@@ -209,6 +209,13 @@ export default function TabbedEvents({
                               {bill.id}
                             </a>
                             <span className="bill-title">{bill.title}</span>
+                            {bill.tags && bill.tags.length > 0 && (
+                              <div className="bill-tags">
+                                {bill.tags.map((tag, tagIdx) => (
+                                  <span key={tagIdx} className="bill-tag">{tag}</span>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>

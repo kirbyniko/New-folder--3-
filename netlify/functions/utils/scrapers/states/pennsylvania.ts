@@ -211,17 +211,110 @@ export class PennsylvaniaScraper extends BaseScraper {
       }
     }
     
-    // TODO: Bill summary fetching disabled to prevent rate limiting and timeouts
-    // This should be implemented as a background job that:
-    // 1. Runs once per day (respecting the 24-hour cache)
-    // 2. Fetches summaries in small batches with delays
-    // 3. Updates the cached event data with summaries
+    // Fetch summaries for each bill with rate limiting
+    const bills = Array.from(billsMap.values());
+    this.log(`📋 Fetching summaries for ${bills.length} bills...`);
     
-    return Array.from(billsMap.values());
+    for (let i = 0; i < bills.length; i++) {
+      const bill = bills[i];
+      try {
+        const billHtml = await this.fetchPage(bill.url);
+        const summary = this.extractBillSummary(billHtml);
+        if (summary) {
+          bill.title = summary;
+          bill.tags = this.generateBillTags(summary);
+          this.log(`✅ Got summary for ${bill.id} (${bill.tags?.length || 0} tags)`);
+        }
+      } catch (error) {
+        this.log(`⚠️ Failed to fetch summary for ${bill.id}: ${error}`);
+      }
+      
+      // Rate limiting: wait 250ms between requests (max 4 per second)
+      if (i < bills.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 250));
+      }
+    }
+    
+    return bills;
   }
 
-  // TODO: Add bill summary extraction for PA bills
-  // This would require fetching the bill page and scraping the summary section.
+  private extractBillSummary(html: string): string | null {
+    // Extract the "An Act..." description from PA bill pages
+    const $ = parseHTML(html, 'PA Bill Page');
+    
+    // Find the specific div with class that contains the bill summary
+    // The summary is in a div after the "Page Navigation" section
+    let summary = '';
+    
+    // Try to find the text content that starts with "An Act"
+    $('div').each((_, elem) => {
+      const text = $(elem).text();
+      if (text.includes('An Act amending') || text.includes('An Act relating') || text.includes('An Act providing')) {
+        const match = text.match(/(An Act[^]+?)(?:Co-Sponsorship Memo|Prime Sponsor|Bill Status|$)/i);
+        if (match && match[1]) {
+          summary = match[1]
+            .replace(/\s+/g, ' ')
+            .replace(/\.\s*\.\s*\.\s*/g, '') // Remove ellipsis
+            .trim();
+          return false; // Stop iterating
+        }
+      }
+    });
+    
+    // If still too long (likely includes extra content), try to extract just the core description
+    if (summary.length > 1000) {
+      const shortMatch = summary.match(/(An Act[^]+?(?:imposing|providing|establishing|amending|relating)[^.]*\.)/i);
+      if (shortMatch) {
+        summary = shortMatch[1].trim();
+      }
+    }
+    
+    return summary || null;
+  }
+
+  private generateBillTags(summary: string): string[] {
+    if (!summary) return [];
+    
+    const tags: Set<string> = new Set();
+    const lowerSummary = summary.toLowerCase();
+    
+    // Topic-based tags
+    const topicKeywords: Record<string, string[]> = {
+      'Healthcare': ['health', 'medical', 'hospital', 'insurance', 'medicare', 'medicaid', 'patient', 'doctor', 'nurse', 'healthcare', 'medicine', 'drug', 'prescription'],
+      'Education': ['education', 'school', 'student', 'teacher', 'university', 'college', 'academic', 'curriculum', 'learning'],
+      'Environment': ['environment', 'climate', 'pollution', 'conservation', 'natural resources', 'energy', 'renewable', 'sustainability', 'wildlife', 'forest', 'water quality'],
+      'Transportation': ['transportation', 'highway', 'road', 'vehicle', 'traffic', 'transit', 'infrastructure', 'bridge', 'tunnel'],
+      'Public Safety': ['police', 'fire', 'emergency', 'safety', 'crime', 'law enforcement', 'security', 'disaster', 'rescue'],
+      'Tax': ['tax', 'taxation', 'revenue', 'fiscal', 'budget', 'appropriation', 'spending'],
+      'Veterans': ['veteran', 'military', 'armed forces', 'service member', 'va ', 'veterans affairs'],
+      'Technology': ['technology', 'digital', 'internet', 'cyber', 'data', 'artificial intelligence', 'ai ', 'telecommunications', 'broadband'],
+      'Housing': ['housing', 'residential', 'home', 'rent', 'landlord', 'tenant', 'mortgage', 'property'],
+      'Labor': ['labor', 'employment', 'worker', 'workplace', 'wage', 'union', 'employee', 'employer'],
+      'Agriculture': ['agriculture', 'farm', 'farming', 'crop', 'livestock', 'rural', 'agricultural'],
+      'Criminal Justice': ['criminal', 'prison', 'parole', 'sentencing', 'conviction', 'felony', 'misdemeanor', 'corrections'],
+      'Commerce': ['business', 'commerce', 'trade', 'economic development', 'industry', 'manufacturing', 'retail'],
+      'Government Operations': ['government', 'administrative', 'regulation', 'department', 'agency', 'commission', 'board'],
+      'Consumer Protection': ['consumer', 'protection', 'fraud', 'deceptive', 'unfair practices'],
+      'Civil Rights': ['civil rights', 'discrimination', 'equal', 'accessibility', 'disability', 'rights']
+    };
+    
+    // Check for topic matches
+    for (const [tag, keywords] of Object.entries(topicKeywords)) {
+      if (keywords.some(keyword => lowerSummary.includes(keyword))) {
+        tags.add(tag);
+      }
+    }
+    
+    // Action-based tags
+    if (lowerSummary.includes('amending')) tags.add('Amendment');
+    if (lowerSummary.includes('providing for') || lowerSummary.includes('establishing')) tags.add('New Program');
+    if (lowerSummary.includes('imposing') && (lowerSummary.includes('penalty') || lowerSummary.includes('fine'))) tags.add('Enforcement');
+    if (lowerSummary.includes('appropriation') || lowerSummary.includes('funding')) tags.add('Funding');
+    if (lowerSummary.includes('regulation') || lowerSummary.includes('licensing')) tags.add('Regulation');
+    
+    return Array.from(tags).slice(0, 5); // Limit to 5 most relevant tags
+  }
+
   private parseDate(dateStr: string): string {
     try {
       // Handle "Monday, December 15, 2025" format
