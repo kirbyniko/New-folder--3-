@@ -1,9 +1,9 @@
 @echo off
-REM CivicPulse Server Startup
+REM Civitron Server Startup
 REM Runs on ports: Frontend 5847, Netlify Functions 8947
 
 echo ====================================
-echo   CivicPulse Legislative Events
+echo   Civitron Legislative Events
 echo   Starting Development Server...
 echo ====================================
 echo.

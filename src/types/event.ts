@@ -14,4 +14,21 @@ export interface LegislativeEvent {
   city?: string;
   state?: string;
   url?: string | null;
+  description?: string;
+  tags?: string[]; // Auto-generated tags for filtering
+  
+  // 🆕 Docket & Virtual Meeting Information
+  docketUrl?: string;           // Link to official docket page
+  virtualMeetingUrl?: string;   // Zoom/Teams/WebEx link for remote attendance
+  bills?: Bill[];               // Bills being discussed (when available)
+}
+
+// 🆕 Bill information structure
+export interface Bill {
+  id: string;                   // Bill number (HB 1234, SB 567)
+  title: string;                // Bill title
+  url: string;                  // Link to full bill text
+  status?: string;              // Current status
+  sponsors?: string[];          // Bill sponsors
+  tags?: string[];              // Policy area tags
 }

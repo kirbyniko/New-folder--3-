@@ -1,6 +1,8 @@
 import type { Handler } from '@netlify/functions';
+import { getStore } from '@netlify/blobs';
 import { loadEnvFile } from './utils/env-loader.js';
 import { ScraperRegistry, CacheManager, initializeScrapers } from './utils/scrapers/index.js';
+import { sanitizeEvent } from './utils/security.js';
 
 // Helper function to get state legislature homepage URL
 function getStateLegislatureUrl(stateCode: string): string | null {
@@ -154,15 +156,55 @@ export const handler: Handler = async (event) => {
 
   try {
     const state = STATE_JURISDICTIONS[stateAbbr];
+    const isLocal = !process.env.NETLIFY_DEV;
+    let store: any = null;
     
-    // ===== STRATEGY 1: Try custom scraper first (more comprehensive) =====
+    // Only use blob storage in production
+    if (!isLocal) {
+      try {
+        store = getStore('events');
+      } catch (err) {
+        console.warn('⚠️  Blob storage not available, using local cache');
+      }
+    }
+    
+    // ===== STRATEGY 0: Check blob storage for pre-scraped data (FASTEST) =====
+    if (store) {
+      console.log(`💾 Checking blob storage for ${stateAbbr}...`);
+      try {
+        const blobData = await store.get(`state-${stateAbbr}`, { type: 'json' });
+        if (blobData) {
+          const age = Date.now() - new Date(blobData.lastUpdated).getTime();
+          const ageHours = Math.floor(age / (1000 * 60 * 60));
+          
+          console.log(`✅ Blob storage hit! Age: ${ageHours}h, Events: ${blobData.count}`);
+          
+          return {
+            statusCode: 200,
+            headers: {
+              'Content-Type': 'application/json',
+              'Cache-Control': 'public, max-age=21600', // 6 hours
+              'X-Cache': 'HIT-BLOB',
+              'X-Cache-Age': String(ageHours)
+            },
+            body: JSON.stringify(blobData.events || [])
+          };
+        }
+      } catch (err) {
+        console.log(`⚠️ Blob storage miss for ${stateAbbr}, falling back to scraping`);
+      }
+    } else {
+      console.log(`🏠 Running in local dev, skipping blob storage`);
+    }
+    
+    // ===== STRATEGY 1: Try custom scraper (comprehensive but slower) =====
     console.log('🔍 Checking for custom scraper...');
     const scraper = ScraperRegistry.get(stateAbbr);
     
     if (scraper && scraper.getHealth().enabled) {
       console.log(`✅ Custom scraper available for ${stateAbbr}`);
       
-      // Check cache first
+      // Check memory cache (24-hour TTL)
       const cacheKey = `scraper:${stateAbbr}:events`;
       const cached = CacheManager.get(cacheKey);
       
@@ -172,7 +214,8 @@ export const handler: Handler = async (event) => {
           statusCode: 200,
           headers: {
             'Content-Type': 'application/json',
-            'Cache-Control': 'public, max-age=1800'
+            'Cache-Control': 'public, max-age=86400', // 24 hours
+            'X-Cache': 'HIT-MEMORY'
           },
           body: JSON.stringify(cached)
         };
@@ -199,14 +242,14 @@ export const handler: Handler = async (event) => {
         
         console.log(`📍 Added coordinates to events (using ${state.capitol.city} capitol)`);
         
-        // Cache the results (30 minutes)
-        CacheManager.set(cacheKey, eventsWithCoords, 1800);
+        // Cache the results (24 hours)
+        CacheManager.set(cacheKey, eventsWithCoords, 86400);
         
         return {
           statusCode: 200,
           headers: {
             'Content-Type': 'application/json',
-            'Cache-Control': 'public, max-age=1800'
+            'Cache-Control': 'public, max-age=86400' // 24 hours
           },
           body: JSON.stringify(eventsWithCoords)
         };

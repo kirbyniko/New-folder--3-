@@ -24,6 +24,8 @@ interface NHCalendarResponse {
 }
 
 export class NewHampshireScraper extends BaseScraper {
+  private committeeIdMap: Map<string, { id: string; chapter: string }> = new Map();
+  
   constructor() {
     const config: ScraperConfig = {
       stateCode: 'NH',
@@ -50,10 +52,88 @@ export class NewHampshireScraper extends BaseScraper {
   }
 
   /**
+   * Build committee name to ID/chapter mapping
+   * HARDCODED: The statstudcomm page uses JavaScript to load data dynamically,
+   * making static scraping impossible. This is a temporary hardcoded mapping
+   * of known committees. TODO: Find API or use headless browser.
+   */
+  private async buildCommitteeMapping(): Promise<void> {
+    // Hardcoded mapping of known statutory/study committees
+    // Format: COMMITTEE NAME → {id, chapter}
+    //
+    // HOW TO ADD MORE MAPPINGS:
+    // 1. Run the scraper and check logs for "No docket link found"
+    // 2. Visit the event details page manually (e.g., eventDetails.aspx?event=635&et=2)
+    // 3. Click the "See Docket" button
+    // 4. Copy the id and txtchapternumber from the resulting URL
+    // 5. Add the mapping below: 'COMMITTEE NAME': { id: 'XXX', chapter: 'YY-Z:N' }
+    //
+    // NOTE: Only statutory/study committees have dockets. Regular House/Senate
+    // committees (Finance, Education, Judiciary, etc.) do NOT appear on statstudcomm
+    // and their events won't have "See Docket" buttons.
+    
+    // STABILITY NOTE: These IDs are database primary keys that SHOULD be stable long-term
+    // (government systems rarely change them, and public URLs depend on them).
+    // However, they're not guaranteed permanent. If an ID stops working:
+    // 1. Visit the event page manually
+    // 2. Click "See Docket" to get the new URL
+    // 3. Update the ID here
+    // 
+    // Last verified: December 2025
+    
+    const knownCommittees: Record<string, { id: string; chapter: string }> = {
+      // ✅ VERIFIED - Has bills on docket page:
+      'STATE COMMISSION ON AGING': { id: '1451', chapter: '19-P:1' }, // RSA 19-P:1
+      
+      // 📋 TO BE ADDED (12 events) - High priority:
+      // 'STATE VETERANS ADVISORY COMMITTEE': { id: '???', chapter: '???' },
+      
+      // 📋 TO BE ADDED (6 events):
+      // 'ASSESSING STANDARDS BOARD': { id: '???', chapter: '???' },
+      
+      // 📋 TO BE ADDED (2 events each):
+      // 'FISCAL COMMITTEE': { id: '???', chapter: '???' },
+      // 'ADMINISTRATIVE RULES': { id: '???', chapter: '???' },
+      // 'INFORMATION TECHNOLOGY COUNCIL': { id: '???', chapter: '???' },
+      // 'HEALTH AND HUMAN SERVICES OVERSIGHT COMMITTEE': { id: '???', chapter: '???' },
+      // 'CAPITAL PROJECT OVERVIEW COMMITTEE': { id: '???', chapter: '???' },
+      // 'JOINT LEGISLATIVE PERFORMANCE AUDIT AND OVERSIGHT COMMITTEE': { id: '???', chapter: '???' },
+    };
+    
+    for (const [name, data] of Object.entries(knownCommittees)) {
+      this.committeeIdMap.set(name, data);
+    }
+    
+    this.log(`✅ Loaded ${this.committeeIdMap.size} hardcoded committee mappings`);
+    if (this.committeeIdMap.size < 5) {
+      this.log(`⚠️  Only ${this.committeeIdMap.size} committee(s) mapped - many events will have no bills`);
+      this.log(`💡 To add more: Visit event pages manually, click "See Docket", copy URL parameters`);
+    }
+  }
+  
+  /**
+   * Get docket URL for a committee name
+   */
+  private getDocketUrl(committeeName: string): string | null {
+    const normalizedName = committeeName.trim().toUpperCase()
+      .replace(/^NH (HOUSE|SENATE) - /, ''); // Remove prefix
+    
+    const committee = this.committeeIdMap.get(normalizedName);
+    if (committee) {
+      return `https://www.gencourt.state.nh.us/statstudcomm/details.aspx?id=${committee.id}&txtchapternumber=${committee.chapter}`;
+    }
+    
+    return null;
+  }
+
+  /**
    * Main scraping method - fetches from JSON endpoints
    */
   protected async scrapeCalendar(): Promise<RawEvent[]> {
     this.log('📅 Starting NH calendar scrape (JSON endpoints)');
+    
+    // Build hardcoded committee mapping
+    await this.buildCommitteeMapping();
 
     const urls = await this.getPageUrls();
     const allEvents: RawEvent[] = [];
@@ -77,8 +157,21 @@ export class NewHampshireScraper extends BaseScraper {
       this.logError('❌ Failed to scrape Senate calendar', error);
     }
 
+    // Enrich first 3 events with bills (reduced to prevent timeout)
+    const eventsToEnrich = allEvents.slice(0, 3);
+    this.log(`🔍 Enriching top ${eventsToEnrich.length} events with bill data...`);
+    
+    let enrichedCount = 0;
+    for (const event of eventsToEnrich) {
+      if (event.detailsUrl) {
+        const enriched = await this.enrichEventWithRegex(event);
+        if (enriched) enrichedCount++;
+      }
+    }
+
     this.log('✅ NH scrape complete', {
       totalEvents: allEvents.length,
+      enrichedWithBills: enrichedCount,
       house: allEvents.filter(e => e.committee?.includes('House')).length,
       senate: allEvents.filter(e => e.committee?.includes('Senate')).length
     });
@@ -282,5 +375,197 @@ export class NewHampshireScraper extends BaseScraper {
     //   /[A-Z][a-z]+\s+\d{1,2}/ // January 15
     // ];
     // return patterns.some(pattern => pattern.test(text));
+  }
+
+  /**
+   * Enrich events in background without blocking initial response
+   */
+  private async enrichEventsInBackground(events: RawEvent[]): Promise<void> {
+    this.log('🔄 Background enrichment started', { total: events.length });
+    let enrichedCount = 0;
+    
+    for (const event of events) {
+      if (event.detailsUrl) {
+        await this.sleep(this.config.requestDelay || 500);
+        const enriched = await this.enrichEventWithRegex(event);
+        if (enriched) {
+          enrichedCount++;
+          this.log(`📊 Progress: ${enrichedCount}/${events.length} enriched`);
+        }
+      }
+    }
+    
+    this.log('✅ Background enrichment complete', { enriched: enrichedCount });
+  }
+
+  /**
+   * 🆕 Enrich event with bills from docket page
+   * Flow: Event Details -> Extract Docket URL -> Fetch Docket -> Scrape Bills
+   */
+  private async enrichEventWithRegex(event: RawEvent): Promise<boolean> {
+    if (!event.detailsUrl) return false;
+
+    try {
+      this.log('📋 Enriching event', { url: event.detailsUrl, name: event.name });
+
+      // Step 1: Fetch event details page
+      const eventHtml = await this.fetchPage(event.detailsUrl);
+      
+      // Extract Zoom/Teams links from event details
+      const zoomMatch = eventHtml.match(/https:\/\/[^\s<>"]+zoom\.us[^\s<>"]*/i);
+      const teamsMatch = eventHtml.match(/https:\/\/[^\s<>"]+teams\.microsoft\.com[^\s<>"]*/i);
+      
+      if (zoomMatch) {
+        event.virtualMeetingUrl = zoomMatch[0];
+        this.log('🎥 Zoom link found', { url: event.virtualMeetingUrl });
+      } else if (teamsMatch) {
+        event.virtualMeetingUrl = teamsMatch[0];
+        this.log('🎥 Teams link found', { url: event.virtualMeetingUrl });
+      }
+
+      // Step 2: Try to extract bills directly from event details page first
+      // Pattern: Look for bill links like <a href="...billinfo...">HB621</a>
+      const billPattern = /<a[^>]+href=["']([^"']*bill[^"']*)["'][^>]*>\s*((?:HB|SB|HCR|SCR)\s*\d+)\s*<\/a>/gi;
+      let bills: typeof event.bills = [];
+      
+      // First try: Extract bills from event details page
+      let match;
+      while ((match = billPattern.exec(eventHtml)) !== null) {
+        const billUrl = this.resolveUrl(match[1]);
+        const billId = match[2].trim().replace(/\s+/g, ' ');
+        
+        const contextStart = Math.max(0, match.index - 300);
+        const contextEnd = Math.min(eventHtml.length, match.index + 600);
+        const context = eventHtml.substring(contextStart, contextEnd);
+        
+        let title = '';
+        const titlePatterns = [
+          /<\/a>[\s\S]*?<[^>]+>([^<]{10,200})<\//i,
+          /Bill Number:[\s\S]*?<\/a>[\s\S]*?([A-Z][^<]{10,200})</i,
+          /<td[^>]*>([^<]{10,200})<\/td>/i
+        ];
+        
+        for (const pattern of titlePatterns) {
+          const titleMatch = context.match(pattern);
+          if (titleMatch && titleMatch[1]) {
+            title = titleMatch[1].trim();
+            if (title.length > 10) break;
+          }
+        }
+        
+        if (billId && billUrl) {
+          bills.push({
+            id: billId,
+            title: title || 'Bill title unavailable',
+            url: billUrl,
+            status: 'Scheduled for Hearing',
+            sponsors: [],
+            tags: []
+          });
+        }
+      }
+      
+      // If no bills found on event details, try to find and fetch docket page
+      if (bills.length === 0) {
+        const committeeName = event.committee || event.name;
+        
+        // Try to get docket URL from committee mapping
+        const docketUrl = this.getDocketUrl(committeeName);
+        
+        if (docketUrl) {
+          event.docketUrl = docketUrl;
+          this.log('🔗 Docket URL constructed from committee mapping', { 
+            committee: committeeName, 
+            url: docketUrl 
+          });
+          
+          try {
+            const docketHtml = await this.fetchPage(docketUrl);
+            
+            // Validate that the docket page loaded correctly
+            if (docketHtml.includes('Object moved') || docketHtml.includes('404') || docketHtml.includes('not found')) {
+              this.log('❌ Docket ID appears invalid - committee ID may have changed!', {
+                committee: committeeName,
+                url: docketUrl,
+                hint: 'Visit event page manually and click "See Docket" to get new ID'
+              });
+              return false;
+            }
+            
+            // Reset regex lastIndex for new HTML
+            billPattern.lastIndex = 0;
+            
+            while ((match = billPattern.exec(docketHtml)) !== null) {
+              const billUrl = this.resolveUrl(match[1]);
+              const billId = match[2].trim().replace(/\s+/g, ' ');
+              
+              const contextStart = Math.max(0, match.index - 300);
+              const contextEnd = Math.min(docketHtml.length, match.index + 600);
+              const context = docketHtml.substring(contextStart, contextEnd);
+              
+              let title = '';
+              const titlePatterns = [
+                /<\/a>[\s\S]*?<[^>]+>([^<]{10,200})<\//i,
+                /Bill Number:[\s\S]*?<\/a>[\s\S]*?([A-Z][^<]{10,200})</i,
+                /<td[^>]*>([^<]{10,200})<\/td>/i
+              ];
+              
+              for (const pattern of titlePatterns) {
+                const titleMatch = context.match(pattern);
+                if (titleMatch && titleMatch[1]) {
+                  title = titleMatch[1].trim();
+                  if (title.length > 10) break;
+                }
+              }
+              
+              if (billId && billUrl) {
+                bills.push({
+                  id: billId,
+                  title: title || 'Bill title unavailable',
+                  url: billUrl,
+                  status: 'Scheduled for Hearing',
+                  sponsors: [],
+                  tags: []
+                });
+              }
+            }
+            
+            if (bills.length > 0) {
+              this.log('📋 Bills extracted from docket page', {
+                eventName: event.name,
+                docketUrl,
+                billCount: bills.length
+              });
+            }
+          } catch (error) {
+            this.logError('Failed to fetch docket page', error);
+          }
+        } else {
+          event.docketUrl = event.detailsUrl;
+          this.log('ℹ️ No docket link found, likely no bills for this event');
+        }
+      } else {
+        // Found bills on event details page
+        event.docketUrl = event.detailsUrl;
+        this.log('📋 Bills found on event details page', {
+          eventName: event.name,
+          billCount: bills.length
+        });
+      }
+      
+      // Attach bills to event if any were found
+      if (bills.length > 0) {
+        event.bills = bills;
+      }
+
+      return true;
+
+    } catch (error) {
+      this.logError('⚠️ Failed to enrich event with regex', error, { 
+        url: event.detailsUrl,
+        name: event.name 
+      });
+      return false;
+    }
   }
 }

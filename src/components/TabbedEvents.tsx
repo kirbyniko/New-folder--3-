@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { LegislativeEvent } from '../types/event';
 import EventMap from './EventMap';
+import { TAG_DEFINITIONS } from '../utils/tagging';
 
 interface TabbedEventsProps {
   federalEvents: LegislativeEvent[];
@@ -9,6 +10,7 @@ interface TabbedEventsProps {
   centerLat: number;
   centerLng: number;
   radius: number;
+  selectedTags?: string[];
 }
 
 type TabType = 'all' | 'state' | 'local';
@@ -19,18 +21,39 @@ export default function TabbedEvents({
   localEvents,
   centerLat,
   centerLng,
-  radius
+  radius,
+  selectedTags = []
 }: TabbedEventsProps) {
   const [activeTab, setActiveTab] = useState<TabType>('all');
 
-  const allEvents = [...federalEvents, ...stateEvents, ...localEvents].sort((a, b) => 
+  // Filter events by selected tags
+  const filterByTags = (events: LegislativeEvent[]) =>
+    selectedTags.length === 0 
+      ? events 
+      : events.filter(e => e.tags?.some(t => selectedTags.includes(t)));
+
+  const filteredFederal = filterByTags(federalEvents);
+  const filteredState = filterByTags(stateEvents);
+  const filteredLocal = filterByTags(localEvents);
+
+  // Combine and deduplicate events (some events may appear in multiple sources)
+  const allEventsMap = new Map<string, LegislativeEvent>();
+  [...filteredFederal, ...filteredState, ...filteredLocal].forEach(event => {
+    // Use a composite key to handle potential duplicates across sources
+    const key = `${event.level}-${event.id}`;
+    if (!allEventsMap.has(key)) {
+      allEventsMap.set(key, event);
+    }
+  });
+  
+  const allEvents = Array.from(allEventsMap.values()).sort((a, b) => 
     new Date(a.date).getTime() - new Date(b.date).getTime()
   );
 
   const tabs = [
     { id: 'all' as TabType, label: '📋 All', events: allEvents, color: '#8b5cf6' },
-    { id: 'state' as TabType, label: '🏢 State', events: stateEvents, color: '#10b981' },
-    { id: 'local' as TabType, label: '🏘️ Local', events: localEvents, color: '#f59e0b' }
+    { id: 'state' as TabType, label: '🏢 State', events: filteredState, color: '#10b981' },
+    { id: 'local' as TabType, label: '🏘️ Local', events: filteredLocal, color: '#f59e0b' }
   ];
 
   const activeEvents = tabs.find(t => t.id === activeTab)?.events || [];
@@ -77,6 +100,7 @@ export default function TabbedEvents({
         {activeEvents.length > 0 && (
           <div className="map-container">
             <EventMap
+              key={`${activeTab}-${selectedTags.join(',')}-${activeEvents.length}`}
               events={activeEvents}
               centerLat={centerLat}
               centerLng={centerLng}
@@ -89,7 +113,7 @@ export default function TabbedEvents({
         {activeEvents.length > 0 ? (
           <div className="events-list">
             {activeEvents.map((event) => (
-              <article key={event.id} className="event-card">
+              <article key={`${event.level}-${event.id}`} className="event-card">
                 <div className="event-header">
                   <span className={`event-badge event-badge-${event.level}`}>
                     {event.level}
@@ -100,6 +124,25 @@ export default function TabbedEvents({
                 </div>
                 
                 <h3 className="event-name">{event.name}</h3>
+                
+                {event.tags && event.tags.length > 0 && (
+                  <div className="event-tags">
+                    {event.tags.map(tagId => {
+                      const tag = TAG_DEFINITIONS[tagId];
+                      if (!tag) return null;
+                      return (
+                        <span 
+                          key={tagId} 
+                          className="event-tag" 
+                          style={{ backgroundColor: tag.color }}
+                          title={tag.label}
+                        >
+                          {tag.icon} {tag.label}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
                 
                 <div className="event-details">
                   <div className="event-detail">
@@ -138,10 +181,37 @@ export default function TabbedEvents({
                     <div className="event-detail">
                       <span className="detail-label">🔗 Link:</span>
                       <span className="detail-value">
-                        <a href={event.url} target="_blank" rel="noopener noreferrer">
-                          View Details
+                        <a href={event.url} target="_blank" rel="noopener noreferrer" className="docket-link">
+                          View Docket
                         </a>
                       </span>
+                    </div>
+                  )}
+
+                  {event.virtualMeetingUrl && (
+                    <div className="event-detail">
+                      <span className="detail-label">🎥 Virtual:</span>
+                      <span className="detail-value">
+                        <a href={event.virtualMeetingUrl} target="_blank" rel="noopener noreferrer" className="zoom-link">
+                          Join Meeting
+                        </a>
+                      </span>
+                    </div>
+                  )}
+
+                  {event.bills && event.bills.length > 0 && (
+                    <div className="event-detail bills-section">
+                      <span className="detail-label">📋 Bills ({event.bills.length}):</span>
+                      <div className="bills-list">
+                        {event.bills.map((bill, idx) => (
+                          <div key={idx} className="bill-item">
+                            <a href={bill.url} target="_blank" rel="noopener noreferrer" className="bill-link">
+                              {bill.id}
+                            </a>
+                            <span className="bill-title">{bill.title}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>

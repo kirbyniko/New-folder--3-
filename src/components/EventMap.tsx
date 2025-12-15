@@ -80,7 +80,7 @@ export default function EventMap({ events, centerLat, centerLng, radius }: Event
         {/* Event markers */}
         {events.map(event => (
           <Marker
-            key={event.id}
+            key={`${event.level}-${event.id}`}
             position={[event.lat, event.lng]}
             icon={getMarkerIcon(event.level)}
           >

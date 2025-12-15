@@ -1,0 +1,20 @@
+{
+  "lastUpdated": "2025-12-14T16:00:04.885Z",
+  "successCount": 6,
+  "errorCount": 0,
+  "errors": [],
+  "availableStates": [
+    "CA",
+    "NY",
+    "MI",
+    "TX",
+    "FL"
+  ],
+  "testedStates": [
+    "CA",
+    "NY",
+    "MI",
+    "TX",
+    "FL"
+  ]
+}

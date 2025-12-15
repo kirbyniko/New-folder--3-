@@ -8,9 +8,11 @@
  * - Rate limiting
  * - Cache integration
  * - Health tracking
+ * - XSS protection via sanitization
  */
 
 import { LegislativeEvent } from '../../../../src/types/event';
+import { sanitizeEvent } from '../security';
 
 export interface ScraperConfig {
   stateCode: string;
@@ -35,6 +37,21 @@ export interface RawEvent {
   type?: string;
   description?: string;
   detailsUrl?: string;
+  
+  // 🆕 Docket & Virtual Meeting Fields
+  docketUrl?: string;
+  virtualMeetingUrl?: string;
+  bills?: BillInfo[];
+}
+
+// 🆕 Bill information for raw events
+export interface BillInfo {
+  id: string;
+  title: string;
+  url: string;
+  status?: string;
+  sponsors?: string[];
+  tags?: string[];
 }
 
 export interface ScraperHealth {
@@ -203,7 +220,7 @@ export abstract class BaseScraper {
         return null;
       }
 
-      return {
+      return sanitizeEvent({
         id: this.generateEventId(raw),
         name: raw.name,
         date: date.toISOString(),
@@ -219,8 +236,11 @@ export abstract class BaseScraper {
         lat: 0, // Will be set by geocoder
         lng: 0,
         zipCode: null,
-        url: raw.detailsUrl || null
-      } as LegislativeEvent;
+        url: raw.detailsUrl || null,
+        docketUrl: raw.docketUrl || null,
+        virtualMeetingUrl: raw.virtualMeetingUrl || null,
+        bills: raw.bills || null
+      }) as LegislativeEvent;
 
     } catch (error) {
       this.logError('⚠️ Event transformation error', error, { raw });
@@ -262,7 +282,7 @@ export abstract class BaseScraper {
           ...options,
           signal: controller.signal,
           headers: {
-            'User-Agent': 'CivicPulse/1.0 (Legislative Events Aggregator)',
+            'User-Agent': 'Civitron/1.0 (Legislative Events Aggregator)',
             ...options.headers
           }
         });

@@ -1,8 +1,8 @@
-# CivicPulse
+# Civitron
 
 > Discover upcoming legislative events near you - Real government data from official APIs
 
-CivicPulse helps citizens find and participate in upcoming legislative events (committee meetings, hearings, town halls) near any US ZIP code using **official government APIs only**.
+Civitron helps citizens find and participate in upcoming legislative events (committee meetings, hearings, town halls) near any US ZIP code using **official government APIs only**.
 
 ## 🎯 Features
 

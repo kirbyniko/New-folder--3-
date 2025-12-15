@@ -28,7 +28,7 @@ export async function geocodeZipCode(zipCode: string): Promise<GeoLocation> {
     `https://nominatim.openstreetmap.org/search?postalcode=${zipCode}&country=us&format=json&addressdetails=1`,
     {
       headers: {
-        'User-Agent': 'CivicPulse/1.0'
+        'User-Agent': 'Civitron/1.0'
       }
     }
   );

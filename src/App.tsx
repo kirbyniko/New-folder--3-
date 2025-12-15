@@ -3,6 +3,10 @@ import { geocodeZipCode, calculateDistance } from './utils/geocoding'
 import type { LegislativeEvent } from './types/event'
 import TabbedEvents from './components/TabbedEvents'
 import StateSelector from './components/StateSelector'
+import TagFilter from './components/TagFilter'
+import { EnrichmentNotice } from './components/EnrichmentNotice'
+import { getApiUrl } from './config/api'
+import { autoTagEvent } from './utils/tagging'
 import './App.css'
 
 // State capitol coordinates for default locations
@@ -38,6 +42,7 @@ function App() {
   const [zipCode, setZipCode] = useState('03054')
   const [radius, setRadius] = useState(50)
   const [selectedState, setSelectedState] = useState<string | null>(null)
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [federalEvents, setFederalEvents] = useState<LegislativeEvent[]>([])
   const [stateEvents, setStateEvents] = useState<LegislativeEvent[]>([])
   const [localEvents, setLocalEvents] = useState<LegislativeEvent[]>([])
@@ -73,11 +78,11 @@ function App() {
       
       const timestamp = Date.now();
       const [federalResponse, stateResponse, localResponse] = await Promise.all([
-        fetch(`/.netlify/functions/congress-meetings?_t=${timestamp}`),
+        fetch(getApiUrl(`/.netlify/functions/congress-meetings?_t=${timestamp}`)),
         location.stateAbbr 
-          ? fetch(`/.netlify/functions/state-events?state=${location.stateAbbr}&_t=${timestamp}`)
+          ? fetch(getApiUrl(`/.netlify/functions/state-events?state=${location.stateAbbr}&_t=${timestamp}`))
           : Promise.resolve(null),
-        fetch(`/.netlify/functions/local-meetings?lat=${location.lat}&lng=${location.lng}&radius=${radius}&_t=${timestamp}`)
+        fetch(getApiUrl(`/.netlify/functions/local-meetings?lat=${location.lat}&lng=${location.lng}&radius=${radius}&_t=${timestamp}`))
       ])
       
       // Parse federal events
@@ -98,6 +103,12 @@ function App() {
         console.log('📥 State raw response:', stateText.substring(0, 200))
         state = JSON.parse(stateText)
         console.log(`🏢 State: ${state.length} events`, state.length > 0 ? state[0] : 'none')
+        
+        // Show enrichment message if events have detail URLs
+        const eventsWithDetails = state.filter(e => e.url).length
+        if (eventsWithDetails > 0) {
+          console.log(`ℹ️ Note: ${eventsWithDetails} events are being enriched with docket/Zoom data in the background. Refresh in a few minutes for full details.`)
+        }
       } else if (stateResponse) {
         console.error('❌ State API error:', stateResponse.status, await stateResponse.text())
       }
@@ -113,16 +124,17 @@ function App() {
         console.error('❌ Local API error:', localResponse.status, await localResponse.text())
       }
       
-      // Calculate distances for all events
-      const addDistance = (events: LegislativeEvent[]) => 
+      // Calculate distances and add tags for all events
+      const addDistanceAndTags = (events: LegislativeEvent[]) => 
         events.map(event => ({
           ...event,
+          tags: autoTagEvent(event),
           distance: calculateDistance(location.lat, location.lng, event.lat, event.lng)
-        })).sort((a, b) => a.distance - b.distance)
+        })).sort((a, b) => a.distance - b.distance);
       
-      const federalWithDistance = addDistance(federal).filter(e => e.distance <= radius)
-      const stateWithDistance = addDistance(state).filter(e => e.distance <= radius)
-      const localWithDistance = addDistance(local).filter(e => e.distance <= radius)
+      const federalWithDistance = addDistanceAndTags(federal).filter(e => e.distance <= radius)
+      const stateWithDistance = addDistanceAndTags(state).filter(e => e.distance <= radius)
+      const localWithDistance = addDistanceAndTags(local).filter(e => e.distance <= radius)
       
       setFederalEvents(federalWithDistance)
       setStateEvents(stateWithDistance)
@@ -131,7 +143,7 @@ function App() {
       const totalEvents = federalWithDistance.length + stateWithDistance.length + localWithDistance.length
       
       if (totalEvents === 0) {
-        const allEvents = [...addDistance(federal), ...addDistance(state), ...addDistance(local)]
+        const allEvents = [...addDistanceAndTags(federal), ...addDistanceAndTags(state), ...addDistanceAndTags(local)]
         if (allEvents.length > 0) {
           const closest = allEvents.sort((a, b) => a.distance - b.distance)[0]
           setError(`No events found within ${radius} miles. The nearest event is ${closest.distance.toFixed(0)} miles away in ${closest.location}. Try increasing your search radius to ${Math.ceil(closest.distance / 50) * 50} miles or more.`)
@@ -151,7 +163,7 @@ function App() {
   return (
     <div className="app">
       <header className="header">
-        <h1>🏛️ CivicPulse</h1>
+        <h1>🏛️ Civitron</h1>
         <p className="tagline">Discover upcoming legislative events near you - Federal, State, and Local</p>
       </header>
 
@@ -177,26 +189,27 @@ function App() {
             try {
               const timestamp = Date.now()
               const [federalResponse, stateResponse, localResponse] = await Promise.all([
-                fetch(`/.netlify/functions/congress-meetings?_t=${timestamp}`),
-                fetch(`/.netlify/functions/state-events?state=${stateAbbr}&_t=${timestamp}`),
-                fetch(`/.netlify/functions/local-meetings?lat=${capitol.lat}&lng=${capitol.lng}&radius=${radius}&_t=${timestamp}`)
+                fetch(getApiUrl(`/.netlify/functions/congress-meetings?_t=${timestamp}`)),
+                fetch(getApiUrl(`/.netlify/functions/state-events?state=${stateAbbr}&_t=${timestamp}`)),
+                fetch(getApiUrl(`/.netlify/functions/local-meetings?lat=${capitol.lat}&lng=${capitol.lng}&radius=${radius}&_t=${timestamp}`))
               ])
               
               const federal = federalResponse.ok ? await federalResponse.json() : []
               const state = stateResponse.ok ? await stateResponse.json() : []
               const local = localResponse.ok ? await localResponse.json() : []
               
-              // Add distances
-              const addDistance = (events: LegislativeEvent[]) => {
+              // Add distances and tags
+              const addDistanceAndTags = (events: LegislativeEvent[]) => {
                 return events.map(event => ({
                   ...event,
+                  tags: autoTagEvent(event),
                   distance: calculateDistance(capitol.lat, capitol.lng, event.lat, event.lng)
                 }))
               }
               
-              setFederalEvents(addDistance(federal).filter(e => e.distance <= radius))
-              setStateEvents(addDistance(state).filter(e => e.distance <= radius))
-              setLocalEvents(addDistance(local).filter(e => e.distance <= radius))
+              setFederalEvents(addDistanceAndTags(federal).filter(e => e.distance <= radius))
+              setStateEvents(addDistanceAndTags(state).filter(e => e.distance <= radius))
+              setLocalEvents(addDistanceAndTags(local).filter(e => e.distance <= radius))
               
             } catch (err) {
               setError(err instanceof Error ? err.message : 'Failed to fetch state events')
@@ -252,6 +265,17 @@ function App() {
               {federalEvents.length + stateEvents.length + localEvents.length} Total Events Found
             </h2>
             
+            {/* Show enrichment notice for state events */}
+            <EnrichmentNotice 
+              eventsCount={stateEvents.length}
+              enrichableCount={stateEvents.filter(e => e.url && (!e.docketUrl || !e.bills)).length}
+            />
+            
+            <TagFilter
+              selectedTags={selectedTags}
+              onTagsChange={setSelectedTags}
+            />
+            
             <TabbedEvents
               federalEvents={federalEvents}
               stateEvents={stateEvents}
@@ -259,6 +283,7 @@ function App() {
               centerLat={userLocation.lat}
               centerLng={userLocation.lng}
               radius={radius}
+              selectedTags={selectedTags}
             />
           </div>
         )}

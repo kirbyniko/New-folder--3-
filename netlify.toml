@@ -6,7 +6,7 @@
   command = "npm run dev"
   targetPort = 5173
   publish = "dist"
-  functions = "netlify/functions"
+  functionsTimeout = 300
 
 [[redirects]]
   from = "/*"
@@ -16,3 +16,16 @@
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
+  external_node_modules = ["jsdom", "cheerio", "@netlify/blobs", "css-what", "css-select", "dom-serializer", "domhandler", "domutils", "htmlparser2", "entities"]
+
+# Scheduled function runs daily at 3 AM UTC
+[functions."scheduled-scraper"]
+  schedule = "0 3 * * *"
+
+# Cache headers for static JSON files
+[[headers]]
+  for = "/cache/*.json"
+  [headers.values]
+    Cache-Control = "public, max-age=21600, s-maxage=21600"  # 6 hours
+    Access-Control-Allow-Origin = "*"
+    Content-Type = "application/json"

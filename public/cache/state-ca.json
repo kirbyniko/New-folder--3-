@@ -1,0 +1,63 @@
+{
+  "events": [
+    {
+      "id": "ca-2025-12-17-joint-hearing-select-committee-on-calfresh-enrollm",
+      "name": "Joint Hearing Select Committee On Calfresh Enrollment And Nutrition And Human Services",
+      "date": "2025-12-17T00:00:00.000Z",
+      "time": "10:00",
+      "location": "Alameda City Hall 2263 Santa Clara Ave Alameda",
+      "committee": "CA Assembly - Joint Hearing Select Committee On Calfresh Enrollment And Nutrition And Human Services",
+      "type": "meeting",
+      "level": "state",
+      "lat": 38.5767,
+      "lng": -121.4934,
+      "zipCode": null,
+      "url": "https://assembly.ca.gov/dailyfile"
+    },
+    {
+      "id": "ca-2026-01-12-revenue-and-taxation",
+      "name": "Revenue And Taxation",
+      "date": "2026-01-12T00:00:00.000Z",
+      "time": "14:30",
+      "location": "State Capitol, Room 126",
+      "committee": "CA Assembly - Revenue And Taxation",
+      "type": "meeting",
+      "level": "state",
+      "lat": 38.5767,
+      "lng": -121.4934,
+      "zipCode": null,
+      "url": "https://assembly.ca.gov/dailyfile"
+    },
+    {
+      "id": "ca-2026-01-13-higher-education",
+      "name": "Higher Education",
+      "date": "2026-01-13T00:00:00.000Z",
+      "time": "13:30",
+      "location": "State Capitol, Room 126",
+      "committee": "CA Assembly - Higher Education",
+      "type": "meeting",
+      "level": "state",
+      "lat": 38.5767,
+      "lng": -121.4934,
+      "zipCode": null,
+      "url": "https://assembly.ca.gov/dailyfile"
+    },
+    {
+      "id": "ca-2026-01-13-water--parks--and-wildlife",
+      "name": "Water, Parks, And Wildlife",
+      "date": "2026-01-13T00:00:00.000Z",
+      "time": "09:00",
+      "location": "State Capitol, Room 444",
+      "committee": "CA Assembly - Water, Parks, And Wildlife",
+      "type": "meeting",
+      "level": "state",
+      "lat": 38.5767,
+      "lng": -121.4934,
+      "zipCode": null,
+      "url": "https://assembly.ca.gov/dailyfile"
+    }
+  ],
+  "state": "CA",
+  "lastUpdated": "2025-12-14T16:00:04.885Z",
+  "source": "custom-scraper"
+}

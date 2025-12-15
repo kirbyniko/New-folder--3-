@@ -1,5 +1,6 @@
 import type { Handler } from '@netlify/functions';
 import { loadEnvFile } from './utils/env-loader';
+import { sanitizeEvent } from './utils/security';
 
 interface CommitteeMeeting {
   eventId: string;
@@ -56,7 +57,7 @@ export const handler: Handler = async (event) => {
     const congress = 119;
     const listResponse = await fetch(
       `https://api.congress.gov/v3/committee-meeting?api_key=${apiKey}&format=json&limit=50`,
-      { headers: { 'User-Agent': 'CivicPulse/1.0' } }
+      { headers: { 'User-Agent': 'Civitron/1.0' } }
     );
     
     if (!listResponse.ok) {
@@ -67,7 +68,7 @@ export const handler: Handler = async (event) => {
     // Would need to fetch individual meeting details, which takes too long
     */
     
-    const upcomingMeetingsFormatted = upcomingMeetings.map((meeting) => ({
+    const upcomingMeetingsFormatted = upcomingMeetings.map((meeting) => sanitizeEvent({
         id: `congress-${meeting.eventId}`,
         name: meeting.title || 'Committee Meeting',
         date: meeting.date,

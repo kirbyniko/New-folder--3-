@@ -223,6 +223,30 @@ body {
   line-height: 1.4;
 }
 
+.event-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.event-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: white;
+  white-space: nowrap;
+  transition: transform 0.1s ease;
+}
+
+.event-tag:hover {
+  transform: scale(1.05);
+}
+
 .event-details {
   display: grid;
   gap: 0.5rem;
@@ -240,6 +264,95 @@ body {
 }
 
 .detail-value {
+  flex: 1;
+}
+
+.detail-value a {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.detail-value a:hover {
+  color: #764ba2;
+  text-decoration: underline;
+}
+
+.docket-link {
+  padding: 0.25rem 0.75rem;
+  background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+  color: white !important;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+.docket-link:hover {
+  background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+  text-decoration: none !important;
+}
+
+.zoom-link {
+  padding: 0.25rem 0.75rem;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: white !important;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+.zoom-link:hover {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+  text-decoration: none !important;
+}
+
+.bills-section {
+  flex-direction: column;
+  align-items: flex-start !important;
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 0.75rem;
+}
+
+.bills-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.bill-item {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.5rem;
+  background: #f9fafb;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.bill-item:hover {
+  background: #f3f4f6;
+}
+
+.bill-link {
+  font-weight: 600;
+  color: #8b5cf6 !important;
+  text-decoration: none;
+  white-space: nowrap;
+  font-size: 0.9rem;
+  min-width: 65px;
+}
+
+.bill-link:hover {
+  color: #7c3aed !important;
+  text-decoration: underline !important;
+}
+
+.bill-title {
+  color: #4b5563;
+  font-size: 0.85rem;
+  line-height: 1.4;
   flex: 1;
 }
 

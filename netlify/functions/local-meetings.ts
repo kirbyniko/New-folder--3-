@@ -1,6 +1,7 @@
 import type { Handler } from '@netlify/functions';
 import { loadEnvFile } from './utils/env-loader';
 import { findNearbyCities } from './utils/legistar-cities';
+import { sanitizeEvent } from './utils/security';
 
 interface LegistarEvent {
   EventId: number;
@@ -105,7 +106,7 @@ export const handler: Handler = async (event) => {
             return eventDate >= today && eventDate <= futureDate;
           })
           .slice(0, 10) // Limit per city
-          .map(evt => ({
+          .map(evt => sanitizeEvent({
             id: `legistar-${city.client}-${evt.EventId}`,
             name: evt.EventBodyName || 'City Council Meeting',
             date: evt.EventDate,

@@ -19,6 +19,7 @@
     "downlevelIteration": true,
     "types": ["node"]
   },
-  "include": ["src", "netlify/functions"],
+  "include": ["src"],
+  "exclude": ["netlify"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
