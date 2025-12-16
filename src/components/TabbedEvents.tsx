@@ -205,17 +205,19 @@ export default function TabbedEvents({
                       <div className="bills-list">
                         {event.bills.map((bill, idx) => (
                           <div key={idx} className="bill-item">
-                            <a href={bill.url} target="_blank" rel="noopener noreferrer" className="bill-link">
-                              {bill.id}
-                            </a>
-                            <span className="bill-title">{bill.title}</span>
-                            {bill.tags && bill.tags.length > 0 && (
-                              <div className="bill-tags">
-                                {bill.tags.map((tag, tagIdx) => (
-                                  <span key={tagIdx} className="bill-tag">{tag}</span>
-                                ))}
-                              </div>
-                            )}
+                            <div className="bill-header">
+                              <a href={bill.url} target="_blank" rel="noopener noreferrer" className="bill-link">
+                                {bill.id}
+                              </a>
+                              {bill.tags && bill.tags.length > 0 && (
+                                <div className="bill-tags">
+                                  {bill.tags.map((tag, tagIdx) => (
+                                    <span key={tagIdx} className="bill-tag">{tag}</span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            <p className="bill-title">{bill.title}</p>
                           </div>
                         ))}
                       </div>

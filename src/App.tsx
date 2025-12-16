@@ -5,6 +5,7 @@ import TabbedEvents from './components/TabbedEvents'
 import StateSelector from './components/StateSelector'
 import TagFilter from './components/TagFilter'
 import { EnrichmentNotice } from './components/EnrichmentNotice'
+import StateSidebar from './components/StateSidebar'
 import { getApiUrl } from './config/api'
 import { autoTagEvent } from './utils/tagging'
 import './App.css'
@@ -49,6 +50,7 @@ function App() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isStateSearch, setIsStateSearch] = useState(false)
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -63,6 +65,7 @@ function App() {
     setFederalEvents([])
     setStateEvents([])
     setLocalEvents([])
+    setIsStateSearch(false)
 
     try {
       // 1. Geocode ZIP code
@@ -77,13 +80,24 @@ function App() {
       console.log('📡 Fetching Local:', `/.netlify/functions/local-meetings?lat=${location.lat}&lng=${location.lng}&radius=${radius}`)
       
       const timestamp = Date.now();
+      
+      // Create abort controller for 30-second timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      
+      const fetchOptions = { signal: controller.signal };
+      
+      console.time('⏱️ Total fetch time');
       const [federalResponse, stateResponse, localResponse] = await Promise.all([
-        fetch(getApiUrl(`/.netlify/functions/congress-meetings?_t=${timestamp}`)),
+        fetch(getApiUrl(`/.netlify/functions/congress-meetings?_t=${timestamp}`), fetchOptions),
         location.stateAbbr 
-          ? fetch(getApiUrl(`/.netlify/functions/state-events?state=${location.stateAbbr}&_t=${timestamp}`))
+          ? fetch(getApiUrl(`/.netlify/functions/state-events?state=${location.stateAbbr}&_t=${timestamp}`), fetchOptions)
           : Promise.resolve(null),
-        fetch(getApiUrl(`/.netlify/functions/local-meetings?lat=${location.lat}&lng=${location.lng}&radius=${radius}&_t=${timestamp}`))
-      ])
+        fetch(getApiUrl(`/.netlify/functions/local-meetings?lat=${location.lat}&lng=${location.lng}&radius=${radius}&_t=${timestamp}`), fetchOptions)
+      ]);
+      console.timeEnd('⏱️ Total fetch time');
+      
+      clearTimeout(timeoutId);
       
       // Parse federal events
       let federal: LegislativeEvent[] = []
@@ -133,7 +147,8 @@ function App() {
         })).sort((a, b) => a.distance - b.distance);
       
       const federalWithDistance = addDistanceAndTags(federal).filter(e => e.distance <= radius)
-      const stateWithDistance = addDistanceAndTags(state).filter(e => e.distance <= radius)
+      // State events are NOT filtered by distance - they're statewide events
+      const stateWithDistance = addDistanceAndTags(state)
       const localWithDistance = addDistanceAndTags(local).filter(e => e.distance <= radius)
       
       setFederalEvents(federalWithDistance)
@@ -162,6 +177,8 @@ function App() {
 
   return (
     <div className="app">
+      <StateSidebar />
+      
       <header className="header">
         <h1>🏛️ Civitron</h1>
         <p className="tagline">Discover upcoming legislative events near you - Federal, State, and Local</p>
@@ -180,19 +197,31 @@ function App() {
               return
             }
             
-            // Update ZIP and fetch events
+            // Update ZIP and fetch events with expanded radius for entire state
             setZipCode(capitol.zip)
+            setRadius(500)  // Expand to 500 miles to cover entire state
             setLoading(true)
             setError(null)
+            setIsStateSearch(true)
             setUserLocation({ lat: capitol.lat, lng: capitol.lng })
             
             try {
-              const timestamp = Date.now()
+              const timestamp = Date.now();
+              
+              // Create abort controller for 30-second timeout
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), 30000);
+              const fetchOptions = { signal: controller.signal };
+              
+              console.time('⏱️ State selector fetch time');
               const [federalResponse, stateResponse, localResponse] = await Promise.all([
-                fetch(getApiUrl(`/.netlify/functions/congress-meetings?_t=${timestamp}`)),
-                fetch(getApiUrl(`/.netlify/functions/state-events?state=${stateAbbr}&_t=${timestamp}`)),
-                fetch(getApiUrl(`/.netlify/functions/local-meetings?lat=${capitol.lat}&lng=${capitol.lng}&radius=${radius}&_t=${timestamp}`))
-              ])
+                fetch(getApiUrl(`/.netlify/functions/congress-meetings?_t=${timestamp}`), fetchOptions),
+                fetch(getApiUrl(`/.netlify/functions/state-events?state=${stateAbbr}&_t=${timestamp}`), fetchOptions),
+                fetch(getApiUrl(`/.netlify/functions/local-meetings?lat=${capitol.lat}&lng=${capitol.lng}&radius=${radius}&_t=${timestamp}`), fetchOptions)
+              ]);
+              console.timeEnd('⏱️ State selector fetch time');
+              
+              clearTimeout(timeoutId);
               
               const federal = federalResponse.ok ? await federalResponse.json() : []
               const state = stateResponse.ok ? await stateResponse.json() : []
@@ -208,8 +237,10 @@ function App() {
               }
               
               setFederalEvents(addDistanceAndTags(federal).filter(e => e.distance <= radius))
-              setStateEvents(addDistanceAndTags(state).filter(e => e.distance <= radius))
-              setLocalEvents(addDistanceAndTags(local).filter(e => e.distance <= radius))
+              // State events are NOT filtered by distance - they're statewide events
+              setStateEvents(addDistanceAndTags(state))
+              // Local events: no distance filter for state searches (show all in state)
+              setLocalEvents(addDistanceAndTags(local))
               
             } catch (err) {
               setError(err instanceof Error ? err.message : 'Failed to fetch state events')
@@ -235,17 +266,26 @@ function App() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="radius">Radius (miles)</label>
+            <label htmlFor="radius">
+              Radius: <strong>{radius} miles</strong>
+              {isStateSearch && <span style={{color: '#10b981', marginLeft: '8px'}}>(Statewide)</span>}
+            </label>
             <input
               id="radius"
-              type="number"
+              type="range"
               value={radius}
-              onChange={(e) => setRadius(Math.max(1, parseInt(e.target.value) || 50))}
-              min="1"
-              max="1000"
-              className="input"
+              onChange={(e) => setRadius(parseInt(e.target.value))}
+              min="10"
+              max="500"
+              step="10"
+              className="slider"
               disabled={loading}
             />
+            <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#9ca3af', marginTop: '4px'}}>
+              <span>10 mi</span>
+              <span>250 mi</span>
+              <span>500 mi</span>
+            </div>
           </div>
 
           <button type="submit" className="search-button" disabled={loading}>

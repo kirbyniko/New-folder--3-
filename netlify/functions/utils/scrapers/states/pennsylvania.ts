@@ -239,33 +239,50 @@ export class PennsylvaniaScraper extends BaseScraper {
   }
 
   private extractBillSummary(html: string): string | null {
-    // Extract the "An Act..." description from PA bill pages
+    // Extract the description from PA bill pages - handles both bills and resolutions
     const $ = parseHTML(html, 'PA Bill Page');
     
-    // Find the specific div with class that contains the bill summary
-    // The summary is in a div after the "Page Navigation" section
     let summary = '';
     
-    // Try to find the text content that starts with "An Act"
-    $('div').each((_, elem) => {
-      const text = $(elem).text();
-      if (text.includes('An Act amending') || text.includes('An Act relating') || text.includes('An Act providing')) {
-        const match = text.match(/(An Act[^]+?)(?:Co-Sponsorship Memo|Prime Sponsor|Bill Status|$)/i);
-        if (match && match[1]) {
-          summary = match[1]
-            .replace(/\s+/g, ' ')
-            .replace(/\.\s*\.\s*\.\s*/g, '') // Remove ellipsis
-            .trim();
-          return false; // Stop iterating
-        }
-      }
+    // First try to find Short Title in the print-only section (works for all bill/resolution types)
+    const shortTitleDiv = $('.d-none.d-print-block .row .col-10.text-justify').filter((_, elem) => {
+      return $(elem).prev('.col-2').find('strong').text().trim() === 'Short Title';
     });
     
-    // If still too long (likely includes extra content), try to extract just the core description
-    if (summary.length > 1000) {
-      const shortMatch = summary.match(/(An Act[^]+?(?:imposing|providing|establishing|amending|relating)[^.]*\.)/i);
-      if (shortMatch) {
-        summary = shortMatch[1].trim();
+    if (shortTitleDiv.length > 0) {
+      summary = shortTitleDiv.text().trim();
+    }
+    
+    // Fallback: Try to find "An Act" text (for regular bills)
+    if (!summary) {
+      $('div').each((_, elem) => {
+        const text = $(elem).text();
+        if (text.includes('An Act amending') || text.includes('An Act relating') || text.includes('An Act providing')) {
+          const match = text.match(/(An Act[^]+?)(?:Co-Sponsorship Memo|Prime Sponsor|Bill Status|$)/i);
+          if (match && match[1]) {
+            summary = match[1]
+              .replace(/\s+/g, ' ')
+              .replace(/\.\s*\.\s*\.\s*/g, '') // Remove ellipsis
+              .trim();
+            return false; // Stop iterating
+          }
+        }
+      });
+    }
+    
+    // Clean up the summary
+    if (summary) {
+      summary = summary
+        .replace(/\s+/g, ' ')
+        .replace(/\.\s*\.\s*\.\s*/g, '')
+        .trim();
+      
+      // If still too long, try to extract just the core description
+      if (summary.length > 1000) {
+        const shortMatch = summary.match(/((?:An Act|A Resolution)[^]+?(?:imposing|providing|establishing|amending|relating|directing)[^.]*\.)/i);
+        if (shortMatch) {
+          summary = shortMatch[1].trim();
+        }
       }
     }
     
@@ -278,22 +295,22 @@ export class PennsylvaniaScraper extends BaseScraper {
     const tags: Set<string> = new Set();
     const lowerSummary = summary.toLowerCase();
     
-    // Topic-based tags
+    // Topic-based tags (use word boundaries to avoid false matches)
     const topicKeywords: Record<string, string[]> = {
       'Healthcare': ['health', 'medical', 'hospital', 'insurance', 'medicare', 'medicaid', 'patient', 'doctor', 'nurse', 'healthcare', 'medicine', 'drug', 'prescription'],
       'Education': ['education', 'school', 'student', 'teacher', 'university', 'college', 'academic', 'curriculum', 'learning'],
-      'Environment': ['environment', 'climate', 'pollution', 'conservation', 'natural resources', 'energy', 'renewable', 'sustainability', 'wildlife', 'forest', 'water quality'],
+      'Environment': ['environment', 'climate', 'pollution', 'conservation', 'natural resource', 'energy', 'renewable', 'sustainability', 'wildlife', 'forest', 'water quality', 'invertebrate', 'species', 'habitat', 'biodiversity'],
       'Transportation': ['transportation', 'highway', 'road', 'vehicle', 'traffic', 'transit', 'infrastructure', 'bridge', 'tunnel'],
       'Public Safety': ['police', 'fire', 'emergency', 'safety', 'crime', 'law enforcement', 'security', 'disaster', 'rescue'],
-      'Tax': ['tax', 'taxation', 'revenue', 'fiscal', 'budget', 'appropriation', 'spending'],
+      'Tax': [' tax ', 'taxation', ' tax.', 'tax code', 'tax reform', 'realty transfer tax'],
       'Veterans': ['veteran', 'military', 'armed forces', 'service member', 'va ', 'veterans affairs'],
       'Technology': ['technology', 'digital', 'internet', 'cyber', 'data', 'artificial intelligence', 'ai ', 'telecommunications', 'broadband'],
-      'Housing': ['housing', 'residential', 'home', 'rent', 'landlord', 'tenant', 'mortgage', 'property'],
+      'Housing': ['housing', 'residential', 'home', 'rent', 'landlord', 'tenant', 'mortgage', 'property', 'borough', 'township', 'cities'],
       'Labor': ['labor', 'employment', 'worker', 'workplace', 'wage', 'union', 'employee', 'employer'],
       'Agriculture': ['agriculture', 'farm', 'farming', 'crop', 'livestock', 'rural', 'agricultural'],
       'Criminal Justice': ['criminal', 'prison', 'parole', 'sentencing', 'conviction', 'felony', 'misdemeanor', 'corrections'],
       'Commerce': ['business', 'commerce', 'trade', 'economic development', 'industry', 'manufacturing', 'retail'],
-      'Government Operations': ['government', 'administrative', 'regulation', 'department', 'agency', 'commission', 'board'],
+      'Government Operations': ['government', 'administrative', 'regulation', 'department', 'agency', 'commission', 'board', 'legislative', 'budget and finance'],
       'Consumer Protection': ['consumer', 'protection', 'fraud', 'deceptive', 'unfair practices'],
       'Civil Rights': ['civil rights', 'discrimination', 'equal', 'accessibility', 'disability', 'rights']
     };

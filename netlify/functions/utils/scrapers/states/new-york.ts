@@ -1,6 +1,16 @@
 import { BaseScraper, ScraperConfig, RawEvent } from '../base-scraper';
 import { parseHTML } from '../html-parser';
 
+interface PublicHearing {
+  date: string;
+  committee: string;
+  topic: string;
+  location: string;
+  time: string;
+  contact: string;
+  noticeUrl?: string;
+}
+
 export class NewYorkScraper extends BaseScraper {
   constructor() {
     const config: ScraperConfig = {
@@ -18,84 +28,204 @@ export class NewYorkScraper extends BaseScraper {
   }
 
   protected async getPageUrls(): Promise<string[]> {
-    return [
-      'https://nyassembly.gov/leg/?sh=hear',
-      'https://www.nysenate.gov/calendar'
-    ];
+    return ['https://nyassembly.gov/leg/?sh=hear'];
   }
 
   async scrapeCalendar(): Promise<RawEvent[]> {
-    try {
-      const events: RawEvent[] = [];
-      
-      // Scrape Assembly hearings
-      const assemblyUrl = 'https://nyassembly.gov/leg/?sh=hear';
-      this.log('📅 Fetching NY Assembly calendar');
-      
-      const html = await this.fetchPage(assemblyUrl);
-      const $ = parseHTML(html, 'NY Assembly');
-      
-      $('.hearing-item, .calendar-row, tr.hearing').each((_, row) => {
-        const $row = $(row);
-        const title = $row.find('.title, .committee, td:nth-child(1)').text().trim();
-        const dateText = $row.find('.date, td:nth-child(2)').text().trim();
-        const timeText = $row.find('.time, td:nth-child(3)').text().trim();
-        const location = $row.find('.location, td:nth-child(4)').text().trim();
+    const hearings = await this.fetchPublicHearings();
+    
+    const events: RawEvent[] = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    for (const hearing of hearings) {
+      try {
+        const date = this.parseNYDate(hearing.date);
         
-        if (title && dateText) {
-          events.push({
-            name: title,
-            date: this.parseDate(dateText),
-            time: this.parseTime(timeText),
-            location: location || 'NYS Capitol Building, Albany',
-            committee: `NY Assembly - ${title}`,
-            type: 'meeting',
-            detailsUrl: 'https://nyassembly.gov/leg/?sh=hear'
+        // Only include future hearings
+        if (date < today) {
+          continue;
+        }
+        
+        // Create event ID
+        const dateStr = date.toISOString().split('T')[0];
+        const committeeSlug = hearing.committee
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-|-$/g, '');
+        const id = `ny-${dateStr}-${committeeSlug}`;
+        
+        // Parse location for room/building info
+        const locationParts = hearing.location.split(',');
+        const room = locationParts[0]?.trim() || 'TBD';
+        const building = locationParts[1]?.trim() || 'Legislative Office Building';
+        
+        const event: RawEvent = {
+          id,
+          name: hearing.topic,
+          date: dateStr,
+          time: hearing.time,
+          location: `${room}, ${building}`,
+          committee: hearing.committee,
+          type: 'committee-meeting',
+          detailsUrl: hearing.noticeUrl || 'https://nyassembly.gov/leg/?sh=hear'
+        };
+        
+        events.push(event);
+      } catch (error) {
+        this.log(`Error processing NY hearing: ${error}`);
+        continue;
+      }
+    }
+    
+    this.log(`✅ Returning ${events.length} NY public hearings (${hearings.length} total found)`);
+    return events;
+  }
+
+  private async fetchPublicHearings(): Promise<PublicHearing[]> {
+    const url = 'https://nyassembly.gov/leg/?sh=hear';
+    const html = await this.fetchPage(url);
+    const $ = parseHTML(html, 'NY Assembly Public Hearings');
+    
+    const hearings: PublicHearing[] = [];
+    let currentDate = '';
+    
+    // The page structure has date headers followed by hearing details
+    const pageText = $('body').text();
+    const lines = pageText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+    
+    let i = 0;
+    while (i < lines.length) {
+      const line = lines[i];
+      
+      // Check if this line is a date (e.g., "Dec. 16")
+      const dateMatch = line.match(/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\.\s+(\d+)$/);
+      if (dateMatch) {
+        currentDate = line;
+        i++;
+        continue;
+      }
+      
+      // Look for committee lines
+      if ((line.includes('Assembly Standing Committee') || line.includes('Senate Standing Committee') || line.includes('Joint --')) && currentDate) {
+        let committee = line;
+        let topic = '';
+        let location = '';
+        let time = '';
+        let contact = '';
+        let noticeUrl = '';
+        
+        // Find the committee name (may span multiple lines)
+        let j = i + 1;
+        while (j < lines.length && !lines[j].startsWith('Public Hearing')) {
+          if (lines[j].includes('Chair:') || lines[j].includes('Assembly Standing Committee') || lines[j].includes('Senate Standing Committee')) {
+            committee += ' ' + lines[j];
+          }
+          j++;
+        }
+        
+        // Find "Public Hearing" line
+        if (j < lines.length && lines[j].startsWith('Public Hearing')) {
+          j++;
+          // Topic is on the next line(s)
+          while (j < lines.length && !lines[j].startsWith('View public hearing notice') && !lines[j].startsWith('Place')) {
+            topic += (topic ? ' ' : '') + lines[j];
+            j++;
+          }
+        }
+        
+        // Find notice URL
+        const noticeLink = $(`a:contains("View public hearing notice")`).eq(hearings.length).attr('href');
+        if (noticeLink) {
+          noticeUrl = noticeLink.startsWith('http') ? noticeLink : `https://nyassembly.gov${noticeLink}`;
+        }
+        
+        // Find location
+        while (j < lines.length && !lines[j].startsWith('Place')) {
+          j++;
+        }
+        if (j < lines.length && lines[j].startsWith('Place')) {
+          j++;
+          while (j < lines.length && !lines[j].startsWith('Time')) {
+            location += (location ? ' ' : '') + lines[j];
+            j++;
+          }
+        }
+        
+        // Find time
+        if (j < lines.length && lines[j].startsWith('Time')) {
+          j++;
+          if (j < lines.length) {
+            time = lines[j];
+          }
+        }
+        
+        // Find contact
+        while (j < lines.length && !lines[j].startsWith('Contact')) {
+          j++;
+        }
+        if (j < lines.length && lines[j].startsWith('Contact')) {
+          j++;
+          if (j < lines.length) {
+            contact = lines[j];
+          }
+        }
+        
+        // Clean up committee name
+        committee = committee
+          .replace(/Chair:.*?(?=Assembly|Senate|$)/g, '')
+          .replace(/\s+/g, ' ')
+          .trim();
+        
+        if (committee && topic && location && time) {
+          hearings.push({
+            date: currentDate,
+            committee,
+            topic: topic.trim(),
+            location: location.trim(),
+            time: time.trim(),
+            contact: contact.trim(),
+            noticeUrl: noticeUrl || undefined,
           });
         }
-      });
-      
-      this.log(`✅ Scraped ${events.length} NY events`);
-      return events;
-      
-    } catch (error) {
-      this.log(`❌ NY scraper error: ${error}`);
-      return [];
-    }
-  }
-
-  private parseDate(dateStr: string): string {
-    try {
-      const cleaned = dateStr.trim();
-      if (cleaned.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
-        const [month, day, year] = cleaned.split('/');
-        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        
+        i = j;
+      } else {
+        i++;
       }
-      const dateObj = new Date(cleaned);
-      if (!isNaN(dateObj.getTime())) {
-        return dateObj.toISOString().split('T')[0];
-      }
-      return new Date().toISOString().split('T')[0];
-    } catch {
-      return new Date().toISOString().split('T')[0];
     }
-  }
-
-  private parseTime(timeStr: string): string {
-    const cleaned = timeStr.trim().toLowerCase();
-    if (!cleaned || cleaned.includes('tbd')) return '10:00';
     
-    const match = cleaned.match(/(\d{1,2}):?(\d{2})?\s*(am|pm)?/i);
-    if (match) {
-      let hours = parseInt(match[1]);
-      const minutes = match[2] || '00';
-      const meridiem = match[3];
-      
-      if (meridiem === 'pm' && hours < 12) hours += 12;
-      if (meridiem === 'am' && hours === 12) hours = 0;
-      
-      return `${hours.toString().padStart(2, '0')}:${minutes}`;
+    this.log(`Fetched ${hearings.length} NY public hearings from calendar`);
+    return hearings;
+  }
+
+  private parseNYDate(dateStr: string): Date {
+    // Parse dates like "Dec. 16" or "Jan. 8"
+    const match = dateStr.match(/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\.\s+(\d+)$/);
+    if (!match) {
+      throw new Error(`Invalid NY date format: ${dateStr}`);
     }
-    return '10:00';
+    
+    const monthMap: { [key: string]: number } = {
+      'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
+      'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
+    };
+    
+    const month = monthMap[match[1]];
+    const day = parseInt(match[2], 10);
+    
+    // Determine year (if month is before current month, assume next year)
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    
+    let year = currentYear;
+    // If the hearing month is earlier than current month, it's next year
+    // Exception: if we're in December and hearing is in January, that's next month
+    if (month < currentMonth && !(currentMonth === 11 && month === 0)) {
+      year = currentYear + 1;
+    }
+    
+    return new Date(year, month, day);
   }
 }

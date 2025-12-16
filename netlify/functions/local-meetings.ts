@@ -2,6 +2,8 @@ import type { Handler } from '@netlify/functions';
 import { loadEnvFile } from './utils/env-loader';
 import { findNearbyCities } from './utils/legistar-cities';
 import { sanitizeEvent } from './utils/security';
+import { scrapeNYCCouncil } from './utils/scrapers/local/nyc-council';
+import { CacheManager } from './utils/scrapers/cache-manager';
 
 interface LegistarEvent {
   EventId: number;
@@ -50,7 +52,20 @@ export const handler: Handler = async (event) => {
 
   try {
     // Find cities within radius that use Legistar
-    const nearbyCities = findNearbyCities(lat, lng, radius);
+    let nearbyCities = findNearbyCities(lat, lng, radius);
+    
+    // Special handling: If searching in NY state and NYC isn't in results, add it
+    // NYC is ~150 miles from Albany, so state capitol searches would miss it
+    const isNYState = (lat >= 40.5 && lat <= 45.0) && (lng >= -79.8 && lng <= -71.8);
+    const hasNYC = nearbyCities.some(c => c.client === 'nyccouncil');
+    
+    if (isNYState && !hasNYC) {
+      console.log('🗽 NY state search detected, adding NYC Council to results');
+      nearbyCities = [
+        { name: 'New York City', client: 'nyccouncil', state: 'NY', lat: 40.7128, lng: -74.0060, population: 8336817 },
+        ...nearbyCities
+      ];
+    }
     
     console.log(`Found ${nearbyCities.length} Legistar cities within ${radius} miles:`, nearbyCities.map(c => c.name));
     
@@ -73,6 +88,30 @@ export const handler: Handler = async (event) => {
     
     const cityEventPromises = nearbyCities.slice(0, 3).map(async (city) => {
       try {
+        // NYC uses special Legistar instance - use custom HTML scraper with cache
+        if (city.client === 'nyccouncil') {
+          console.log(`🗽 ${city.name}: Using custom NYC Council scraper`);
+          
+          // Check cache first (24-hour TTL)
+          const cacheKey = 'local:nyc:events';
+          const cachedEvents = CacheManager.get(cacheKey);
+          
+          if (cachedEvents) {
+            console.log(`✅ Returning cached NYC events (${cachedEvents.length} events)`);
+            return cachedEvents.slice(0, 10);
+          }
+          
+          // Cache miss - scrape fresh data
+          console.log(`🕷️ Cache miss - scraping NYC Council website...`);
+          const nycEvents = await scrapeNYCCouncil();
+          
+          // Cache for 24 hours (86400 seconds)
+          CacheManager.set(cacheKey, nycEvents, 86400);
+          console.log(`💾 Cached ${nycEvents.length} NYC events for 24 hours`);
+          
+          return nycEvents.slice(0, 10); // Limit to 10 events
+        }
+        
         // Legistar public API endpoint with date filter
         // $filter parameter uses OData query syntax
         const startDateStr = today.toISOString().split('T')[0]; // YYYY-MM-DD

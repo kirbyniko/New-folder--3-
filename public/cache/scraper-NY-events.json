@@ -1,0 +1,40 @@
+{
+  "data": [
+    {
+      "id": "ny-2025-12-16-use-of-artificial-intelligence-systems-in-the-unde",
+      "name": "Use of Artificial Intelligence Systems in the Underwriting and Pricing of Insurance Policies",
+      "date": "2025-12-16T00:00:00.000Z",
+      "time": "10:00 A.M.",
+      "location": "Roosevelt Hearing Room C, Legislative Office Building",
+      "committee": "Joint -- Assembly Standing Committee on Insurance Assembly Standing Committee on Science & Technology",
+      "type": "committee-meeting",
+      "level": "state",
+      "lat": 42.6526,
+      "lng": -73.7562,
+      "zipCode": null,
+      "url": "https://nyassembly.gov/comm/?id=23&sec=story&story=116030",
+      "docketUrl": null,
+      "virtualMeetingUrl": null,
+      "bills": null
+    },
+    {
+      "id": "ny-2025-12-17-impact-of-artificial-intelligence-on-new-york-s-wo",
+      "name": "Impact of Artificial Intelligence on New York’s Workforce",
+      "date": "2025-12-17T00:00:00.000Z",
+      "time": "11:30 A.M.",
+      "location": "Hamilton Hearing Room B, Legislative Office Building",
+      "committee": "Joint -- Assembly Standing Committee on Labor Assembly Standing Committee on Governmental Employees Assembly Standing Committee on Science & Technology",
+      "type": "committee-meeting",
+      "level": "state",
+      "lat": 42.6526,
+      "lng": -73.7562,
+      "zipCode": null,
+      "url": "https://nyassembly.gov/comm/?id=17&sec=story&story=116068",
+      "docketUrl": null,
+      "virtualMeetingUrl": null,
+      "bills": null
+    }
+  ],
+  "timestamp": 1765831857633,
+  "expiresAt": 1765918257633
+}

@@ -13,6 +13,7 @@ export interface LegistarCity {
 }
 
 export const LEGISTAR_CITIES: LegistarCity[] = [
+  { name: 'New York City', client: 'nyccouncil', state: 'NY', lat: 40.7128, lng: -74.0060, population: 8336817 },
   { name: 'Los Angeles', client: 'lacity', state: 'CA', lat: 34.0522, lng: -118.2437, population: 3979576 },
   { name: 'Chicago', client: 'chicago', state: 'IL', lat: 41.8781, lng: -87.6298, population: 2693976 },
   { name: 'Houston', client: 'houston', state: 'TX', lat: 29.7604, lng: -95.3698, population: 2320268 },

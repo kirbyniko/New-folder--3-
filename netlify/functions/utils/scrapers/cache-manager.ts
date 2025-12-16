@@ -1,16 +1,19 @@
 /**
- * Cache Manager
+ * Cache Manager with File-Based Persistent Storage
  * 
- * Simple in-memory caching for scraped data
- * Reduces load on state legislature websites and improves response time
- * 
- * For production, could be extended to use Redis or another persistent cache
+ * Stores scraped data as JSON files in /public/cache
+ * Persists across server restarts - perfect for development
+ * 24-hour TTL to ensure data freshness
  */
+
+import * as fs from 'fs';
+import * as path from 'path';
 
 export interface CacheEntry<T> {
   data: T;
   timestamp: number;
   expiresAt: number;
+  state?: string;
 }
 
 export interface CacheStats {
@@ -21,104 +24,166 @@ export interface CacheStats {
 }
 
 class CacheManagerClass {
-  private cache: Map<string, CacheEntry<any>> = new Map();
+  private cacheDir: string;
   private hits: number = 0;
   private misses: number = 0;
+
+  constructor() {
+    // Use public/cache for persistence (works in dev and production)
+    this.cacheDir = path.join(process.cwd(), 'public', 'cache');
+    this.ensureCacheDir();
+  }
+
+  private ensureCacheDir(): void {
+    if (!fs.existsSync(this.cacheDir)) {
+      fs.mkdirSync(this.cacheDir, { recursive: true });
+      console.log('[CACHE] 📁 Created cache directory:', this.cacheDir);
+    }
+  }
+
+  private getCacheFilePath(key: string): string {
+    // Sanitize key for filesystem
+    const safeKey = key.replace(/[^a-zA-Z0-9-_]/g, '-');
+    return path.join(this.cacheDir, `${safeKey}.json`);
+  }
 
   /**
    * Get item from cache if not expired
    */
   get<T>(key: string): T | null {
-    const entry = this.cache.get(key);
+    const filePath = this.getCacheFilePath(key);
     
-    if (!entry) {
-      this.misses++;
-      console.log('[CACHE] ❌ Miss', { key, stats: this.getStats() });
-      return null;
-    }
+    try {
+      // Check if file exists
+      if (!fs.existsSync(filePath)) {
+        this.misses++;
+        console.log('[CACHE] ❌ Miss (file not found)', { key });
+        return null;
+      }
 
-    // Check if expired
-    if (Date.now() > entry.expiresAt) {
-      this.cache.delete(key);
-      this.misses++;
-      console.log('[CACHE] ⏰ Expired', {
+      // Read and parse file
+      const fileContent = fs.readFileSync(filePath, 'utf-8');
+      const entry: CacheEntry<T> = JSON.parse(fileContent);
+
+      // Check if expired
+      if (Date.now() > entry.expiresAt) {
+        fs.unlinkSync(filePath);
+        this.misses++;
+        console.log('[CACHE] ⏰ Expired (deleted file)', {
+          key,
+          age: `${Math.round((Date.now() - entry.timestamp) / 1000 / 60)}min`
+        });
+        return null;
+      }
+
+      this.hits++;
+      console.log('[CACHE] ✅ Hit (from file)', {
         key,
-        age: `${Math.round((Date.now() - entry.timestamp) / 1000)}s`
+        age: `${Math.round((Date.now() - entry.timestamp) / 1000 / 60)}min`,
+        file: path.basename(filePath)
       });
+      
+      return entry.data as T;
+    } catch (error) {
+      this.misses++;
+      console.error('[CACHE] ❌ Error reading cache file:', error);
       return null;
     }
-
-    this.hits++;
-    console.log('[CACHE] ✅ Hit', {
-      key,
-      age: `${Math.round((Date.now() - entry.timestamp) / 1000)}s`,
-      stats: this.getStats()
-    });
-    
-    return entry.data as T;
   }
 
   /**
    * Set item in cache with TTL (time-to-live in seconds)
    */
-  set<T>(key: string, data: T, ttlSeconds: number = 3600): void {
+  set<T>(key: string, data: T, ttlSeconds: number = 86400): void {
     const entry: CacheEntry<T> = {
       data,
       timestamp: Date.now(),
       expiresAt: Date.now() + (ttlSeconds * 1000)
     };
 
-    this.cache.set(key, entry);
+    const filePath = this.getCacheFilePath(key);
     
-    console.log('[CACHE] 💾 Set', {
-      key,
-      ttl: `${ttlSeconds}s`,
-      size: this.cache.size
-    });
+    try {
+      fs.writeFileSync(filePath, JSON.stringify(entry, null, 2), 'utf-8');
+      
+      console.log('[CACHE] 💾 Saved to file', {
+        key,
+        ttl: `${Math.round(ttlSeconds / 3600)}h`,
+        file: path.basename(filePath),
+        size: `${Math.round(JSON.stringify(entry).length / 1024)}KB`
+      });
+    } catch (error) {
+      console.error('[CACHE] ❌ Error writing cache file:', error);
+    }
   }
 
   /**
    * Check if key exists and is not expired
    */
   has(key: string): boolean {
-    const entry = this.cache.get(key);
+    const filePath = this.getCacheFilePath(key);
     
-    if (!entry) {
+    try {
+      if (!fs.existsSync(filePath)) {
+        return false;
+      }
+
+      const fileContent = fs.readFileSync(filePath, 'utf-8');
+      const entry: CacheEntry<any> = JSON.parse(fileContent);
+
+      // Check expiration
+      if (Date.now() > entry.expiresAt) {
+        fs.unlinkSync(filePath);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
       return false;
     }
-
-    // Check expiration
-    if (Date.now() > entry.expiresAt) {
-      this.cache.delete(key);
-      return false;
-    }
-
-    return true;
   }
 
   /**
    * Delete item from cache
    */
   delete(key: string): boolean {
-    const deleted = this.cache.delete(key);
+    const filePath = this.getCacheFilePath(key);
     
-    if (deleted) {
-      console.log('[CACHE] 🗑️ Deleted', { key });
+    try {
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        console.log('[CACHE] 🗑️ Deleted file', { key, file: path.basename(filePath) });
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('[CACHE] ❌ Error deleting cache file:', error);
+      return false;
     }
-    
-    return deleted;
   }
 
   /**
    * Clear all cache entries
    */
   clear(): void {
-    const size = this.cache.size;
-    this.cache.clear();
-    this.hits = 0;
-    this.misses = 0;
-    
-    console.log('[CACHE] 🧹 Cleared', { entriesRemoved: size });
+    try {
+      const files = fs.readdirSync(this.cacheDir);
+      let removed = 0;
+      
+      for (const file of files) {
+        if (file.endsWith('.json')) {
+          fs.unlinkSync(path.join(this.cacheDir, file));
+          removed++;
+        }
+      }
+      
+      this.hits = 0;
+      this.misses = 0;
+      
+      console.log('[CACHE] 🧹 Cleared all files', { filesRemoved: removed });
+    } catch (error) {
+      console.error('[CACHE] ❌ Error clearing cache:', error);
+    }
   }
 
   /**
@@ -128,19 +193,37 @@ class CacheManagerClass {
     const now = Date.now();
     let removed = 0;
 
-    const entries = Array.from(this.cache.entries());
-    for (const [key, entry] of entries) {
-      if (now > entry.expiresAt) {
-        this.cache.delete(key);
-        removed++;
+    try {
+      const files = fs.readdirSync(this.cacheDir);
+      
+      for (const file of files) {
+        if (!file.endsWith('.json')) continue;
+        
+        const filePath = path.join(this.cacheDir, file);
+        
+        try {
+          const fileContent = fs.readFileSync(filePath, 'utf-8');
+          const entry: CacheEntry<any> = JSON.parse(fileContent);
+          
+          if (now > entry.expiresAt) {
+            fs.unlinkSync(filePath);
+            removed++;
+          }
+        } catch (error) {
+          // Invalid JSON or corrupted file - remove it
+          fs.unlinkSync(filePath);
+          removed++;
+        }
       }
-    }
 
-    if (removed > 0) {
-      console.log('[CACHE] 🧹 Cleanup', {
-        removed,
-        remaining: this.cache.size
-      });
+      if (removed > 0) {
+        console.log('[CACHE] 🧹 Cleanup', {
+          removedFiles: removed,
+          remainingFiles: fs.readdirSync(this.cacheDir).filter(f => f.endsWith('.json')).length
+        });
+      }
+    } catch (error) {
+      console.error('[CACHE] ❌ Error during cleanup:', error);
     }
 
     return removed;
@@ -152,11 +235,18 @@ class CacheManagerClass {
   getStats(): CacheStats {
     const total = this.hits + this.misses;
     const hitRate = total > 0 ? this.hits / total : 0;
+    
+    let fileCount = 0;
+    try {
+      fileCount = fs.readdirSync(this.cacheDir).filter(f => f.endsWith('.json')).length;
+    } catch (error) {
+      // Ignore
+    }
 
     return {
       hits: this.hits,
       misses: this.misses,
-      size: this.cache.size,
+      size: fileCount,
       hitRate: Math.round(hitRate * 100) / 100
     };
   }
@@ -169,7 +259,8 @@ class CacheManagerClass {
     
     console.log('[CACHE] 📊 Statistics', {
       ...stats,
-      hitRate: `${(stats.hitRate * 100).toFixed(1)}%`
+      hitRate: `${(stats.hitRate * 100).toFixed(1)}%`,
+      cacheFiles: stats.size
     });
   }
 
@@ -177,7 +268,13 @@ class CacheManagerClass {
    * Get all cache keys
    */
   getKeys(): string[] {
-    return Array.from(this.cache.keys());
+    try {
+      return fs.readdirSync(this.cacheDir)
+        .filter(f => f.endsWith('.json'))
+        .map(f => f.replace('.json', ''));
+    } catch (error) {
+      return [];
+    }
   }
 
   /**
@@ -187,14 +284,29 @@ class CacheManagerClass {
     const now = Date.now();
     const entries: Array<{ key: string; data: any; age: number; ttl: number }> = [];
 
-    const cacheEntries = Array.from(this.cache.entries());
-    for (const [key, entry] of cacheEntries) {
-      entries.push({
-        key,
-        data: entry.data,
-        age: Math.round((now - entry.timestamp) / 1000),
-        ttl: Math.round((entry.expiresAt - now) / 1000)
-      });
+    try {
+      const files = fs.readdirSync(this.cacheDir);
+      
+      for (const file of files) {
+        if (!file.endsWith('.json')) continue;
+        
+        try {
+          const filePath = path.join(this.cacheDir, file);
+          const fileContent = fs.readFileSync(filePath, 'utf-8');
+          const entry: CacheEntry<any> = JSON.parse(fileContent);
+          
+          entries.push({
+            key: file.replace('.json', ''),
+            data: entry.data,
+            age: Math.round((now - entry.timestamp) / 1000),
+            ttl: Math.round((entry.expiresAt - now) / 1000)
+          });
+        } catch (error) {
+          // Skip invalid files
+        }
+      }
+    } catch (error) {
+      console.error('[CACHE] ❌ Error reading cache entries:', error);
     }
 
     return entries;
