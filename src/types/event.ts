@@ -21,6 +21,7 @@ export interface LegislativeEvent {
   docketUrl?: string;           // Link to official docket page
   virtualMeetingUrl?: string;   // Zoom/Teams/WebEx link for remote attendance
   bills?: Bill[];               // Bills being discussed (when available)
+  sourceUrl?: string;           // URL of the page where data was scraped from
 }
 
 // 🆕 Bill information structure

@@ -199,6 +199,17 @@ export default function TabbedEvents({
                     </div>
                   )}
 
+                  {event.sourceUrl && (
+                    <div className="event-detail">
+                      <span className="detail-label">📰 Source:</span>
+                      <span className="detail-value">
+                        <a href={event.sourceUrl} target="_blank" rel="noopener noreferrer" className="source-link">
+                          View Original Page
+                        </a>
+                      </span>
+                    </div>
+                  )}
+
                   {event.bills && event.bills.length > 0 && (
                     <div className="event-detail bills-section">
                       <span className="detail-label">📋 Bills ({event.bills.length}):</span>

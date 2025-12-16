@@ -22,10 +22,52 @@ const STATE_NAME_TO_ABBR: Record<string, string> = {
 // In-memory cache for geocoded ZIP codes (persists for session)
 const geocodeCache = new Map<string, GeoLocation>();
 
+// Persistent localStorage cache key
+const CACHE_KEY = 'civitron_geocode_cache';
+const CACHE_VERSION = 1;
+
+/**
+ * Load persistent cache from localStorage
+ */
+function loadPersistentCache(): void {
+  try {
+    const stored = localStorage.getItem(CACHE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (parsed.version === CACHE_VERSION && parsed.data) {
+        Object.entries(parsed.data).forEach(([zip, location]) => {
+          geocodeCache.set(zip, location as GeoLocation);
+        });
+        console.log(`📦 Loaded ${geocodeCache.size} cached ZIP codes from localStorage`);
+      }
+    }
+  } catch (e) {
+    console.warn('Could not load geocode cache:', e);
+  }
+}
+
+/**
+ * Save cache to localStorage
+ */
+function savePersistentCache(): void {
+  try {
+    const data: Record<string, GeoLocation> = {};
+    geocodeCache.forEach((location, zip) => {
+      data[zip] = location;
+    });
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ version: CACHE_VERSION, data }));
+  } catch (e) {
+    console.warn('Could not save geocode cache:', e);
+  }
+}
+
+// Load cache on startup
+loadPersistentCache();
+
 /**
  * Geocode a US ZIP code using OpenStreetMap Nominatim API
  * Returns latitude, longitude, state, and city information
- * Results are cached in memory for the session
+ * Results are cached persistently in localStorage
  */
 export async function geocodeZipCode(zipCode: string): Promise<GeoLocation> {
   // Check cache first
@@ -35,41 +77,58 @@ export async function geocodeZipCode(zipCode: string): Promise<GeoLocation> {
   }
   
   console.log(`🌐 Geocoding ${zipCode} via Nominatim API...`);
-  const response = await fetch(
-    `https://nominatim.openstreetmap.org/search?postalcode=${zipCode}&country=us&format=json&addressdetails=1`,
-    {
-      headers: {
-        'User-Agent': 'Civitron/1.0'
+  
+  // Add timeout to prevent hanging
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+  
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?postalcode=${zipCode}&country=us&format=json&addressdetails=1`,
+      {
+        headers: {
+          'User-Agent': 'Civitron/1.0'
+        },
+        signal: controller.signal
       }
+    );
+    
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      throw new Error('Geocoding service unavailable');
     }
-  );
-  
-  if (!response.ok) {
-    throw new Error('Geocoding service unavailable');
+    
+    const data = await response.json();
+    
+    if (data.length === 0) {
+      throw new Error('ZIP code not found');
+    }
+    
+    const result = data[0];
+    const stateName = result.address?.state;
+    
+    const location: GeoLocation = {
+      lat: parseFloat(result.lat),
+      lng: parseFloat(result.lon),
+      state: stateName,
+      stateAbbr: stateName ? STATE_NAME_TO_ABBR[stateName] : undefined,
+      city: result.address?.city || result.address?.town || result.address?.village
+    };
+    
+    // Cache the result in memory and localStorage
+    geocodeCache.set(zipCode, location);
+    savePersistentCache();
+    console.log(`💾 Cached geocode for ${zipCode}`);
+    
+    return location;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('Geocoding request timed out. Please try again.');
+    }
+    throw error;
   }
-  
-  const data = await response.json();
-  
-  if (data.length === 0) {
-    throw new Error('ZIP code not found');
-  }
-  
-  const result = data[0];
-  const stateName = result.address?.state;
-  
-  const location: GeoLocation = {
-    lat: parseFloat(result.lat),
-    lng: parseFloat(result.lon),
-    state: stateName,
-    stateAbbr: stateName ? STATE_NAME_TO_ABBR[stateName] : undefined,
-    city: result.address?.city || result.address?.town || result.address?.village
-  };
-  
-  // Cache the result
-  geocodeCache.set(zipCode, location);
-  console.log(`💾 Cached geocode for ${zipCode}`);
-  
-  return location;
 }
 
 /**

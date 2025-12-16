@@ -337,7 +337,8 @@ export class NewHampshireScraper extends BaseScraper {
         location: location,
         committee: `NH ${chamber} - ${committee.trim()}`,
         type: this.determineEventType(nhEvent.backgroundColor),
-        detailsUrl: detailsUrl
+        detailsUrl: detailsUrl,
+        sourceUrl: this.config.websiteUrl
       };
 
     } catch (error) {

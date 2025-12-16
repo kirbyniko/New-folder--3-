@@ -61,7 +61,8 @@ export class MichiganScraper extends BaseScraper {
             committee: meeting.committee,
             type: 'hearing',
             detailsUrl: meeting.meetingUrl,
-            bills: bills.length > 0 ? bills : undefined
+            bills: bills.length > 0 ? bills : undefined,
+            sourceUrl: this.config.websiteUrl
           });
           
           if (bills.length > 0) {
@@ -77,7 +78,8 @@ export class MichiganScraper extends BaseScraper {
             location: meeting.location || 'Michigan State Capitol',
             committee: meeting.committee,
             type: 'hearing',
-            detailsUrl: meeting.meetingUrl
+            detailsUrl: meeting.meetingUrl,
+            sourceUrl: this.config.websiteUrl
           });
         }
       }

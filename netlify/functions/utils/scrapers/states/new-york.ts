@@ -68,7 +68,8 @@ export class NewYorkScraper extends BaseScraper {
           location: `${room}, ${building}`,
           committee: hearing.committee,
           type: 'committee-meeting',
-          detailsUrl: hearing.noticeUrl || 'https://nyassembly.gov/leg/?sh=hear'
+          detailsUrl: hearing.noticeUrl || 'https://nyassembly.gov/leg/?sh=hear',
+          sourceUrl: 'https://nyassembly.gov/leg/?sh=hear'
         };
         
         events.push(event);

@@ -150,7 +150,8 @@ export class PennsylvaniaScraper extends BaseScraper {
       committee: `PA ${meeting.chamber} - ${meeting.committee}`,
       type: 'meeting',
       description: meeting.description,
-      detailsUrl
+      detailsUrl,
+      sourceUrl: this.config.websiteUrl
     };
     
     // Add bills array if any found

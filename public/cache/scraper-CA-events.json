@@ -16,7 +16,8 @@
       "docketUrl": null,
       "virtualMeetingUrl": null,
       "bills": [],
-      "tags": []
+      "tags": [],
+      "sourceUrl": "https://assembly.ca.gov/dailyfile"
     },
     {
       "id": "ca-2026-01-12-revenue-and-taxation",
@@ -53,7 +54,8 @@
           ]
         }
       ],
-      "tags": []
+      "tags": [],
+      "sourceUrl": "https://assembly.ca.gov/dailyfile"
     },
     {
       "id": "ca-2026-01-13-higher-education",
@@ -99,7 +101,8 @@
           ]
         }
       ],
-      "tags": []
+      "tags": [],
+      "sourceUrl": "https://assembly.ca.gov/dailyfile"
     },
     {
       "id": "ca-2026-01-13-water--parks--and-wildlife",
@@ -136,9 +139,10 @@
           ]
         }
       ],
-      "tags": []
+      "tags": [],
+      "sourceUrl": "https://assembly.ca.gov/dailyfile"
     }
   ],
-  "timestamp": 1765915660122,
-  "expiresAt": 1766002060122
+  "timestamp": 1765916926165,
+  "expiresAt": 1766003326165
 }

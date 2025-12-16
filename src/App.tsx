@@ -226,9 +226,10 @@ function App() {
               };
               
               console.time('⏱️ State selector fetch time');
+              const stateCacheBuster = `&_t=${Date.now()}`;
               const [federalResponse, stateResponse, localResponse] = await Promise.all([
                 fetch(getApiUrl(`/.netlify/functions/congress-meetings`), fetchOptions),
-                fetch(getApiUrl(`/.netlify/functions/state-events?state=${stateAbbr}`), fetchOptions),
+                fetch(getApiUrl(`/.netlify/functions/state-events?state=${stateAbbr}${stateCacheBuster}`), fetchOptions),
                 fetch(getApiUrl(`/.netlify/functions/local-meetings?lat=${capitol.lat}&lng=${capitol.lng}&radius=${radius}`), fetchOptions)
               ]);
               console.timeEnd('⏱️ State selector fetch time');

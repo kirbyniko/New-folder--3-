@@ -147,7 +147,8 @@ export class CaliforniaScraper extends BaseScraper {
       committee: `CA ${chamber} - ${hearing.committee}`,
       description: description,
       detailsUrl: agendaUrl || 'https://assembly.ca.gov/dailyfile',
-      bills: bills
+      bills: bills,
+      sourceUrl: 'https://assembly.ca.gov/dailyfile'
     };
   }
 

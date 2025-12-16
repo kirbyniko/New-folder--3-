@@ -346,7 +346,8 @@ export class NewJerseyScraper extends BaseScraper {
         description: schedule.AgendaComment ? schedule.AgendaComment.substring(0, 200) : undefined,
         detailsUrl: detailsUrl,
         bills: bills && bills.length > 0 ? bills : undefined,
-        tags: tags
+        tags: tags,
+        sourceUrl: this.config.websiteUrl
       };
     } catch (error) {
       this.log(`⚠️ Error converting schedule to event: ${error}`);
