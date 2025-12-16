@@ -14,11 +14,12 @@ const STATE_PROGRESS: StateProgress[] = [
   { code: 'FL', name: 'Florida', status: 'partial', notes: 'Session starts Jan 14, 2026' },
   { code: 'NC', name: 'North Carolina', status: 'complete', notes: '4 committee meetings' },
   { code: 'NY', name: 'New York', status: 'complete', notes: '2 public hearings' },
-  { code: 'CA', name: 'California', status: 'pending' },
-  { code: 'IL', name: 'Illinois', status: 'pending' },
+  { code: 'NJ', name: 'New Jersey', status: 'complete', notes: 'Committee meetings with live bill scraping' },
+  { code: 'CA', name: 'California', status: 'complete', notes: 'Daily file scraper' },
+  { code: 'IL', name: 'Illinois', status: 'complete', notes: 'API-based scraper' },
   { code: 'OH', name: 'Ohio', status: 'pending' },
   { code: 'GA', name: 'Georgia', status: 'pending' },
-  { code: 'NH', name: 'New Hampshire', status: 'pending' },
+  { code: 'NH', name: 'New Hampshire', status: 'complete', notes: 'Session + dockets' },
 ];
 
 export function StateSidebar() {

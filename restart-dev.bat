@@ -4,26 +4,20 @@ echo Civitron Dev Server Restart
 echo ========================================
 echo.
 
-echo [1/4] Stopping all Node processes...
-taskkill /F /IM node.exe 2>nul
-if %errorlevel% equ 0 (
-    echo    ✓ Node processes stopped
-) else (
-    echo    ℹ No Node processes found
-)
-timeout /t 3 /nobreak >nul
+echo [1/3] Stopping all Node processes...
+powershell -Command "Get-Process | Where-Object { $_.ProcessName -like '*node*' } | Stop-Process -Force -ErrorAction SilentlyContinue"
+echo    ✓ Node processes stopped
+powershell -Command "Start-Sleep -Seconds 3"
 
 echo.
-echo [2/4] Checking for stuck ports...
-netstat -ano | findstr ":5341 :5342 :5343 :5344" >nul
-if %errorlevel% equ 0 (
-    echo    ⚠ Ports still in use, waiting...
-    timeout /t 3 /nobreak >nul
-)
+echo [2/3] Checking for stuck ports...
+powershell -Command "$ports = Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object { $_.LocalPort -in @(5341, 5342, 8888) }; if ($ports) { Write-Host '   ⚠ Ports still in use, waiting...'; Start-Sleep -Seconds 3 } else { Write-Host '   ✓ Ports clear' }"
 
 echo.
-echo [3/4] Starting Netlify Dev server...
-echo    Starting server, please wait...
+echo [3/3] Starting Netlify Dev server...
+echo    Server starting in new window...
+echo    Wait 60 seconds for Edge Functions to initialize
+echo    Then open: http://localhost:8888
 echo.
 
-netlify dev
+start powershell -NoExit -Command "netlify dev"

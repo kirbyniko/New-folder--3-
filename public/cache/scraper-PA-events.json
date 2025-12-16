@@ -1,243 +1,6 @@
 {
   "data": [
     {
-      "id": "pa-2025-12-16-appropriations",
-      "name": "Appropriations",
-      "date": "2025-12-16T15:00:00.000Z",
-      "time": "10:00",
-      "location": "Room 140",
-      "committee": "PA House - Appropriations",
-      "type": "meeting",
-      "level": "state",
-      "lat": 40.2732,
-      "lng": -76.8867,
-      "zipCode": null,
-      "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
-      "docketUrl": null,
-      "virtualMeetingUrl": null,
-      "bills": null
-    },
-    {
-      "id": "pa-2025-12-16-veterans-affairs---emergency-preparedness",
-      "name": "Veterans Affairs & Emergency Preparedness",
-      "date": "2025-12-16T14:30:00.000Z",
-      "time": "09:30",
-      "location": "Room 515",
-      "committee": "PA House - Veterans Affairs & Emergency Preparedness",
-      "type": "meeting",
-      "level": "state",
-      "lat": 40.2732,
-      "lng": -76.8867,
-      "zipCode": null,
-      "url": "https://www.palegis.us/house/committees/meeting-schedule#veterans-affairs-emergency-preparedness",
-      "docketUrl": null,
-      "virtualMeetingUrl": null,
-      "bills": [
-        {
-          "id": "HB 889",
-          "title": "An Act amending Titles 51 (Military Affairs) and 61 (Prisons and Parole) of the Pennsylvania Consolidated Statutes, in Department of Military and Veterans Affairs, further providing for duties of department; in State Veterans' Commission and Deputy Adjutant General for Veterans' Affairs, further providing for specific duties relating to Deputy Adjutant General for Veterans' Affairs; and, in general administration relating to correctional institutions, further providing for powers and duties of department.",
-          "url": "https://www.palegis.us/legislation/bills/2025/hb889",
-          "status": "Scheduled for Committee",
-          "sponsors": [],
-          "tags": [
-            "Veterans",
-            "Criminal Justice",
-            "Government Operations",
-            "Amendment",
-            "New Program"
-          ]
-        },
-        {
-          "id": "HB 1379",
-          "title": "An Act amending the act of June 28, 1995 (P.L.89, No.18), known as the Conservation and Natural Resources Act, in Department of Conservation and Natural Resources, further providing for forests.",
-          "url": "https://www.palegis.us/legislation/bills/2025/hb1379",
-          "status": "Scheduled for Committee",
-          "sponsors": [],
-          "tags": [
-            "Environment",
-            "Government Operations",
-            "Amendment",
-            "New Program"
-          ]
-        },
-        {
-          "id": "HB 1380",
-          "title": "An Act amending the act of June 28, 1995 (P.L.89, No.18), known as the Conservation and Natural Resources Act, in Department of Conservation and Natural Resources, further providing for forests.",
-          "url": "https://www.palegis.us/legislation/bills/2025/hb1380",
-          "status": "Scheduled for Committee",
-          "sponsors": [],
-          "tags": [
-            "Environment",
-            "Government Operations",
-            "Amendment",
-            "New Program"
-          ]
-        },
-        {
-          "id": "HB 2024",
-          "title": "An Act amending Title 51 (Military Affairs) of the Pennsylvania Consolidated Statutes, in State Veterans' Commission and Deputy Adjutant General for Veterans' Affairs, further providing for accreditation.",
-          "url": "https://www.palegis.us/legislation/bills/2025/hb2024",
-          "status": "Scheduled for Committee",
-          "sponsors": [],
-          "tags": [
-            "Veterans",
-            "Government Operations",
-            "Amendment",
-            "New Program"
-          ]
-        },
-        {
-          "id": "HR 374",
-          "title": "A Resolution designating 2025 as \"The Year of the Catholic War Veterans of the United States of America\" in Pennsylvania in honor of the organization's 90-year history of enduring service to faith, family and country.",
-          "url": "https://www.palegis.us/legislation/bills/2025/hr374",
-          "status": "Scheduled for Committee",
-          "sponsors": [],
-          "tags": [
-            "Veterans"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "pa-2025-12-16-tourism--recreation---economic-development",
-      "name": "Tourism, Recreation & Economic Development",
-      "date": "2025-12-16T14:45:00.000Z",
-      "time": "09:45",
-      "location": "Room 60",
-      "committee": "PA House - Tourism, Recreation & Economic Development",
-      "type": "meeting",
-      "level": "state",
-      "lat": 40.2732,
-      "lng": -76.8867,
-      "zipCode": null,
-      "url": "https://www.palegis.us/house/committees/meeting-schedule#tourism-recreation-economic-development",
-      "docketUrl": null,
-      "virtualMeetingUrl": null,
-      "bills": [
-        {
-          "id": "HR 380",
-          "title": "A Resolution designating November 16, 2025, as \"Philadelphia Orchestra Day\" in Pennsylvania.",
-          "url": "https://www.palegis.us/legislation/bills/2025/hr380",
-          "status": "Scheduled for Committee",
-          "sponsors": [],
-          "tags": []
-        }
-      ]
-    },
-    {
-      "id": "pa-2025-12-16-consumer-protection--technology---utilities",
-      "name": "Consumer Protection, Technology & Utilities",
-      "date": "2025-12-16T15:00:00.000Z",
-      "time": "10:00",
-      "location": "Room 523",
-      "committee": "PA House - Consumer Protection, Technology & Utilities",
-      "type": "meeting",
-      "level": "state",
-      "lat": 40.2732,
-      "lng": -76.8867,
-      "zipCode": null,
-      "url": "https://www.palegis.us/house/committees/meeting-schedule#consumer-protection-technology-utilities",
-      "docketUrl": null,
-      "virtualMeetingUrl": null,
-      "bills": [
-        {
-          "id": "HB 1191",
-          "title": "An Act amending Title 66 (Public Utilities) of the Pennsylvania Consolidated Statutes, in railroads, providing for prohibition on blocking of crossings, for limitation on length of freight or work trains, for authorization to monitor safety practices and operations by collective bargaining representatives, for safe staffing levels for trains or light engines, for wayside detector systems, for study of transportation of hazardous materials or waste and for reporting system for transportation of hazardous materials or waste; and imposing penalties.",
-          "url": "https://www.palegis.us/legislation/bills/2025/hb1191",
-          "status": "Scheduled for Committee",
-          "sponsors": [],
-          "tags": [
-            "Transportation",
-            "Public Safety",
-            "Amendment",
-            "New Program"
-          ]
-        },
-        {
-          "id": "HB 1522",
-          "title": "An Act requiring the installation and maintenance of fuel gas detectors in certain buildings; providing for building owner responsibilities; and imposing penalties.",
-          "url": "https://www.palegis.us/legislation/bills/2025/hb1522",
-          "status": "Scheduled for Committee",
-          "sponsors": [],
-          "tags": [
-            "New Program"
-          ]
-        },
-        {
-          "id": "HR 372",
-          "title": "A Resolution recognizing December 2, 2025, as \"World Nuclear Energy Day\" in Pennsylvania.",
-          "url": "https://www.palegis.us/legislation/bills/2025/hr372",
-          "status": "Scheduled for Committee",
-          "sponsors": [],
-          "tags": [
-            "Environment"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "pa-2025-12-16-tourism--recreation---economic-development",
-      "name": "Tourism, Recreation & Economic Development",
-      "date": "2025-12-16T15:00:00.000Z",
-      "time": "10:00",
-      "location": "Room 60",
-      "committee": "PA House - Tourism, Recreation & Economic Development",
-      "type": "meeting",
-      "level": "state",
-      "lat": 40.2732,
-      "lng": -76.8867,
-      "zipCode": null,
-      "url": "https://www.palegis.us/house/committees/meeting-schedule#tourism-recreation-economic-development",
-      "docketUrl": null,
-      "virtualMeetingUrl": null,
-      "bills": null
-    },
-    {
-      "id": "pa-2025-12-16-gaming-oversight",
-      "name": "Gaming Oversight",
-      "date": "2025-12-16T15:00:00.000Z",
-      "time": "10:00",
-      "location": "Room B31",
-      "committee": "PA House - Gaming Oversight",
-      "type": "meeting",
-      "level": "state",
-      "lat": 40.2732,
-      "lng": -76.8867,
-      "zipCode": null,
-      "url": "https://www.palegis.us/house/committees/meeting-schedule#gaming-oversight",
-      "docketUrl": null,
-      "virtualMeetingUrl": null,
-      "bills": null
-    },
-    {
-      "id": "pa-2025-12-16-education",
-      "name": "Education",
-      "date": "2025-12-16T15:00:00.000Z",
-      "time": "10:00",
-      "location": "Room 205",
-      "committee": "PA House - Education",
-      "type": "meeting",
-      "level": "state",
-      "lat": 40.2732,
-      "lng": -76.8867,
-      "zipCode": null,
-      "url": "https://www.palegis.us/house/committees/meeting-schedule#education",
-      "docketUrl": null,
-      "virtualMeetingUrl": null,
-      "bills": [
-        {
-          "id": "HR 370",
-          "title": "A Resolution recognizing November 29, 2025, as the \"50th Anniversary of the Individuals with Disabilities Education Act\" in Pennsylvania.",
-          "url": "https://www.palegis.us/legislation/bills/2025/hr370",
-          "status": "Scheduled for Committee",
-          "sponsors": [],
-          "tags": [
-            "Education"
-          ]
-        }
-      ]
-    },
-    {
       "id": "pa-2025-12-17-appropriations",
       "name": "Appropriations",
       "date": "2025-12-17T15:00:00.000Z",
@@ -252,7 +15,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2025-12-17-health",
@@ -293,8 +57,30 @@
             "Amendment",
             "New Program"
           ]
+        },
+        {
+          "id": "HR 379",
+          "title": "A Resolution designating January 23, 2026, as \"Maternal Health Awareness Day\" in Pennsylvania to recognize all the women who die from complications of pregnancy or childbirth.",
+          "url": "https://www.palegis.us/legislation/bills/2025/hr379",
+          "status": "Scheduled for Committee",
+          "sponsors": [],
+          "tags": [
+            "Healthcare"
+          ]
+        },
+        {
+          "id": "HR 382",
+          "title": "A Resolution urging the Congress of the United States to retain expanded health insurance subsidies that enable consumers to purchase health insurance through Pennie.",
+          "url": "https://www.palegis.us/legislation/bills/2025/hr382",
+          "status": "Scheduled for Committee",
+          "sponsors": [],
+          "tags": [
+            "Healthcare",
+            "Consumer Protection"
+          ]
         }
-      ]
+      ],
+      "tags": []
     },
     {
       "id": "pa-2025-12-17-environmental---natural-resource-protection",
@@ -347,7 +133,8 @@
             "Government Operations"
           ]
         }
-      ]
+      ],
+      "tags": []
     },
     {
       "id": "pa-2025-12-17-local-government",
@@ -438,7 +225,8 @@
             "Amendment"
           ]
         }
-      ]
+      ],
+      "tags": []
     },
     {
       "id": "pa-2025-12-17-finance",
@@ -469,7 +257,8 @@
             "New Program"
           ]
         }
-      ]
+      ],
+      "tags": []
     },
     {
       "id": "pa-2026-01-14-house-agriculture---rural-affairssenate-agricultur",
@@ -486,7 +275,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#house-agriculture-rural-affairssenate-agriculture-rural-affairs",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-01-26-appropriations",
@@ -503,7 +293,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-01-27-appropriations",
@@ -520,7 +311,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-01-28-appropriations",
@@ -537,7 +329,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-02-02-appropriations",
@@ -554,7 +347,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-02-03-appropriations",
@@ -571,7 +365,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-02-04-appropriations",
@@ -588,7 +383,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-03-23-appropriations",
@@ -605,7 +401,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-03-24-appropriations",
@@ -622,7 +419,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-03-25-appropriations",
@@ -639,7 +437,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-04-13-appropriations",
@@ -656,7 +455,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-04-14-appropriations",
@@ -673,7 +473,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-04-15-appropriations",
@@ -690,7 +491,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-04-27-appropriations",
@@ -707,7 +509,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-04-28-appropriations",
@@ -724,7 +527,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-04-29-appropriations",
@@ -741,7 +545,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-05-04-appropriations",
@@ -758,7 +563,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-05-05-appropriations",
@@ -775,7 +581,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-05-06-appropriations",
@@ -792,7 +599,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-06-01-appropriations",
@@ -809,7 +617,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-06-02-appropriations",
@@ -826,7 +635,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-06-03-appropriations",
@@ -843,7 +653,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-06-08-appropriations",
@@ -860,7 +671,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-06-09-appropriations",
@@ -877,7 +689,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-06-10-appropriations",
@@ -894,7 +707,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-06-15-appropriations",
@@ -911,7 +725,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-06-16-appropriations",
@@ -928,7 +743,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-06-17-appropriations",
@@ -945,7 +761,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-06-22-appropriations",
@@ -962,7 +779,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-06-23-appropriations",
@@ -979,7 +797,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-06-24-appropriations",
@@ -996,7 +815,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-06-25-appropriations",
@@ -1013,7 +833,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-06-26-appropriations",
@@ -1030,7 +851,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-06-27-appropriations",
@@ -1047,7 +869,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-06-28-appropriations",
@@ -1064,7 +887,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-06-29-appropriations",
@@ -1081,7 +905,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-06-30-appropriations",
@@ -1098,7 +923,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-09-28-appropriations",
@@ -1115,7 +941,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-09-29-appropriations",
@@ -1132,7 +959,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-09-30-appropriations",
@@ -1149,7 +977,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-10-05-appropriations",
@@ -1166,7 +995,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-10-06-appropriations",
@@ -1183,7 +1013,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-10-07-appropriations",
@@ -1200,7 +1031,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-10-19-appropriations",
@@ -1217,7 +1049,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-10-20-appropriations",
@@ -1234,7 +1067,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-10-21-appropriations",
@@ -1251,7 +1085,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-11-09-appropriations",
@@ -1268,7 +1103,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-11-10-appropriations",
@@ -1285,7 +1121,8 @@
       "url": "https://www.palegis.us/house/committees/meeting-schedule#appropriations",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     },
     {
       "id": "pa-2026-01-14-senate-agriculture---rural-affairshouse-agricultur",
@@ -1302,9 +1139,10 @@
       "url": "https://www.palegis.us/senate/committees/meeting-schedule#senate-agriculture-rural-affairshouse-agriculture-rural-affairs",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": null,
+      "tags": []
     }
   ],
-  "timestamp": 1765822142895,
-  "expiresAt": 1765908542895
+  "timestamp": 1765915730148,
+  "expiresAt": 1766002130148
 }

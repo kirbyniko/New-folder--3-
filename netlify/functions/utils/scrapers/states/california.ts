@@ -1,4 +1,4 @@
-import { BaseScraper, ScraperConfig, RawEvent } from '../base-scraper';
+import { BaseScraper, ScraperConfig, RawEvent, BillInfo } from '../base-scraper';
 import { parseHTML } from '../html-parser';
 
 interface CAHearing {
@@ -6,6 +6,7 @@ interface CAHearing {
   time: string;
   committee: string;
   location: string;
+  agendaId?: string;
 }
 
 export class CaliforniaScraper extends BaseScraper {
@@ -60,21 +61,32 @@ export class CaliforniaScraper extends BaseScraper {
           .replace(/<br\s*\/?>/gi, ', ') // Replace <br> with commas
           .replace(/\s+/g, ' '); // Normalize whitespace
         
+        // Extract agenda ID from View Agenda link
+        const agendaLink = $row.find('a[href*="/api/dailyfile/agenda/"]').attr('href');
+        const agendaId = agendaLink ? agendaLink.split('/').pop() : undefined;
+        
         if (date && time && committee && location) {
-          hearings.push({ date, time, committee, location });
+          hearings.push({ date, time, committee, location, agendaId });
         }
       });
 
       this.log(`✅ California Assembly: Found ${hearings.length} hearings`);
       
-      return hearings.map(hearing => this.convertCAHearingToRaw(hearing, 'Assembly'));
+      // Convert hearings to raw events with bills
+      const events: RawEvent[] = [];
+      for (const hearing of hearings) {
+        const event = await this.convertCAHearingToRaw(hearing, 'Assembly');
+        events.push(event);
+      }
+      
+      return events;
     } catch (error) {
       this.log(`Error scraping California Assembly: ${error}`);
       return [];
     }
   }
 
-  private convertCAHearingToRaw(hearing: CAHearing, chamber: string): RawEvent {
+  private async convertCAHearingToRaw(hearing: CAHearing, chamber: string): Promise<RawEvent> {
     // Parse date format: "12/11/25" or "01/12/26"
     const dateParts = hearing.date.split('/');
     const month = parseInt(dateParts[0]);
@@ -106,6 +118,26 @@ export class CaliforniaScraper extends BaseScraper {
     }
     
     const locationDisplay = hearing.location;
+    const agendaUrl = hearing.agendaId 
+      ? `https://assembly.ca.gov/api/dailyfile/agenda/${hearing.agendaId}`
+      : undefined;
+    
+    // Fetch bills from agenda if available
+    let bills: BillInfo[] | undefined;
+    let description: string | undefined;
+    
+    if (agendaUrl) {
+      try {
+        const agendaResult = await this.fetchBillsFromAgenda(agendaUrl);
+        bills = agendaResult.bills;
+        description = agendaResult.description;
+      } catch (error) {
+        this.log(`⚠️ Could not fetch agenda for ${hearing.committee}: ${error}`);
+        description = `California ${chamber} Committee Hearing`;
+      }
+    } else {
+      description = `California ${chamber} Committee Hearing`;
+    }
 
     return {
       name: hearing.committee,
@@ -113,9 +145,51 @@ export class CaliforniaScraper extends BaseScraper {
       time: timeStr,
       location: locationDisplay,
       committee: `CA ${chamber} - ${hearing.committee}`,
-      description: `California ${chamber} Committee Hearing`,
-      detailsUrl: 'https://assembly.ca.gov/dailyfile'
+      description: description,
+      detailsUrl: agendaUrl || 'https://assembly.ca.gov/dailyfile',
+      bills: bills
     };
+  }
+
+  private async fetchBillsFromAgenda(agendaUrl: string): Promise<{ bills: BillInfo[], description: string }> {
+    const html = await this.fetchPage(agendaUrl);
+    const $ = parseHTML(html);
+    
+    const bills: BillInfo[] = [];
+    const seenBills = new Set<string>();
+    
+    // Parse bill measures from agenda
+    $('.Measure').each((_: number, measure: any) => {
+      const $measure = $(measure);
+      const billLink = $measure.find('a[href*="billNavClient"]').attr('href');
+      const billType = $measure.find('.MeasureType').text().trim();
+      const billNum = $measure.find('.MeasureNum .MeasureNumText').parent().text().trim();
+      const author = $measure.find('.Author').text().trim().replace(/\.$/, '');
+      const topic = $measure.find('.Topic').text().trim();
+      
+      if (billLink && billType && billNum) {
+        const billId = `${billType.replace(/\./g, '')} ${billNum.replace('No. ', '')}`;
+        
+        if (!seenBills.has(billId)) {
+          seenBills.add(billId);
+          bills.push({
+            id: billId,
+            title: topic || billId,
+            url: billLink,
+            status: 'Scheduled for Committee',
+            sponsors: author ? [author] : undefined
+          });
+        }
+      }
+    });
+    
+    // Get full agenda text as description (strip HTML tags)
+    let description = $('.agenda').text().trim().replace(/\s+/g, ' ');
+    if (description.length > 500) {
+      description = description.substring(0, 497) + '...';
+    }
+    
+    return { bills, description: description || 'Committee meeting agenda' };
   }
 
 }

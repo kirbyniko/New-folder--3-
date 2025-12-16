@@ -2,20 +2,21 @@
   "data": [
     {
       "id": "ca-2025-12-17-joint-hearing-select-committee-on-calfresh-enrollm",
-      "name": "Joint Hearing Select Committee On Calfresh Enrollment And Nutrition  And Human Services",
+      "name": "Joint Hearing Select Committee On Calfresh Enrollment And Nutrition And Human Services",
       "date": "2025-12-17T00:00:00.000Z",
       "time": "10:00",
       "location": "Alameda City Hall 2263 Santa Clara Ave Alameda",
-      "committee": "CA Assembly - Joint Hearing Select Committee On Calfresh Enrollment And Nutrition  And Human Services",
+      "committee": "CA Assembly - Joint Hearing Select Committee On Calfresh Enrollment And Nutrition And Human Services",
       "type": "meeting",
       "level": "state",
       "lat": 38.5767,
       "lng": -121.4934,
       "zipCode": null,
-      "url": "https://assembly.ca.gov/dailyfile",
+      "url": "https://assembly.ca.gov/api/dailyfile/agenda/18683",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": [],
+      "tags": []
     },
     {
       "id": "ca-2026-01-12-revenue-and-taxation",
@@ -29,10 +30,30 @@
       "lat": 38.5767,
       "lng": -121.4934,
       "zipCode": null,
-      "url": "https://assembly.ca.gov/dailyfile",
+      "url": "https://assembly.ca.gov/api/dailyfile/agenda/18684",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": [
+        {
+          "id": "AB 796",
+          "title": "Social media platforms: advertising: tax.",
+          "url": "http://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=202520260AB796",
+          "status": "Scheduled for Committee",
+          "sponsors": [
+            "Lowenthal"
+          ]
+        },
+        {
+          "id": "AB 1265",
+          "title": "Income taxes: credits: rehabilitation of certified historic structures. (Tax Levy)",
+          "url": "http://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=202520260AB1265",
+          "status": "Scheduled for Committee",
+          "sponsors": [
+            "Haney"
+          ]
+        }
+      ],
+      "tags": []
     },
     {
       "id": "ca-2026-01-13-higher-education",
@@ -46,10 +67,39 @@
       "lat": 38.5767,
       "lng": -121.4934,
       "zipCode": null,
-      "url": "https://assembly.ca.gov/dailyfile",
+      "url": "https://assembly.ca.gov/api/dailyfile/agenda/18669",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": [
+        {
+          "id": "AB 713",
+          "title": "Public postsecondary education: student employment.",
+          "url": "http://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=202520260AB713",
+          "status": "Scheduled for Committee",
+          "sponsors": [
+            "Solache"
+          ]
+        },
+        {
+          "id": "AB 1171",
+          "title": "Community colleges: part-time faculty: benefits.",
+          "url": "http://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=202520260AB1171",
+          "status": "Scheduled for Committee",
+          "sponsors": [
+            "Patel"
+          ]
+        },
+        {
+          "id": "AB 1241",
+          "title": "Student financial aid: Pay-It-Forward Financial Aid Program.",
+          "url": "http://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=202520260AB1241",
+          "status": "Scheduled for Committee",
+          "sponsors": [
+            "Schiavo"
+          ]
+        }
+      ],
+      "tags": []
     },
     {
       "id": "ca-2026-01-13-water--parks--and-wildlife",
@@ -63,12 +113,32 @@
       "lat": 38.5767,
       "lng": -121.4934,
       "zipCode": null,
-      "url": "https://assembly.ca.gov/dailyfile",
+      "url": "https://assembly.ca.gov/api/dailyfile/agenda/18685",
       "docketUrl": null,
       "virtualMeetingUrl": null,
-      "bills": null
+      "bills": [
+        {
+          "id": "AB 892",
+          "title": "Captive wild animals: direct contact: prohibition.",
+          "url": "http://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=202520260AB892",
+          "status": "Scheduled for Committee",
+          "sponsors": [
+            "Schultz"
+          ]
+        },
+        {
+          "id": "AB 1203",
+          "title": "Water conservation: water wise designation.",
+          "url": "http://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=202520260AB1203",
+          "status": "Scheduled for Committee",
+          "sponsors": [
+            "Ahrens"
+          ]
+        }
+      ],
+      "tags": []
     }
   ],
-  "timestamp": 1765830288009,
-  "expiresAt": 1765916688009
+  "timestamp": 1765915660122,
+  "expiresAt": 1766002060122
 }

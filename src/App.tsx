@@ -79,21 +79,25 @@ function App() {
       console.log('📡 Fetching State:', location.stateAbbr ? `/.netlify/functions/state-events?state=${location.stateAbbr}` : 'SKIPPED')
       console.log('📡 Fetching Local:', `/.netlify/functions/local-meetings?lat=${location.lat}&lng=${location.lng}&radius=${radius}`)
       
-      const timestamp = Date.now();
-      
       // Create abort controller for 30-second timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000);
       
-      const fetchOptions = { signal: controller.signal };
+      // Use cache: 'default' to enable browser caching
+      // Add timestamp to bust cache for state events (they update frequently)
+      const cacheBuster = `&_t=${Date.now()}`;
+      const fetchOptions: RequestInit = { 
+        signal: controller.signal,
+        cache: 'default'
+      };
       
       console.time('⏱️ Total fetch time');
       const [federalResponse, stateResponse, localResponse] = await Promise.all([
-        fetch(getApiUrl(`/.netlify/functions/congress-meetings?_t=${timestamp}`), fetchOptions),
+        fetch(getApiUrl(`/.netlify/functions/congress-meetings`), fetchOptions),
         location.stateAbbr 
-          ? fetch(getApiUrl(`/.netlify/functions/state-events?state=${location.stateAbbr}&_t=${timestamp}`), fetchOptions)
+          ? fetch(getApiUrl(`/.netlify/functions/state-events?state=${location.stateAbbr}${cacheBuster}`), fetchOptions)
           : Promise.resolve(null),
-        fetch(getApiUrl(`/.netlify/functions/local-meetings?lat=${location.lat}&lng=${location.lng}&radius=${radius}&_t=${timestamp}`), fetchOptions)
+        fetch(getApiUrl(`/.netlify/functions/local-meetings?lat=${location.lat}&lng=${location.lng}&radius=${radius}`), fetchOptions)
       ]);
       console.timeEnd('⏱️ Total fetch time');
       
@@ -117,6 +121,13 @@ function App() {
         console.log('📥 State raw response:', stateText.substring(0, 200))
         state = JSON.parse(stateText)
         console.log(`🏢 State: ${state.length} events`, state.length > 0 ? state[0] : 'none')
+        
+        // Debug: Check bills field
+        const eventsWithBills = state.filter(e => e.bills && e.bills.length > 0)
+        console.log(`📋 Events with bills: ${eventsWithBills.length}`)
+        if (eventsWithBills.length > 0) {
+          console.log(`📋 Sample event with bills:`, eventsWithBills[0].name, 'Bills:', eventsWithBills[0].bills)
+        }
         
         // Show enrichment message if events have detail URLs
         const eventsWithDetails = state.filter(e => e.url).length
@@ -206,18 +217,19 @@ function App() {
             setUserLocation({ lat: capitol.lat, lng: capitol.lng })
             
             try {
-              const timestamp = Date.now();
-              
               // Create abort controller for 30-second timeout
               const controller = new AbortController();
               const timeoutId = setTimeout(() => controller.abort(), 30000);
-              const fetchOptions = { signal: controller.signal };
+              const fetchOptions: RequestInit = { 
+                signal: controller.signal,
+                cache: 'default'
+              };
               
               console.time('⏱️ State selector fetch time');
               const [federalResponse, stateResponse, localResponse] = await Promise.all([
-                fetch(getApiUrl(`/.netlify/functions/congress-meetings?_t=${timestamp}`), fetchOptions),
-                fetch(getApiUrl(`/.netlify/functions/state-events?state=${stateAbbr}&_t=${timestamp}`), fetchOptions),
-                fetch(getApiUrl(`/.netlify/functions/local-meetings?lat=${capitol.lat}&lng=${capitol.lng}&radius=${radius}&_t=${timestamp}`), fetchOptions)
+                fetch(getApiUrl(`/.netlify/functions/congress-meetings`), fetchOptions),
+                fetch(getApiUrl(`/.netlify/functions/state-events?state=${stateAbbr}`), fetchOptions),
+                fetch(getApiUrl(`/.netlify/functions/local-meetings?lat=${capitol.lat}&lng=${capitol.lng}&radius=${radius}`), fetchOptions)
               ]);
               console.timeEnd('⏱️ State selector fetch time');
               

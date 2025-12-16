@@ -1,0 +1,928 @@
+{
+  "data": [
+    {
+      "id": "nj-2025-12-18-assembly-appropriations",
+      "name": "Assembly Appropriations",
+      "date": "2025-12-18T11:00:00.000Z",
+      "time": "11:00 AM",
+      "location": "Committee Room 11, 4th Floor, State House Annex, Trenton, NJ",
+      "committee": "NJ Assembly - Appropriations",
+      "type": "meeting",
+      "level": "state",
+      "lat": 40.2206,
+      "lng": -74.7597,
+      "zipCode": null,
+      "url": "https://www.njleg.state.nj.us/live-proceedings/2025-12-18-11:00:00/AAP/Meeting",
+      "docketUrl": null,
+      "virtualMeetingUrl": null,
+      "bills": [
+        {
+          "id": "A1421",
+          "title": "\"Protecting Against Forever Chemicals Act\"; establishes requirements, prohibitions, and programs for regulation of perfluoroalkyl and polyfluoroalkyl ",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A1421",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation"
+          ]
+        },
+        {
+          "id": "A1611",
+          "title": "Establishes central registry for background checks of youth serving organization employees and volunteers.Katz, Andrea /Bagolie, Rosaura +1APS10/21/20",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A1611",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation"
+          ]
+        },
+        {
+          "id": "A1792",
+          "title": "Directs Attorney General to establish program for anonymous reporting of potential threats to school safety.Carter, Linda S./Verrelli, Anthony S. +5AA",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A1792",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation",
+            "Education"
+          ]
+        },
+        {
+          "id": "A1802",
+          "title": "Requires law enforcement officer to conduct danger assessment of domestic violence victims and provide assistance to high-risk victims.Carter, Linda S",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A1802",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation",
+            "Criminal Justice"
+          ]
+        },
+        {
+          "id": "A1930",
+          "title": "Broadens statute that criminalizes cyber-harassment of minor.Park, Ellen J./Stanley, Sterley S. +5AAP9/12/2024",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A1930",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation"
+          ]
+        },
+        {
+          "id": "A1941",
+          "title": "Requires Commission on Human Trafficking to post public awareness signage in additional establishments.Speight, Shanique /Murphy, Carol A. +22AAP9/12/",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A1941",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation"
+          ]
+        },
+        {
+          "id": "A2075",
+          "title": "Establishes minimum base NJ FamilyCare per diem reimbursement rate of $1,100 for special care nursing facility with neurologically impaired young adul",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A2075",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation"
+          ]
+        },
+        {
+          "id": "A2198",
+          "title": "Clarifies DHS authority to regulate sober living homes and halfway houses as residential substance abuse aftercare facilities; requires background che",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A2198",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation"
+          ]
+        },
+        {
+          "id": "A2490",
+          "title": "Requires DHS to establish Alzheimer's disease public awareness campaign.Allen, John /Calabrese, Clinton +232RA12/11/2025",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A2490",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation"
+          ]
+        },
+        {
+          "id": "A3555",
+          "title": "Requires inspection for pest infestation prior to certain demolitions.McCoy, Tennille R.AAP5/5/2025",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A3555",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation"
+          ]
+        },
+        {
+          "id": "A3636",
+          "title": "Requires State agencies to make their websites accessible to people with disabilities and on mobile devices.Murphy, Carol A./Quijano, Annette +5AAP3/2",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A3636",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation"
+          ]
+        },
+        {
+          "id": "A3735",
+          "title": "Establishes crime of fertility fraud.Murphy, Carol A./Park, Ellen J. +2AAP5/8/2025",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A3735",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation",
+            "Criminal Justice"
+          ]
+        },
+        {
+          "id": "A3739",
+          "title": "Criminalizes the use of \"signal jammers.\"Murphy, Carol A./Rodriguez, Gabriel AAP9/19/2024",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A3739",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation"
+          ]
+        },
+        {
+          "id": "A3753",
+          "title": "Imposes time constraints on submission and analysis of rape kits.Murphy, Carol A./Quijano, Annette +4AAP6/3/2024",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A3753",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation"
+          ]
+        },
+        {
+          "id": "A3852",
+          "title": "Establishes Psilocybin Behavioral Health Access and Therapy Pilot Program; appropriates $6 million.*Calabrese, Clinton /Verrelli, Anthony S. +3AAP11/2",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A3852",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation",
+            "Healthcare"
+          ]
+        },
+        {
+          "id": "A3864",
+          "title": "Requires Commissioner of Education to establish and maintain educator common application and web portal.*Reynolds-Jackson, Verlina /Quijano, Annette +",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A3864",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation",
+            "Education"
+          ]
+        },
+        {
+          "id": "A3977",
+          "title": "Concerns State regulation of boarding houses, including cooperative sober living residences.Simmons, Heather /Speight, Shanique +4AAP5/13/2024",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A3977",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation"
+          ]
+        },
+        {
+          "id": "A4193",
+          "title": "Requires licensed health care professionals providing prenatal care to offer and screen, upon request, pregnant patients with history of depression fo",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A4193",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation",
+            "Healthcare"
+          ]
+        },
+        {
+          "id": "A4374",
+          "title": "Establishes criminal penalties for certain violations of the \"New Jersey Prevailing Wage Act.\"Carter, Linda S./Lopez, Yvonne +16AAP5/8/2025",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A4374",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation",
+            "Criminal Justice",
+            "Labor"
+          ]
+        },
+        {
+          "id": "A4428",
+          "title": "Updates definition of veteran to include discharged LGBTQ veteran; requires DMVA develop review process for such veterans.Ramirez, Jessica +1AAP6/16/2",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A4428",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation",
+            "Veterans"
+          ]
+        },
+        {
+          "id": "A4460",
+          "title": "Provides certain requirements concerning railroad safety.Calabrese, Clinton /Karabinchak, Robert J. +6AAP9/12/2024",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A4460",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation"
+          ]
+        },
+        {
+          "id": "A4838",
+          "title": "Requires prescription drug coverage for serious mental illness without prior authorization or utilization management, including step therapy.Pintor Ma",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A4838",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation",
+            "Drug Policy"
+          ]
+        },
+        {
+          "id": "A4966",
+          "title": "Eliminates statute of limitations for kidnapping and human trafficking prosecutions, and extends statute of limitations for civil cases arising from h",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A4966",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation"
+          ]
+        },
+        {
+          "id": "A5052",
+          "title": "Requires health insurance and Medicaid coverage for screening, prevention, and treatment services of behavioral health issues affecting children.Katz,",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A5052",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation",
+            "Healthcare",
+            "Family",
+            "Children"
+          ]
+        },
+        {
+          "id": "A5198",
+          "title": "Concerns valuation of board and lodging with respect to workers' compensation.Sampson, William B./Verrelli, Anthony S. +1AAP1/23/2025",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A5198",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation"
+          ]
+        },
+        {
+          "id": "A5258",
+          "title": "Permits certain wineries to sell their products by the glass for consumption in licensed salesrooms.Drulis, Mitchelle /Freiman, Roy +32RA12/11/2025",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A5258",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation"
+          ]
+        },
+        {
+          "id": "A5259",
+          "title": "Permits certain winery license holders to sell wine produced by other winery licensees under certain circumstances; establishes supplemental wine prod",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A5259",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation"
+          ]
+        },
+        {
+          "id": "A5265",
+          "title": "Authorizes enforcement of landscape irrigation law by local enforcing agency and increases penalties.Karabinchak, Robert J.AAP5/8/2025",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A5265",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation"
+          ]
+        },
+        {
+          "id": "A5355",
+          "title": "Authorizes creation of special license plate honoring Phi Beta Sigma and Zeta Phi Beta.Atkins, Reginald W./Reynolds-Jackson, Verlina +12RA12/11/2025",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A5355",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation"
+          ]
+        },
+        {
+          "id": "A5387",
+          "title": "Requires each public institution of higher education to develop food waste reduction program on campus.Moen, William F./Carter, Linda S.AAP5/5/2025",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A5387",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation",
+            "Education"
+          ]
+        },
+        {
+          "id": "A5427",
+          "title": "Eliminates presumption of pretrial release for sex offenses committed against minor.DeAngelo, Wayne P./Simmons, Heather AAP5/8/2025",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A5427",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation"
+          ]
+        },
+        {
+          "id": "A5502",
+          "title": "Revises provisions of \"County College Contracts Law\"; permits bidder disqualification due to prior negative experience.Simmons, Heather/Morales, Carme",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A5502",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation",
+            "Education"
+          ]
+        },
+        {
+          "id": "A5510",
+          "title": "Requires appointment of State Dementia Services Coordinator; appropriates $150,000.Sampson, William B./Calabrese, Clinton +92RA12/11/2025",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A5510",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation"
+          ]
+        },
+        {
+          "id": "A5579",
+          "title": "Requires public institution of higher education to provide students with information on food assistance programs.Carter, Linda S./Reynolds-Jackson, Ve",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A5579",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation",
+            "Education"
+          ]
+        },
+        {
+          "id": "A5624",
+          "title": "Requires Division of Consumer Affairs to create open data portal and provide certain datasets online.Stanley, Sterley S. +1AAP5/15/2025",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A5624",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation"
+          ]
+        },
+        {
+          "id": "A5735",
+          "title": "Requires restaurant to disclose mandatory gratuity to patrons.*Hutchison, Dan /Venezia, Michael +2ACE12/11/2025",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A5735",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation"
+          ]
+        },
+        {
+          "id": "A5798",
+          "title": "Requires automatic enrollment into utility bill payment assitance programs for certain individuals and households.*Reynolds-Jackson, Verlina /Carter, ",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A5798",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation"
+          ]
+        },
+        {
+          "id": "A5851",
+          "title": "Directs DEP to establish scrap tire hauler license and scrap tire storage, collection, and disposal site permit.Moen, William F.AAP12/4/2025",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A5851",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation"
+          ]
+        },
+        {
+          "id": "A5852",
+          "title": "Requires DEP to regulate scrap metal facilities as recycling facilities.Moen, William F./Reynolds-Jackson, Verlina AAP12/4/2025",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A5852",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation"
+          ]
+        },
+        {
+          "id": "A5898",
+          "title": "Requires BPU to study potential deployment of advanced transmission technologies in NJ.Calabrese, Clinton /Karabinchak, Robert J.AAP12/11/2025",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A5898",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation"
+          ]
+        },
+        {
+          "id": "A5901",
+          "title": "Authorizes certain energy projects involving installation of transmission and distribution wires that cross preserved farmland.*Bailey, David /Karabin",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A5901",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation",
+            "Environment"
+          ]
+        },
+        {
+          "id": "A5905",
+          "title": "Requires Judiciary and law enforcement to notify State Parole Board when parolee violates domestic violence restraining order.Speight, Shanique /Park,",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A5905",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation",
+            "Criminal Justice"
+          ]
+        },
+        {
+          "id": "A5907",
+          "title": "Prohibits sharing automated license plate reader information for interstate investigation concerning reproductive health care services that are legal ",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A5907",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation",
+            "Healthcare"
+          ]
+        },
+        {
+          "id": "A5920",
+          "title": "Amends Fiscal Year 2026 annual appropriations act to reassign appropriation for Borinqueneer Park from City of Perth Amboy to Borinqueneers Park Educa",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A5920",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation",
+            "Budget",
+            "Finance",
+            "Tax"
+          ]
+        },
+        {
+          "id": "A5930",
+          "title": "Includes retired teachers and county college faculty members in science, technology, engineering, and mathematics teacher grant program.*Swain, LisaAS",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A5930",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation",
+            "Education"
+          ]
+        },
+        {
+          "id": "A5976",
+          "title": "Amends lists of projects eligible to receive loans for environmental infrastructure projects from NJ Infrastructure Bank for FY2026.Abdelaziz, Al +1AA",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A5976",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation"
+          ]
+        },
+        {
+          "id": "A5977",
+          "title": "Amends lists of environmental infrastructure projects approved for long-term funding by DEP under FY2026 environmental infrastructure funding program.",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A5977",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation"
+          ]
+        },
+        {
+          "id": "A6074",
+          "title": "Authorizes State Treasurer to sell as surplus certain real property and improvements in Borough of Lodi in Bergen County.Calabrese, ClintonAAP12/15/20",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A6074",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation",
+            "Housing"
+          ]
+        },
+        {
+          "id": "A6107",
+          "title": "Provides supplemental appropriation of $250,000 to Department of Treasury for gubernatorial transition expenses of Governor-Elect.Coughlin, Craig J./D",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A6107",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation",
+            "Budget",
+            "Finance",
+            "Tax"
+          ]
+        },
+        {
+          "id": "A6116",
+          "title": "Supplemental appropriation of $1.5 million from General Fund to DOH and DCA for Camden Coalition of Healthcare Providers.Greenwald, Louis D.AHE11/24/2",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A6116",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation",
+            "Budget",
+            "Finance",
+            "Tax"
+          ]
+        },
+        {
+          "id": "A6129",
+          "title": "Makes supplemental appropriation of $615,000 to DHS for grant to NJ 2-1-1 Partnership.Pintor Marin, Eliana /Reynolds-Jackson, Verlina +1AHU12/4/2025",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A6129",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation",
+            "Budget",
+            "Finance",
+            "Tax"
+          ]
+        },
+        {
+          "id": "A6149",
+          "title": "Establishes nonpublic school nursing services pilot program to provide funding to county consortium of nonpublic schools for nursing services.Tully, C",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A6149",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation",
+            "Education"
+          ]
+        },
+        {
+          "id": "A6213",
+          "title": "Allows cities to close existing life guard pension plans to new entrants and modifies certain life guard pension benefits; makes new life guard pensio",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A6213",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation"
+          ]
+        },
+        {
+          "id": "A6241",
+          "title": "Amends FY2026 annual appropriations act to increase Supplemental Graduate Medical Education Subsidy by $496,000 for support to additional acute care h",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A6241",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation",
+            "Healthcare",
+            "Education"
+          ]
+        },
+        {
+          "id": "S1016",
+          "title": "Requires State agencies to make their websites accessible to people with disabilities and on mobile devices.Greenstein, Linda R./Beach, James +2AAP3/2",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/S1016",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Senate",
+            "Legislation"
+          ]
+        },
+        {
+          "id": "S2051",
+          "title": "Requires law enforcement officer to conduct risk assessment of and provide assistance to domestic violence victims.*Gopal, Vin /Singleton, Troy +3AAP7",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/S2051",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Senate",
+            "Legislation",
+            "Criminal Justice"
+          ]
+        },
+        {
+          "id": "S2493",
+          "title": "Establishes minimum base NJ FamilyCare per diem reimbursement rate of $1,100 for special care nursing facility with neurologically impaired young adul",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/S2493",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Senate",
+            "Legislation"
+          ]
+        },
+        {
+          "id": "S2498",
+          "title": "Requires Commissioner of Education to establish and maintain educator common application and web portal.*Ruiz, M. Teresa/Turner, Shirley K. +2AAP1/23/",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/S2498",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Senate",
+            "Legislation",
+            "Education"
+          ]
+        },
+        {
+          "id": "S2505",
+          "title": "Requires Commissioner of Education to establish and maintain an educator common application and web portal.Ruiz, M. Teresa/McKnight, Angela V. +2COMB1",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/S2505",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Senate",
+            "Legislation",
+            "Education"
+          ]
+        },
+        {
+          "id": "S3889",
+          "title": "Requires each public institution of higher education to develop food waste reduction program on campus.Ruiz, M. Teresa/Turner, Shirley K. +3AAP5/5/202",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/S3889",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Senate",
+            "Legislation",
+            "Education"
+          ]
+        },
+        {
+          "id": "S3890",
+          "title": "Requires public institution of higher education to provide students with information on food assistance programs.Ruiz, M. Teresa/McKnight, Angela V. +",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/S3890",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Senate",
+            "Legislation",
+            "Education"
+          ]
+        }
+      ],
+      "tags": [
+        "New Jersey",
+        "Assembly",
+        "Committee Meeting",
+        "Budget",
+        "Finance"
+      ]
+    },
+    {
+      "id": "nj-2025-12-18-assembly-community-development-and-women-s-affairs",
+      "name": "Assembly Community Development and Women's Affairs",
+      "date": "2025-12-18T10:00:00.000Z",
+      "time": "10:00 AM",
+      "location": "Committee Room 12, 4th Floor, State House Annex, Trenton, NJ",
+      "committee": "NJ Assembly - Community Development and Women's Affairs",
+      "type": "meeting",
+      "level": "state",
+      "lat": 40.2206,
+      "lng": -74.7597,
+      "zipCode": null,
+      "url": "https://www.njleg.state.nj.us/live-proceedings/2025-12-18-10:00:00/ACW/Meeting",
+      "docketUrl": null,
+      "virtualMeetingUrl": null,
+      "bills": [
+        {
+          "id": "A2191",
+          "title": "Establishes \"Remote Methadone Dosing Pilot Program;\" appropriates $225,000.Moen, William F./Speight, Shanique +2ACW12/12/2024",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A2191",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation"
+          ]
+        },
+        {
+          "id": "A4694",
+          "title": "Establishes \"Female Incarcerated Person's Rights Protection Act.\"Lopez, Yvonne /Hall, Garnet R.ACW9/12/2024",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A4694",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation"
+          ]
+        },
+        {
+          "id": "A5703",
+          "title": "Requires midwives and physicians to provide pregnant women information on birthing options prior to delivery.Speight, ShaniqueACW5/22/2025",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A5703",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation",
+            "Civil Rights",
+            "Womens Rights"
+          ]
+        },
+        {
+          "id": "A6113",
+          "title": "Provides supplemental appropriation of $4 million for Hinchliffe Stadium Partners to support stadium, entertainment, and tourism infrastructure at Pat",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A6113",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation",
+            "Budget",
+            "Finance",
+            "Tax"
+          ]
+        },
+        {
+          "id": "S1087",
+          "title": "Requires midwives and physicians to provide pregnant women information on birthing options prior to delivery.Timberlake, Britnee N./McKnight, Angela V",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/S1087",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Senate",
+            "Legislation",
+            "Civil Rights",
+            "Womens Rights"
+          ]
+        }
+      ],
+      "tags": [
+        "New Jersey",
+        "Assembly",
+        "Committee Meeting",
+        "Womens Rights",
+        "Civil Rights",
+        "Community Development"
+      ]
+    },
+    {
+      "id": "nj-2025-12-18-assembly-education",
+      "name": "Assembly Education",
+      "date": "2025-12-18T10:00:00.000Z",
+      "time": "10:00 AM",
+      "location": "Committee Room 16, 4th Floor, State House Annex, Trenton, NJ",
+      "committee": "NJ Assembly - Education",
+      "type": "meeting",
+      "level": "state",
+      "lat": 40.2206,
+      "lng": -74.7597,
+      "zipCode": null,
+      "url": "https://www.njleg.state.nj.us/live-proceedings/2025-12-18-10:00:00/AED/Meeting",
+      "docketUrl": null,
+      "virtualMeetingUrl": null,
+      "bills": [
+        {
+          "id": "A276",
+          "title": "Establishes \"Student Mental Health Task Force.\"Matsikoudis, Michele /Miller, Cody D. +3AED1/9/2024",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A276",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation",
+            "Healthcare",
+            "Education"
+          ]
+        },
+        {
+          "id": "A3909",
+          "title": "\"Max's Law\"; requires school districts to provide instruction on dangers of fentanyl and xylazine.Azzariti Jr., John V./Verrelli, Anthony S. +18AED2/2",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A3909",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation",
+            "Education"
+          ]
+        },
+        {
+          "id": "A4607",
+          "title": "Establishes Special Education Transportation Task Force.Barlas, Al /DePhillips, Christopher P. +4AED6/20/2024",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A4607",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation",
+            "Education"
+          ]
+        },
+        {
+          "id": "A4639",
+          "title": "Requires boards of education to adopt policy on use of video surveillance systems with artificial intelligence capabilities.Miller, Cody D. +2AED10/21",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A4639",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation",
+            "Education"
+          ]
+        },
+        {
+          "id": "A6149",
+          "title": "Establishes nonpublic school nursing services pilot program to provide funding to county consortium of nonpublic schools for nursing services.Tully, C",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/A6149",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Assembly",
+            "Legislation",
+            "Education"
+          ]
+        },
+        {
+          "id": "S3447",
+          "title": "Establishes Special Education Transportation Task Force.Corrado, Kristin M./Diegnan, Patrick J. +2AED3/24/2025",
+          "url": "https://www.njleg.state.nj.us/bill-search/2024/S3447",
+          "status": "Scheduled for Committee",
+          "tags": [
+            "New Jersey",
+            "Senate",
+            "Legislation",
+            "Education"
+          ]
+        }
+      ],
+      "tags": [
+        "New Jersey",
+        "Assembly",
+        "Committee Meeting",
+        "Education"
+      ]
+    }
+  ],
+  "timestamp": 1765911854678,
+  "expiresAt": 1765998254678
+}

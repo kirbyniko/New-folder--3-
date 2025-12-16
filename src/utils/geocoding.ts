@@ -19,11 +19,22 @@ const STATE_NAME_TO_ABBR: Record<string, string> = {
   'Virginia': 'VA', 'Washington': 'WA', 'West Virginia': 'WV', 'Wisconsin': 'WI', 'Wyoming': 'WY'
 };
 
+// In-memory cache for geocoded ZIP codes (persists for session)
+const geocodeCache = new Map<string, GeoLocation>();
+
 /**
  * Geocode a US ZIP code using OpenStreetMap Nominatim API
  * Returns latitude, longitude, state, and city information
+ * Results are cached in memory for the session
  */
 export async function geocodeZipCode(zipCode: string): Promise<GeoLocation> {
+  // Check cache first
+  if (geocodeCache.has(zipCode)) {
+    console.log(`🎯 Geocode cache HIT for ${zipCode}`);
+    return geocodeCache.get(zipCode)!;
+  }
+  
+  console.log(`🌐 Geocoding ${zipCode} via Nominatim API...`);
   const response = await fetch(
     `https://nominatim.openstreetmap.org/search?postalcode=${zipCode}&country=us&format=json&addressdetails=1`,
     {
@@ -46,13 +57,19 @@ export async function geocodeZipCode(zipCode: string): Promise<GeoLocation> {
   const result = data[0];
   const stateName = result.address?.state;
   
-  return {
+  const location: GeoLocation = {
     lat: parseFloat(result.lat),
     lng: parseFloat(result.lon),
     state: stateName,
     stateAbbr: stateName ? STATE_NAME_TO_ABBR[stateName] : undefined,
     city: result.address?.city || result.address?.town || result.address?.village
   };
+  
+  // Cache the result
+  geocodeCache.set(zipCode, location);
+  console.log(`💾 Cached geocode for ${zipCode}`);
+  
+  return location;
 }
 
 /**

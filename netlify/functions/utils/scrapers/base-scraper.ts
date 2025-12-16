@@ -42,6 +42,7 @@ export interface RawEvent {
   docketUrl?: string;
   virtualMeetingUrl?: string;
   bills?: BillInfo[];
+  tags?: string[];
 }
 
 // 🆕 Bill information for raw events
@@ -239,7 +240,8 @@ export abstract class BaseScraper {
         url: raw.detailsUrl || null,
         docketUrl: raw.docketUrl || null,
         virtualMeetingUrl: raw.virtualMeetingUrl || null,
-        bills: raw.bills || null
+        bills: raw.bills || null,
+        tags: raw.tags || []
       }) as LegislativeEvent;
 
     } catch (error) {

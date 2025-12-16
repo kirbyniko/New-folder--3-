@@ -29,6 +29,7 @@ import { OhioScraper } from './states/ohio';
 import { GeorgiaScraper } from './states/georgia';
 import { NorthCarolinaScraper } from './states/north-carolina';
 import { MichiganScraper } from './states/michigan';
+import { NewJerseyScraper } from './states/new-jersey';
 
 /**
  * Initialize the scraper registry with all state scrapers
@@ -37,7 +38,7 @@ import { MichiganScraper } from './states/michigan';
 export async function initializeScrapers(): Promise<void> {
   console.log('[SCRAPERS] 🚀 Initializing scraper system...');
 
-  // Register all state scrapers (11 states covering 200M+ people)
+  // Register all state scrapers (12 states covering 220M+ people)
   Registry.register('NH', new NewHampshireScraper());
   Registry.register('CA', new CaliforniaScraper());
   Registry.register('TX', new TexasScraper());
@@ -49,6 +50,7 @@ export async function initializeScrapers(): Promise<void> {
   Registry.register('GA', new GeorgiaScraper());
   Registry.register('NC', new NorthCarolinaScraper());
   Registry.register('MI', new MichiganScraper());
+  Registry.register('NJ', new NewJerseyScraper());
 
   // Log registry status
   Registry.logStatus();
