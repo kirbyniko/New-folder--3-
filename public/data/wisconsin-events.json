@@ -1,0 +1,309 @@
+{
+  "events": [
+    {
+      "id": "wi-3014-2025-12-18",
+      "name": "Natural Resources, Veteran and Military Affairs (Senate)",
+      "date": "2025-12-18T15:00:00.000Z",
+      "time": "10:00 AM",
+      "location": "201 Southeast",
+      "committee": "Natural Resources, Veteran and Military Affairs (Senate)",
+      "type": " Public Hearing - Public Hearing",
+      "level": "state",
+      "state": "WI",
+      "city": "Madison",
+      "lat": 43.0747,
+      "lng": -89.3841,
+      "zipCode": null,
+      "description": "Senate committee public hearing. Topics: County -- Health department; Environmental protection; Indians and tribal issues; Natural Resources, Department of -- Environmental protection; Racine County; Water -- Pollution",
+      "sourceUrl": "https://docs.legis.wisconsin.gov/raw/cid/1957408",
+      "virtualMeetingUrl": null,
+      "bills": [
+        {
+          "id": "SB628",
+          "title": "Natural Resources, Veteran and Military Affairs (Senate) - SB628",
+          "url": "https://docs.legis.wisconsin.gov/2025/proposals/sb628"
+        },
+        {
+          "id": "SB693",
+          "title": "Natural Resources, Veteran and Military Affairs (Senate) - SB693",
+          "url": "https://docs.legis.wisconsin.gov/2025/proposals/sb693"
+        }
+      ]
+    },
+    {
+      "id": "wi-2919-2025-12-18",
+      "name": "Environment (Assembly)",
+      "date": "2025-12-18T15:00:00.000Z",
+      "time": "10:00 AM",
+      "location": "300 Northeast",
+      "committee": "Environment (Assembly)",
+      "type": " Public Hearing - Public Hearing",
+      "level": "state",
+      "state": "WI",
+      "city": "Madison",
+      "lat": 43.0747,
+      "lng": -89.3841,
+      "zipCode": null,
+      "description": "Assembly committee public hearing. Topics: Agriculture; Agriculture, Trade and Consumer Protection, Department of; Business; Natural Resources, Department of -- Environmental protection; Pests; Plants; Racine County; Recycling",
+      "sourceUrl": "https://docs.legis.wisconsin.gov/raw/cid/1959077",
+      "virtualMeetingUrl": null,
+      "bills": [
+        {
+          "id": "AB713",
+          "title": "Environment (Assembly) - AB713",
+          "url": "https://docs.legis.wisconsin.gov/2025/proposals/ab713"
+        },
+        {
+          "id": "AB732",
+          "title": "Environment (Assembly) - AB732",
+          "url": "https://docs.legis.wisconsin.gov/2025/proposals/ab732"
+        },
+        {
+          "id": "AB703",
+          "title": "Environment (Assembly) - AB703",
+          "url": "https://docs.legis.wisconsin.gov/2025/proposals/ab703"
+        }
+      ]
+    },
+    {
+      "id": "wi-2930-2025-12-17",
+      "name": "Regulatory Licensing Reform (Assembly)",
+      "date": "2025-12-17T15:00:00.000Z",
+      "time": "10:00 AM",
+      "location": "400 Northeast",
+      "committee": "Regulatory Licensing Reform (Assembly)",
+      "type": " Public Hearing - Public Hearing",
+      "level": "state",
+      "state": "WI",
+      "city": "Madison",
+      "lat": 43.0747,
+      "lng": -89.3841,
+      "zipCode": null,
+      "description": "Assembly committee public hearing. Topics: Administrative rules -- Revisions; Certified public accountant; Detective; Interstate relations; Religious societies",
+      "sourceUrl": "https://docs.legis.wisconsin.gov/raw/cid/1958559",
+      "virtualMeetingUrl": null,
+      "bills": [
+        {
+          "id": "AB696",
+          "title": "Regulatory Licensing Reform (Assembly) - AB696",
+          "url": "https://docs.legis.wisconsin.gov/2025/proposals/ab696"
+        },
+        {
+          "id": "AB746",
+          "title": "Regulatory Licensing Reform (Assembly) - AB746",
+          "url": "https://docs.legis.wisconsin.gov/2025/proposals/ab746"
+        }
+      ]
+    },
+    {
+      "id": "wi-2972-2025-12-17",
+      "name": "Judiciary and Public Safety (Senate)",
+      "date": "2025-12-17T15:00:00.000Z",
+      "time": "10:00 AM",
+      "location": "411 South",
+      "committee": "Judiciary and Public Safety (Senate)",
+      "type": " Public Hearing - Public Hearing",
+      "level": "state",
+      "state": "WI",
+      "city": "Madison",
+      "lat": 43.0747,
+      "lng": -89.3841,
+      "zipCode": null,
+      "description": "Senate committee public hearing. Topics: Claims; Corrections, Department of; Data processing -- Criminal acts and law enforcement; Drugs -- Criminal acts and law enforcement; Drunken driving; Fraud; Group Insurance Board; Hearings and Appeals, Division of; Income tax -- Deduction; Legislature -- Criminal Penalties, Joint Review Committee on; Legislature -- Tax Exemptions, Joint Survey Committee on; Personal property; Police; Public assistance; Revenue, Department of; Sentences and penalties; Sex crimes",
+      "sourceUrl": "https://docs.legis.wisconsin.gov/raw/cid/1959660",
+      "virtualMeetingUrl": null,
+      "bills": [
+        {
+          "id": "SB577",
+          "title": "Judiciary and Public Safety (Senate) - SB577",
+          "url": "https://docs.legis.wisconsin.gov/2025/proposals/sb577"
+        },
+        {
+          "id": "SB610",
+          "title": "Judiciary and Public Safety (Senate) - SB610",
+          "url": "https://docs.legis.wisconsin.gov/2025/proposals/sb610"
+        },
+        {
+          "id": "SB620",
+          "title": "Judiciary and Public Safety (Senate) - SB620",
+          "url": "https://docs.legis.wisconsin.gov/2025/proposals/sb620"
+        },
+        {
+          "id": "SB647",
+          "title": "Judiciary and Public Safety (Senate) - SB647",
+          "url": "https://docs.legis.wisconsin.gov/2025/proposals/sb647"
+        },
+        {
+          "id": "SB678",
+          "title": "Judiciary and Public Safety (Senate) - SB678",
+          "url": "https://docs.legis.wisconsin.gov/2025/proposals/sb678"
+        }
+      ]
+    },
+    {
+      "id": "wi-2941-2025-12-17",
+      "name": "Jobs and Economy (Assembly)",
+      "date": "2025-12-17T15:00:00.000Z",
+      "time": "10:00 AM",
+      "location": "328 Northwest",
+      "committee": "Jobs and Economy (Assembly)",
+      "type": " Public Hearing - Public Hearing",
+      "level": "state",
+      "state": "WI",
+      "city": "Madison",
+      "lat": 43.0747,
+      "lng": -89.3841,
+      "zipCode": null,
+      "description": "Assembly committee public hearing. Topics: Economic Development Corporation, Wisconsin; Municipality; University of Wisconsin",
+      "sourceUrl": "https://docs.legis.wisconsin.gov/raw/cid/1958861",
+      "virtualMeetingUrl": null,
+      "bills": [
+        {
+          "id": "AB397",
+          "title": "Jobs and Economy (Assembly) - AB397",
+          "url": "https://docs.legis.wisconsin.gov/2025/proposals/ab397"
+        }
+      ]
+    },
+    {
+      "id": "wi-3016-2025-12-18",
+      "name": "Utilities, Technology and Tourism (Senate)",
+      "date": "2025-12-18T16:00:00.000Z",
+      "time": "11:00 AM",
+      "location": "411 South",
+      "committee": "Utilities, Technology and Tourism (Senate)",
+      "type": " Public Hearing - Public Hearing",
+      "level": "state",
+      "state": "WI",
+      "city": "Madison",
+      "lat": 43.0747,
+      "lng": -89.3841,
+      "zipCode": null,
+      "description": "Senate committee public hearing. Topics: Agricultural societies; Agriculture, Trade and Consumer Protection, Department of; Electric utility; Electricity; Energy conservation; Fair; Franchise -- Taxation; Fuel; Income tax -- Credit; Public Service Commission; Public utility; Shared revenue",
+      "sourceUrl": "https://docs.legis.wisconsin.gov/raw/cid/1959819",
+      "virtualMeetingUrl": null,
+      "bills": [
+        {
+          "id": "SB328",
+          "title": "Utilities, Technology and Tourism (Senate) - SB328",
+          "url": "https://docs.legis.wisconsin.gov/2025/proposals/sb328"
+        },
+        {
+          "id": "SB502",
+          "title": "Utilities, Technology and Tourism (Senate) - SB502",
+          "url": "https://docs.legis.wisconsin.gov/2025/proposals/sb502"
+        },
+        {
+          "id": "SB556",
+          "title": "Utilities, Technology and Tourism (Senate) - SB556",
+          "url": "https://docs.legis.wisconsin.gov/2025/proposals/sb556"
+        },
+        {
+          "id": "SB733",
+          "title": "Utilities, Technology and Tourism (Senate) - SB733",
+          "url": "https://docs.legis.wisconsin.gov/2025/proposals/sb733"
+        }
+      ]
+    },
+    {
+      "id": "wi-3034-2025-12-18",
+      "name": "Rulemaking (Assembly)",
+      "date": "2025-12-18T16:00:00.000Z",
+      "time": "11:00 AM",
+      "location": "Winchester Town Hall, 8522 Parkway Lane, Larsen, WI 54947",
+      "committee": "Rulemaking (Assembly)",
+      "type": " Public Hearing - Public Hearing",
+      "level": "state",
+      "state": "WI",
+      "city": "Madison",
+      "lat": 43.0747,
+      "lng": -89.3841,
+      "zipCode": null,
+      "description": "Assembly committee public hearing. Topics: (None)",
+      "sourceUrl": "https://docs.legis.wisconsin.gov/raw/cid/1960095",
+      "virtualMeetingUrl": null,
+      "bills": []
+    },
+    {
+      "id": "wi-2917-2025-12-17",
+      "name": "Education (Assembly)",
+      "date": "2025-12-17T18:00:00.000Z",
+      "time": "1:00 PM",
+      "location": "417 North (GAR Hall)",
+      "committee": "Education (Assembly)",
+      "type": " Public Hearing - Public Hearing",
+      "level": "state",
+      "state": "WI",
+      "city": "Madison",
+      "lat": 43.0747,
+      "lng": -89.3841,
+      "zipCode": null,
+      "description": "Assembly committee public hearing. Topics: Administrative rules -- Revisions; Children and Families, Department of; Day care; Indians and tribal issues; Public health; Public Instruction, Department of; School -- Administration; School -- Curriculum; School -- Finance; Teacher -- Certificate; Transplant",
+      "sourceUrl": "https://docs.legis.wisconsin.gov/raw/cid/1959900",
+      "virtualMeetingUrl": null,
+      "bills": [
+        {
+          "id": "AB109",
+          "title": "Education (Assembly) - AB109",
+          "url": "https://docs.legis.wisconsin.gov/2025/proposals/ab109"
+        },
+        {
+          "id": "AB710",
+          "title": "Education (Assembly) - AB710",
+          "url": "https://docs.legis.wisconsin.gov/2025/proposals/ab710"
+        },
+        {
+          "id": "AB749",
+          "title": "Education (Assembly) - AB749",
+          "url": "https://docs.legis.wisconsin.gov/2025/proposals/ab749"
+        },
+        {
+          "id": "AB391",
+          "title": "Education (Assembly) - AB391",
+          "url": "https://docs.legis.wisconsin.gov/2025/proposals/ab391"
+        }
+      ]
+    },
+    {
+      "id": "wi-2908-2025-12-18",
+      "name": "Administrative Rules (Joint)",
+      "date": "2025-12-18T18:00:00.000Z",
+      "time": "1:00 PM",
+      "location": "10 South, State Capitol",
+      "committee": "Administrative Rules (Joint)",
+      "type": " Executive Session - Executive Session",
+      "level": "state",
+      "state": "WI",
+      "city": "Madison",
+      "lat": 43.0747,
+      "lng": -89.3841,
+      "zipCode": null,
+      "description": "Joint committee executive session. Topics: (None)",
+      "sourceUrl": "https://docs.legis.wisconsin.gov/raw/cid/1960366",
+      "virtualMeetingUrl": null,
+      "bills": []
+    },
+    {
+      "id": "wi-3036-2025-12-18",
+      "name": "Oversight of the Department of Justice (Senate)",
+      "date": "2025-12-18T20:00:00.000Z",
+      "time": "3:00 PM",
+      "location": "300 Southeast",
+      "committee": "Oversight of the Department of Justice (Senate)",
+      "type": " Executive Session - Executive Session",
+      "level": "state",
+      "state": "WI",
+      "city": "Madison",
+      "lat": 43.0747,
+      "lng": -89.3841,
+      "zipCode": null,
+      "description": "Senate committee executive session. Topics: (None)",
+      "sourceUrl": "https://docs.legis.wisconsin.gov/raw/cid/1960329",
+      "virtualMeetingUrl": null,
+      "bills": []
+    }
+  ],
+  "count": 10,
+  "billsCount": 21,
+  "lastUpdated": "2025-12-17T08:12:51.837Z"
+}

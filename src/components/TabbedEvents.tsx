@@ -177,6 +177,13 @@ export default function TabbedEvents({
                     </div>
                   )}
 
+                  {event.description && (
+                    <div className="event-detail">
+                      <span className="detail-label">📄 Description:</span>
+                      <span className="detail-value">{event.description}</span>
+                    </div>
+                  )}
+
                   {event.url && (
                     <div className="event-detail">
                       <span className="detail-label">🔗 Link:</span>

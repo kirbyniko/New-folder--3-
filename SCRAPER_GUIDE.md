@@ -935,6 +935,127 @@ private normalizeUrl(url: string): string {
 }
 ```
 
+### Pattern 6: Dual-Chamber Unified Parsing
+
+When House and Senate use the same HTML structure, create reusable parsing functions:
+
+```typescript
+async scrapeCalendar(): Promise<RawEvent[]> {
+  const allEvents: RawEvent[] = [];
+  
+  // Fetch both chambers
+  const houseHtml = await this.fetchHouse();
+  const senateHtml = await this.fetchSenate();
+  
+  // Use same parser for both
+  allEvents.push(...this.parseHearings(houseHtml, 'House'));
+  allEvents.push(...this.parseHearings(senateHtml, 'Senate'));
+  
+  return allEvents;
+}
+
+private parseHearings(html: string, chamber: string): RawEvent[] {
+  const events: RawEvent[] = [];
+  const $ = cheerio.load(html);
+  
+  // Both chambers use same table structure
+  $('table[border="0"]').each((_, table) => {
+    const $table = $(table);
+    const committee = $table.find('th:contains("Committee:")').next().text();
+    const date = $table.find('th:contains("Date:")').next().text();
+    const time = $table.find('th:contains("Time:")').next().text();
+    const location = $table.find('th:contains("Location:")').next().text();
+    
+    events.push({
+      name: committee,
+      date,
+      time,
+      location,
+      chamber,
+      // ... other fields
+    });
+  });
+  
+  return events;
+}
+```
+
+### Pattern 7: ASP.NET Alternative Views
+
+ASP.NET sites often have "modern" complex views and "traditional" simpler views:
+
+```typescript
+async scrapeCalendar(): Promise<RawEvent[]> {
+  // Try traditional view first (cleaner HTML)
+  const traditionalUrl = 'https://house.mo.gov/HearingsTimeOrder.aspx';
+  
+  // Instead of complex ASP.NET ViewState page:
+  // const complexUrl = 'https://house.mo.gov/AllHearings.aspx';
+  
+  const response = await fetch(traditionalUrl);
+  const html = await response.text();
+  
+  // Traditional view has clean table structure
+  // No need to deal with ViewState, postback, etc.
+  return this.parseHearings(html);
+}
+```
+
+**When to look for alternatives:**
+- Page contains `__VIEWSTATE` and complex JavaScript
+- HTML is heavily obfuscated or uses data attributes
+- Page requires postbacks or form submissions
+- Look for links like "Traditional View", "Classic View", "Time Order", "Simple View"
+
+### Pattern 8: Flexible Time Handling
+
+Legislative schedules often include conditional timing:
+
+```typescript
+private parseTime(timeStr: string): { time: string, originalText: string } {
+  // Preserve full text for context
+  const originalText = timeStr.trim();
+  
+  // Extract primary time
+  const timeMatch = timeStr.match(/(\d+:\d+\s*[AP]M)/i);
+  const time = timeMatch ? timeMatch[1] : 'TBD';
+  
+  return { time, originalText };
+}
+
+// Usage:
+const { time, originalText } = this.parseTime('4:30 PM or upon adjournment');
+event.time = time; // "4:30 PM"
+event.description = `Meeting at ${originalText}`; // Full context
+```
+
+**Common patterns:**
+- "4:30 PM or upon adjournment"
+- "Upon adjournment (whichever is later)"
+- "Immediately following floor session"
+- "30 minutes after session convenes"
+
+### Pattern 9: Graceful Empty State Handling
+
+Check for "no data" messages before parsing:
+
+```typescript
+private async fetchSenate(): Promise<RawEvent[]> {
+  const response = await fetch(this.senateUrl);
+  const html = await response.text();
+  
+  // Check for empty state messages
+  if (html.toLowerCase().includes('no hearings scheduled') ||
+      html.toLowerCase().includes('no meetings scheduled') ||
+      html.toLowerCase().includes('none scheduled')) {
+    this.log('No Senate hearings found');
+    return [];
+  }
+  
+  return this.parseHearings(html, 'Senate');
+}
+```
+
 ---
 
 ## Troubleshooting
@@ -1319,6 +1440,190 @@ private async fetchDailyCommittees(date: string): Promise<RawEvent[]> {
 - Include all required headers
 - Handle authentication errors gracefully
 
+### Example 5: Missouri (Dual-Chamber Tables)
+
+**Challenge:** Scrape both House and Senate with ASP.NET pages, unified table parsing
+
+**Website Research:**
+- House: https://house.mo.gov/HearingsTimeOrder.aspx
+- Senate: https://www.senate.mo.gov/hearingsschedule/hrings.htm
+- Both use clean HTML tables with `<th>` labels and `<td>` values
+
+**Discovery:** House has two views:
+- AllHearings.aspx (complex ASP.NET ViewState)
+- HearingsTimeOrder.aspx (traditional view with simple tables) ✅ Use this!
+
+**Solution:**
+```typescript
+export class MissouriScraper extends BaseScraper {
+  private houseUrl = 'https://house.mo.gov/HearingsTimeOrder.aspx';
+  private senateUrl = 'https://www.senate.mo.gov/hearingsschedule/hrings.htm';
+
+  async scrapeCalendar(): Promise<RawEvent[]> {
+    const events: RawEvent[] = [];
+    
+    // Fetch both chambers in parallel
+    const [houseHtml, senateHtml] = await Promise.all([
+      this.fetchHouseHearings(),
+      this.fetchSenateHearings()
+    ]);
+    
+    // Parse both with shared logic
+    events.push(...this.parseHouseHearings(houseHtml));
+    events.push(...this.parseSenateHearings(senateHtml));
+    
+    return events;
+  }
+
+  private async fetchHouseHearings(): Promise<string> {
+    const response = await fetch(this.houseUrl, {
+      headers: { 'User-Agent': 'Mozilla/5.0' }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`House HTTP ${response.status}`);
+    }
+    
+    return response.text();
+  }
+
+  private parseHouseHearings(html: string): RawEvent[] {
+    const events: RawEvent[] = [];
+    const $ = cheerio.load(html);
+    
+    // Find all hearing tables (border="0" width="100%")
+    $('table[border="0"][width="100%"]').each((_, table) => {
+      const $table = $(table);
+      
+      // Extract data from <th>/<td> pairs
+      const committee = $table
+        .find('th:contains("Committee:")')
+        .next('td')
+        .find('a')
+        .text()
+        .trim();
+      
+      const dateText = $table
+        .find('th:contains("Hearing Date")')
+        .parent()
+        .text()
+        .replace('Hearing Date', '')
+        .trim();
+      
+      const time = $table
+        .find('th:contains("Time:")')
+        .next('td')
+        .text()
+        .trim();
+      
+      const location = $table
+        .find('th:contains("Location:")')
+        .next('td')
+        .text()
+        .trim();
+      
+      const note = $table
+        .find('th:contains("Note:")')
+        .next('td')
+        .text()
+        .trim();
+      
+      if (!committee || !dateText) return;
+      
+      // Parse date: "Wednesday, January 14, 2026"
+      const date = new Date(dateText);
+      
+      // Handle conditional timing: "4:30 PM or upon adjournment"
+      const timeMatch = time.match(/(\d+:\d+\s*[AP]M)/i);
+      const primaryTime = timeMatch ? timeMatch[1] : 'TBD';
+      
+      events.push({
+        name: committee,
+        date: date.toISOString(),
+        time: primaryTime,
+        location: location || 'State Capitol',
+        committee,
+        type: 'committee-meeting',
+        level: 'state',
+        state: 'MO',
+        city: 'Jefferson City',
+        lat: 38.5767,
+        lng: -92.1735,
+        description: note || 'House committee hearing',
+        sourceUrl: this.houseUrl,
+        bills: [] // Bills could be extracted from note field
+      });
+    });
+    
+    return events;
+  }
+
+  private async fetchSenateHearings(): Promise<string> {
+    const response = await fetch(this.senateUrl, {
+      headers: { 'User-Agent': 'Mozilla/5.0' }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Senate HTTP ${response.status}`);
+    }
+    
+    return response.text();
+  }
+
+  private parseSenateHearings(html: string): RawEvent[] {
+    // Check for empty state
+    if (html.toLowerCase().includes('no hearings scheduled')) {
+      this.log('No Senate hearings scheduled');
+      return [];
+    }
+    
+    // Use same table parsing logic as House
+    // Senate uses identical structure
+    return this.parseHouseHearings(html);
+  }
+}
+```
+
+**Key Lessons:**
+- **Look for alternative views** on ASP.NET sites - often there's a "traditional" or "time order" view with cleaner HTML
+- **Avoid ViewState complexity** - if you see `__VIEWSTATE` and postback mechanisms, search for simpler alternatives
+- **Dual-chamber unified parsing** - when both chambers use identical HTML structure, create shared parsing methods
+- **Flexible time handling** - legislative schedules often include "or upon adjournment" - extract primary time but preserve full context
+- **Graceful empty states** - check for "no hearings scheduled" messages before attempting to parse
+- **Parallel fetching** - use `Promise.all()` to fetch both chambers simultaneously for better performance
+
+**HTML Structure Pattern:**
+```html
+<table border="0" width="100%">
+  <tr>
+    <th scope="row">Committee:</th>
+    <td><a href="...">Corrections and Public Institutions</a></td>
+  </tr>
+  <tr>
+    <th scope="row">Hearing Date</th>
+    <td>Wednesday, January 14, 2026</td>
+  </tr>
+  <tr>
+    <th scope="row">Time:</th>
+    <td>4:30 PM or upon adjournment (whichever is later)</td>
+  </tr>
+  <tr>
+    <th scope="row">Location:</th>
+    <td>House Hearing Room 6</td>
+  </tr>
+  <tr>
+    <th scope="row">Note:</th>
+    <td>Informational discussion on Department staffing</td>
+  </tr>
+</table>
+```
+
+**Testing Results:**
+- ✅ Generated `missouri-events.json` with 1 House hearing
+- ✅ Extracted all fields: committee, date, time, location, note
+- ✅ Handled "or upon adjournment" timing gracefully
+- ✅ Senate correctly returned empty array (no hearings scheduled)
+
 ---
 
 ## Checklist: Is Your Scraper Complete?
@@ -1477,6 +1782,7 @@ try {
 
 ## Version History
 
+- **v1.1** (Dec 2025) - Added Missouri example, dual-chamber patterns, ASP.NET alternative views, flexible time handling
 - **v1.0** (Dec 2025) - Initial guide based on AZ, TN, MA, IN implementations
 
 ---
