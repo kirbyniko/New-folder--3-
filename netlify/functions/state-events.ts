@@ -199,6 +199,52 @@ export const handler: Handler = async (event) => {
     
     // ===== STRATEGY 1: Try custom scraper (comprehensive but slower) =====
     console.log('🔍 Checking for custom scraper...');
+    
+    // Special handling for Virginia, Arizona, Tennessee, Massachusetts & Indiana - use pre-scraped static data
+    if (stateAbbr === 'VA' || stateAbbr === 'AZ' || stateAbbr === 'TN' || stateAbbr === 'MA' || stateAbbr === 'IN') {
+      const stateNames: Record<string, string> = { 'VA': 'Virginia', 'AZ': 'Arizona', 'TN': 'Tennessee', 'MA': 'Massachusetts', 'IN': 'Indiana' };
+      const fileNames: Record<string, string> = { 'VA': 'virginia-events.json', 'AZ': 'arizona-events.json', 'TN': 'tennessee-events.json', 'MA': 'massachusetts-events.json', 'IN': 'indiana-events.json' };
+      const stateName = stateNames[stateAbbr];
+      const fileName = fileNames[stateAbbr];
+      console.log(`📄 Loading pre-scraped ${stateName} data from static file`);
+      try {
+        const { readFileSync } = await import('fs');
+        const { join } = await import('path');
+        const dataPath = join(process.cwd(), 'public', 'data', fileName);
+        const staticData = JSON.parse(readFileSync(dataPath, 'utf-8'));
+        
+        console.log(`✅ Loaded ${staticData.count} ${stateName} events from static file`);
+        console.log(`📋 Bills: ${staticData.billsCount} total`);
+        
+        // Add state capitol coordinates to events that don't have them
+        const eventsWithCoords = staticData.events.map((event: any) => {
+          if (event.lat === 0 && event.lng === 0) {
+            return {
+              ...event,
+              lat: state.capitol.lat,
+              lng: state.capitol.lng
+            };
+          }
+          return event;
+        });
+        
+        return {
+          statusCode: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'public, max-age=86400', // 24 hours
+            'X-Data-Source': 'static-file',
+            'X-Last-Updated': staticData.lastUpdated
+          },
+          body: JSON.stringify(eventsWithCoords)
+        };
+      } catch (staticError) {
+        console.error(`❌ Failed to load static ${stateName} data:`, staticError);
+        console.log('⬇️ Falling back to OpenStates API...');
+        // Continue to OpenStates fallback
+      }
+    }
+    
     const scraper = ScraperRegistry.get(stateAbbr);
     
     if (scraper && scraper.getHealth().enabled) {

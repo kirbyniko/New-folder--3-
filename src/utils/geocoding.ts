@@ -1,3 +1,5 @@
+import { ZIP_DATABASE } from './zip-database';
+
 export interface GeoLocation {
   lat: number;
   lng: number;
@@ -70,7 +72,16 @@ loadPersistentCache();
  * Results are cached persistently in localStorage
  */
 export async function geocodeZipCode(zipCode: string): Promise<GeoLocation> {
-  // Check cache first
+  // Check built-in database first (instant lookup)
+  if (ZIP_DATABASE[zipCode]) {
+    console.log(`⚡ Built-in database HIT for ${zipCode}`);
+    const location = ZIP_DATABASE[zipCode];
+    geocodeCache.set(zipCode, location);
+    savePersistentCache();
+    return location;
+  }
+  
+  // Check cache second
   if (geocodeCache.has(zipCode)) {
     console.log(`🎯 Geocode cache HIT for ${zipCode}`);
     return geocodeCache.get(zipCode)!;
@@ -80,7 +91,7 @@ export async function geocodeZipCode(zipCode: string): Promise<GeoLocation> {
   
   // Add timeout to prevent hanging
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
   
   try {
     const response = await fetch(

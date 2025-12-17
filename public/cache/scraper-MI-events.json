@@ -1,0 +1,410 @@
+{
+  "data": [
+    {
+      "id": "mi-2025-12-17-health-policy-committee-meeting",
+      "name": "Health Policy Committee Meeting",
+      "date": "2025-12-17T14:00:00.000Z",
+      "time": "09:00 AM",
+      "location": "Michigan State Capitol",
+      "committee": "Health Policy",
+      "type": "hearing",
+      "level": "state",
+      "lat": 42.7325,
+      "lng": -84.5555,
+      "zipCode": null,
+      "url": "https://www.legislature.mi.gov/Committees/Meeting?meetingID=5624",
+      "docketUrl": null,
+      "virtualMeetingUrl": null,
+      "bills": [
+        {
+          "id": "HB 4910",
+          "title": "Health occupations: dentists; continuing education options for dentistry professions; expand.HB 4932  Health occupations: pharmacists; continuing education requirements for pharmacists and pharmacy te...",
+          "url": "https://www.legislature.mi.gov/Bills/Bill?ObjectName=2025-HB-4910",
+          "tags": [
+            "Healthcare",
+            "Education"
+          ]
+        },
+        {
+          "id": "HB 4932",
+          "title": "HB 4910  Health occupations: dentists; continuing education options for dentistry professions; expand.  Health occupations: pharmacists; continuing education requirements for pharmacists and pharmacy ...",
+          "url": "https://www.legislature.mi.gov/Bills/Bill?ObjectName=2025-HB-4932",
+          "tags": [
+            "Healthcare",
+            "Education"
+          ]
+        },
+        {
+          "id": "HB 5150",
+          "title": "HB 4910  Health occupations: dentists; continuing education options for dentistry professions; expand.HB 4932  Health occupations: pharmacists; continuing education requirements for pharmacists and ph...",
+          "url": "https://www.legislature.mi.gov/Bills/Bill?ObjectName=2025-HB-5150",
+          "tags": [
+            "Healthcare",
+            "Education"
+          ]
+        },
+        {
+          "id": "SB 413",
+          "title": "HB 4910  Health occupations: dentists; continuing education options for dentistry professions; expand.HB 4932  Health occupations: pharmacists; continuing education requirements for pharmacists and ph...",
+          "url": "https://www.legislature.mi.gov/Bills/Bill?ObjectName=2025-SB-413",
+          "tags": [
+            "Healthcare",
+            "Education"
+          ]
+        }
+      ],
+      "tags": [],
+      "sourceUrl": "https://www.legislature.mi.gov"
+    },
+    {
+      "id": "mi-2025-12-17-judiciary-committee-meeting",
+      "name": "Judiciary Committee Meeting",
+      "date": "2025-12-17T15:30:00.000Z",
+      "time": "10:30 AM",
+      "location": "Michigan State Capitol",
+      "committee": "Judiciary",
+      "type": "hearing",
+      "level": "state",
+      "lat": 42.7325,
+      "lng": -84.5555,
+      "zipCode": null,
+      "url": "https://www.legislature.mi.gov/Committees/Meeting?meetingID=5618",
+      "docketUrl": null,
+      "virtualMeetingUrl": null,
+      "bills": [
+        {
+          "id": "HB 5314",
+          "title": "Public employees and officers: state; ability of the attorney general to bring an action in certain courts; modify.HB 5315  Public employees and officers: state; discretion of the attorney general to ...",
+          "url": "https://www.legislature.mi.gov/Bills/Bill?ObjectName=2025-HB-5314",
+          "tags": [
+            "Amendment"
+          ]
+        },
+        {
+          "id": "HB 5315",
+          "title": "HB 5314  Public employees and officers: state; ability of the attorney general to bring an action in certain courts; modify.  Public employees and officers: state; discretion of the attorney general t...",
+          "url": "https://www.legislature.mi.gov/Bills/Bill?ObjectName=2025-HB-5315",
+          "tags": [
+            "Amendment"
+          ]
+        },
+        {
+          "id": "HB 5316",
+          "title": "HB 5314  Public employees and officers: state; ability of the attorney general to bring an action in certain courts; modify.HB 5315  Public employees and officers: state; discretion of the attorney ge...",
+          "url": "https://www.legislature.mi.gov/Bills/Bill?ObjectName=2025-HB-5316",
+          "tags": [
+            "Amendment"
+          ]
+        },
+        {
+          "id": "HB 4138",
+          "title": "HB 5314  Public employees and officers: state; ability of the attorney general to bring an action in certain courts; modify.HB 5315  Public employees and officers: state; discretion of the attorney ge...",
+          "url": "https://www.legislature.mi.gov/Bills/Bill?ObjectName=2025-HB-4138",
+          "tags": [
+            "Amendment"
+          ]
+        },
+        {
+          "id": "HB 4139",
+          "title": "HB 5314  Public employees and officers: state; ability of the attorney general to bring an action in certain courts; modify.HB 5315  Public employees and officers: state; discretion of the attorney ge...",
+          "url": "https://www.legislature.mi.gov/Bills/Bill?ObjectName=2025-HB-4139",
+          "tags": [
+            "Amendment"
+          ]
+        },
+        {
+          "id": "HB 4140",
+          "title": "HB 5314  Public employees and officers: state; ability of the attorney general to bring an action in certain courts; modify.HB 5315  Public employees and officers: state; discretion of the attorney ge...",
+          "url": "https://www.legislature.mi.gov/Bills/Bill?ObjectName=2025-HB-4140",
+          "tags": [
+            "Amendment"
+          ]
+        }
+      ],
+      "tags": [],
+      "sourceUrl": "https://www.legislature.mi.gov"
+    },
+    {
+      "id": "mi-2025-12-17-education-and-workforce-committee-meeting",
+      "name": "Education and Workforce Committee Meeting",
+      "date": "2025-12-17T15:30:00.000Z",
+      "time": "10:30 AM",
+      "location": "Michigan State Capitol",
+      "committee": "Education and Workforce",
+      "type": "hearing",
+      "level": "state",
+      "lat": 42.7325,
+      "lng": -84.5555,
+      "zipCode": null,
+      "url": "https://www.legislature.mi.gov/Committees/Meeting?meetingID=5628",
+      "docketUrl": null,
+      "virtualMeetingUrl": null,
+      "bills": [
+        {
+          "id": "HB 5044",
+          "title": "Health occupations: health professionals; policy for the receipt of medically necessary treatment by pupils; require.HB 5154  Education: athletics; admission fee for middle school and high school inte...",
+          "url": "https://www.legislature.mi.gov/Bills/Bill?ObjectName=2025-HB-5044",
+          "tags": [
+            "Healthcare",
+            "Education"
+          ]
+        },
+        {
+          "id": "HB 5154",
+          "title": "HB 5044  Health occupations: health professionals; policy for the receipt of medically necessary treatment by pupils; require.  Education: athletics; admission fee for middle school and high school in...",
+          "url": "https://www.legislature.mi.gov/Bills/Bill?ObjectName=2025-HB-5154",
+          "tags": [
+            "Healthcare",
+            "Education"
+          ]
+        }
+      ],
+      "tags": [],
+      "sourceUrl": "https://www.legislature.mi.gov"
+    },
+    {
+      "id": "mi-2025-12-17-corporate-subsidies-and-state-investments-committe",
+      "name": "Corporate Subsidies and State Investments Committee Meeting",
+      "date": "2025-12-17T15:30:00.000Z",
+      "time": "10:30 AM",
+      "location": "Michigan State Capitol",
+      "committee": "Corporate Subsidies and State Investments",
+      "type": "hearing",
+      "level": "state",
+      "lat": 42.7325,
+      "lng": -84.5555,
+      "zipCode": null,
+      "url": "https://www.legislature.mi.gov/Committees/Meeting?meetingID=5629",
+      "docketUrl": null,
+      "virtualMeetingUrl": null,
+      "bills": null,
+      "tags": [],
+      "sourceUrl": "https://www.legislature.mi.gov"
+    },
+    {
+      "id": "mi-2025-12-17-natural-resources-and-tourism-committee-meeting",
+      "name": "Natural Resources and Tourism Committee Meeting",
+      "date": "2025-12-17T17:00:00.000Z",
+      "time": "12:00 PM",
+      "location": "Michigan State Capitol",
+      "committee": "Natural Resources and Tourism",
+      "type": "hearing",
+      "level": "state",
+      "lat": 42.7325,
+      "lng": -84.5555,
+      "zipCode": null,
+      "url": "https://www.legislature.mi.gov/Committees/Meeting?meetingID=5617",
+      "docketUrl": null,
+      "virtualMeetingUrl": null,
+      "bills": [
+        {
+          "id": "HB 4445",
+          "title": "Natural resources: hunting; feeding or baiting deer; allow.Presentation by Rigero Inc. of Plymouth, MI on technology for nutrient management and recovery for lakes and ponds And any other business pro...",
+          "url": "https://www.legislature.mi.gov/Bills/Bill?ObjectName=2025-HB-4445",
+          "tags": [
+            "Technology",
+            "Commerce"
+          ]
+        }
+      ],
+      "tags": [],
+      "sourceUrl": "https://www.legislature.mi.gov"
+    },
+    {
+      "id": "mi-2025-12-17-homeland-security-and-foreign-influence-committee-",
+      "name": "Homeland Security and Foreign Influence Committee Meeting",
+      "date": "2025-12-17T17:00:00.000Z",
+      "time": "12:00 PM",
+      "location": "Michigan State Capitol",
+      "committee": "Homeland Security and Foreign Influence",
+      "type": "hearing",
+      "level": "state",
+      "lat": 42.7325,
+      "lng": -84.5555,
+      "zipCode": null,
+      "url": "https://www.legislature.mi.gov/Committees/Meeting?meetingID=5626",
+      "docketUrl": null,
+      "virtualMeetingUrl": null,
+      "bills": null,
+      "tags": [],
+      "sourceUrl": "https://www.legislature.mi.gov"
+    },
+    {
+      "id": "mi-2025-12-17-insurance-committee-meeting",
+      "name": "Insurance Committee Meeting",
+      "date": "2025-12-17T17:00:00.000Z",
+      "time": "12:00 PM",
+      "location": "Michigan State Capitol",
+      "committee": "Insurance",
+      "type": "hearing",
+      "level": "state",
+      "lat": 42.7325,
+      "lng": -84.5555,
+      "zipCode": null,
+      "url": "https://www.legislature.mi.gov/Committees/Meeting?meetingID=5634",
+      "docketUrl": null,
+      "virtualMeetingUrl": null,
+      "bills": [
+        {
+          "id": "HB 5298",
+          "title": "Insurance: no-fault; personal protection insurance benefits for individuals in a motor vehicle operated in the business of transporting passengers; modify.HB 5299  Insurance: no-fault; personal protec...",
+          "url": "https://www.legislature.mi.gov/Bills/Bill?ObjectName=2025-HB-5298",
+          "tags": [
+            "Transportation",
+            "Financial Services",
+            "Commerce",
+            "Amendment"
+          ]
+        },
+        {
+          "id": "HB 5299",
+          "title": "HB 5298  Insurance: no-fault; personal protection insurance benefits for individuals in a motor vehicle operated in the business of transporting passengers; modify.  Insurance: no-fault; personal prot...",
+          "url": "https://www.legislature.mi.gov/Bills/Bill?ObjectName=2025-HB-5299",
+          "tags": [
+            "Transportation",
+            "Financial Services",
+            "Commerce",
+            "Amendment"
+          ]
+        }
+      ],
+      "tags": [],
+      "sourceUrl": "https://www.legislature.mi.gov"
+    },
+    {
+      "id": "mi-2025-12-18-government-operations-committee-meeting",
+      "name": "Government Operations Committee Meeting",
+      "date": "2025-12-18T14:00:00.000Z",
+      "time": "09:00 AM",
+      "location": "Michigan State Capitol",
+      "committee": "Government Operations",
+      "type": "hearing",
+      "level": "state",
+      "lat": 42.7325,
+      "lng": -84.5555,
+      "zipCode": null,
+      "url": "https://www.legislature.mi.gov/Committees/Meeting?meetingID=5625",
+      "docketUrl": null,
+      "virtualMeetingUrl": null,
+      "bills": [
+        {
+          "id": "SB 304",
+          "title": "Transportation: other; regulation of ferries; provide for.And any other business properly before the committee.",
+          "url": "https://www.legislature.mi.gov/Bills/Bill?ObjectName=2025-SB-304",
+          "tags": [
+            "Transportation",
+            "Commerce"
+          ]
+        }
+      ],
+      "tags": [],
+      "sourceUrl": "https://www.legislature.mi.gov"
+    },
+    {
+      "id": "mi-2025-12-18-regulatory-reform-committee-meeting",
+      "name": "Regulatory Reform Committee Meeting",
+      "date": "2025-12-18T14:00:00.000Z",
+      "time": "09:00 AM",
+      "location": "Michigan State Capitol",
+      "committee": "Regulatory Reform",
+      "type": "hearing",
+      "level": "state",
+      "lat": 42.7325,
+      "lng": -84.5555,
+      "zipCode": null,
+      "url": "https://www.legislature.mi.gov/Committees/Meeting?meetingID=5630",
+      "docketUrl": null,
+      "virtualMeetingUrl": null,
+      "bills": [
+        {
+          "id": "HB 4907",
+          "title": "Occupations: individual licensing and registration; testing of control and safety devices by boiler repairers and installers; allow.HB 4897  Occupations: individual licensing and registration; boiler ...",
+          "url": "https://www.legislature.mi.gov/Bills/Bill?ObjectName=2025-HB-4907",
+          "tags": [
+            "Public Safety"
+          ]
+        },
+        {
+          "id": "HB 4897",
+          "title": "HB 4907  Occupations: individual licensing and registration; testing of control and safety devices by boiler repairers and installers; allow.  Occupations: individual licensing and registration; boile...",
+          "url": "https://www.legislature.mi.gov/Bills/Bill?ObjectName=2025-HB-4897",
+          "tags": [
+            "Public Safety"
+          ]
+        },
+        {
+          "id": "HB 4898",
+          "title": "HB 4907  Occupations: individual licensing and registration; testing of control and safety devices by boiler repairers and installers; allow.HB 4897  Occupations: individual licensing and registration...",
+          "url": "https://www.legislature.mi.gov/Bills/Bill?ObjectName=2025-HB-4898",
+          "tags": [
+            "Public Safety"
+          ]
+        },
+        {
+          "id": "HB 5206",
+          "title": "HB 4907  Occupations: individual licensing and registration; testing of control and safety devices by boiler repairers and installers; allow.HB 4897  Occupations: individual licensing and registration...",
+          "url": "https://www.legislature.mi.gov/Bills/Bill?ObjectName=2025-HB-5206",
+          "tags": [
+            "Public Safety"
+          ]
+        },
+        {
+          "id": "HB 5207",
+          "title": "HB 4907  Occupations: individual licensing and registration; testing of control and safety devices by boiler repairers and installers; allow.HB 4897  Occupations: individual licensing and registration...",
+          "url": "https://www.legislature.mi.gov/Bills/Bill?ObjectName=2025-HB-5207",
+          "tags": [
+            "Public Safety"
+          ]
+        }
+      ],
+      "tags": [],
+      "sourceUrl": "https://www.legislature.mi.gov"
+    },
+    {
+      "id": "mi-2025-12-18-economic-competitiveness-committee-meeting",
+      "name": "Economic Competitiveness Committee Meeting",
+      "date": "2025-12-18T15:30:00.000Z",
+      "time": "10:30 AM",
+      "location": "Michigan State Capitol",
+      "committee": "Economic Competitiveness",
+      "type": "hearing",
+      "level": "state",
+      "lat": 42.7325,
+      "lng": -84.5555,
+      "zipCode": null,
+      "url": "https://www.legislature.mi.gov/Committees/Meeting?meetingID=5632",
+      "docketUrl": null,
+      "virtualMeetingUrl": null,
+      "bills": [
+        {
+          "id": "SB 27",
+          "title": "Economic development: Michigan strategic fund; procurement technical assistance center ; update to APEX Accelerator.HB 5168  Use tax: exemptions; large agricultural processing facility project exempti...",
+          "url": "https://www.legislature.mi.gov/Bills/Bill?ObjectName=2025-SB-27",
+          "tags": [
+            "Commerce"
+          ]
+        },
+        {
+          "id": "HB 5168",
+          "title": "SB 27  Economic development: Michigan strategic fund; procurement technical assistance center ; update to APEX Accelerator.  Use tax: exemptions; large agricultural processing facility project exempti...",
+          "url": "https://www.legislature.mi.gov/Bills/Bill?ObjectName=2025-HB-5168",
+          "tags": [
+            "Commerce"
+          ]
+        },
+        {
+          "id": "HB 5169",
+          "title": "SB 27  Economic development: Michigan strategic fund; procurement technical assistance center ; update to APEX Accelerator.HB 5168  Use tax: exemptions; large agricultural processing facility project ...",
+          "url": "https://www.legislature.mi.gov/Bills/Bill?ObjectName=2025-HB-5169",
+          "tags": [
+            "Commerce"
+          ]
+        }
+      ],
+      "tags": [],
+      "sourceUrl": "https://www.legislature.mi.gov"
+    }
+  ],
+  "timestamp": 1765930425003,
+  "expiresAt": 1766016825003
+}

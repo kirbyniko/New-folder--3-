@@ -8,7 +8,7 @@ interface CacheStatus {
     completed: number;
     failed: number;
     pending: number;
-    inProgress: number;
+    inProgress: string[];
     percentage: number;
   };
   states: {

@@ -17,8 +17,11 @@ const STATE_PROGRESS: StateProgress[] = [
   { code: 'NJ', name: 'New Jersey', status: 'complete', notes: 'Committee meetings with live bill scraping' },
   { code: 'CA', name: 'California', status: 'complete', notes: 'Daily file scraper' },
   { code: 'IL', name: 'Illinois', status: 'complete', notes: 'API-based scraper' },
+  { code: 'VA', name: 'Virginia', status: 'complete', notes: '42 events, 4 bills via Puppeteer (static)' },
+  { code: 'WA', name: 'Washington', status: 'complete', notes: 'POST form-based scraper with bill API' },
+  { code: 'AZ', name: 'Arizona', status: 'complete', notes: 'ALIS calendar API with bill extraction' },
   { code: 'OH', name: 'Ohio', status: 'pending' },
-  { code: 'GA', name: 'Georgia', status: 'pending' },
+  { code: 'GA', name: 'Georgia', status: 'complete', notes: '6 events via OpenStates' },
   { code: 'NH', name: 'New Hampshire', status: 'complete', notes: 'Session + dockets' },
 ];
 
