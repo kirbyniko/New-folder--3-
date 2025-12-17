@@ -1,0 +1,58 @@
+{
+  "events": [
+    {
+      "id": "al-1733072400000-study-on-commission-on-public-notice-of-title-39-advertisements",
+      "name": "Study on Commission on Public Notice of Title 39 Advertisements",
+      "date": "2025-12-01T16:00:00.000Z",
+      "time": "11:00 AM",
+      "location": "S-201 in Capitol",
+      "committee": "Study on Commission on Public Notice of Title 39 Advertisements",
+      "type": "committee-meeting",
+      "level": "state",
+      "state": "AL",
+      "city": "Montgomery",
+      "lat": 32.3792,
+      "lng": -86.3077,
+      "zipCode": null,
+      "description": "Alabama Legislature committee meeting",
+      "sourceUrl": "https://alison.legislature.state.al.us/todays-schedule?tab=0"
+    },
+    {
+      "id": "al-1733339400000-contract-review-legislative-oversight-committee",
+      "name": "Contract Review Legislative Oversight Committee",
+      "date": "2025-12-04T19:30:00.000Z",
+      "time": "2:30 PM",
+      "location": "11 South Union St, Montgomery, AL 36130. Room 200",
+      "committee": "Contract Review Legislative Oversight Committee",
+      "type": "committee-meeting",
+      "level": "state",
+      "state": "AL",
+      "city": "Montgomery",
+      "lat": 32.3792,
+      "lng": -86.3077,
+      "zipCode": null,
+      "description": "Alabama Legislature committee meeting",
+      "sourceUrl": "https://alison.legislature.state.al.us/todays-schedule?tab=0"
+    },
+    {
+      "id": "al-1736088600000-joint-interim-study-commission-on-ptsd-in-first-responders",
+      "name": "Joint Interim Study Commission on PTSD in First Responders",
+      "date": "2026-01-05T16:30:00.000Z",
+      "time": "11:30 AM",
+      "location": "11 South Union St, Montgomery, AL 36130. Room 617",
+      "committee": "Joint Interim Study Commission on PTSD in First Responders",
+      "type": "committee-meeting",
+      "level": "state",
+      "state": "AL",
+      "city": "Montgomery",
+      "lat": 32.3792,
+      "lng": -86.3077,
+      "zipCode": null,
+      "description": "Alabama Legislature committee meeting",
+      "sourceUrl": "https://alison.legislature.state.al.us/todays-schedule?tab=0"
+    }
+  ],
+  "count": 3,
+  "billsCount": 0,
+  "lastUpdated": "2025-12-17T09:25:37.969Z"
+}

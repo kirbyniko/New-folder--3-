@@ -184,11 +184,11 @@ export default function TabbedEvents({
                     </div>
                   )}
 
-                  {event.url && (
+                  {(event.agendaUrl || event.docketUrl || event.url) && (
                     <div className="event-detail">
                       <span className="detail-label">🔗 Link:</span>
                       <span className="detail-value">
-                        <a href={event.url} target="_blank" rel="noopener noreferrer" className="docket-link">
+                        <a href={event.agendaUrl || event.docketUrl || event.url || ''} target="_blank" rel="noopener noreferrer" className="docket-link">
                           View Docket
                         </a>
                       </span>

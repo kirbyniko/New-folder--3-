@@ -200,10 +200,10 @@ export const handler: Handler = async (event) => {
     // ===== STRATEGY 1: Try custom scraper (comprehensive but slower) =====
     console.log('🔍 Checking for custom scraper...');
     
-    // Special handling for Virginia, Arizona, Tennessee, Massachusetts, Indiana, Maryland & Missouri - use pre-scraped static data
-    if (stateAbbr === 'VA' || stateAbbr === 'AZ' || stateAbbr === 'TN' || stateAbbr === 'MA' || stateAbbr === 'IN' || stateAbbr === 'MD' || stateAbbr === 'MO' || stateAbbr === 'WI') {
-      const stateNames: Record<string, string> = { 'VA': 'Virginia', 'AZ': 'Arizona', 'TN': 'Tennessee', 'MA': 'Massachusetts', 'IN': 'Indiana', 'MD': 'Maryland', 'MO': 'Missouri', 'WI': 'Wisconsin' };
-      const fileNames: Record<string, string> = { 'VA': 'virginia-events.json', 'AZ': 'arizona-events.json', 'TN': 'tennessee-events.json', 'MA': 'massachusetts-events.json', 'IN': 'indiana-events.json', 'MD': 'maryland-events.json', 'MO': 'missouri-events.json', 'WI': 'wisconsin-events.json' };
+    // Special handling for Virginia, Arizona, Tennessee, Massachusetts, Indiana, Maryland, Missouri, Wisconsin, Colorado, Minnesota, South Carolina & Alabama - use pre-scraped static data
+    if (stateAbbr === 'VA' || stateAbbr === 'AZ' || stateAbbr === 'TN' || stateAbbr === 'MA' || stateAbbr === 'IN' || stateAbbr === 'MD' || stateAbbr === 'MO' || stateAbbr === 'WI' || stateAbbr === 'CO' || stateAbbr === 'MN' || stateAbbr === 'SC' || stateAbbr === 'AL') {
+      const stateNames: Record<string, string> = { 'VA': 'Virginia', 'AZ': 'Arizona', 'TN': 'Tennessee', 'MA': 'Massachusetts', 'IN': 'Indiana', 'MD': 'Maryland', 'MO': 'Missouri', 'WI': 'Wisconsin', 'CO': 'Colorado', 'MN': 'Minnesota', 'SC': 'South Carolina', 'AL': 'Alabama' };
+      const fileNames: Record<string, string> = { 'VA': 'virginia-events.json', 'AZ': 'arizona-events.json', 'TN': 'tennessee-events.json', 'MA': 'massachusetts-events.json', 'IN': 'indiana-events.json', 'MD': 'maryland-events.json', 'MO': 'missouri-events.json', 'WI': 'wisconsin-events.json', 'CO': 'colorado-events.json', 'MN': 'minnesota-events.json', 'SC': 'southcarolina-events.json', 'AL': 'alabama-events.json' };
       const stateName = stateNames[stateAbbr];
       const fileName = fileNames[stateAbbr];
       console.log(`📄 Loading pre-scraped ${stateName} data from static file`);

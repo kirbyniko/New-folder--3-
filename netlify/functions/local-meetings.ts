@@ -3,6 +3,8 @@ import { loadEnvFile } from './utils/env-loader';
 import { findNearbyCities } from './utils/legistar-cities';
 import { sanitizeEvent } from './utils/security';
 import { scrapeNYCCouncil } from './utils/scrapers/local/nyc-council';
+import { scrapeBirminghamMeetings } from './utils/scrapers/local/birmingham';
+import { scrapeMontgomeryMeetings } from './utils/scrapers/local/montgomery';
 import { CacheManager } from './utils/scrapers/cache-manager';
 
 interface LegistarEvent {
@@ -67,6 +69,36 @@ export const handler: Handler = async (event) => {
       ];
     }
     
+    // Special handling: Alabama cities with custom scrapers (not in Legistar)
+    const isAlabama = (lat >= 30.2 && lat <= 35.0) && (lng >= -88.5 && lng <= -84.9);
+    const hasBirmingham = nearbyCities.some(c => c.client === 'birmingham');
+    const hasMontgomery = nearbyCities.some(c => c.client === 'montgomery');
+    
+    if (isAlabama) {
+      if (!hasBirmingham) {
+        console.log('🏛️ Alabama search detected, adding Birmingham to results');
+        nearbyCities.push({
+          name: 'Birmingham',
+          client: 'birmingham',
+          state: 'AL',
+          lat: 33.5186,
+          lng: -86.8104,
+          population: 200733
+        });
+      }
+      if (!hasMontgomery) {
+        console.log('🏛️ Alabama search detected, adding Montgomery to results');
+        nearbyCities.push({
+          name: 'Montgomery',
+          client: 'montgomery',
+          state: 'AL',
+          lat: 32.3792,
+          lng: -86.3077,
+          population: 200603
+        });
+      }
+    }
+    
     console.log(`Found ${nearbyCities.length} Legistar cities within ${radius} miles:`, nearbyCities.map(c => c.name));
     
     if (nearbyCities.length === 0) {
@@ -110,6 +142,50 @@ export const handler: Handler = async (event) => {
           console.log(`💾 Cached ${nycEvents.length} NYC events for 24 hours`);
           
           return nycEvents.slice(0, 10); // Limit to 10 events
+        }
+        
+        // Birmingham, AL - custom Next.js calendar scraper
+        if (city.client === 'birmingham') {
+          console.log(`🏛️ ${city.name}: Using custom Birmingham scraper`);
+          
+          const cacheKey = 'local:birmingham:events';
+          const cachedEvents = CacheManager.get(cacheKey);
+          
+          if (cachedEvents) {
+            console.log(`✅ Returning cached Birmingham events (${cachedEvents.length} events)`);
+            return cachedEvents.slice(0, 10);
+          }
+          
+          console.log(`🕷️ Cache miss - scraping Birmingham calendar...`);
+          const events = await scrapeBirminghamMeetings();
+          
+          CacheManager.set(cacheKey, events, 86400); // 24-hour cache
+          console.log(`💾 Cached ${events.length} Birmingham events for 24 hours`);
+          
+          return events.slice(0, 10);
+        }
+        
+        // Montgomery, AL - custom scraper (currently inaccessible due to Akamai)
+        if (city.client === 'montgomery') {
+          console.log(`🏛️ ${city.name}: Using custom Montgomery scraper`);
+          
+          const cacheKey = 'local:montgomery:events';
+          const cachedEvents = CacheManager.get(cacheKey);
+          
+          if (cachedEvents) {
+            console.log(`✅ Returning cached Montgomery events (${cachedEvents.length} events)`);
+            return cachedEvents.slice(0, 10);
+          }
+          
+          console.log(`🕷️ Cache miss - attempting Montgomery scrape (likely blocked)...`);
+          const events = await scrapeMontgomeryMeetings();
+          
+          if (events.length > 0) {
+            CacheManager.set(cacheKey, events, 86400); // 24-hour cache
+            console.log(`💾 Cached ${events.length} Montgomery events for 24 hours`);
+          }
+          
+          return events.slice(0, 10);
         }
         
         // Legistar public API endpoint with date filter
