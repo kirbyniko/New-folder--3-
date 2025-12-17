@@ -280,6 +280,39 @@ const events = await scrapeWithPuppeteer(url, {
 npm install puppeteer @sparticuz/chromium
 ```
 
+**Integration in local-meetings.ts:**
+```typescript
+// 1. Alabama geo-detection (add to nearbyCities logic)
+const isAlabama = (lat >= 30.2 && lat <= 35.0) && (lng >= -88.5 && lng <= -84.9);
+if (isAlabama) {
+  nearbyCities.push({ name: 'Birmingham', client: 'birmingham', ... });
+  nearbyCities.push({ name: 'Montgomery', client: 'montgomery', ... });
+}
+
+// 2. Prioritize custom scrapers before Legistar cities
+const customCities = nearbyCities.filter(c => c.client === 'birmingham' || c.client === 'montgomery');
+const legistarCities = nearbyCities.filter(c => c.client !== 'birmingham' && c.client !== 'montgomery');
+const prioritizedCities = [...customCities, ...legistarCities];
+
+// 3. Handle in city processing loop
+if (city.client === 'birmingham') {
+  const rawEvents = await scrapeBirminghamMeetings();
+  // Convert RawEvent → local-meetings format
+  const events = rawEvents.map(evt => sanitizeEvent({
+    ...evt,
+    level: 'local',
+    url: evt.sourceUrl || null // KEY: map sourceUrl to url
+  }));
+  CacheManager.set(cacheKey, events, 86400); // Cache for 24h
+  return events;
+}
+```
+
+**Performance:**
+- First request: 10-15s (Puppeteer launch + scrape)
+- Cached requests: <50ms (24h TTL)
+- Lambda requirements: 1024MB+ memory, 30s+ timeout
+
 **Performance:** 3-5s browser launch + render time. Cache 24hrs to minimize usage.
 
 **Lambda:** Uses `@sparticuz/chromium` for serverless (1024MB+ memory, 30s+ timeout)
@@ -313,9 +346,51 @@ Use actual calendar page, not homepage:
 - ❌ `https://state.gov/`
 - ✅ `https://state.gov/calendar`
 
-### No Local Events
+### No Local Events Showing in Frontend
+**Root Cause:** Browser caching empty responses from failed scraper attempts
+
+**Symptoms:**
+- Backend returns events when tested directly (curl/Invoke-RestMethod)
+- Frontend shows 0 events with fast response time (~40ms)
+- No server logs for local-meetings requests
+
+**Solution:**
+1. Delete cache files: `public/cache/local-[city]-events.json`
+2. Add cache-buster to frontend fetch calls (like state-events has)
+3. Hard refresh browser (Ctrl+Shift+R)
+
+**Frontend Fix Required:**
+```typescript
+// In src/App.tsx, add timestamp to local-meetings calls:
+const cacheBuster = `&_t=${Date.now()}`;
+fetch(`/.netlify/functions/local-meetings?lat=${lat}&lng=${lng}&radius=${radius}${cacheBuster}`)
+```
+
+### Puppeteer Environment Detection
+**Issue:** `@sparticuz/chromium` tries to load Lambda binary in dev mode
+
+**Symptoms:**
+```
+TypeError: The "path" argument must be of type string. Received undefined
+    at chromium.executablePath()
+```
+
+**Solution:** Check for `NETLIFY_DEV` environment variable:
+```typescript
+const isProduction = !!process.env.AWS_LAMBDA_FUNCTION_VERSION;
+const isNetlifyDev = !!process.env.NETLIFY_DEV;
+
+if (isProduction && !isNetlifyDev) {
+  // Use Lambda chromium
+} else {
+  // Use local Chrome
+}
+```
+
+### No Local Events Despite Backend Working
 - Check Legistar first
-- City website may be inaccessible
+- City website may be inaccessible (Akamai, React SPA)
+- For Alabama-style custom scrapers: prioritize in city processing
 - ASK USER for calendar URL
 
 ---
@@ -337,10 +412,12 @@ Use actual calendar page, not homepage:
 - Method: Table + detail API
 - Pattern: List page → API for details
 
-**Alabama** (OpenStates)
-- URL: `https://alison.legislature.state.al.us/todays-schedule`
-- Method: OpenStates API (site too complex)
-- Note: GraphQL exists but OpenStates simpler
+**Alabama** (OpenStates + Custom Local)
+- State URL: `https://alison.legislature.state.al.us/todays-schedule`
+- State Method: OpenStates API (site too complex, GraphQL exists but overkill)
+- Local: Birmingham (Next.js + Puppeteer) + Montgomery (Akamai bypass + Puppeteer)
+- Integration: Geo-detection (lat 30.2-35.0, lng -88.5 to -84.9) auto-adds cities
+- Result: 3 state + 19 local events (7 Birmingham + 12 Montgomery)
 
 **Missouri** (ASP.NET Alternative)
 - URL: `https://house.mo.gov/HearingsTimeOrder.aspx`
@@ -370,6 +447,42 @@ Invoke-RestMethod "https://webapi.legistar.com/v1/[city]/events" | Select-Object
 ```powershell
 Get-Content "public/data/state-events.json" | ConvertFrom-Json
 ```
+
+---
+
+## Integration Checklist
+
+After implementing state + local scrapers:
+
+### Backend
+- [ ] Scraper registered in `index.ts`
+- [ ] Static JSON file created in `public/data/[state]-events.json`
+- [ ] Local cities added to `legistar-cities.ts` OR custom geo-detection
+- [ ] Custom scrapers handle `sourceUrl` → `url` field mapping
+- [ ] Cache invalidated: delete `public/cache/local-[city]-events.json`
+
+### Frontend  
+- [ ] Add cache-buster to local-meetings calls in `src/App.tsx` (if not present)
+- [ ] Hard refresh browser (Ctrl+Shift+R)
+- [ ] Verify in browser console: server logs show function invocations
+- [ ] Check Network tab: responses not coming from browser cache
+
+### Testing
+```bash
+# Test state scraper
+npx tsx netlify/functions/test-[state]-scraper.ts
+
+# Test local endpoint directly
+Invoke-RestMethod "http://localhost:8888/.netlify/functions/local-meetings?lat=XX&lng=XX&radius=50"
+
+# Verify frontend sees events (browser console should show):
+# 📊 Parsed results - Federal: X State: X Local: X
+```
+
+### Production Deployment
+- [ ] Puppeteer scrapers: Lambda needs 1024MB+ memory, 30s+ timeout
+- [ ] `@sparticuz/chromium` binary deployed (check `external_node_modules` in `netlify.toml`)
+- [ ] Environment variables set: `OPENSTATES_API_KEY`, `CONGRESS_API_KEY`
 
 ---
 

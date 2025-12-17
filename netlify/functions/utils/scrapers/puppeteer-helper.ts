@@ -22,10 +22,19 @@ export async function getBrowser(): Promise<Browser> {
   }
 
   // Check if running in Netlify/serverless environment
-  const isProduction = !!process.env.AWS_LAMBDA_FUNCTION_VERSION;
+  const isProduction = !!process.env.AWS_LAMBDA_FUNCTION_VERSION || !!process.env.AWS_EXECUTION_ENV;
+  const isNetlifyDev = !!process.env.NETLIFY_DEV;
+  
+  console.log('[Puppeteer] Environment check:', {
+    isProduction,
+    isNetlifyDev,
+    AWS_LAMBDA: !!process.env.AWS_LAMBDA_FUNCTION_VERSION,
+    AWS_EXEC: !!process.env.AWS_EXECUTION_ENV
+  });
 
-  if (isProduction) {
+  if (isProduction && !isNetlifyDev) {
     // Use @sparticuz/chromium for AWS Lambda
+    console.log('[Puppeteer] Using Lambda chromium binary');
     browserInstance = await puppeteer.launch({
       args: chromium.args,
       defaultViewport: { width: 1920, height: 1080 },
@@ -34,6 +43,7 @@ export async function getBrowser(): Promise<Browser> {
     });
   } else {
     // Local development - use system Chrome
+    console.log('[Puppeteer] Using local system Chrome');
     browserInstance = await puppeteer.launch({
       headless: true,
       args: [

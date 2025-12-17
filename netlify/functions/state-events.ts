@@ -208,9 +208,30 @@ export const handler: Handler = async (event) => {
       const fileName = fileNames[stateAbbr];
       console.log(`📄 Loading pre-scraped ${stateName} data from static file`);
       try {
-        const { readFileSync } = await import('fs');
+        const { readFileSync, existsSync } = await import('fs');
         const { join } = await import('path');
-        const dataPath = join(process.cwd(), 'public', 'data', fileName);
+        
+        // Try multiple possible paths for the static file
+        const possiblePaths = [
+          join(process.cwd(), 'public', 'data', fileName),
+          join(process.cwd(), '..', '..', 'public', 'data', fileName),
+          join(__dirname, '..', '..', 'public', 'data', fileName),
+          join(__dirname, '..', '..', '..', 'public', 'data', fileName)
+        ];
+        
+        let dataPath = possiblePaths[0];
+        for (const path of possiblePaths) {
+          if (existsSync(path)) {
+            dataPath = path;
+            console.log(`📁 Found static file at: ${path}`);
+            break;
+          }
+        }
+        
+        if (!existsSync(dataPath)) {
+          throw new Error(`Static file not found. Tried: ${possiblePaths.join(', ')}`);
+        }
+        
         const staticData = JSON.parse(readFileSync(dataPath, 'utf-8'));
         
         console.log(`✅ Loaded ${staticData.count} ${stateName} events from static file`);

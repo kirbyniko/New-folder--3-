@@ -71,12 +71,15 @@ export const handler: Handler = async (event) => {
     
     // Special handling: Alabama cities with custom scrapers (not in Legistar)
     const isAlabama = (lat >= 30.2 && lat <= 35.0) && (lng >= -88.5 && lng <= -84.9);
+    console.log(`🔍 Alabama check: lat=${lat}, lng=${lng}, isAlabama=${isAlabama}`);
+    
     const hasBirmingham = nearbyCities.some(c => c.client === 'birmingham');
     const hasMontgomery = nearbyCities.some(c => c.client === 'montgomery');
     
     if (isAlabama) {
+      console.log('✅ Alabama coordinates detected! Adding custom city scrapers...');
       if (!hasBirmingham) {
-        console.log('🏛️ Alabama search detected, adding Birmingham to results');
+        console.log('🏛️ Adding Birmingham to nearby cities');
         nearbyCities.push({
           name: 'Birmingham',
           client: 'birmingham',
@@ -87,7 +90,7 @@ export const handler: Handler = async (event) => {
         });
       }
       if (!hasMontgomery) {
-        console.log('🏛️ Alabama search detected, adding Montgomery to results');
+        console.log('🏛️ Adding Montgomery to nearby cities');
         nearbyCities.push({
           name: 'Montgomery',
           client: 'montgomery',
@@ -97,6 +100,7 @@ export const handler: Handler = async (event) => {
           population: 200603
         });
       }
+      console.log(`📋 Total cities to scrape: ${nearbyCities.length} (including Alabama cities)`);
     }
     
     console.log(`Found ${nearbyCities.length} Legistar cities within ${radius} miles:`, nearbyCities.map(c => c.name));
@@ -118,7 +122,14 @@ export const handler: Handler = async (event) => {
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + 90);
     
-    const cityEventPromises = nearbyCities.slice(0, 3).map(async (city) => {
+    // Prioritize Alabama cities - move them to the front if present
+    const alabamaCities = nearbyCities.filter(c => c.client === 'birmingham' || c.client === 'montgomery');
+    const otherCities = nearbyCities.filter(c => c.client !== 'birmingham' && c.client !== 'montgomery');
+    const prioritizedCities = [...alabamaCities, ...otherCities];
+    
+    console.log(`🎯 Processing cities (Alabama cities prioritized):`, prioritizedCities.map(c => c.name));
+    
+    const cityEventPromises = prioritizedCities.slice(0, 5).map(async (city) => {
       try {
         // NYC uses special Legistar instance - use custom HTML scraper with cache
         if (city.client === 'nyccouncil') {
@@ -146,18 +157,37 @@ export const handler: Handler = async (event) => {
         
         // Birmingham, AL - custom Next.js calendar scraper
         if (city.client === 'birmingham') {
-          console.log(`🏛️ ${city.name}: Using custom Birmingham scraper`);
+          console.log(`🏛️ BIRMINGHAM SCRAPER INVOKED for ${city.name}`);
           
           const cacheKey = 'local:birmingham:events';
           const cachedEvents = CacheManager.get(cacheKey);
           
           if (cachedEvents) {
-            console.log(`✅ Returning cached Birmingham events (${cachedEvents.length} events)`);
+            console.log(`✅ CACHE HIT: Returning cached Birmingham events (${cachedEvents.length} events)`);
             return cachedEvents.slice(0, 10);
           }
           
-          console.log(`🕷️ Cache miss - scraping Birmingham calendar...`);
-          const events = await scrapeBirminghamMeetings();
+          console.log(`🕷️ CACHE MISS - Starting Birmingham Puppeteer scrape...`);
+          const rawEvents = await scrapeBirminghamMeetings();
+          console.log(`✅ Birmingham scraper returned ${rawEvents.length} raw events`);
+          
+          // Convert RawEvent format to local-meetings format
+          const events = rawEvents.map(evt => sanitizeEvent({
+            id: evt.id,
+            name: evt.name,
+            date: evt.date,
+            time: evt.time,
+            location: evt.location,
+            committee: evt.committee,
+            type: evt.type,
+            level: 'local' as const,
+            lat: city.lat,
+            lng: city.lng,
+            zipCode: null,
+            city: city.name,
+            state: city.state,
+            url: evt.sourceUrl || null
+          }));
           
           CacheManager.set(cacheKey, events, 86400); // 24-hour cache
           console.log(`💾 Cached ${events.length} Birmingham events for 24 hours`);
@@ -165,20 +195,40 @@ export const handler: Handler = async (event) => {
           return events.slice(0, 10);
         }
         
-        // Montgomery, AL - custom scraper (currently inaccessible due to Akamai)
+        // Montgomery, AL - custom scraper (Akamai bypass with Puppeteer)
         if (city.client === 'montgomery') {
-          console.log(`🏛️ ${city.name}: Using custom Montgomery scraper`);
+          console.log(`🏛️ MONTGOMERY SCRAPER INVOKED for ${city.name}`);
           
           const cacheKey = 'local:montgomery:events';
           const cachedEvents = CacheManager.get(cacheKey);
           
           if (cachedEvents) {
-            console.log(`✅ Returning cached Montgomery events (${cachedEvents.length} events)`);
+            console.log(`✅ CACHE HIT: Returning cached Montgomery events (${cachedEvents.length} events)`);
             return cachedEvents.slice(0, 10);
           }
           
+          console.log(`🕷️ CACHE MISS - Starting Montgomery Puppeteer scrape (Akamai bypass)...`);
+          
           console.log(`🕷️ Cache miss - attempting Montgomery scrape (likely blocked)...`);
-          const events = await scrapeMontgomeryMeetings();
+          const rawEvents = await scrapeMontgomeryMeetings();
+          
+          // Convert RawEvent format to local-meetings format
+          const events = rawEvents.map(evt => sanitizeEvent({
+            id: evt.id,
+            name: evt.name,
+            date: evt.date,
+            time: evt.time,
+            location: evt.location,
+            committee: evt.committee,
+            type: evt.type,
+            level: 'local' as const,
+            lat: city.lat,
+            lng: city.lng,
+            zipCode: null,
+            city: city.name,
+            state: city.state,
+            url: evt.sourceUrl || null
+          }));
           
           if (events.length > 0) {
             CacheManager.set(cacheKey, events, 86400); // 24-hour cache

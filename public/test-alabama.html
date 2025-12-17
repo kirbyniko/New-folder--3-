@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Alabama Local Events Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-result { 
+            margin: 20px 0; 
+            padding: 15px; 
+            background: #f0f0f0; 
+            border-radius: 5px;
+        }
+        .success { background: #d4edda; border-left: 4px solid #28a745; }
+        .error { background: #f8d7da; border-left: 4px solid #dc3545; }
+        pre { background: white; padding: 10px; overflow-x: auto; }
+        button { 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 5px; 
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover { background: #0056b3; }
+        #loading { display: none; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Alabama Local Events Diagnostic</h1>
+    
+    <div>
+        <h2>Test Scenarios:</h2>
+        <button onclick="testMontgomery()">Test Montgomery, AL (Capitol)</button>
+        <button onclick="testBirmingham()">Test Birmingham, AL</button>
+        <button onclick="testAlabamaBounds()">Test Alabama State Bounds</button>
+    </div>
+    
+    <div id="loading" style="margin: 20px 0; color: #007bff;">
+        <strong>⏳ Testing... (this may take 10-15 seconds due to Puppeteer scraping)</strong>
+    </div>
+    
+    <div id="results"></div>
+
+    <script>
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+        
+        function displayResult(title, success, data) {
+            hideLoading();
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${success ? 'success' : 'error'}`;
+            resultDiv.innerHTML = `
+                <h3>${title}</h3>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+            resultsDiv.insertBefore(resultDiv, resultsDiv.firstChild);
+        }
+        
+        async function testMontgomery() {
+            showLoading();
+            const lat = 32.3792;
+            const lng = -86.3077;
+            const radius = 50;
+            
+            try {
+                console.log('Testing Montgomery:', `/.netlify/functions/local-meetings?lat=${lat}&lng=${lng}&radius=${radius}`);
+                const response = await fetch(`/.netlify/functions/local-meetings?lat=${lat}&lng=${lng}&radius=${radius}`);
+                const data = await response.json();
+                
+                displayResult(
+                    `✅ Montgomery, AL (${lat}, ${lng}) - Found ${data.length} events`,
+                    true,
+                    {
+                        eventCount: data.length,
+                        sampleEvents: data.slice(0, 3),
+                        cities: [...new Set(data.map(e => e.city))]
+                    }
+                );
+            } catch (error) {
+                displayResult('❌ Montgomery Test Failed', false, { error: error.message });
+            }
+        }
+        
+        async function testBirmingham() {
+            showLoading();
+            const lat = 33.5186;
+            const lng = -86.8104;
+            const radius = 50;
+            
+            try {
+                console.log('Testing Birmingham:', `/.netlify/functions/local-meetings?lat=${lat}&lng=${lng}&radius=${radius}`);
+                const response = await fetch(`/.netlify/functions/local-meetings?lat=${lat}&lng=${lng}&radius=${radius}`);
+                const data = await response.json();
+                
+                displayResult(
+                    `✅ Birmingham, AL (${lat}, ${lng}) - Found ${data.length} events`,
+                    true,
+                    {
+                        eventCount: data.length,
+                        sampleEvents: data.slice(0, 3),
+                        cities: [...new Set(data.map(e => e.city))]
+                    }
+                );
+            } catch (error) {
+                displayResult('❌ Birmingham Test Failed', false, { error: error.message });
+            }
+        }
+        
+        async function testAlabamaBounds() {
+            showLoading();
+            // Use exact coordinates from App.tsx STATE_CAPITOLS['AL']
+            const lat = 32.3617;
+            const lng = -86.2792;
+            const radius = 500; // State search uses 500 miles
+            
+            try {
+                console.log('Testing Alabama State Search:', `/.netlify/functions/local-meetings?lat=${lat}&lng=${lng}&radius=${radius}`);
+                const response = await fetch(`/.netlify/functions/local-meetings?lat=${lat}&lng=${lng}&radius=${radius}`);
+                const data = await response.json();
+                
+                displayResult(
+                    `✅ Alabama State Search (${lat}, ${lng}, ${radius}mi) - Found ${data.length} events`,
+                    true,
+                    {
+                        eventCount: data.length,
+                        birminghamEvents: data.filter(e => e.city === 'Birmingham').length,
+                        montgomeryEvents: data.filter(e => e.city === 'Montgomery').length,
+                        sampleEvents: data.slice(0, 5),
+                        allCities: [...new Set(data.map(e => e.city))]
+                    }
+                );
+            } catch (error) {
+                displayResult('❌ Alabama State Search Failed', false, { error: error.message });
+            }
+        }
+        
+        // Run Montgomery test on page load
+        window.onload = () => {
+            console.log('🚀 Alabama diagnostic page loaded');
+            console.log('Click a button to test the local-meetings endpoint');
+        };
+    </script>
+</body>
+</html>

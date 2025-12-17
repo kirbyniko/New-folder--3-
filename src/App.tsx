@@ -97,7 +97,7 @@ function App() {
         location.stateAbbr 
           ? fetch(getApiUrl(`/.netlify/functions/state-events?state=${location.stateAbbr}${cacheBuster}`), fetchOptions)
           : Promise.resolve(null),
-        fetch(getApiUrl(`/.netlify/functions/local-meetings?lat=${location.lat}&lng=${location.lng}&radius=${radius}`), fetchOptions)
+        fetch(getApiUrl(`/.netlify/functions/local-meetings?lat=${location.lat}&lng=${location.lng}&radius=${radius}${cacheBuster}`), fetchOptions)
       ]);
       console.timeEnd('⏱️ Total fetch time');
       
@@ -227,18 +227,27 @@ function App() {
               
               console.time('⏱️ State selector fetch time');
               const stateCacheBuster = `&_t=${Date.now()}`;
+              
+              console.log('🚀 Fetching federal events...');
+              console.log('🚀 Fetching state events:', `state-events?state=${stateAbbr}`);
+              console.log('🚀 Fetching local events:', `local-meetings?lat=${capitol.lat}&lng=${capitol.lng}&radius=${radius}`);
+              
               const [federalResponse, stateResponse, localResponse] = await Promise.all([
                 fetch(getApiUrl(`/.netlify/functions/congress-meetings`), fetchOptions),
                 fetch(getApiUrl(`/.netlify/functions/state-events?state=${stateAbbr}${stateCacheBuster}`), fetchOptions),
-                fetch(getApiUrl(`/.netlify/functions/local-meetings?lat=${capitol.lat}&lng=${capitol.lng}&radius=${radius}`), fetchOptions)
+                fetch(getApiUrl(`/.netlify/functions/local-meetings?lat=${capitol.lat}&lng=${capitol.lng}&radius=${radius}${stateCacheBuster}`), fetchOptions)
               ]);
               console.timeEnd('⏱️ State selector fetch time');
+              
+              console.log('📡 Response status - Federal:', federalResponse.status, 'State:', stateResponse.status, 'Local:', localResponse.status);
               
               clearTimeout(timeoutId);
               
               const federal = federalResponse.ok ? await federalResponse.json() : []
               const state = stateResponse.ok ? await stateResponse.json() : []
               const local = localResponse.ok ? await localResponse.json() : []
+              
+              console.log('📊 Parsed results - Federal:', federal.length, 'State:', state.length, 'Local:', local.length);
               
               // Add distances and tags
               const addDistanceAndTags = (events: LegislativeEvent[]) => {
