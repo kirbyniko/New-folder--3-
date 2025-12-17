@@ -147,6 +147,94 @@ export const handler: Handler = async (event) => {
       console.log(`📋 Total cities to scrape: ${nearbyCities.length} (including Kentucky cities)`);
     }
     
+    // Special handling: Oregon cities with custom scrapers (Puppeteer for paginated site)
+    const isOregon = (lat >= 42.0 && lat <= 46.3) && (lng >= -124.6 && lng <= -116.5);
+    console.log(`🔍 Oregon check: lat=${lat}, lng=${lng}, isOregon=${isOregon}`);
+    
+    const hasPortland = nearbyCities.some(c => c.client === 'portland');
+    
+    if (isOregon) {
+      console.log('✅ Oregon coordinates detected! Adding custom city scrapers...');
+      if (!hasPortland) {
+        console.log('🌹 Adding Portland to nearby cities');
+        nearbyCities.push({
+          name: 'Portland',
+          client: 'portland',
+          state: 'OR',
+          lat: 45.5152,
+          lng: -122.6784,
+          population: 652503
+        });
+      }
+      console.log(`📋 Total cities to scrape: ${nearbyCities.length} (including Oregon cities)`);
+    }
+    
+    // Special handling: Oklahoma cities with custom scrapers (PrimeGov portal)
+    const isOklahoma = (lat >= 34.5 && lat <= 37.0) && (lng >= -103.0 && lng <= -94.4);
+    console.log(`🔍 Oklahoma check: lat=${lat}, lng=${lng}, isOklahoma=${isOklahoma}`);
+    
+    const hasOklahomaCity = nearbyCities.some(c => c.client === 'oklahomacity');
+    
+    if (isOklahoma) {
+      console.log('✅ Oklahoma coordinates detected! Adding custom city scrapers...');
+      if (!hasOklahomaCity) {
+        console.log('🏛️ Adding Oklahoma City to nearby cities');
+        nearbyCities.push({
+          name: 'Oklahoma City',
+          client: 'oklahomacity',
+          state: 'OK',
+          lat: 35.4676,
+          lng: -97.5164,
+          population: 649821
+        });
+      }
+      console.log(`📋 Total cities to scrape: ${nearbyCities.length} (including Oklahoma cities)`);
+    }
+    
+    // Special handling: Connecticut cities with custom scrapers (static HTML)
+    const isConnecticut = (lat >= 40.9 && lat <= 42.1) && (lng >= -73.8 && lng <= -71.8);
+    console.log(`🔍 Connecticut check: lat=${lat}, lng=${lng}, isConnecticut=${isConnecticut}`);
+    
+    const hasBridgeport = nearbyCities.some(c => c.client === 'bridgeport');
+    
+    if (isConnecticut) {
+      console.log('✅ Connecticut coordinates detected! Adding custom city scrapers...');
+      if (!hasBridgeport) {
+        console.log('🌉 Adding Bridgeport to nearby cities');
+        nearbyCities.push({
+          name: 'Bridgeport',
+          client: 'bridgeport',
+          state: 'CT',
+          lat: 41.1865,
+          lng: -73.1952,
+          population: 148654
+        });
+      }
+      console.log(`📋 Total cities to scrape: ${nearbyCities.length} (including Connecticut cities)`);
+    }
+    
+    // Special handling: Nevada cities with custom scrapers (PrimeGov portal API)
+    const isNevada = (lat >= 35.0 && lat <= 42.0) && (lng >= -120.0 && lng <= -114.0);
+    console.log(`🔍 Nevada check: lat=${lat}, lng=${lng}, isNevada=${isNevada}`);
+    
+    const hasLasVegas = nearbyCities.some(c => c.client === 'lasvegas');
+    
+    if (isNevada) {
+      console.log('✅ Nevada coordinates detected! Adding custom city scrapers...');
+      if (!hasLasVegas) {
+        console.log('🎰 Adding Las Vegas to nearby cities');
+        nearbyCities.push({
+          name: 'Las Vegas',
+          client: 'lasvegas',
+          state: 'NV',
+          lat: 36.1699,
+          lng: -115.1398,
+          population: 641903
+        });
+      }
+      console.log(`📋 Total cities to scrape: ${nearbyCities.length} (including Nevada cities)`);
+    }
+    
     console.log(`Found ${nearbyCities.length} Legistar cities within ${radius} miles:`, nearbyCities.map(c => c.name));
     
     if (nearbyCities.length === 0) {
@@ -166,18 +254,26 @@ export const handler: Handler = async (event) => {
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + 90);
     
-    // Prioritize custom cities (Alabama, Louisiana, Kentucky) - move them to the front if present
+    // Prioritize custom cities (Alabama, Louisiana, Kentucky, Oregon, Oklahoma, Connecticut, Nevada) - move them to the front if present
     const customCities = nearbyCities.filter(c => 
       c.client === 'birmingham' || 
       c.client === 'montgomery' ||
       c.client === 'batonrouge' ||
-      c.client === 'lexington'
+      c.client === 'lexington' ||
+      c.client === 'portland' ||
+      c.client === 'oklahomacity' ||
+      c.client === 'bridgeport' ||
+      c.client === 'lasvegas'
     );
     const otherCities = nearbyCities.filter(c => 
       c.client !== 'birmingham' && 
       c.client !== 'montgomery' &&
       c.client !== 'batonrouge' &&
-      c.client !== 'lexington'
+      c.client !== 'lexington' &&
+      c.client !== 'portland' &&
+      c.client !== 'oklahomacity' &&
+      c.client !== 'bridgeport' &&
+      c.client !== 'lasvegas'
     );
     const prioritizedCities = [...customCities, ...otherCities];
     
@@ -240,7 +336,10 @@ export const handler: Handler = async (event) => {
             zipCode: null,
             city: city.name,
             state: city.state,
-            url: evt.sourceUrl || null
+            url: evt.sourceUrl || null,
+            docketUrl: evt.docketUrl || null,
+            virtualMeetingUrl: evt.virtualMeetingUrl || null,
+            description: evt.description || null
           }));
           
           CacheManager.set(cacheKey, events, 86400); // 24-hour cache
@@ -324,7 +423,10 @@ export const handler: Handler = async (event) => {
             zipCode: null,
             city: city.name,
             state: city.state,
-            url: evt.sourceUrl || null
+            url: evt.sourceUrl || null,
+            docketUrl: evt.docketUrl || null,
+            virtualMeetingUrl: evt.virtualMeetingUrl || null,
+            description: evt.description || null
           }));
           
           CacheManager.set(cacheKey, events, 86400); // 24-hour cache
@@ -365,11 +467,189 @@ export const handler: Handler = async (event) => {
             zipCode: null,
             city: city.name,
             state: city.state,
-            url: evt.sourceUrl || null
+            url: evt.sourceUrl || null,
+            docketUrl: evt.docketUrl || null,
+            virtualMeetingUrl: evt.virtualMeetingUrl || null,
+            description: evt.description || null
           }));
           
           CacheManager.set(cacheKey, events, 86400); // 24-hour cache
           console.log(`💾 Cached ${events.length} Lexington events for 24 hours`);
+          
+          return events.slice(0, 10);
+        }
+        
+        // Portland, OR uses custom CMS with pagination - use Puppeteer with cache
+        if (city.client === 'portland') {
+          const cacheKey = 'local:portland:events';
+          console.log(`🌹 PORTLAND DETECTED - Checking cache for events...`);
+          const cachedEvents = CacheManager.get(cacheKey);
+          
+          if (cachedEvents) {
+            console.log(`✅ CACHE HIT: Returning cached Portland events (${cachedEvents.length} events)`);
+            return cachedEvents.slice(0, 10);
+          }
+          
+          console.log(`🕷️ CACHE MISS - Starting Portland Puppeteer scrape...`);
+          const { scrapePortlandMeetings } = await import('./utils/scrapers/local/portland');
+          const rawEvents = await scrapePortlandMeetings();
+          console.log(`✅ Portland scraper returned ${rawEvents.length} raw events`);
+          
+          // Convert RawEvent format to local-meetings format
+          const events = rawEvents.map(evt => sanitizeEvent({
+            id: evt.id,
+            name: evt.name,
+            date: evt.date,
+            time: evt.time,
+            location: evt.location,
+            committee: evt.committee,
+            type: evt.type,
+            level: 'local' as const,
+            lat: city.lat,
+            lng: city.lng,
+            zipCode: null,
+            city: city.name,
+            state: city.state,
+            url: evt.sourceUrl || null,
+            docketUrl: evt.docketUrl || null,
+            virtualMeetingUrl: evt.virtualMeetingUrl || null,
+            description: evt.description || null
+          }));
+          
+          CacheManager.set(cacheKey, events, 86400); // 24-hour cache
+          console.log(`💾 Cached ${events.length} Portland events for 24 hours`);
+          
+          return events.slice(0, 10);
+        }
+        
+        // Oklahoma City, OK - custom scraper (PrimeGov portal API)
+        if (city.client === 'oklahomacity') {
+          console.log(`🏛️ OKLAHOMA CITY SCRAPER INVOKED for ${city.name}`);
+          
+          const cacheKey = 'local:oklahomacity:events';
+          const cachedEvents = CacheManager.get(cacheKey);
+          
+          if (cachedEvents) {
+            console.log(`✅ CACHE HIT: Returning cached Oklahoma City events (${cachedEvents.length} events)`);
+            return cachedEvents.slice(0, 10);
+          }
+          
+          console.log(`🕷️ CACHE MISS - Starting Oklahoma City PrimeGov scrape...`);
+          const { scrapeOklahomaCityMeetings } = await import('./utils/scrapers/local/oklahoma-city');
+          const rawEvents = await scrapeOklahomaCityMeetings();
+          console.log(`✅ Oklahoma City scraper returned ${rawEvents.length} raw events`);
+          
+          // Convert RawEvent format to local-meetings format
+          const events = rawEvents.map(evt => sanitizeEvent({
+            id: evt.id,
+            name: evt.name,
+            date: evt.date,
+            time: evt.time,
+            location: evt.location,
+            committee: evt.committee,
+            type: evt.type,
+            level: 'local' as const,
+            lat: city.lat,
+            lng: city.lng,
+            zipCode: null,
+            city: city.name,
+            state: city.state,
+            url: evt.sourceUrl || null,
+            docketUrl: evt.docketUrl || null,
+            virtualMeetingUrl: evt.virtualMeetingUrl || null,
+            description: evt.description || null
+          }));
+          
+          CacheManager.set(cacheKey, events, 86400); // 24-hour cache
+          console.log(`💾 Cached ${events.length} Oklahoma City events for 24 hours`);
+          
+          return events.slice(0, 10);
+        }
+        
+        // Bridgeport, CT - custom scraper (static HTML events page)
+        if (city.client === 'bridgeport') {
+          console.log(`🌉 BRIDGEPORT SCRAPER INVOKED for ${city.name}`);
+          
+          const cacheKey = 'local:bridgeport:events';
+          const cachedEvents = CacheManager.get(cacheKey);
+          
+          if (cachedEvents) {
+            console.log(`✅ CACHE HIT: Returning cached Bridgeport events (${cachedEvents.length} events)`);
+            return cachedEvents.slice(0, 10);
+          }
+          
+          console.log(`🕷️ CACHE MISS - Starting Bridgeport static HTML scrape...`);
+          const { scrapeBridgeportMeetings } = await import('./utils/scrapers/local/bridgeport');
+          const rawEvents = await scrapeBridgeportMeetings();
+          console.log(`✅ Bridgeport scraper returned ${rawEvents.length} raw events`);
+          
+          // Convert RawEvent format to local-meetings format
+          const events = rawEvents.map(evt => sanitizeEvent({
+            id: evt.id,
+            name: evt.name,
+            date: evt.date,
+            time: evt.time,
+            location: evt.location,
+            committee: evt.committee,
+            type: evt.type,
+            level: 'local' as const,
+            lat: city.lat,
+            lng: city.lng,
+            zipCode: null,
+            city: city.name,
+            state: city.state,
+            url: evt.sourceUrl || null,
+            docketUrl: evt.docketUrl || null,
+            virtualMeetingUrl: evt.virtualMeetingUrl || null,
+            description: evt.description || null
+          }));
+          
+          CacheManager.set(cacheKey, events, 86400); // 24-hour cache
+          console.log(`💾 Cached ${events.length} Bridgeport events for 24 hours`);
+          
+          return events.slice(0, 10);
+        }
+        
+        // Las Vegas, NV - custom scraper (PrimeGov portal API)
+        if (city.client === 'lasvegas') {
+          console.log(`🎰 LAS VEGAS SCRAPER INVOKED for ${city.name}`);
+          
+          const cacheKey = 'local:lasvegas:events';
+          const cachedEvents = CacheManager.get(cacheKey);
+          
+          if (cachedEvents) {
+            console.log(`✅ CACHE HIT: Returning cached Las Vegas events (${cachedEvents.length} events)`);
+            return cachedEvents.slice(0, 10);
+          }
+          
+          console.log(`🕷️ CACHE MISS - Starting Las Vegas PrimeGov scrape...`);
+          const { scrapeLasVegasMeetings } = await import('./utils/scrapers/local/las-vegas');
+          const rawEvents = await scrapeLasVegasMeetings();
+          console.log(`✅ Las Vegas scraper returned ${rawEvents.length} raw events`);
+          
+          // Convert RawEvent format to local-meetings format
+          const events = rawEvents.map(evt => sanitizeEvent({
+            id: evt.id,
+            name: evt.name,
+            date: evt.date,
+            time: evt.time,
+            location: evt.location,
+            committee: evt.committee,
+            type: evt.type,
+            level: 'local' as const,
+            lat: city.lat,
+            lng: city.lng,
+            zipCode: null,
+            city: city.name,
+            state: city.state,
+            url: evt.sourceUrl || null,
+            docketUrl: evt.docketUrl || null,
+            virtualMeetingUrl: evt.virtualMeetingUrl || null,
+            description: evt.description || null
+          }));
+          
+          CacheManager.set(cacheKey, events, 86400); // 24-hour cache
+          console.log(`💾 Cached ${events.length} Las Vegas events for 24 hours`);
           
           return events.slice(0, 10);
         }

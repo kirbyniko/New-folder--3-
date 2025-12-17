@@ -111,7 +111,8 @@ export async function scrapeBaronRougeMeetings(): Promise<RawEvent[]> {
         lat,
         lng,
         description: '',
-        sourceUrl: item.agendaUrl,
+        sourceUrl: 'https://www.brla.gov',
+        docketUrl: item.agendaUrl, // Link to agenda page (PDF or HTML)
       });
     }
 

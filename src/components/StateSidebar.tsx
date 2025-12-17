@@ -24,6 +24,8 @@ const STATE_PROGRESS: StateProgress[] = [
   { code: 'MN', name: 'Minnesota', status: 'complete', notes: '20 committee meetings (static)' },
   { code: 'SC', name: 'South Carolina', status: 'complete', notes: '2 upcoming meetings (static)' },
   { code: 'AL', name: 'Alabama', status: 'complete', notes: '3 events via OpenStates (static)' },
+    { code: 'CT', name: 'Connecticut', status: 'complete', notes: 'State + Bridgeport local' },
+    { code: 'NV', name: 'Nevada', status: 'complete', notes: 'Interim committees' },
   { code: 'OH', name: 'Ohio', status: 'pending' },
   { code: 'GA', name: 'Georgia', status: 'complete', notes: '6 events via OpenStates' },
   { code: 'NH', name: 'New Hampshire', status: 'complete', notes: 'Session + dockets' },

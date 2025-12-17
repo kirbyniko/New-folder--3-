@@ -1,0 +1,38 @@
+{
+  "data": [
+    {
+      "date": "2025-12-17T13:30:00.000Z",
+      "time": "08:30 AM",
+      "location": "City Hall, 495 S. Main St., Las Vegas, NV 89101",
+      "committee": "Redevelopment Agency",
+      "level": "local",
+      "lat": 36.1699,
+      "lng": -115.1398,
+      "zipCode": null,
+      "city": "Las Vegas",
+      "state": "NV",
+      "url": "https://lasvegas.primegov.com/public/portal",
+      "docketUrl": "https://lasvegas.primegov.com/Portal/Meeting?meetingTemplateId=42142",
+      "virtualMeetingUrl": null,
+      "description": "Redevelopment Agency"
+    },
+    {
+      "date": "2025-12-17T14:00:00.000Z",
+      "time": "09:00 AM",
+      "location": "City Hall, 495 S. Main St., Las Vegas, NV 89101",
+      "committee": "City Council",
+      "level": "local",
+      "lat": 36.1699,
+      "lng": -115.1398,
+      "zipCode": null,
+      "city": "Las Vegas",
+      "state": "NV",
+      "url": "https://lasvegas.primegov.com/public/portal",
+      "docketUrl": "https://lasvegas.primegov.com/Portal/Meeting?meetingTemplateId=42132",
+      "virtualMeetingUrl": null,
+      "description": "City Council"
+    }
+  ],
+  "timestamp": 1765988159070,
+  "expiresAt": 1766074559070
+}

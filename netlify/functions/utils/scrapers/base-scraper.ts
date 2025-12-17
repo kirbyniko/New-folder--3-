@@ -258,8 +258,11 @@ export abstract class BaseScraper {
   protected generateEventId(raw: RawEvent): string {
     const date = raw.date instanceof Date ? raw.date : new Date(raw.date);
     const dateStr = date.toISOString().split('T')[0];
-    const nameSlug = raw.name.toLowerCase().replace(/[^a-z0-9]/g, '-').substring(0, 50);
-    return `${this.config.stateCode.toLowerCase()}-${dateStr}-${nameSlug}`;
+    // Use name if available, fallback to committee, then timestamp
+    const nameSource = raw.name || raw.committee || `event-${date.getTime()}`;
+    const nameSlug = nameSource.toLowerCase().replace(/[^a-z0-9]/g, '-').substring(0, 50);
+    const stateCode = this.config?.stateCode || 'unknown';
+    return `${stateCode.toLowerCase()}-${dateStr}-${nameSlug}`;
   }
 
   /**

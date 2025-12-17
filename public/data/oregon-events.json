@@ -1,0 +1,18 @@
+{
+  "count": 1,
+  "billsCount": 0,
+  "lastUpdated": "2025-12-17T13:47:43.307Z",
+  "events": [
+    {
+      "id": "ocd-event/d8effbba-f9f6-4c07-8eb5-1140e1241cc9",
+      "title": "Rules and Executive Appointments",
+      "date": "September 29, 2025",
+      "time": "6:00 PM",
+      "location": "HR B",
+      "type": "Committee Meeting",
+      "lat": 44.9429,
+      "lng": -123.0307,
+      "state": "OR"
+    }
+  ]
+}

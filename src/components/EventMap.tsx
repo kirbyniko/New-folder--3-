@@ -87,7 +87,7 @@ export default function EventMap({ events, centerLat, centerLng, radius }: Event
             <Popup>
               <div style={{ minWidth: '200px' }}>
                 <strong>{event.name}</strong><br />
-                <small style={{ color: '#666' }}>{event.level.toUpperCase()}</small><br />
+                <small style={{ color: '#666' }}>{event.level?.toUpperCase() || 'UNKNOWN'}</small><br />
                 📅 {formatDate(event.date)}<br />
                 🕐 {event.time}<br />
                 📍 {event.location}<br />

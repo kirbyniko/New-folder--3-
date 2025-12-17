@@ -41,7 +41,8 @@ Provide what you tried:
 │
 ├─ JavaScript SPA? (React/Vue, empty source)
 │  ├─ GraphQL/REST endpoint? → Use API
-│  └─ No API? → Use OpenStates
+│  ├─ No API but simple calendar? → Use Puppeteer
+│  └─ Too complex? → Use OpenStates
 │
 └─ Can't find after 10min? → ASK USER
 ```
@@ -130,7 +131,47 @@ async convertEventToRaw(event: StateEvent): Promise<RawEvent> {
 - Limit to first 3 items, truncate each to 150 chars
 - Some agendas may be empty - handle gracefully
 
-### 4. OpenStates Fallback (Georgia, Alabama)
+### 4. Puppeteer for Dynamic Calendars (Lexington, Birmingham)
+
+**When to use:** Calendar is JavaScript-rendered (empty view-source), no API available
+
+```typescript
+import { scrapeWithPuppeteer } from '../puppeteer-helper';
+
+export async function scrapeLexingtonMeetings(): Promise<RawEvent[]> {
+  const events = await scrapeWithPuppeteer(url, {
+    waitFor: 3000, // Wait for JS to render
+    evaluate: async (page) => {
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      // Use page.evaluate to run in browser context
+      const eventLinks = await page.evaluate(() => {
+        const links = Array.from(document.querySelectorAll('a[href*="/calendar/"]'));
+        return links.map(link => ({
+          title: link.textContent?.trim(),
+          url: (link as HTMLAnchorElement).href,
+          // Extract date from URL or parent text
+          dateStr: link.href.match(/\/(\d{4}-\d{2}-\d{2})\//)?.[1],
+          // Extract time from parent context
+          timeStr: link.parentElement?.textContent?.match(/–\s*(\d{1,2}(?::\d{2})?\s*[ap]\.m\.)/)?.[1]
+        }));
+      });
+      
+      return eventLinks;
+    }
+  });
+  return events.map(e => convertToRawEvent(e));
+}
+```
+
+**Key Points:**
+- Use `page.evaluate()` to run code in browser context (has access to `document`)
+- Wait 3-6 seconds for dynamic content to load
+- Extract dates from URLs when possible (more reliable than parsing text)
+- Look for time patterns in parent elements: `– 4:30 p.m.` or `– 11 a.m.`
+- Cache results (24hr) since Puppeteer is slower
+
+### 5. OpenStates Fallback (Georgia, Alabama)
 
 ```typescript
 async scrapeCalendar(): Promise<RawEvent[]> {
@@ -284,9 +325,9 @@ curl "https://webapi.legistar.com/v1/[cityname]/events"
 
 #### When Basic Fetch Fails
 
-**Client-Side Rendered (React/Next.js)**
+**Client-Side Rendered (React/Next.js/Dynamic)**
 - Symptoms: Skeleton loaders, empty HTML source, data loads after render
-- Example: Birmingham, AL (Next.js calendar)
+- Examples: Birmingham AL (Next.js), Lexington KY (dynamic calendar)
 - Solution: **Puppeteer**
 
 **Security Blocks (Akamai/Cloudflare)**
@@ -294,24 +335,39 @@ curl "https://webapi.legistar.com/v1/[cityname]/events"
 - Example: Montgomery, AL (Akamai protection)
 - Solution: **Puppeteer** bypasses bot detection
 
+**Dynamic Calendars (JavaScript-rendered)**
+- Symptoms: `view-source:` shows minimal HTML, calendar loads via AJAX
+- Examples: Lexington KY government calendar
+- Solution: **Puppeteer** with `page.evaluate()` to extract rendered content
+- Pattern: Wait 3+ seconds, extract links with dates/times from DOM
+
 #### Puppeteer Pattern
 
 ```typescript
 import { scrapeWithPuppeteer } from '../puppeteer-helper';
 
 const events = await scrapeWithPuppeteer(url, {
-  waitFor: '.calendar-grid', // CSS selector or ms
+  waitFor: 3000, // Wait for calendar JS to render (ms)
   evaluate: async (page) => {
-    await new Promise(r => setTimeout(r, 3000)); // Let data load
+    await new Promise(r => setTimeout(r, 3000)); // Additional wait if needed
+    
+    // IMPORTANT: Use page.evaluate() to run code in browser context
     return await page.evaluate(() => {
-      return Array.from(document.querySelectorAll('.event')).map(el => ({
-        title: el.querySelector('h3')?.textContent?.trim(),
-        date: el.querySelector('.date')?.textContent?.trim(),
-        url: el.querySelector('a')?.href
+      // This code runs IN THE BROWSER - has access to document
+      return Array.from(document.querySelectorAll('a[href*="/calendar/"]')).map(el => ({
+        title: el.textContent?.trim(),
+        url: (el as HTMLAnchorElement).href,
+        // Extract date from URL (most reliable)
+        dateStr: el.href.match(/\/(\d{4}-\d{2}-\d{2})\//)?.[1],
+        // Extract time from parent text (look for "– 4:30 p.m." pattern)
+        timeStr: el.parentElement?.textContent?.match(/–\s*(\d{1,2}(?::\d{2})?\s*[ap]\.m\.)/)?.[1]
       }));
     });
   }
 });
+
+// Time extraction patterns to look for:
+// "– 4:30 p.m." "– 11 a.m." "at 2:00 PM" "@ 9:30 AM"
 ```
 
 **Setup:**
@@ -378,7 +434,17 @@ if (city.client === 'birmingham') {
 - Try OpenStates fallback
 
 ### Missing `level` Field
-Events crash without `level: "state"` field
+Events crash without `level: "state"` field. Always ensure scrapers return events with:
+- `level: 'state'` or `level: 'local'`
+- `name: string` (event title)
+- `committee: string` (committee name)
+
+Common bug: Using only partial fields like `title` without `name` + `committee` causes frontend crashes.
+
+### Duplicate Event IDs
+**Symptoms:** React warnings "Encountered two children with the same key"  
+**Cause:** ID generation creates collisions (e.g., using `substring(0, 12)` on base64)  
+**Fix:** Use timestamp + unique hash: `${city}-${date.getTime()}-${titleHash}`
 
 ### Generic sourceUrl  
 Use actual calendar page, not homepage:
@@ -466,6 +532,49 @@ if (isProduction && !isNetlifyDev) {
 - Integration: Geo-detection (lat 28.9-33.0, lng -94.0 to -88.8) auto-adds Baton Rouge
 - Result: 4 state (1 with agenda details) + 81 local events (Metropolitan Council)
 - Tip: User said "PDF agendas" but they're actually HTML pages - always verify link type
+
+**Kentucky** (Static HTML State + Puppeteer Local)
+- State URL: `https://apps.legislature.ky.gov/legislativecalendar` (static weekly calendar)
+- State Method: Cheerio parsing of `.TimeAndLocation`, `.CommitteeName`, `.Agenda` divs
+- State Features: Embedded agendas (3 of 4 events have agenda descriptions)
+- Local: Lexington government calendar (Puppeteer for dynamic JavaScript site)
+- Local URL: `https://www.lexingtonky.gov/calendar`
+- Local Method: Puppeteer with `page.evaluate()` to extract event links after JS render
+- Integration: Geo-detection (lat 36.5-39.1, lng -89.6 to -81.9) auto-adds Lexington
+- Result: 4 state (committee meetings) + 42 local events (councils, boards, commissions)
+- Key Learning: Dynamic calendar required Puppeteer; extract dates from URLs, times from parent text
+
+**Oregon** (OpenStates State + Puppeteer Paginated Local)
+- State URL: `https://olis.oregonlegislature.gov/LIZ/Committees/Meeting/List` (often empty during interim)
+- State Method: OpenStates API (legislature meets biennially in odd years)
+- State Result: 1 event (Rules and Executive Appointments, Sept 29)
+- Local: Portland custom CMS with pagination
+- Local URL: `https://www.portland.gov/auditor/council-clerk/events` (48+ events across 3 pages)
+- Local Method: Puppeteer with multi-page scraping (pages 0-2)
+- Local Pattern: Extract h2 links with `/events/` URLs, parse sibling content for date/time
+- Integration: Geo-detection (lat 42.0-46.3, lng -124.6 to -116.5) auto-adds Portland
+- Result: 1 state + 48 local events (26 Council, 9 Committee, 1 Work Session, 12 Executive)
+- Key Learning: **Pagination** - loop through pages until <10 events found, add 1s delay between requests
+
+**Oklahoma** (Puppeteer + PDF Bill/Agenda Extraction + PrimeGov Local)
+- State URL: `https://www.okhouse.gov/calendars` (dynamic Next.js calendar with date range)
+- State Method: Puppeteer scraping of OK House calendar (client-rendered)
+- Date/Time Parsing: Extracted from meeting notice PDF filenames (format: CMN-XX-YYYYMMDD-HHMMSS00.pdf)
+- Bill Extraction: Automated PDF parsing using pdfjs-dist to extract HB/SB numbers from meeting notices
+- SourceUrl: Individual committee pages (e.g., `/committees/house/approp/ap-natur`)
+- Meeting Notices: PDF links included in description field for reference
+- State Result: 5 events (House A&B subcommittees, current meetings are budget hearings without bills)
+- Local: Oklahoma City PrimeGov portal (JSON API - similar to Legistar but different structure)
+- Local URL: `https://okc.primegov.com/api/v2/PublicPortal/ListUpcomingMeetings`
+- Local Method: Direct JSON API fetch + PDF agenda parsing (no Puppeteer needed)
+- Local Features: Returns meeting titles, dates, times, document links (PDF/HTML agendas)
+- Local PDF Parsing: Extracts up to 5 agenda items from first 3 pages using pattern matching (numbered/lettered/Roman items)
+- Local Description: Includes direct PDF links + agenda item summaries (e.g., "Documents: Agenda: [PDF URL] | Agenda: Item 1; Item 2; Item 3 (+ 2 more items)")
+- Local docketUrl: First PDF agenda document URL (direct link for "View Docket" button)
+- Integration: Geo-detection (lat 34.5-37.0, lng -103.0 to -94.4) auto-adds Oklahoma City
+- Result: 5 state + 7 local events (Housing Authority, Airport Trust, Park Commission, etc.)
+- Bills: Fully automated extraction from PDFs (0 bills in current meetings - budget reviews, not bill hearings)
+- Note: State requires Puppeteer + pdfjs-dist library. Local uses clean REST API with PDF parsing (24hr cache).
 
 **Missouri** (ASP.NET Alternative)
 - URL: `https://house.mo.gov/HearingsTimeOrder.aspx`

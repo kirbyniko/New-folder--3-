@@ -1,0 +1,25 @@
+{
+  "data": [
+    {
+      "id": "bridgeport-1766444400000-miscellaneous-matters-committee",
+      "name": "Miscellaneous Matters Committee",
+      "date": "2025-12-22T23:00:00.000Z",
+      "time": "6:00pm",
+      "location": "Bridgeport City Hall",
+      "committee": "Miscellaneous Matters Committee",
+      "type": "committee-meeting",
+      "level": "local",
+      "lat": 41.1865,
+      "lng": -73.1952,
+      "zipCode": null,
+      "city": "Bridgeport",
+      "state": "CT",
+      "url": "https://www.bridgeportct.gov/events/miscellaneous-matters-committee-19",
+      "docketUrl": null,
+      "virtualMeetingUrl": null,
+      "description": "City of Bridgeport Miscellaneous Matters Committee"
+    }
+  ],
+  "timestamp": 1765987037707,
+  "expiresAt": 1766073437707
+}

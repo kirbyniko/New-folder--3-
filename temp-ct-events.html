@@ -1,0 +1,593 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, height=device-height,  initial-scale=1.0, user-scalable=no;user-scalable=0;"/>
+    
+    <!--Start Foundation-->
+    <link href="/basin/css/app.css" type="text/css" rel="stylesheet">
+    <script src="/basin/js/vendor/modernizr.js"></script>
+    <script src="/basin/js/vendor/jquery-1.9.1.min.js" type="text/javascript"></script>
+    <!--End Foundation-->
+
+
+    <link rel="shortcut icon" sizes="16x16" href="imgs/cgalogo16.png">
+    <link rel="shortcut icon" sizes="196x196" href="imgs/cgalogo196.png">
+    <link rel="apple-touch-icon-precomposed" href="imgs/cgalogo152.png">
+    <link rel="stylesheet" type="text/css" href="style/addtohomescreen.css">
+    <link rel="apple-touch-icon" href="/basin/img/Official_Logo_85.png">
+   
+
+
+    <script src="src/addtohomescreen.js"></script>
+<script>
+    addToHomescreen({
+        maxDisplayCount: 1
+    });
+
+</script>
+    <!--
+
+ The following code adds Stock Android Browser (OS version <=4.3)
+ compatibility to Add to Homescreen. The code is a sort of plugin to the
+ original Add to homescreen widget and doesn't interfere with it. You can
+ safely update the official Add to homescreen and this code should keep
+ working.
+
+ This addon has been kindly sponsored by Rapid Data GmbH (www.rapid-data.de)
+ and released under the MIT license for everyone to use.
+
+ USAGE: Include the 'style' and 'script' below anywhere in your page.
+
+//-->
+    <!-- ************************* START HERE ************************* -->
+    <style type="text/css">
+        .ath-samsungAndroid
+        {
+            bottom: 1.8em;
+            left: 50%;
+            margin-left: -9em;
+        }
+        
+        .ath-stockAndroid
+        {
+            right: 1.5em;
+            top: 1.8em;
+        }
+        
+        .ath-samsungAndroid:after
+        {
+            content: '';
+            background: #eee;
+            background: -webkit-linear-gradient(135deg, rgba(238,238,238,0) 0%, rgba(238,238,238,0) 50%, rgba(238,238,238,1) 50%, rgba(238,238,238,1) 100%);
+            position: absolute;
+            width: 2em;
+            height: 2em;
+            bottom: -1.5em;
+            left: 0;
+        }
+        
+        .ath-stockAndroid:after
+        {
+            content: '';
+            background: #eee;
+            background: -webkit-linear-gradient(-45deg, rgba(238,238,238,0) 0%, rgba(238,238,238,0) 50%, rgba(238,238,238,1) 50%, rgba(238,238,238,1) 100%);
+            position: absolute;
+            width: 2em;
+            height: 2em;
+            top: -1.5em;
+            right: 0;
+        }
+        
+        .ath-container.ath-stockAndroid:before
+        {
+            float: left;
+            margin: -0.7em 0.5em 0 -0.6em;
+        }
+        
+        .ath-container.ath-stockAndroid.ath-icon:before
+        {
+            position: absolute;
+            right: auto;
+            left: 0;
+            margin: 0;
+            float: none;
+        }
+        
+        /*
+ * The following is not strictly needed and should be customized. If you want you can have an icon inside the message.
+ * All you need to to is to add a special %icon tag in the message string (see below)
+ */
+        
+        .ath-stockAndroid .ath-action-icon, .ath-samsungAndroid .ath-action-icon
+        {
+            width: 1.2em;
+            height: 1.2em;
+        }
+    </style>
+    <script>
+        var _ath = addToHomescreen;
+
+        // This is the special custom message for stock android, it has to be customized to your needs
+        var athMessages = {
+            samsungAndroid: 'To add this web app to the home screen: tap the Menu  button and then Add Shortcut.',
+            stockAndroid: 'To add this web app to the home screen: tap the Menu  button and then Add Shortcut.'
+        };
+
+        // Add stock browser compatibility
+        var _ua = window.navigator.userAgent;
+
+        _ath.isAndroidBrowser = _ua.indexOf('Android') > -1 && !(/Chrome\/[.0-9]*/).test(_ua);
+        _ath.isCompatible = _ath.isCompatible || _ath.isAndroidBrowser;
+        if (_ath.OS == 'unsupported' && _ath.isAndroidBrowser) {
+            // additionally we check for some Samsung devices (not strictly needed)
+            _ath.OS = (/ (GT-I9|GT-P7|SM-T2|GT-P5|GT-P3|SCH-I8)/).test(_ua) ? 'samsungAndroid' : 'stockAndroid';
+        }
+
+        _ath({
+            message: _ath.OS in athMessages ? athMessages[_ath.OS] : '',
+
+            // the followings are just for debug, customize the options to your needs
+            skipFirstVisit: false,
+            displayPace: false
+        });
+    </script>
+    <!-- ************************* END HERE ************************* -->
+</head>
+
+
+    <meta name="apple-mobile-web-app-title" content="CGA Schedule of Events">
+    <title>CGA Schedule of Events</title>
+<body style="background: none">
+    <div class="contain-to-grid">
+        <div class="row">
+            <div style="background: #224488;" class="large-12 medium-12 small-12 columns">
+                <div style="color: #fff; margin: 5px 0 5px -10px; text-align: center; font-size: 1.11em">
+                    <a href="/default.asp" style="color: #fff; font-family:'marcellus sc', arial, sans-serif"><img src="/basin/img/official logos/OfficialCGALogo_60.png">&nbsp;Connecticut&nbsp;General&nbsp;Assembly</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="row">
+            <div class="small-12 medium-10 large-11 small-centered columns">
+                <h3 class="text-center">
+                    CGA Schedule of Events</h3>
+                <fieldset>
+                  <!-- begin form script --> 
+  <script type="text/javascript">
+      /** XHConn - Simple XMLHTTP Interface - bfults@gmail.com - 2005-04-08        **
+      ** Code licensed under Creative Commons Attribution-ShareAlike License      **
+      ** http://creativecommons.org/licenses/by-sa/2.0/                           **/
+      function XHConn() {
+          var xmlhttp, bComplete = false;
+          try { xmlhttp = new ActiveXObject("Msxml2.XMLHTTP"); }
+          catch (e) {
+              try { xmlhttp = new ActiveXObject("Microsoft.XMLHTTP"); }
+              catch (e) {
+                  try { xmlhttp = new XMLHttpRequest(); }
+                  catch (e) { xmlhttp = false; }
+              }
+          }
+          if (!xmlhttp) return null;
+          this.connect = function (sURL, sMethod, sVars, fnDone) {
+              if (!xmlhttp) return false;
+              bComplete = false;
+              sMethod = sMethod.toUpperCase();
+              try {
+                  if (sMethod == "GET") {
+                      xmlhttp.open(sMethod, sURL + "?" + sVars, true);
+                      sVars = "";
+                  }
+                  else {
+                      xmlhttp.open(sMethod, sURL, true);
+                      xmlhttp.setRequestHeader("Method", "POST " + sURL + " HTTP/1.1");
+                      xmlhttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+                  }
+                  xmlhttp.onreadystatechange = function () {
+                      if (xmlhttp.readyState == 4 && !bComplete) {
+                          bComplete = true;
+                          fnDone(xmlhttp);
+                      }
+                  };
+                  xmlhttp.send(sVars);
+              }
+              catch (z) { return false; }
+              return true;
+          };
+          return this;
+      }
+
+      // doAJAXCall : Generic AJAX Handler, used with XHConn
+      // Author : Bryce Christensen (www.esonica.com)
+      // PageURL : the server side page we are calling
+      // ReqType : either POST or GET, typically POST
+      // PostStr : parameter passed in a query string format 'param1=foo&param2=bar'
+      // FunctionName : the JS function that will handle the response
+
+      var doAJAXCall = function (PageURL, ReqType, PostStr, FunctionName) {
+
+          // create the new object for doing the XMLHTTP Request
+          var myConn = new XHConn();
+
+          // check if the browser supports it
+          if (myConn) {
+
+              // XMLHTTPRequest is supported by the browser, continue with the request
+              myConn.connect('' + PageURL + '', '' + ReqType + '', '' + PostStr + '', FunctionName);
+          }
+          else {
+              // Not support by this browser, alert the user
+              alert("XMLHTTP not available. Try a newer/better browser or this application will not work!");
+          }
+      }
+
+      function MySubmit() {
+          var enteredsDate;
+          var enteredeDate;
+
+          if (!Modernizr.inputtypes.date) {
+              if ($("#smalldiv").is(":visible")) {
+                  enteredsDate = $('#sDateS').datepicker('getDate', '+1d');
+                  enteredeDate = $('#eDateS').datepicker('getDate', '+1d');
+              }
+              else {
+                  enteredeDate = $('#eDate').datepicker('getDate', '+1d');
+                  enteredsDate = $('#sDate').datepicker('getDate', '+1d');
+              }
+              setModDates(enteredsDate, 0, enteredeDate);
+          }
+          else {
+              if ($("#smalldiv").is(":visible")) {
+                  enteredDate = document.getElementById('sDateS').valueAsDate;
+                  enteredeDate = document.getElementById('eDateS').valueAsDate;
+              }
+              else {
+                  enteredDate = document.getElementById('sDate').valueAsDate;
+                  enteredeDate = document.getElementById('eDate').valueAsDate;
+              }
+              setRegDates(enteredDate, 1, enteredeDate);
+          }
+      }
+
+
+      function setModDates(enteredDate, num, eDate) {
+          $('#hidedate').datepicker('setDate', enteredDate);
+          var date2 = $('#hidedate').datepicker('getDate', '+1d');
+          date2.setDate(date2.getDate() + num);
+          $('#hidedate').datepicker('setDate', date2);
+
+          $('#hidedate1').datepicker('setDate', eDate);
+          var date3 = $('#hidedate1').datepicker('getDate', '+1d');
+          date3.setDate(date3.getDate() + num);
+          $('#hidedate1').datepicker('setDate', date3);
+
+          $('#sDate').datepicker('setDate', date2);
+          $('#eDate').datepicker('setDate', date3);
+          $('#sDateS').datepicker('setDate', date2);
+          $('#eDateS').datepicker('setDate', date3);
+          var sdate = $('#hidedate').datepicker({ dateFormat: 'mm/dd/yy' }).val();
+          var edate = $('#hidedate1').datepicker({ dateFormat: 'mm/dd/yy' }).val();
+          var PostStr = "sDate=" + sdate + "&eDate=" + edate;
+          doAJAXCall('in-events1x.asp', 'POST', PostStr, showEvents);
+      }
+
+      function setRegDates(enteredDate, num, eDate) {
+          $('#hidedate').datepicker('setDate', enteredDate);
+          var date2 = $('#hidedate').datepicker('getDate', '+1d');
+          date2.setDate(date2.getDate() + num);
+          $('#hidedate').datepicker('setDate', date2);
+
+          $('#hidedate1').datepicker('setDate', eDate);
+          var date3 = $('#hidedate1').datepicker('getDate', '+1d');
+          date3.setDate(date3.getDate() + num);
+          $('#hidedate1').datepicker('setDate', date3);
+
+          document.getElementById('sDate').valueAsDate = date2;
+          document.getElementById('eDate').valueAsDate = date3;
+          document.getElementById('sDateS').valueAsDate = date2;
+          document.getElementById('eDateS').valueAsDate = date3;
+          var sdate = $('#hidedate').datepicker({ dateFormat: 'mm/dd/yy' }).val();
+          var edate = $('#hidedate1').datepicker({ dateFormat: 'mm/dd/yy' }).val();
+          var PostStr = "sDate=" + sdate + "&eDate=" + edate;
+          doAJAXCall('in-events1x.asp', 'POST', PostStr, showEvents);
+      }
+
+      var nextday = function () {
+
+          var enteredDate;
+
+          if (!Modernizr.inputtypes.date) {
+              enteredDate = $('#sDate').datepicker('getDate', '+1d');
+              if (enteredDate == null) {
+                  enteredDate = $('#sDateS').datepicker('getDate', '+1d');
+              }
+              setModDates(enteredDate, 1, enteredDate);
+          }
+          else {
+              enteredDate = document.getElementById('sDate').valueAsDate;
+              if (enteredDate == null) {
+                  enteredDate = document.getElementById('sDateS').valueAsDate;
+              }
+              setRegDates(enteredDate, 2, enteredDate);
+          }
+
+      }
+
+      var prevday = function () {
+
+          var enteredDate;
+
+          if (!Modernizr.inputtypes.date) {
+              enteredDate = $('#sDate').datepicker('getDate', '+1d');
+              if (enteredDate == null) {
+                  enteredDate = $('#sDateS').datepicker('getDate', '+1d');
+              }
+              setModDates(enteredDate, -1, enteredDate);
+          }
+          else {
+              enteredDate = document.getElementById('sDate').valueAsDate;
+              if (enteredDate == null) {
+                  enteredDate = document.getElementById('sDateS').valueAsDate;
+              }
+              setRegDates(enteredDate, 0, enteredDate);
+          }
+
+      }
+
+      var gotoday = function () {
+          var enteredDate = new Date();
+          if (!Modernizr.inputtypes.date) {
+              setModDates(enteredDate, 0, enteredDate);
+          }
+          else {
+              setRegDates(enteredDate, 0, enteredDate);
+          }
+      }
+
+      // The function for handling the response from the server
+      var showEvents = function (oXML) {
+
+          // get the response text, into a variable
+          var response = oXML.responseText;
+
+          // update the Div to show the result from the server
+          document.getElementById("replaceajax").innerHTML = response;
+          $('table').footable();
+          addeventatc.refresh();
+      };
+</script> 
+
+    <link rel="stylesheet" href="/basin/css/jquery-ui.css">
+    <script type="text/javascript" src="/basin/js/vendor/modernizr.js"></script>
+    <script src="/basin/js/vendor/jquery-ui.js"></script>
+    <script>
+        $(function () {
+            if (!Modernizr.inputtypes.date) {
+                $("#sDate").datepicker();
+                $("#eDate").datepicker();
+                $("#sDateS").datepicker();
+                $("#eDateS").datepicker();
+            }
+            else {
+                document.getElementById('sDate').valueAsDate = new Date();
+                document.getElementById('eDate').valueAsDate = new Date();
+                document.getElementById('sDateS').valueAsDate = new Date();
+                document.getElementById('eDateS').valueAsDate = new Date();
+            }
+            $("#hidedate").datepicker();
+            $("#hidedate1").datepicker();
+        });
+
+    </script>
+<!--Start FooTable - only include if the foo table is being used -->
+  <!--link href="/basin/foo/css/footable.core.css" rel="stylesheet" type="text/css" /-->
+  <script src="/basin/foo/js/footable.js" type="text/javascript"></script>
+  <script src="/basin/foo/js/footable.filter.js" type="text/javascript"></script>
+  <script type="text/javascript">
+      $(function () {
+          $('.footable').footable();
+      });
+  </script>
+<!--End FooTable -->
+
+<!--style>
+td a {
+    display:block !important;
+    width:100% !important;
+    height:100% !important;
+ 
+}
+a {
+    padding-top: 120px !important;
+    margin-top: -120px !important;
+}
+</style-->
+
+
+
+   <div class="row">
+  <div class="small-12 large-12 columns">
+
+<form name="eventform" onsubmit="event.preventDefault(); return MySubmit();" >
+<div class="row hide-for-small hide-for-medium" id="largediv">
+<div class="medium-2 columns">
+<span class="fc-button fc-button-prev fc-state-default fc-corner-left" style="font-weight:bold" onclick="prevday();"><span class="fc-text-arrow">&lsaquo;</span></span>
+<span class="fc-button fc-button-next fc-state-default fc-corner-right" style="font-weight:bold" onclick="nextday();"><span class="fc-text-arrow">&rsaquo;</span></span>
+<span class="fc-button fc-button-today fc-state-default fc-corner-left fc-corner-right" style="font-weight:normal;font-family: Helvetica,Arial,sans-serif !important;" onclick="gotoday();">today</span>
+</div>
+<div class="medium-4 columns">
+    <div class="row">
+        <div class="small-4 columns hide-for-medium hide-for-small">
+            <label for="right-label" class="right inline">
+                Start Date:
+            </label>
+        </div>
+        <div class="small-4 columns hide-for-large-up">
+            <label for="right-label" class="right inline">
+                Start:
+            </label>
+        </div>
+        <div class="small-8 columns">
+            <input type='date' id="sDate" name="sDate" value="12/17/2025" />
+        </div>
+    </div>
+</div>
+<div class="medium-4 columns">
+    <div class="row">
+        <div class="small-4 columns hide-for-medium hide-for-small">
+            <label for="right-label" class="right inline">
+                End Date:
+            </label>
+        </div>
+        <div class="small-4 columns hide-for-large-up">
+            <label for="right-label" class="right inline">
+                End:
+            </label>
+        </div>        
+        <div class="small-8 columns">
+            <input type='date' id="eDate" name="eDate" value="12/17/2025" />
+        </div>
+    </div>
+</div>
+<div class="medium-2 columns"><button class="anibutton anibutton-sky left inline" style="height: 37px; margin-left:-30px; border-bottom-right-radius:1;border-top-right-radius:1;border-top-left-radius:0;border-bottom-left-radius:0;"><i class="fa fa-check"></i> Go</button>
+</div>
+</div>
+
+<div class="row hide-for-large-up" id="smalldiv">
+
+<div class="small-6 columns">
+            <label>
+                Start:
+            </label>
+            <input type='date' id="sDateS" name="sDateS" value="12/17/2025" />
+</div>
+<div class="small-6 end columns" style="margin-left:-15px;">
+            <label>
+                End:
+            </label>
+            <input type='date' style='border-right:none;' id="eDateS" name="eDateS" value="12/17/2025" />
+</div>
+
+<div class="row hide-for-large-up">
+<div class="small-6 small-push-1 columns" style="margin-left:-5px; text-align:left;">
+<div  style="margin-top:-15px !important;padding-bottom:10px !important"> </div>
+<span class="fc-button fc-button-prev fc-state-default fc-corner-left" style="font-weight:bold" onclick="prevday();"><span class="fc-text-arrow">&lsaquo;</span></span>
+<span class="fc-button fc-button-next fc-state-default fc-corner-right" style="font-weight:bold" onclick="nextday();"><span class="fc-text-arrow">&rsaquo;</span></span>
+<span class="fc-button fc-button-today fc-state-default fc-corner-left fc-corner-right" style="font-weight:normal;font-family: Helvetica,Arial,sans-serif !important; vertical-align:top" onclick="gotoday();">today</span>
+</div>
+<div class="small-2 small-push-4 columns hide-for-small"><button class="anibutton anibutton-sky" style="height: 37px; margin:-53px 30px 0 0 ; padding-right:0; border-bottom-right-radius:1;border-top-right-radius:1;border-top-left-radius:0;border-bottom-left-radius:0;"><i class="fa fa-check"></i> Go&nbsp;&nbsp;</button>
+</div>
+<div class="small-2 small-push-1 columns hide-for-medium"><button class="anibutton anibutton-sky" style="height: 37px; margin:-53px 0 0 -30px; padding-right:0; border-bottom-right-radius:1;border-top-right-radius:1;border-top-left-radius:0;border-bottom-left-radius:0;">Go&nbsp;&nbsp;</button>
+</div>
+</div>
+</div>
+
+<input type="hidden" id="hidedate" />
+<input type="hidden" id="hidedate1" />
+      </form>
+      <div id="replaceajax">
+          <div class="row eventcal" id="evtable">
+              <div class="small-12 small-centered medium-12 columns" id="content">
+                  <div class="row">
+                      <div class="small-12 columns">
+                          <div style="margin-top: 5px !important; padding-top: 5px !important">
+                          </div>
+                          <div class="show-for-touch" style="padding-bottom: 3px">
+                          </div>
+                          <input id="filter" type="text" placeholder="Filter: e.g. Public Health" /></div>
+                  </div>
+                  <table data-filter="#filter" class="footable hover-town">
+                      <thead>
+                          <tr>
+                              <th data-class="expand">
+                                  Date
+                              </th>
+                              <th data-hide="phone">
+                                  Time
+                              </th>
+                              <th>
+                                  Description
+                              </th>
+                              <th data-hide="phone">
+                                  Location
+                              </th>
+                              <th>
+                                  Add
+                              </th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                          <tr><td style='vertical-align:top;width:7rem'>12/17/2025</td>
+<td style='vertical-align:top'>10:00&nbsp;AM</td>
+<td style='font-weight:bold; vertical-align:top'>Social Equity Council: Meeting</td>
+<td style='vertical-align:top'>Room&nbsp;1D&nbsp;of&nbsp;the&nbsp;LOB</td>
+<td style='vertical-align:top'><a title='Add to Calendar' class='addeventatc' data-styling='none' style='background:none;border:none;padding:0px; margin: -1px 0 -5px !important;'><i class='fa fa-calendar' aria-hidden='true' style='color:#657dad;'></i><div style='display:none;'><span class='_start'>12/17/2025 10:00:00 AM</span><span class='_end'>12/17/2025 1:00:00 PM</span><span class='_zonecode'>15</span><span class='_summary'>Social Equity Council: Meeting</span><span class='_location'>Room 1D of the LOB</span><span class='_all_day_event'>false</span><span class='_date_format'>MM/DD/YYYY</span></div></a> </td></tr><tr><td style='vertical-align:top;width:7rem'>12/17/2025</td>
+<td style='vertical-align:top'>10:00&nbsp;AM</td>
+<td style='font-weight:bold; vertical-align:top'><a  style='z-index:-999;'  href=/2025/PHdata/oa/pdf/2025oa-01217-R001000PH-oa.pdf>Sewage Disposal Working Group - Nitrogen & Environment&nbsp;<i class='icon-appointment-agenda' aria-hidden='true' style='color:#657dad; font-size: 1.05em; z-index:-1'></i></a></td>
+<td style='vertical-align:top'>Zoom&nbsp;and&nbsp;YouTube&nbsp;Live</td>
+<td style='vertical-align:top'><a title='Add to Calendar' class='addeventatc' data-styling='none' style='background:none;border:none;padding:0px; margin: -1px 0 -5px !important;'><i class='fa fa-calendar' aria-hidden='true' style='color:#657dad;'></i><div style='display:none;'><span class='_start'>12/17/2025 10:00:00 AM</span><span class='_end'>12/17/2025 12:00:00 PM</span><span class='_zonecode'>15</span><span class='_summary'>Sewage Disposal Working Group - Nitrogen & Environment</span><span class='_location'>Zoom and YouTube Live</span><span class='_all_day_event'>false</span><span class='_date_format'>MM/DD/YYYY</span></div></a> </td></tr><tr><td style='vertical-align:top;width:7rem'>12/17/2025</td>
+<td style='vertical-align:top'>11:00&nbsp;AM</td>
+<td style='font-weight:bold; vertical-align:top'>Task Force on the Regulation of Corporate Housing Acquisitions</td>
+<td style='vertical-align:top'>Zoom&nbsp;Remote&nbsp;Meeting</td>
+<td style='vertical-align:top'><a title='Add to Calendar' class='addeventatc' data-styling='none' style='background:none;border:none;padding:0px; margin: -1px 0 -5px !important;'><i class='fa fa-calendar' aria-hidden='true' style='color:#657dad;'></i><div style='display:none;'><span class='_start'>12/17/2025 11:00:00 AM</span><span class='_end'>12/17/2025 1:00:00 PM</span><span class='_zonecode'>15</span><span class='_summary'>Task Force on the Regulation of Corporate Housing Acquisitions</span><span class='_location'>Zoom Remote Meeting</span><span class='_all_day_event'>false</span><span class='_date_format'>MM/DD/YYYY</span></div></a> </td></tr><tr><td style='vertical-align:top;width:7rem'>12/17/2025</td>
+<td style='vertical-align:top'>12:30&nbsp;PM</td>
+<td style='font-weight:bold; vertical-align:top'><a  style='z-index:-999;'  href=/2025/JUDdata/oa/pdf/2025oa-01217-R001230JUD-oa.pdf>Domestic Violence Criminal Justice Advisory Council Meeting&nbsp;<i class='icon-appointment-agenda' aria-hidden='true' style='color:#657dad; font-size: 1.05em; z-index:-1'></i></a></td>
+<td style='vertical-align:top'>Room&nbsp;2D&nbsp;of&nbsp;the&nbsp;LOB&nbsp;and&nbsp;Zoom&nbsp;and&nbsp;YouTube&nbsp;Live</td>
+<td style='vertical-align:top'><a title='Add to Calendar' class='addeventatc' data-styling='none' style='background:none;border:none;padding:0px; margin: -1px 0 -5px !important;'><i class='fa fa-calendar' aria-hidden='true' style='color:#657dad;'></i><div style='display:none;'><span class='_start'>12/17/2025 12:30:00 PM</span><span class='_end'>12/17/2025 2:00:00 PM</span><span class='_zonecode'>15</span><span class='_summary'>Domestic Violence Criminal Justice Advisory Council Meeting</span><span class='_location'>Room 2D of the LOB and Zoom and YouTube Live</span><span class='_all_day_event'>false</span><span class='_date_format'>MM/DD/YYYY</span></div></a> </td></tr><tr><td style='vertical-align:top;width:7rem'>12/17/2025</td>
+<td style='vertical-align:top'>1:00&nbsp;PM</td>
+<td style='font-weight:bold; vertical-align:top'>CANCELLED: CHAMP Working Group - Advisory Committee</td>
+<td style='vertical-align:top'>Zoom&nbsp;Remote&nbsp;Meeting</td>
+<td style='vertical-align:top'><a title='Add to Calendar' class='addeventatc' data-styling='none' style='background:none;border:none;padding:0px; margin: -1px 0 -5px !important;'><i class='fa fa-calendar' aria-hidden='true' style='color:#657dad;'></i><div style='display:none;'><span class='_start'>12/17/2025 1:00:00 PM</span><span class='_end'>12/17/2025 2:30:00 PM</span><span class='_zonecode'>15</span><span class='_summary'>CANCELLED: CHAMP Working Group - Advisory Committee</span><span class='_location'>Zoom Remote Meeting</span><span class='_all_day_event'>false</span><span class='_date_format'>MM/DD/YYYY</span></div></a> </td></tr><tr><td style='vertical-align:top;width:7rem'>12/17/2025</td>
+<td style='vertical-align:top'>2:00&nbsp;PM</td>
+<td style='font-weight:bold; vertical-align:top'>Rep. Leeper, Rep. Brown and Connecticut Education Association Press Conference Re:  Paid Student Teaching</td>
+<td style='vertical-align:top'>Room&nbsp;1C&nbsp;of&nbsp;the&nbsp;LOB</td>
+<td style='vertical-align:top'><a title='Add to Calendar' class='addeventatc' data-styling='none' style='background:none;border:none;padding:0px; margin: -1px 0 -5px !important;'><i class='fa fa-calendar' aria-hidden='true' style='color:#657dad;'></i><div style='display:none;'><span class='_start'>12/17/2025 2:00:00 PM</span><span class='_end'>12/17/2025 3:00:00 PM</span><span class='_zonecode'>15</span><span class='_summary'>Rep. Leeper, Rep. Brown and Connecticut Education Association Press Conference Re:  Paid Student Teaching</span><span class='_location'>Room 1C of the LOB</span><span class='_all_day_event'>false</span><span class='_date_format'>MM/DD/YYYY</span></div></a> </td></tr><tr><td style='vertical-align:top;width:7rem'>12/17/2025</td>
+<td style='vertical-align:top'>2:30&nbsp;PM</td>
+<td style='font-weight:bold; vertical-align:top'><a  style='z-index:-999;'  href=/2025/PHdata/oa/pdf/2025oa-01217-R001430PH-oa.pdf>Sewage Disposal Working Group - Regulations & Legal&nbsp;<i class='icon-appointment-agenda' aria-hidden='true' style='color:#657dad; font-size: 1.05em; z-index:-1'></i></a></td>
+<td style='vertical-align:top'>Zoom&nbsp;and&nbsp;YouTube&nbsp;Live</td>
+<td style='vertical-align:top'><a title='Add to Calendar' class='addeventatc' data-styling='none' style='background:none;border:none;padding:0px; margin: -1px 0 -5px !important;'><i class='fa fa-calendar' aria-hidden='true' style='color:#657dad;'></i><div style='display:none;'><span class='_start'>12/17/2025 2:30:00 PM</span><span class='_end'>12/17/2025 4:00:00 PM</span><span class='_zonecode'>15</span><span class='_summary'>Sewage Disposal Working Group - Regulations & Legal</span><span class='_location'>Zoom and YouTube Live</span><span class='_all_day_event'>false</span><span class='_date_format'>MM/DD/YYYY</span></div></a> </td></tr>
+                      </tbody>
+                  </table>
+              </div>
+          </div>
+      </div>
+  </div>
+   </div>
+
+
+
+<!-- AddThisEvent Settings --> 
+<link rel="stylesheet" href="/basin/css/ate-table.css" type="text/css" media="all" />
+<script type="text/javascript" src="/basin/js/vendor/atc.1.6.1.js" async defer></script>
+<script type="text/javascript">
+window.addeventasync = function(){
+    addeventatc.settings({
+        license: "azBLNKuCizFmLsJyZmTv24238",
+        mouse: false,
+        css: false,
+        outlook: { show: true, text: "Outlook Calendar" },
+        google: { show: true, text: "Google Calendar" },
+        yahoo: { show: true, text: "Yahoo Calendar" },
+        hotmail: { show: true, text: "Hotmail Calendar" },
+        ical: { show: true, text: "iCal Calendar" },
+        facebook: { show: true, text: "Facebook Event" },
+        dropdown: { order: "outlook,google,ical,yahoo" },
+        callback: ""
+      });
+};
+</script> 
+
+                </fieldset>
+            </div>
+        </div>
+    </div>
+
+    <script src="/basin/js/foundation.min.js"></script>
+    <script>
+        $(document).foundation();
+    </script>
+</body>
+</html>
+

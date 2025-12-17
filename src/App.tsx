@@ -247,22 +247,27 @@ function App() {
               const state = stateResponse.ok ? await stateResponse.json() : []
               const local = localResponse.ok ? await localResponse.json() : []
               
-              console.log('📊 Parsed results - Federal:', federal.length, 'State:', state.length, 'Local:', local.length);
+              // Filter out malformed events missing required fields
+              const validFederal = federal.filter((e: any) => e && e.level)
+              const validState = state.filter((e: any) => e && e.level)
+              const validLocal = local.filter((e: any) => e && e.level)
+              
+              console.log('📊 Parsed results - Federal:', validFederal.length, 'State:', validState.length, 'Local:', validLocal.length);
               
               // Add distances and tags
               const addDistanceAndTags = (events: LegislativeEvent[]) => {
-                return events.map(event => ({
+                return events.filter(e => e && e.level).map(event => ({
                   ...event,
                   tags: autoTagEvent(event),
                   distance: calculateDistance(capitol.lat, capitol.lng, event.lat, event.lng)
                 }))
               }
               
-              setFederalEvents(addDistanceAndTags(federal).filter(e => e.distance <= radius))
+              setFederalEvents(addDistanceAndTags(validFederal).filter(e => e.distance <= radius))
               // State events are NOT filtered by distance - they're statewide events
-              setStateEvents(addDistanceAndTags(state))
+              setStateEvents(addDistanceAndTags(validState))
               // Local events: no distance filter for state searches (show all in state)
-              setLocalEvents(addDistanceAndTags(local))
+              setLocalEvents(addDistanceAndTags(validLocal))
               
             } catch (err) {
               setError(err instanceof Error ? err.message : 'Failed to fetch state events')

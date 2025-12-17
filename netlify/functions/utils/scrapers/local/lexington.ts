@@ -100,8 +100,12 @@ function convertToRawEvent(event: LexingtonEventLink): RawEvent {
     type = 'Board Meeting';
   }
   
+  // Generate unique ID from date + title hash
+  const dateTimestamp = new Date(event.dateStr).getTime();
+  const titleHash = Buffer.from(event.title).toString('base64').substring(0, 8);
+  
   return {
-    id: `lexington-${Buffer.from(event.url).toString('base64').substring(0, 12)}`,
+    id: `lexington-${dateTimestamp}-${titleHash}`,
     name: event.title,
     date: event.dateStr,
     time,
