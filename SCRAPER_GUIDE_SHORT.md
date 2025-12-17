@@ -50,7 +50,7 @@ Provide what you tried:
 
 ## Implementation Patterns
 
-### 1. Static HTML (Tennessee, South Carolina)
+### 1. Static HTML (Tennessee, South Carolina, Louisiana)
 
 ```typescript
 export class StateScraper extends BaseScraper {
@@ -91,7 +91,46 @@ async scrapeCalendar(): Promise<RawEvent[]> {
 }
 ```
 
-### 3. OpenStates Fallback (Georgia, Alabama)
+### 3. Agenda Parsing Enhancement (Louisiana)
+
+**When agenda URLs exist, parse for meeting details:**
+
+```typescript
+private async parseAgenda(agendaUrl: string): Promise<{ items: string[] }> {
+  const html = await fetch(agendaUrl).then(r => r.text());
+  const $ = cheerio.load(html);
+  const items: string[] = [];
+  
+  // Extract numbered agenda items (skip headers like "CALL TO ORDER")
+  $('#TableAgendaItems tr').each((_, row) => {
+    const text = $(row).text().trim();
+    const match = text.match(/^\d+\.\s+(.+)/);
+    if (match && match[1]) {
+      items.push(match[1].substring(0, 150)); // Truncate long items
+    }
+  });
+  return { items };
+}
+
+async convertEventToRaw(event: StateEvent): Promise<RawEvent> {
+  const agenda = await this.parseAgenda(event.agendaUrl);
+  return {
+    ...baseFields,
+    description: agenda.items.length > 0 
+      ? `Agenda: ${agenda.items.slice(0, 3).join('; ')}${agenda.items.length > 3 ? '...' : ''}`
+      : ''
+  };
+}
+```
+
+**Key Points:**
+- Agendas may be HTML (not PDF) - check link before implementing
+- Extract numbered items only (e.g., "1. To receive an update...")
+- Filter headers: "CALL TO ORDER", "ROLL CALL", "BUSINESS", "ADJOURNMENT"
+- Limit to first 3 items, truncate each to 150 chars
+- Some agendas may be empty - handle gracefully
+
+### 4. OpenStates Fallback (Georgia, Alabama)
 
 ```typescript
 async scrapeCalendar(): Promise<RawEvent[]> {
@@ -418,6 +457,15 @@ if (isProduction && !isNetlifyDev) {
 - Local: Birmingham (Next.js + Puppeteer) + Montgomery (Akamai bypass + Puppeteer)
 - Integration: Geo-detection (lat 30.2-35.0, lng -88.5 to -84.9) auto-adds cities
 - Result: 3 state + 19 local events (7 Birmingham + 12 Montgomery)
+
+**Louisiana** (Static HTML + Agenda Parsing + CivicPlus Local)
+- State URL: `https://legis.la.gov/legis/ByCmte.aspx` (static table)
+- State Method: Cheerio + async agenda parsing from `Agenda.aspx?m=[ID]`
+- Agenda Enhancement: Extracts numbered meeting items for description field
+- Local: Baton Rouge AgendaCenter (CivicPlus system, static HTML)
+- Integration: Geo-detection (lat 28.9-33.0, lng -94.0 to -88.8) auto-adds Baton Rouge
+- Result: 4 state (1 with agenda details) + 81 local events (Metropolitan Council)
+- Tip: User said "PDF agendas" but they're actually HTML pages - always verify link type
 
 **Missouri** (ASP.NET Alternative)
 - URL: `https://house.mo.gov/HearingsTimeOrder.aspx`

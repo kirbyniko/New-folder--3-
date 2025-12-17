@@ -1,0 +1,273 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head><link href="App_Themes/Legis/jplayer_skin.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Legis/Legis.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Legis/nav.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Legis/vertnav.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Legis/video-js.css" type="text/css" rel="stylesheet" /><meta http-equiv="X-UA-Compatible" content="IE=edge" /><link rel="shortcut icon" href="App_Themes/Legis/Images/State.ico" /><title>
+	Agenda - Ways and Means
+</title>
+    <style type="text/css">
+        div.AgendaPrompt { position: absolute; top: 30%; left: 30%; height: 150px; width: 400px; background-color:ButtonFace; z-index: 20;
+                           border-style: outset; text-align:center; }
+        div.PublicComment { margin:0 3% 0 6.5%; text-align:justify; }
+        span.ChkBoxPos { position: absolute; left: 67px; }
+        a.MoveLinkPos { position: absolute; left: 620px; }
+        td.FlashColor { font-weight:bold; color:#9A0000; }
+        td.StandardColor { font-weight:normal; color:Black;  }
+        td.CurrentItem { border-top:inset; border-top-width:thin; border-color: #D3D3D3; color:#9A0000; }
+        a.CurrentItem { color:#9A0000; }
+        td.PastItem { border-top:none; border-bottom:none; color:#0000F0; }
+        a.PastItem { color:#0000F0 }
+        td.FutureItem { border-top:none; border-bottom:none; color:Black }
+        a.FutureItem { color:Black }
+        td.DocumentsMenu { border-bottom:inset; border-bottom-width:thin; border-color: #D3D3D3; }
+        table.AgendaItems { border-collapse:collapse }
+    </style>
+    
+    <script type="text/javascript">
+       function GetWindowHeight() {
+       // NOTE 1:  This function is written to return the window's height, regardless of browser type.
+       // NOTE 2:  The "ScrollToCurrentItem()" function will use our return value to calculate a scroll
+       // amount that will position the current item in the middle of the window, regardless of the 
+       // window's size.
+        
+          if (self.innerHeight) {
+              return self.innerHeight;
+          }
+          else if (document.documentElement && document.documentElement.clientHeight) {
+              return document.documentElement.clientHeight;
+          }
+          else if (document.body) {
+              return document.body.clientHeight;
+          }
+          else {
+            return 0;
+          }
+       }
+       
+       function ResetCheckBoxColor() {
+         // This cancels the "flash" effect for the checkbox, which we started in ScrollToCurrentItem().  We're briefly "flashing" the
+         // checkbox, prior to auto-scrolling to the agenda's current item.
+         var chkBoxTableCell = document.getElementById('tcCheckBoxAutoScroll');
+         chkBoxTableCell.setAttribute('class','StandardColor');
+       }
+       
+       function ScrollToCurrentItem() {
+         // NOTE 1: This function is called by code written into this page thru a call to ScriptManager.RegisterStartupScript(), in the
+         // Page_PreRender() subroutine of our code-behind page.  It's necessary to do it that way, in order for the code to execute 
+         // when our "UpdatePanelAgenda" updates.
+         //
+         // NOTE 2: In our code below, we have to use the "window.setTimeout()" method, because the window will re-load after we've 
+         // already scrolled, which will effectively cancel our auto-scrolling efforts.  Setting the timeout delay allows the window 
+         // to completely render, before scrolling.  When the scrolling code executes after the short delay, the scrolling will stay in effect.
+         // We can't use "currentItem.ScrollIntoView() because unlike the "window" object, "currentItem" won't be in scope following the delay.
+             
+         var myCheckBox = document.getElementById('CheckBoxAutoScroll');
+              
+         if (myCheckBox != null && myCheckBox.getAttribute('checked') == 'checked') {
+            var currentItem = document.getElementById('tcCurrentItem');
+
+            if (currentItem != null){
+               var chkBoxTableCell = document.getElementById('tcCheckBoxAutoScroll');
+               chkBoxTableCell.setAttribute('class','FlashColor');
+               window.setTimeout('ResetCheckBoxColor()', 500);
+               
+               var currItemOT = currentItem.offsetTop;
+               var tableAgendaOT = document.getElementById('TableAgenda').offsetTop              
+               var scrollAmount = currItemOT + tableAgendaOT + 80 - GetWindowHeight() / 2;
+               window.setTimeout('window.scroll(0,' + scrollAmount + ')',1000);
+            } 
+         }
+       }
+       
+       function GoToCurrentItem(){
+         var currentItem = document.getElementById('tcCurrentItem');
+
+         if (currentItem != null){          
+            var currItemOT = currentItem.offsetTop;
+            var tableAgendaOT = document.getElementById('TableAgenda').offsetTop              
+            var scrollAmount = currItemOT + tableAgendaOT + 80 - GetWindowHeight() / 2;
+            window.scroll(0, scrollAmount );
+         }
+       }
+    </script>
+<link href="App_Themes/Legis/jplayer_skin.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Legis/Legis.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Legis/nav.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Legis/vertnav.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Legis/video-js.css" type="text/css" rel="stylesheet" /></head> 
+<body style="background:white; font-family:Palatino Linotype">
+    <form name="form1" method="post" action="./Agenda.aspx?m=25274" onkeypress="javascript:return WebForm_FireDefaultButton(event, 'btnAutoScrollYes')" id="form1">
+<div>
+<input type="hidden" name="__EVENTTARGET" id="__EVENTTARGET" value="" />
+<input type="hidden" name="__EVENTARGUMENT" id="__EVENTARGUMENT" value="" />
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="/wEPDwULLTE5OTIyNjIxNzQPFgQeB1VTRVJfSURlHgpVU0VSX0ZMQUdTZBYCAgMPZBYCAgMPZBYCZg9kFggCBQ9kFgJmD2QWAgIBD2QWAmYPZBYGZg9kFgJmD2QWAmYPDxYEHgRUZXh0BSFIb3VzZSBDb21taXR0ZWUgb24gV2F5cyBhbmQgTWVhbnMeC05hdmlnYXRlVXJsBTVodHRwczovL2hvdXNlLmxvdWlzaWFuYS5nb3YvSF9DbXRlcy9XYXlzQW5kTWVhbnMuYXNweGRkAgEPZBYCZg9kFgZmDw8WAh8CBRFEZWNlbWJlciAxOSwgMjAyNWRkAgIPDxYCHwIFCTk6MDAgYS5tLmRkAgQPDxYCHwIFBlJvb20gNmRkAgIPZBYCZg9kFgICAQ8PFgYfAgUJU2NoZWR1bGVkHglGb3JlQ29sb3IKIx4EXyFTQgIEZGQCCA9kFgJmDw8WAh4HVmlzaWJsZWdkZAIQD2QWAmYPZBYEAgEPFgIeB0VuYWJsZWRoZAIDD2QWBGYPZBYCAgEPZBYEZg8QDxYCHwZoZGRkZAIBDw8WAh8GaGRkAgEPZBYCAgEPZBYCZg9kFgQCAw9kFgRmDw8WBB4IQ3NzQ2xhc3MFCkZ1dHVyZUl0ZW0fBQICZGQCAQ8PFgQfCAUKRnV0dXJlSXRlbR8FAgJkZAIED2QWBGYPDxYEHwgFCkZ1dHVyZUl0ZW0fBQICZGQCAQ8PFgQfCAUKRnV0dXJlSXRlbR8FAgJkZAISDw8WAh8CBe4FUHVyc3VhbnQgdG8gSG91c2UgUnVsZSAxNC4zMywgYW55IGludGVyZXN0ZWQgcGVyc29uIG9yIGFueSBjb21taXR0ZWUgbWVtYmVyIG1heSBmaWxlIHdpdGggdGhlIGNvbW1pdHRlZSBhIHByZXBhcmVkIHN0YXRlbWVudCBjb25jZXJuaW5nIGEgc3BlY2lmaWMgaW5zdHJ1bWVudCBvciBtYXR0ZXIgdW5kZXIgY29uc2lkZXJhdGlvbiBieSB0aGUgY29tbWl0dGVlIG9yIGNvbmNlcm5pbmcgYW55IG1hdHRlciB3aXRoaW4gdGhlIGNvbW1pdHRlZSdzIHNjb3BlIG9mIGF1dGhvcml0eSwgYW5kIHRoZSBjb21taXR0ZWUgcmVjb3JkcyBzaGFsbCByZWZsZWN0IHJlY2VpcHQgb2Ygc3VjaCBzdGF0ZW1lbnQgYW5kIHRoZSBkYXRlIGFuZCB0aW1lIHRoZXJlb2YuPGJyIFw+PGJyIFw+Tk9URTogU3RhdGVtZW50cyBtYXkgYmUgZmlsZWQgd2l0aCB0aGUgSG91c2UgQ29tbWl0dGVlIG9uIFdheXMgYW5kIE1lYW5zIHZpYSBlLW1haWwgYXQgaHdtY0BsZWdpcy5sYS5nb3YuPGJyIFw+PGJyIFw+QXVkaW8vdmlzdWFsIHByZXNlbnRhdGlvbnMsIHN1Y2ggYXMgUG93ZXJQb2ludCwgc2hhbGwgYmUgZmlsZWQgd2l0aCB0aGUgSW5zdXJhbmNlIFByZW1pdW0gVGF4IFN0dWR5IEdyb3VwIHZpYSBlbWFpbCBhdCBod21jQGxlZ2lzLmxhLmdvdiBhdCBsZWFzdCAyNCBob3VycyBwcmlvciB0byB0aGUgc2NoZWR1bGVkIHN0YXJ0IG9mIHRoZSBjb21taXR0ZWUgbWVldGluZy4gTm8gZmxhc2ggb3IgdGh1bWIgZHJpdmVzIHdpbGwgYmUgYWNjZXB0ZWQuZGRkDVsgW8sjwKvgt5TG44NuguA/OYd+USmsEEZ5SsJmF7c=" />
+</div>
+
+<script type="text/javascript">
+//<![CDATA[
+var theForm = document.forms['form1'];
+if (!theForm) {
+    theForm = document.form1;
+}
+function __doPostBack(eventTarget, eventArgument) {
+    if (!theForm.onsubmit || (theForm.onsubmit() != false)) {
+        theForm.__EVENTTARGET.value = eventTarget;
+        theForm.__EVENTARGUMENT.value = eventArgument;
+        theForm.submit();
+    }
+}
+//]]>
+</script>
+
+
+<script src="/Legis/WebResource.axd?d=5jDUB5FcgRu9gm4gBt1u1KsFLqzVpd0jMIO5iA68CJBuA_vcd-39cRr8vbawEAdmi5popG5R3ZBpCjX6-vmt2udWlEvp-Tm-y6Kw6RtbHZo1&amp;t=638901361900000000" type="text/javascript"></script>
+
+
+<script src="/Legis/ScriptResource.axd?d=diSgN70uE7PSlGIF-M7i9qiTH7Hn8WERt3qVXrpsChyhwSmuCy3EWh-YFo7L_cBuAJ4YcawKHSP-2pg2Kqh6WY2nOgnCNMJSxH3TREZxenLGzm7En73sqv0D_Q1S4z3wu1PKZ6PeIDSorVFZNOT0FsnVAyciY0uWz0iuvKDViUQkpXyAUPNiQ1YiucARyLuZ0&amp;t=5c0e0825" type="text/javascript"></script>
+<script type="text/javascript">
+//<![CDATA[
+if (typeof(Sys) === 'undefined') throw new Error('ASP.NET Ajax client-side framework failed to load.');
+//]]>
+</script>
+
+<script src="/Legis/ScriptResource.axd?d=aD-qBI-kRxqsdNU3xdB71n0pQQIe-BUCPRu-BOosiVY6rFHnCVhDb3R1W3ZHBv-NvpDQgfLzxPNUVAkEGUS1AM5RQE-pAco2Lkuwwrd0zW4fQxStpUhAKKKz8bohmqxcehxNzBIGQdOu2JpxtxMlrxqIIQaqhGP3rbwOPnzvxlqq1PTVN3tKZqLVL_irQfCz0&amp;t=5c0e0825" type="text/javascript"></script>
+<script src="/Legis/ScriptResource.axd?d=-q5El4UVvKJMUcO01BeJOzu_blcXRh3xt1hl7EQG6kUs3iGByCFM5xp_rdGVN9hjXITudqkQhWoAL-Bqwp6iQhQzHfKyxH7FvDEicLPwBDe2lYimrfmI6FrdQN1kaYYz8vDQlARgyKkzMTPe22eH6FgOT4VAddmZI61nPMPyLvePdh8pTbokIWM8XSuBEGiH0&amp;t=5c0e0825" type="text/javascript"></script>
+<script src="/Legis/WebResource.axd?d=ldl8T4tUYAiaEMUJC38vfFUY2CTNW0B4XPbye4Thi9T0QGDytwRLDyvOfP5GA67lCUlU6JhIWBi1nNSlAfi0WXm0ymct97GojM1nRV0UIxs1&amp;t=638901361900000000" type="text/javascript"></script>
+<div>
+
+	<input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="FB85917D" />
+	<input type="hidden" name="__EVENTVALIDATION" id="__EVENTVALIDATION" value="/wEdAAb/Dg8yzUS0sQtnD7/UGA/unRulAO1Ql6S+c09MX9PL/+f5lTzMJALihOlYKg47v351vInrW+Yi5hpIzto5+Zg3zcK4fzUJjUU4+7WeqdMX2Y5Gez2SxMKgJX6fDviLbPV4h5/MUkvCj1r+wFKVW71MQDkVi2VL+1V7lKr6GxpXcA==" />
+</div>
+        
+    <script type="text/javascript">
+//<![CDATA[
+Sys.WebForms.PageRequestManager._initialize('ScriptManager1', 'form1', ['tUpdatePanelAgenda','','fUpdatePanelItems',''], [], [], 90, '');
+//]]>
+</script>
+     
+    
+    <div id="UpdatePanelAgenda">
+	
+            <input type="hidden" name="hidPageTitle" id="hidPageTitle" value="Agenda - Ways and Means" />
+            <input type="hidden" name="hidIsMember" id="hidIsMember" value="0" />
+    
+            <table border="0" style="width:100%;">
+		<tr>
+			<td valign="top" style="width:200px;">
+                        <!-- pic goes here (note: our code will set the image URL, based on the chamber ID): -->
+                        <img id="ImageSeal" src="App_Themes/Legis/Images/StateSeal.png" style="border-width:0px;" /></td><td><table id="tblHeader" cellpadding="0" border="0" style="border-width:0px;width:100%;">
+				<tr>
+					<td align="center" style="width:100%;"><a id="linkTitle" href="https://house.louisiana.gov/H_Cmtes/WaysAndMeans.aspx" target="_blank" style="font-size:Large;font-weight:bold;">House Committee on Ways and Means</a></td>
+				</tr><tr valign="top">
+					<td align="center" style="width:100%;"><span id="lDate" style="font-weight:bold;">December 19, 2025</span><br />
+                                        <span id="lTime" style="font-weight:bold;">9:00 a.m.</span><br />  
+                                        <span id="lLocation" style="font-weight:bold;">Room 6</span><br />                           
+                                </td>
+				</tr><tr id="trStatus">
+					<td align="center">
+                                    <br />
+                                    <span id="lStatus" style="color:Black;font-size:Medium;font-weight:bold;">Scheduled</span></td><td>&nbsp;</td>
+				</tr>
+			</table></td><td align="right" valign="top" style="width:200px;">
+                        <br />
+                        <span>
+                            
+                            <br />
+                            <!--                   
+                            <br />
+                            -->
+
+                            <br />
+                             
+                            <!--
+                            <br />
+                            -->
+                            
+                        </span>
+                    </td>
+		</tr>
+	</table><input type="hidden" name="hideMeetingStatus" id="hideMeetingStatus" value="1" />
+                 
+            <table cellpadding="2" border="0">
+		<tr id="trInfo">
+			<td style="width:8%;">&nbsp;</td><td style="border-color:#707070;border-width:1px;border-style:solid;">
+                        <span style="font-size:Small; font-style:italic">
+                            <span id="Label3" style="color:#0000F0;font-weight:bold;font-style:normal;">BLUE</span> = already considered.&nbsp;&nbsp;
+                            <span id="Label4" style="color:#9A0000;font-weight:bold;font-style:normal;">RED</span> = currently being considered.&nbsp;&nbsp;
+                            <span id="Label5" style="color:Black;font-weight:bold;font-style:normal;">BLACK</span> = not yet considered.
+                             <br />&nbsp;**Click on an instrument for additional information.&nbsp;&nbsp;Click on an author for the author's home page.
+                        </span>
+                        <br />
+                    </td>
+		</tr>
+	</table><div style="text-align:left;display:inline-block; width:6%"> &nbsp; </div><div style="text-align:left;display:inline-block; width:93%">
+                
+                <!-- Agenda-level docs go here: -->
+                <table id="TableAgendaDocs" border="0" style="width:100%;">
+
+	</table>              
+            </div>
+            
+            <input type="hidden" name="hideMeetingId" id="hideMeetingId" value="25274" />
+            
+            
+ 
+            <div id="UpdatePanelItems">
+		                                      
+                    <span id="Timer1" style="visibility:hidden;display:none;"></span>
+    
+                    <table id="TableAgenda" border="0" style="width:100%;">
+			<tr>
+				<td style="width:6%;">&nbsp;</td><td id="tcCheckBoxAutoScroll" class="StandardColor" valign="top"></td>
+			</tr><tr>
+				<td style="width:6%;">&nbsp;</td><td><table id="TableAgendaItems" class="AgendaItems" cellpadding="3" border="0" style="width:100%;">
+					<tr>
+						<td align="left" colspan="5" style="font-weight:bold;"><br/>CALL TO ORDER</td>
+					</tr><tr>
+						<td align="left" colspan="5" style="font-weight:bold;"><br/>ROLL CALL</td>
+					</tr><tr>
+						<td align="left" colspan="5" style="font-weight:bold;"><br/>BUSINESS</td>
+					</tr><tr valign="top">
+						<td class="FutureItem" style="min-width:15px;">&nbsp;</td><td class="FutureItem" align="left" colspan="4">1.  To receive an update from the Louisiana Uniform Local Sales<br/>Tax Board on the status of the uniform electronic local return<br/>and remittance system required to be designed, implemented,<br/>and available for use by taxpayers no later than January 1,<br/>2026, pursuant to the provisions of R.S. 47:337.102(I)(4).</td>
+					</tr><tr valign="top">
+						<td class="FutureItem" style="min-width:15px;">&nbsp;</td><td class="FutureItem" align="left" colspan="4">2.  To review and approve the third party convenience fee<br/>schedule for certain online transactions pursuant to R.S.<br/>49:316.1 for the Louisiana Department of Revenue</td>
+					</tr><tr>
+						<td align="left" colspan="5" style="font-weight:bold;"><br/>ANNOUNCEMENTS</td>
+					</tr><tr>
+						<td align="left" colspan="5" style="font-weight:bold;"><br/>ADJOURNMENT</td>
+					</tr>
+				</table></td>
+			</tr>
+		</table>
+                    
+                    <input type="hidden" name="hideCurrentMtgOrderItemId" id="hideCurrentMtgOrderItemId" value="0" />
+                    <br />
+                 
+	</div>
+
+            
+            <div class="PublicComment">
+                <span id="LabelPublicComment">Pursuant to House Rule 14.33, any interested person or any committee member may file with the committee a prepared statement concerning a specific instrument or matter under consideration by the committee or concerning any matter within the committee's scope of authority, and the committee records shall reflect receipt of such statement and the date and time thereof.<br \><br \>NOTE: Statements may be filed with the House Committee on Ways and Means via e-mail at hwmc@legis.la.gov.<br \><br \>Audio/visual presentations, such as PowerPoint, shall be filed with the Insurance Premium Tax Study Group via email at hwmc@legis.la.gov at least 24 hours prior to the scheduled start of the committee meeting. No flash or thumb drives will be accepted.</span>
+            </div>
+            
+                
+            
+
+            <br /><br />
+
+        
+</div>
+        
+    <br /><br /><br /><br />
+
+    
+
+<script type="text/javascript">
+//<![CDATA[
+ScrollToCurrentItem();WebForm_AutoFocus('btnAutoScrollYes');Sys.Application.add_init(function() {
+    $create(Sys.UI._Timer, {"enabled":false,"interval":10000,"uniqueID":"Timer1"}, null, null, $get("Timer1"));
+});
+//]]>
+</script>
+</form>
+</body>
+</html>
+
+

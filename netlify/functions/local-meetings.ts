@@ -103,6 +103,50 @@ export const handler: Handler = async (event) => {
       console.log(`📋 Total cities to scrape: ${nearbyCities.length} (including Alabama cities)`);
     }
     
+    // Special handling: Louisiana cities with custom scrapers (not in Legistar)
+    const isLouisiana = (lat >= 28.9 && lat <= 33.0) && (lng >= -94.0 && lng <= -88.8);
+    console.log(`🔍 Louisiana check: lat=${lat}, lng=${lng}, isLouisiana=${isLouisiana}`);
+    
+    const hasBaronRouge = nearbyCities.some(c => c.client === 'batonrouge');
+    
+    if (isLouisiana) {
+      console.log('✅ Louisiana coordinates detected! Adding custom city scrapers...');
+      if (!hasBaronRouge) {
+        console.log('🏛️ Adding Baton Rouge to nearby cities');
+        nearbyCities.push({
+          name: 'Baton Rouge',
+          client: 'batonrouge',
+          state: 'LA',
+          lat: 30.4515,
+          lng: -91.1871,
+          population: 227470
+        });
+      }
+      console.log(`📋 Total cities to scrape: ${nearbyCities.length} (including Louisiana cities)`);
+    }
+    
+    // Special handling: Kentucky cities with custom scrapers (Puppeteer for dynamic site)
+    const isKentucky = (lat >= 36.5 && lat <= 39.1) && (lng >= -89.6 && lng <= -81.9);
+    console.log(`🔍 Kentucky check: lat=${lat}, lng=${lng}, isKentucky=${isKentucky}`);
+    
+    const hasLexington = nearbyCities.some(c => c.client === 'lexington');
+    
+    if (isKentucky) {
+      console.log('✅ Kentucky coordinates detected! Adding custom city scrapers...');
+      if (!hasLexington) {
+        console.log('🐴 Adding Lexington to nearby cities');
+        nearbyCities.push({
+          name: 'Lexington',
+          client: 'lexington',
+          state: 'KY',
+          lat: 38.0406,
+          lng: -84.5037,
+          population: 323152
+        });
+      }
+      console.log(`📋 Total cities to scrape: ${nearbyCities.length} (including Kentucky cities)`);
+    }
+    
     console.log(`Found ${nearbyCities.length} Legistar cities within ${radius} miles:`, nearbyCities.map(c => c.name));
     
     if (nearbyCities.length === 0) {
@@ -122,12 +166,22 @@ export const handler: Handler = async (event) => {
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + 90);
     
-    // Prioritize Alabama cities - move them to the front if present
-    const alabamaCities = nearbyCities.filter(c => c.client === 'birmingham' || c.client === 'montgomery');
-    const otherCities = nearbyCities.filter(c => c.client !== 'birmingham' && c.client !== 'montgomery');
-    const prioritizedCities = [...alabamaCities, ...otherCities];
+    // Prioritize custom cities (Alabama, Louisiana, Kentucky) - move them to the front if present
+    const customCities = nearbyCities.filter(c => 
+      c.client === 'birmingham' || 
+      c.client === 'montgomery' ||
+      c.client === 'batonrouge' ||
+      c.client === 'lexington'
+    );
+    const otherCities = nearbyCities.filter(c => 
+      c.client !== 'birmingham' && 
+      c.client !== 'montgomery' &&
+      c.client !== 'batonrouge' &&
+      c.client !== 'lexington'
+    );
+    const prioritizedCities = [...customCities, ...otherCities];
     
-    console.log(`🎯 Processing cities (Alabama cities prioritized):`, prioritizedCities.map(c => c.name));
+    console.log(`🎯 Processing cities (custom scrapers prioritized):`, prioritizedCities.map(c => c.name));
     
     const cityEventPromises = prioritizedCities.slice(0, 5).map(async (city) => {
       try {
@@ -234,6 +288,88 @@ export const handler: Handler = async (event) => {
             CacheManager.set(cacheKey, events, 86400); // 24-hour cache
             console.log(`💾 Cached ${events.length} Montgomery events for 24 hours`);
           }
+          
+          return events.slice(0, 10);
+        }
+        
+        // Baton Rouge, LA - custom scraper (CivicPlus AgendaCenter)
+        if (city.client === 'batonrouge') {
+          console.log(`🏛️ BATON ROUGE SCRAPER INVOKED for ${city.name}`);
+          
+          const cacheKey = 'local:batonrouge:events';
+          const cachedEvents = CacheManager.get(cacheKey);
+          
+          if (cachedEvents) {
+            console.log(`✅ CACHE HIT: Returning cached Baton Rouge events (${cachedEvents.length} events)`);
+            return cachedEvents.slice(0, 10);
+          }
+          
+          console.log(`🕷️ CACHE MISS - Starting Baton Rouge AgendaCenter scrape...`);
+          const { scrapeBaronRougeMeetings } = await import('./utils/scrapers/local/baton-rouge');
+          const rawEvents = await scrapeBaronRougeMeetings();
+          console.log(`✅ Baton Rouge scraper returned ${rawEvents.length} raw events`);
+          
+          // Convert RawEvent format to local-meetings format
+          const events = rawEvents.map(evt => sanitizeEvent({
+            id: evt.id,
+            name: evt.name,
+            date: evt.date,
+            time: evt.time,
+            location: evt.location,
+            committee: evt.committee,
+            type: evt.type,
+            level: 'local' as const,
+            lat: city.lat,
+            lng: city.lng,
+            zipCode: null,
+            city: city.name,
+            state: city.state,
+            url: evt.sourceUrl || null
+          }));
+          
+          CacheManager.set(cacheKey, events, 86400); // 24-hour cache
+          console.log(`💾 Cached ${events.length} Baton Rouge events for 24 hours`);
+          
+          return events.slice(0, 10);
+        }
+        
+        // Lexington, KY - custom scraper (Puppeteer for dynamic calendar)
+        if (city.client === 'lexington') {
+          console.log(`🐴 LEXINGTON SCRAPER INVOKED for ${city.name}`);
+          
+          const cacheKey = 'local:lexington:events';
+          const cachedEvents = CacheManager.get(cacheKey);
+          
+          if (cachedEvents) {
+            console.log(`✅ CACHE HIT: Returning cached Lexington events (${cachedEvents.length} events)`);
+            return cachedEvents.slice(0, 10);
+          }
+          
+          console.log(`🕷️ CACHE MISS - Starting Lexington Puppeteer scrape...`);
+          const { scrapeLexingtonMeetings } = await import('./utils/scrapers/local/lexington');
+          const rawEvents = await scrapeLexingtonMeetings();
+          console.log(`✅ Lexington scraper returned ${rawEvents.length} raw events`);
+          
+          // Convert RawEvent format to local-meetings format
+          const events = rawEvents.map(evt => sanitizeEvent({
+            id: evt.id,
+            name: evt.name,
+            date: evt.date,
+            time: evt.time,
+            location: evt.location,
+            committee: evt.committee,
+            type: evt.type,
+            level: 'local' as const,
+            lat: city.lat,
+            lng: city.lng,
+            zipCode: null,
+            city: city.name,
+            state: city.state,
+            url: evt.sourceUrl || null
+          }));
+          
+          CacheManager.set(cacheKey, events, 86400); // 24-hour cache
+          console.log(`💾 Cached ${events.length} Lexington events for 24 hours`);
           
           return events.slice(0, 10);
         }
