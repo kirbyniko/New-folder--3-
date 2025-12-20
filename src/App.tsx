@@ -2,11 +2,9 @@ import { useState, useEffect } from 'react'
 import { geocodeZipCode, calculateDistance } from './utils/geocoding'
 import type { LegislativeEvent } from './types/event'
 import TabbedEvents from './components/TabbedEvents'
-import StateSelector from './components/StateSelector'
-import TagFilter from './components/TagFilter'
 import { EnrichmentNotice } from './components/EnrichmentNotice'
-import StateSidebar from './components/StateSidebar'
-import { SourceLinks } from './components/SourceLinks'
+import Navbar from './components/Navbar'
+import Sidebar from './components/Sidebar'
 import { getApiUrl } from './config/api'
 import { autoTagEvent } from './utils/tagging'
 import './App.css'
@@ -41,7 +39,7 @@ const STATE_CAPITOLS: Record<string, { lat: number; lng: number; zip: string }> 
 }
 
 function App() {
-  const [zipCode, setZipCode] = useState('03054')
+  const [zipCode, setZipCode] = useState('')
   const [radius, setRadius] = useState(50)
   const [selectedState, setSelectedState] = useState<string | null>(null)
   const [searchedState, setSearchedState] = useState<string | null>(null) // State from ZIP code search
@@ -49,11 +47,44 @@ function App() {
   const [federalEvents, setFederalEvents] = useState<LegislativeEvent[]>([])
   const [stateEvents, setStateEvents] = useState<LegislativeEvent[]>([])
   const [localEvents, setLocalEvents] = useState<LegislativeEvent[]>([])
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [calendarSources, setCalendarSources] = useState<any[]>([])
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [isStateSearch, setIsStateSearch] = useState(false)
-  const [calendarSources, setCalendarSources] = useState<{ name: string; url: string; description: string }[]>([])
+
+  // Auto-detect user location on mount
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords
+          try {
+            // Reverse geocode to get ZIP code
+            const response = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+            )
+            const data = await response.json()
+            const zip = data.address?.postcode
+            
+            if (zip && /^\d{5}/.test(zip)) {
+              // Extract first 5 digits
+              const zipCode = zip.slice(0, 5)
+              setZipCode(zipCode)
+              // Note: Not auto-searching, just setting the ZIP. User can click search.
+            }
+          } catch (err) {
+            console.log('Could not determine ZIP from location')
+          }
+        },
+        (error) => {
+          console.log('Location detection not available:', error.message)
+          // Silently fail - leave ZIP empty
+        },
+        { timeout: 10000 }
+      )
+    }
+  }, [])
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -203,250 +234,195 @@ function App() {
     }
   }
 
-  const handleStateSelect = (stateCode: string) => {
-    if (stateCode === '') {
+  const handleStateSelect = async (stateAbbr: string) => {
+    if (stateAbbr === '') {
       // Clear filter
       setSelectedState(null)
-    } else {
-      // Set filter
-      setSelectedState(stateCode)
+      return
+    }
+    
+    setSelectedState(stateAbbr)
+    
+    // Get capitol location for this state
+    const capitol = STATE_CAPITOLS[stateAbbr]
+    if (!capitol) {
+      setError(`No data available for ${stateAbbr} yet`)
+      return
+    }
+    
+    // Update ZIP and fetch events with expanded radius for entire state
+    setZipCode(capitol.zip)
+    setRadius(500)  // Expand to 500 miles to cover entire state
+    setLoading(true)
+    setError(null)
+    setCalendarSources([]) // Reset calendar sources
+    setIsStateSearch(true)
+    setUserLocation({ lat: capitol.lat, lng: capitol.lng })
+    setSearchedState(stateAbbr) // Set the searched state
+    
+    try {
+      // Create abort controller for 30-second timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      const fetchOptions: RequestInit = { 
+        signal: controller.signal,
+        cache: 'default'
+      };
+      
+      console.time('⏱️ State selector fetch time');
+      const stateCacheBuster = `&_t=${Date.now()}`;
+      
+      console.log('🚀 Fetching federal events...');
+      console.log('🚀 Fetching state events:', `state-events?state=${stateAbbr}`);
+      console.log('🚀 Fetching local events:', `local-meetings?lat=${capitol.lat}&lng=${capitol.lng}&radius=${radius}`);
+      
+      const [federalResponse, stateResponse, localResponse] = await Promise.all([
+        fetch(getApiUrl(`/.netlify/functions/congress-meetings`), fetchOptions),
+        fetch(getApiUrl(`/.netlify/functions/state-events?state=${stateAbbr}${stateCacheBuster}`), fetchOptions),
+        fetch(getApiUrl(`/.netlify/functions/local-meetings?lat=${capitol.lat}&lng=${capitol.lng}&radius=${radius}${stateCacheBuster}`), fetchOptions)
+      ]);
+      console.timeEnd('⏱️ State selector fetch time');
+      
+      console.log('📡 Response status - Federal:', federalResponse.status, 'State:', stateResponse.status, 'Local:', localResponse.status);
+      
+      clearTimeout(timeoutId);
+      
+      const federal = federalResponse.ok ? await federalResponse.json() : []
+      const state = stateResponse.ok ? await stateResponse.json() : []
+      const local = localResponse.ok ? await localResponse.json() : []
+      
+      // Extract calendar sources from state response headers
+      if (stateResponse.ok) {
+        const calendarSourcesHeader = stateResponse.headers.get('X-Calendar-Sources')
+        if (calendarSourcesHeader) {
+          try {
+            const sources = JSON.parse(calendarSourcesHeader)
+            setCalendarSources(sources)
+            console.log('📅 Calendar sources:', sources)
+          } catch (e) {
+            console.warn('Failed to parse calendar sources:', e)
+          }
+        }
+      }
+      
+      // Filter out malformed events missing required fields
+      const validFederal = federal.filter((e: any) => e && e.level)
+      const validState = state.filter((e: any) => e && e.level)
+      const validLocal = local.filter((e: any) => e && e.level)
+      
+      console.log('📊 Parsed results - Federal:', validFederal.length, 'State:', validState.length, 'Local:', validLocal.length);
+      
+      // Add distances and tags
+      const addDistanceAndTags = (events: LegislativeEvent[]) => {
+        return events.filter(e => e && e.level).map(event => ({
+          ...event,
+          tags: autoTagEvent(event),
+          distance: calculateDistance(capitol.lat, capitol.lng, event.lat, event.lng)
+        }))
+      }
+      
+      setFederalEvents(addDistanceAndTags(validFederal).filter(e => e.distance <= radius))
+      // State events are NOT filtered by distance - they're statewide events
+      setStateEvents(addDistanceAndTags(validState))
+      // Local events: no distance filter for state searches (show all in state)
+      setLocalEvents(addDistanceAndTags(validLocal))
+      
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch state events')
+    } finally {
+      setLoading(false)
     }
   }
 
   return (
     <div className="app">
-      <StateSidebar 
-        selectedState={selectedState || undefined}
-        onStateSelect={handleStateSelect}
+      <Navbar
+        zipCode={zipCode}
+        onZipCodeChange={setZipCode}
+        onSearch={handleSearch}
+        loading={loading}
       />
-      
-      <header className="header">
-        <h1>🏛️ Civitron</h1>
-        <p className="tagline">Discover upcoming legislative events near you - Federal, State, and Local</p>
-      </header>
 
-      <main className="main">
-        <StateSelector
+      <div className="layout">
+        <Sidebar
+          selectedTags={selectedTags}
+          onTagsChange={setSelectedTags}
           selectedState={selectedState}
-          onSelectState={async (stateAbbr) => {
-            setSelectedState(stateAbbr)
-            
-            // Get capitol location for this state
-            const capitol = STATE_CAPITOLS[stateAbbr]
-            if (!capitol) {
-              setError(`No data available for ${stateAbbr} yet`)
-              return
-            }
-            
-            // Update ZIP and fetch events with expanded radius for entire state
-            setZipCode(capitol.zip)
-            setRadius(500)  // Expand to 500 miles to cover entire state
-            setLoading(true)
-            setError(null)
-            setCalendarSources([]) // Reset calendar sources
-            setIsStateSearch(true)
-            setUserLocation({ lat: capitol.lat, lng: capitol.lng })
-            setSearchedState(stateAbbr) // Set the searched state
-            
-            try {
-              // Create abort controller for 30-second timeout
-              const controller = new AbortController();
-              const timeoutId = setTimeout(() => controller.abort(), 30000);
-              const fetchOptions: RequestInit = { 
-                signal: controller.signal,
-                cache: 'default'
-              };
-              
-              console.time('⏱️ State selector fetch time');
-              const stateCacheBuster = `&_t=${Date.now()}`;
-              
-              console.log('🚀 Fetching federal events...');
-              console.log('🚀 Fetching state events:', `state-events?state=${stateAbbr}`);
-              console.log('🚀 Fetching local events:', `local-meetings?lat=${capitol.lat}&lng=${capitol.lng}&radius=${radius}`);
-              
-              const [federalResponse, stateResponse, localResponse] = await Promise.all([
-                fetch(getApiUrl(`/.netlify/functions/congress-meetings`), fetchOptions),
-                fetch(getApiUrl(`/.netlify/functions/state-events?state=${stateAbbr}${stateCacheBuster}`), fetchOptions),
-                fetch(getApiUrl(`/.netlify/functions/local-meetings?lat=${capitol.lat}&lng=${capitol.lng}&radius=${radius}${stateCacheBuster}`), fetchOptions)
-              ]);
-              console.timeEnd('⏱️ State selector fetch time');
-              
-              console.log('📡 Response status - Federal:', federalResponse.status, 'State:', stateResponse.status, 'Local:', localResponse.status);
-              
-              clearTimeout(timeoutId);
-              
-              const federal = federalResponse.ok ? await federalResponse.json() : []
-              const state = stateResponse.ok ? await stateResponse.json() : []
-              const local = localResponse.ok ? await localResponse.json() : []
-              
-              // Extract calendar sources from state response headers
-              if (stateResponse.ok) {
-                const calendarSourcesHeader = stateResponse.headers.get('X-Calendar-Sources')
-                if (calendarSourcesHeader) {
-                  try {
-                    const sources = JSON.parse(calendarSourcesHeader)
-                    setCalendarSources(sources)
-                    console.log('📅 Calendar sources:', sources)
-                  } catch (e) {
-                    console.warn('Failed to parse calendar sources:', e)
-                  }
-                }
-              }
-              
-              // Filter out malformed events missing required fields
-              const validFederal = federal.filter((e: any) => e && e.level)
-              const validState = state.filter((e: any) => e && e.level)
-              const validLocal = local.filter((e: any) => e && e.level)
-              
-              console.log('📊 Parsed results - Federal:', validFederal.length, 'State:', validState.length, 'Local:', validLocal.length);
-              
-              // Add distances and tags
-              const addDistanceAndTags = (events: LegislativeEvent[]) => {
-                return events.filter(e => e && e.level).map(event => ({
-                  ...event,
-                  tags: autoTagEvent(event),
-                  distance: calculateDistance(capitol.lat, capitol.lng, event.lat, event.lng)
-                }))
-              }
-              
-              setFederalEvents(addDistanceAndTags(validFederal).filter(e => e.distance <= radius))
-              // State events are NOT filtered by distance - they're statewide events
-              setStateEvents(addDistanceAndTags(validState))
-              // Local events: no distance filter for state searches (show all in state)
-              setLocalEvents(addDistanceAndTags(validLocal))
-              
-            } catch (err) {
-              setError(err instanceof Error ? err.message : 'Failed to fetch state events')
-            } finally {
-              setLoading(false)
-            }
-          }}
+          onSelectState={handleStateSelect}
+          federalEvents={federalEvents}
+          stateEvents={stateEvents}
+          localEvents={localEvents}
+          searchedState={searchedState}
+          calendarSources={calendarSources}
+          userLocation={userLocation}
         />
 
-        <form onSubmit={handleSearch} className="search-form">
-          <div className="form-group">
-            <label htmlFor="zipCode">ZIP Code</label>
-            <input
-              id="zipCode"
-              type="text"
-              value={zipCode}
-              onChange={(e) => setZipCode(e.target.value.replace(/\D/g, '').slice(0, 5))}
-              placeholder="Enter 5-digit ZIP code"
-              maxLength={5}
-              className="input"
-              disabled={loading}
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="radius">
-              Radius: <strong>{radius} miles</strong>
-              {isStateSearch && <span style={{color: '#10b981', marginLeft: '8px'}}>(Statewide)</span>}
-            </label>
-            <input
-              id="radius"
-              type="range"
-              value={radius}
-              onChange={(e) => setRadius(parseInt(e.target.value))}
-              min="10"
-              max="500"
-              step="10"
-              className="slider"
-              disabled={loading}
-            />
-            <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#9ca3af', marginTop: '4px'}}>
-              <span>10 mi</span>
-              <span>250 mi</span>
-              <span>500 mi</span>
+        <main className="main-content">
+          {error && (
+            <div className="error-message">
+              <strong>Error:</strong> {error}
             </div>
-          </div>
+          )}
 
-          <button type="submit" className="search-button" disabled={loading}>
-            {loading ? 'Searching...' : 'Search Events'}
-          </button>
-        </form>
-
-        {error && (
-          <div className="error-message">
-            <strong>Error:</strong> {error}
-          </div>
-        )}
-
-        {/* Show source links when we have searched (regardless of results) */}
-        {userLocation && (
-          <SourceLinks
-            federalEvents={federalEvents}
-            stateEvents={stateEvents}
-            localEvents={localEvents}
-            selectedState={selectedState || searchedState || undefined}
-            searchedState={searchedState || undefined}
-            calendarSources={calendarSources}
-          />
-        )}
-
-        {/* Show "no results" message when search completed but found nothing */}
-        {!loading && !error && userLocation && 
-         federalEvents.length === 0 && stateEvents.length === 0 && localEvents.length === 0 && (
-          <div className="empty-results">
-            <div className="empty-results-icon">🔍</div>
-            <h3>No Events Found</h3>
-            <p>
-              {selectedState 
-                ? `No upcoming legislative events found for ${selectedState}.`
-                : `No upcoming legislative events found within ${radius} miles of ZIP ${zipCode}.`
-              }
-            </p>
-            <div className="empty-results-tips">
-              <h4>Suggestions:</h4>
-              <ul>
-                <li>The legislature may not be in session currently</li>
-                <li>Try selecting a different state from the sidebar</li>
-                <li>Check back during the regular legislative session (typically January-May)</li>
-                <li>Expand your search to include more states</li>
-              </ul>
+          {/* Show "no results" message when search completed but found nothing */}
+          {!loading && !error && userLocation && 
+           federalEvents.length === 0 && stateEvents.length === 0 && localEvents.length === 0 && (
+            <div className="empty-results">
+              <div className="empty-results-icon">🔍</div>
+              <h3>No Events Found</h3>
+              <p>
+                {selectedState 
+                  ? `No upcoming legislative events found for ${selectedState}.`
+                  : `No upcoming legislative events found within ${radius} miles of ZIP ${zipCode}.`
+                }
+              </p>
+              <div className="empty-results-tips">
+                <h4>Suggestions:</h4>
+                <ul>
+                  <li>The legislature may not be in session currently</li>
+                  <li>Try selecting a different state from the sidebar</li>
+                  <li>Check back during the regular legislative session (typically January-May)</li>
+                  <li>Expand your search to include more states</li>
+                </ul>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {(federalEvents.length > 0 || stateEvents.length > 0 || localEvents.length > 0) && userLocation && (
-          <div className="results">
-            <h2 className="results-title">
-              {federalEvents.length + stateEvents.length + localEvents.length} Total Events Found
-            </h2>
-            
-            {/* Show enrichment notice for state events */}
-            <EnrichmentNotice 
-              eventsCount={stateEvents.length}
-              enrichableCount={stateEvents.filter(e => e.url && (!e.docketUrl || !e.bills)).length}
-            />
-            
-            <TagFilter
-              selectedTags={selectedTags}
-              onTagsChange={setSelectedTags}
-            />
-            
-            <TabbedEvents
-              federalEvents={federalEvents}
-              stateEvents={stateEvents}
-              localEvents={localEvents}
-              centerLat={userLocation.lat}
-              centerLng={userLocation.lng}
-              radius={radius}
-              selectedTags={selectedTags}
-              selectedState={selectedState || undefined}
-            />
-          </div>
-        )}
+          {(federalEvents.length > 0 || stateEvents.length > 0 || localEvents.length > 0) && userLocation && (
+            <div className="results">
+              <h2 className="results-title">
+                {federalEvents.length + stateEvents.length + localEvents.length} Total Events Found
+              </h2>
+              
+              {/* Show enrichment notice for state events */}
+              <EnrichmentNotice 
+                eventsCount={stateEvents.length}
+                enrichableCount={stateEvents.filter(e => e.url && (!e.docketUrl || !e.bills)).length}
+              />
+              
+              <TabbedEvents
+                federalEvents={federalEvents}
+                stateEvents={stateEvents}
+                localEvents={localEvents}
+                centerLat={userLocation.lat}
+                centerLng={userLocation.lng}
+                radius={radius}
+                selectedTags={selectedTags}
+                selectedState={selectedState || undefined}
+              />
+            </div>
+          )}
 
-        {!loading && !error && federalEvents.length === 0 && stateEvents.length === 0 && localEvents.length === 0 && !userLocation && (
-          <div className="empty-state">
-            <p>Enter a ZIP code to find legislative events near you</p>
-            <p className="empty-state-hint">
-              Real-time data from Congress.gov, OpenStates, and Legistar APIs
-            </p>
-          </div>
-        )}
-      </main>
+          {!loading && !error && federalEvents.length === 0 && stateEvents.length === 0 && localEvents.length === 0 && !userLocation && (
+            <div className="empty-state">
+              <p>Enter a ZIP code to find legislative events near you</p>
+              <p className="empty-state-hint">
+                Real-time data from Congress.gov, OpenStates, and Legistar APIs
+              </p>
+            </div>
+          )}
+        </main>
+      </div>
 
       <footer className="footer">
         <p>

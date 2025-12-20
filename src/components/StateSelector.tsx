@@ -74,6 +74,10 @@ export default function StateSelector({ selectedState, onSelectState }: StateSel
     setSearchTerm('')
   }
 
+  const selectedStateName = selectedState 
+    ? STATES.find(s => s.abbr === selectedState)?.name 
+    : null
+
   return (
     <div className="state-selector">
       <button
@@ -82,7 +86,7 @@ export default function StateSelector({ selectedState, onSelectState }: StateSel
         type="button"
       >
         <span className="state-selector-icon">🗺️</span>
-        <span>Browse by State</span>
+        <span>{selectedStateName || 'Browse by State'}</span>
         <span className="state-selector-arrow">{isOpen ? '▲' : '▼'}</span>
       </button>
 
