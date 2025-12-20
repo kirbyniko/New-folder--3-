@@ -235,6 +235,50 @@ export const handler: Handler = async (event) => {
       console.log(`📋 Total cities to scrape: ${nearbyCities.length} (including Nevada cities)`);
     }
     
+    // Special handling: Iowa cities with custom scrapers (Puppeteer for Revize calendar)
+    const isIowa = (lat >= 40.4 && lat <= 43.5) && (lng >= -96.7 && lng <= -90.1);
+    console.log(`🔍 Iowa check: lat=${lat}, lng=${lng}, isIowa=${isIowa}`);
+    
+    const hasDesMoines = nearbyCities.some(c => c.client === 'desmoines');
+    
+    if (isIowa) {
+      console.log('✅ Iowa coordinates detected! Adding custom city scrapers...');
+      if (!hasDesMoines) {
+        console.log('🌽 Adding Des Moines to nearby cities');
+        nearbyCities.push({
+          name: 'Des Moines',
+          client: 'desmoines',
+          state: 'IA',
+          lat: 41.5868,
+          lng: -93.6250,
+          population: 214133
+        });
+      }
+      console.log(`📋 Total cities to scrape: ${nearbyCities.length} (including Iowa cities)`);
+    }
+    
+    // Special handling: Arkansas cities with custom scrapers
+    const isArkansas = (lat >= 33.0 && lat <= 36.5) && (lng >= -94.6 && lng <= -89.6);
+    console.log(`🔍 Arkansas check: lat=${lat}, lng=${lng}, isArkansas=${isArkansas}`);
+    
+    const hasLittleRock = nearbyCities.some(c => c.client === 'littlerock');
+    
+    if (isArkansas) {
+      console.log('✅ Arkansas coordinates detected! Adding custom city scrapers...');
+      if (!hasLittleRock) {
+        console.log('🏛️ Adding Little Rock to nearby cities');
+        nearbyCities.push({
+          name: 'Little Rock',
+          client: 'littlerock',
+          state: 'AR',
+          lat: 34.7465,
+          lng: -92.2896,
+          population: 202591
+        });
+      }
+      console.log(`📋 Total cities to scrape: ${nearbyCities.length} (including Arkansas cities)`);
+    }
+    
     console.log(`Found ${nearbyCities.length} Legistar cities within ${radius} miles:`, nearbyCities.map(c => c.name));
     
     if (nearbyCities.length === 0) {
@@ -650,6 +694,92 @@ export const handler: Handler = async (event) => {
           
           CacheManager.set(cacheKey, events, 86400); // 24-hour cache
           console.log(`💾 Cached ${events.length} Las Vegas events for 24 hours`);
+          
+          return events.slice(0, 10);
+        }
+        
+        if (city.client === 'desmoines') {
+          console.log(`🌽 DES MOINES SCRAPER INVOKED for ${city.name}`);
+          
+          const cacheKey = 'local:desmoines:events';
+          const cachedEvents = CacheManager.get(cacheKey);
+          
+          if (cachedEvents) {
+            console.log(`✅ CACHE HIT: Returning cached Des Moines events (${cachedEvents.length} events)`);
+            return cachedEvents.slice(0, 10);
+          }
+          
+          console.log(`🕷️ CACHE MISS - Starting Des Moines Revize calendar scrape...`);
+          const { scrapeDesMoinesMeetings } = await import('./utils/scrapers/local/des-moines');
+          const rawEvents = await scrapeDesMoinesMeetings();
+          console.log(`✅ Des Moines scraper returned ${rawEvents.length} raw events`);
+          
+          // Convert RawEvent format to local-meetings format
+          const events = rawEvents.map(evt => sanitizeEvent({
+            id: evt.id,
+            name: evt.name,
+            date: evt.date,
+            time: evt.time,
+            location: evt.location,
+            committee: evt.committee,
+            type: evt.type,
+            level: 'local' as const,
+            lat: city.lat,
+            lng: city.lng,
+            zipCode: null,
+            city: city.name,
+            state: city.state,
+            url: evt.sourceUrl || null,
+            docketUrl: evt.docketUrl || null,
+            virtualMeetingUrl: evt.virtualMeetingUrl || null,
+            description: evt.description || null
+          }));
+          
+          CacheManager.set(cacheKey, events, 86400); // 24-hour cache
+          console.log(`💾 Cached ${events.length} Des Moines events for 24 hours`);
+          
+          return events.slice(0, 10);
+        }
+        
+        if (city.client === 'littlerock') {
+          console.log(`🏛️ LITTLE ROCK SCRAPER INVOKED for ${city.name}`);
+          
+          const cacheKey = 'local:littlerock:events';
+          const cachedEvents = CacheManager.get(cacheKey);
+          
+          if (cachedEvents) {
+            console.log(`✅ CACHE HIT: Returning cached Little Rock events (${cachedEvents.length} events)`);
+            return cachedEvents.slice(0, 10);
+          }
+          
+          console.log(`🕷️ CACHE MISS - Starting Little Rock Board calendar scrape...`);
+          const { scrapeLittleRockMeetings } = await import('./utils/scrapers/local/little-rock');
+          const rawEvents = await scrapeLittleRockMeetings();
+          console.log(`✅ Little Rock scraper returned ${rawEvents.length} raw events`);
+          
+          // Convert RawEvent format to local-meetings format
+          const events = rawEvents.map(evt => sanitizeEvent({
+            id: evt.id,
+            name: evt.name,
+            date: evt.date,
+            time: evt.time,
+            location: evt.location,
+            committee: evt.committee,
+            type: evt.type,
+            level: 'local' as const,
+            lat: city.lat,
+            lng: city.lng,
+            zipCode: null,
+            city: city.name,
+            state: city.state,
+            url: evt.sourceUrl || null,
+            docketUrl: evt.docketUrl || null,
+            virtualMeetingUrl: evt.virtualMeetingUrl || null,
+            description: evt.description || null
+          }));
+          
+          CacheManager.set(cacheKey, events, 86400); // 24-hour cache
+          console.log(`💾 Cached ${events.length} Little Rock events for 24 hours`);
           
           return events.slice(0, 10);
         }

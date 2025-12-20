@@ -46,6 +46,8 @@ import { AlabamaScraper } from './states/alabama';
 import { OklahomaScraper } from './states/oklahoma';
 import { ConnecticutScraper } from './states/connecticut';
 import { NevadaScraper } from './states/nevada';
+import { IowaScraper } from './states/iowa';
+import { ArkansasScraper } from './states/arkansas';
 
 /**
  * Initialize the scraper registry with all state scrapers
@@ -83,6 +85,8 @@ export async function initializeScrapers(): Promise<void> {
   Registry.register('OK', new OklahomaScraper());
   Registry.register('CT', new ConnecticutScraper());
   Registry.register('NV', new NevadaScraper());
+  Registry.register('IA', new IowaScraper());
+  Registry.register('AR', new ArkansasScraper());
 
   // Log registry status
   Registry.logStatus();

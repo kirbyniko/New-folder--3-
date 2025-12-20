@@ -78,11 +78,19 @@ export class NevadaScraper extends BaseScraper {
           
           const location = locations[0] || 'Nevada Legislature';
           
-          // Extract videoconference info
+          // Extract videoconference info and agenda viewer
           let virtualMeetingUrl: string | null = null;
+          let agendaViewerUrl: string | null = null;
+          
           const videoLink = $section.find('a[href*="youtube.com"]').attr('href');
           if (videoLink) {
             virtualMeetingUrl = videoLink;
+          }
+          
+          // Check for Sliq Harmony viewer (contains agenda/video)
+          const viewerLink = $section.find('a[href*="sliq.net"]').attr('href');
+          if (viewerLink) {
+            agendaViewerUrl = viewerLink;
           }
           
           // Parse date
@@ -97,6 +105,32 @@ export class NevadaScraper extends BaseScraper {
           const committeeMatch = finalName.match(/^(.*?)\s*(?:-|–)\s/);
           if (committeeMatch) {
             committee = committeeMatch[1].trim();
+          }
+          
+          // Build description with meeting context
+          let description = `Nevada Legislature ${committee}`;
+          const nameLower = finalName.toLowerCase();
+          
+          // Identify key meeting characteristics
+          const characteristics: string[] = [];
+          if (nameLower.includes('vote') || nameLower.includes('voting')) {
+            characteristics.push('voting session');
+          }
+          if (nameLower.includes('public comment') || nameLower.includes('public hearing')) {
+            characteristics.push('public comment period');
+          }
+          if (nameLower.includes('budget') || nameLower.includes('appropriation')) {
+            characteristics.push('budget discussion');
+          }
+          if (nameLower.includes('work session')) {
+            characteristics.push('work session');
+          }
+          if (agendaViewerUrl) {
+            characteristics.push('agenda viewer available');
+          }
+          
+          if (characteristics.length > 0) {
+            description += ` (${characteristics.join(', ')})`;
           }
           
           // Build event
@@ -114,10 +148,10 @@ export class NevadaScraper extends BaseScraper {
             lat: location.includes('Carson City') ? 39.1638 : 36.1716,
             lng: location.includes('Carson City') ? -119.7674 : -115.1391,
             zipCode: null,
-            description: `Nevada Legislature ${committee}`,
+            description,
             sourceUrl: detailUrl ? (detailUrl.startsWith('http') ? detailUrl : `https://www.leg.state.nv.us${detailUrl}`) : url,
-            virtualMeetingUrl,
-            docketUrl: detailUrl ? (detailUrl.startsWith('http') ? detailUrl : `https://www.leg.state.nv.us${detailUrl}`) : null
+            virtualMeetingUrl: virtualMeetingUrl || agendaViewerUrl, // Use Sliq viewer if no YouTube
+            docketUrl: agendaViewerUrl || (detailUrl ? (detailUrl.startsWith('http') ? detailUrl : `https://www.leg.state.nv.us${detailUrl}`) : null)
           };
           
           events.push(event);
@@ -133,7 +167,22 @@ export class NevadaScraper extends BaseScraper {
       const futureEvents = events.filter(e => new Date(e.date) >= now);
       
       console.log(`[SCRAPER:NV] Found ${futureEvents.length} future events (${events.length} total)`);
-      return futureEvents;
+      
+      // Enhance events with agenda details (async, with rate limiting)
+      // Only fetch details for events that likely have useful info (first 10 upcoming)
+      console.log('[SCRAPER:NV] 📋 Fetching agenda details for upcoming meetings...');
+      const eventsToEnhance = futureEvents.slice(0, 10);
+      const eventsToSkip = futureEvents.slice(10);
+      
+      const enhancedEvents: RawEvent[] = [];
+      for (const event of eventsToEnhance) {
+        const enhanced = await this.enhanceWithAgendaDetails(event);
+        enhancedEvents.push(enhanced);
+        // Small delay between requests to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      
+      return [...enhancedEvents, ...eventsToSkip];
       
     } catch (error) {
       console.error('[SCRAPER:NV] Failed to scrape Nevada', error);
@@ -179,6 +228,70 @@ export class NevadaScraper extends BaseScraper {
     } catch (err) {
       console.error('[SCRAPER:NV] Date parse error:', err);
       return null;
+    }
+  }
+  
+  /**
+   * Enhance event with agenda details from meeting page
+   */
+  private async enhanceWithAgendaDetails(event: RawEvent): Promise<RawEvent> {
+    // Only fetch if we have a detail URL that's different from sourceUrl
+    if (!event.sourceUrl || !event.sourceUrl.includes('/Meeting/')) {
+      return event;
+    }
+    
+    try {
+      const html = await this.fetchPage(event.sourceUrl);
+      const $ = cheerio.load(html);
+      const pageText = $('body').text();
+      
+      // Extract bill references (AB, SB, ACR, SCR, AJR, SJR)
+      const billMatches = pageText.match(/\b(AB|SB|ACR|SCR|AJR|SJR)\s*\d+/gi);
+      const bills: Array<{ number: string; title: string }> = [];
+      
+      if (billMatches && billMatches.length > 0) {
+        const uniqueBills = [...new Set(billMatches)];
+        uniqueBills.forEach(billNum => {
+          bills.push({
+            number: billNum.toUpperCase(),
+            title: `Nevada ${billNum.toUpperCase()}`
+          });
+        });
+      }
+      
+      // Look for agenda-related keywords in the page
+      const agendaInfo: string[] = [];
+      
+      if (pageText.toLowerCase().includes('public comment')) {
+        agendaInfo.push('Public comment period');
+      }
+      if (pageText.toLowerCase().includes('vote') || pageText.toLowerCase().includes('voting')) {
+        agendaInfo.push('Voting on items');
+      }
+      if (pageText.match(/\b(action|approve|adopt|consider)\b/i)) {
+        agendaInfo.push('Action items');
+      }
+      
+      // Update description if we found additional info
+      let enhancedDescription = event.description;
+      if (bills.length > 0) {
+        const billList = bills.slice(0, 5).map(b => b.number).join(', ');
+        const moreText = bills.length > 5 ? `, +${bills.length - 5} more` : '';
+        enhancedDescription += ` | Bills: ${billList}${moreText}`;
+      }
+      if (agendaInfo.length > 0) {
+        enhancedDescription += ` | ${agendaInfo.join(', ')}`;
+      }
+      
+      return {
+        ...event,
+        description: enhancedDescription,
+        bills: bills.length > 0 ? bills : undefined
+      };
+      
+    } catch (error) {
+      console.log(`[SCRAPER:NV] ⚠️ Could not fetch agenda details for ${event.name}:`, error);
+      return event;
     }
   }
   

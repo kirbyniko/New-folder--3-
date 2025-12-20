@@ -244,11 +244,18 @@ const events = await scrapeWithPuppeteer(url, {
   lng: -74.0060,
   zipCode: null,
   description: "State committee meeting",
-  sourceUrl: "https://state.gov/calendar", // Actual calendar page
-  virtualMeetingUrl: "https://state.gov/video/123",
+  sourceUrl: "https://state.gov/calendar", // REQUIRED: Actual calendar page being scraped
+  docketUrl: "https://state.gov/agenda.pdf", // Optional: Only if specific agenda exists
+  virtualMeetingUrl: "https://state.gov/video/123", // Optional
   bills: [...]  // Optional
 }
 ```
+
+**🚨 Critical sourceUrl Rule:**
+- `sourceUrl` should **always point to the calendar page being scraped**
+- Frontend displays this prominently above events so users can verify the source
+- Use actual calendar URL, not generic homepage or archive pages
+- Only set `docketUrl` if a **specific meeting agenda** exists (not generic agendas page)
 
 ---
 
@@ -446,10 +453,19 @@ Common bug: Using only partial fields like `title` without `name` + `committee` 
 **Cause:** ID generation creates collisions (e.g., using `substring(0, 12)` on base64)  
 **Fix:** Use timestamp + unique hash: `${city}-${date.getTime()}-${titleHash}`
 
-### Generic sourceUrl  
-Use actual calendar page, not homepage:
-- ❌ `https://state.gov/`
-- ✅ `https://state.gov/calendar`
+### Missing/Wrong sourceUrl  
+**Critical:** `sourceUrl` must be the actual calendar page being scraped (frontend displays it above all events):
+- ❌ Homepage: `https://state.gov/`
+- ❌ Archive: `https://city.gov/agendas/` (unless scraping that specific page)
+- ✅ Calendar: `https://state.gov/committee-meetings`
+- ✅ Schedule: `https://city.gov/board-calendar`
+
+### Wrong docketUrl
+**Only set if specific meeting agenda exists:**
+- ❌ Generic agendas page: `https://city.gov/meeting-agendas/`
+- ❌ Archive without specific link: Don't set `docketUrl`
+- ✅ Specific PDF: `https://state.gov/agenda-2025-01-15.pdf`
+- ✅ Specific HTML agenda: `https://state.gov/meeting/12345/agenda`
 
 ### No Local Events Showing in Frontend
 **Root Cause:** Browser caching empty responses from failed scraper attempts

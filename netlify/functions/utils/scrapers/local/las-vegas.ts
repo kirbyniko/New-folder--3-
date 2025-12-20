@@ -134,7 +134,13 @@ function convertToRawEvent(meeting: PrimeGovMeeting): RawEvent {
   const meetingDate = new Date(meeting.dateTime);
   const isoDate = meetingDate.toISOString();
   
+  // Generate unique ID from meeting template ID or timestamp + title
+  const idBase = agendaDoc?.templateId || meetingDate.getTime();
+  const titleSlug = meeting.title.toLowerCase().replace(/[^a-z0-9]/g, '-').substring(0, 50);
+  const id = `lasvegas-${idBase}-${titleSlug}`;
+  
   return {
+    id,
     title: meeting.title,
     name: meeting.title,
     date: isoDate,

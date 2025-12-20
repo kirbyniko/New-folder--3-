@@ -96,6 +96,22 @@ export default function TabbedEvents({
           Radius: {radius} mi
         </div>
 
+        {/* Calendar Source Link */}
+        {activeEvents.length > 0 && activeEvents[0].sourceUrl && (
+          <div className="calendar-source">
+            <span className="source-icon">🔗</span>
+            <span className="source-label">Calendar Source:</span>
+            <a 
+              href={activeEvents[0].sourceUrl} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="source-link"
+            >
+              {activeEvents[0].sourceUrl}
+            </a>
+          </div>
+        )}
+
         {/* Map Visualization */}
         {activeEvents.length > 0 && (
           <div className="map-container">
@@ -184,12 +200,12 @@ export default function TabbedEvents({
                     </div>
                   )}
 
-                  {(event.agendaUrl || event.docketUrl || event.url) && (
+                  {event.docketUrl && (
                     <div className="event-detail">
-                      <span className="detail-label">🔗 Link:</span>
+                      <span className="detail-label">📋 Agenda:</span>
                       <span className="detail-value">
-                        <a href={event.agendaUrl || event.docketUrl || event.url || ''} target="_blank" rel="noopener noreferrer" className="docket-link">
-                          View Docket
+                        <a href={event.docketUrl} target="_blank" rel="noopener noreferrer" className="docket-link">
+                          View Agenda PDF
                         </a>
                       </span>
                     </div>
@@ -208,10 +224,10 @@ export default function TabbedEvents({
 
                   {event.sourceUrl && (
                     <div className="event-detail">
-                      <span className="detail-label">📰 Source:</span>
+                      <span className="detail-label">🔗 Source:</span>
                       <span className="detail-value">
                         <a href={event.sourceUrl} target="_blank" rel="noopener noreferrer" className="source-link">
-                          View Original Page
+                          View Details
                         </a>
                       </span>
                     </div>

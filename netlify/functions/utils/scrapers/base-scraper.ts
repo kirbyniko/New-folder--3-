@@ -238,6 +238,7 @@ export abstract class BaseScraper {
         lat: 0, // Will be set by geocoder
         lng: 0,
         zipCode: null,
+        description: raw.description || null,
         url: raw.detailsUrl || null,
         docketUrl: raw.docketUrl || null,
         virtualMeetingUrl: raw.virtualMeetingUrl || null,
