@@ -1,5 +1,6 @@
 import * as cheerio from 'cheerio';
 import { StateEvent } from '../../types/events';
+import { enrichEventMetadata } from '../shared/tagging';
 import { BaseScraper, ScraperConfig } from '../base-scraper';
 
 /**
@@ -41,13 +42,27 @@ export class ColoradoScraper extends BaseScraper {
     const config: ScraperConfig = {
       stateCode: 'CO',
       stateName: 'Colorado',
-      websiteUrl: 'https://leg.colorado.gov/schedule',
+      websiteUrl: 'https://leg.colorado.gov',
       reliability: 'high',
-      updateFrequency: 24,
+      updateFrequency: 6,
       maxRequestsPerMinute: 30,
-      requestDelay: 300
+      requestDelay: 200
     };
     super(config);
+    this.log('🏔️ CO Scraper initialized');
+  }
+
+  getCalendarSources(): { name: string; url: string; description: string }[] {
+    return [
+      {
+        name: 'Colorado General Assembly Calendar',
+        url: 'https://leg.colorado.gov/schedule',
+        description: 'Daily legislative schedules and committee meetings'
+      }
+    ];
+  }
+
+  protected async getPageUrls(): Promise<string[]> {
   }
 
   async scrapeSchedule(): Promise<StateEvent[]> {

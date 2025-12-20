@@ -1,5 +1,5 @@
-import { BaseScraper } from '../base-scraper';
-import type { RawEvent } from '../../types';
+import { BaseScraper, RawEvent } from '../base-scraper';
+import { enrichEventMetadata } from '../shared/tagging';
 import * as cheerio from 'cheerio';
 
 /**
@@ -7,6 +7,7 @@ import * as cheerio from 'cheerio';
  * URL: https://www.leg.state.nv.us/App/Calendar/A/
  * Method: Static HTML parsing with Cheerio
  * Note: Nevada meets biennially (odd years), interim committees meet between sessions
+ * Uses shared tagging system for topic categorization and public participation detection
  */
 
 export class NevadaScraper extends BaseScraper {
@@ -18,6 +19,21 @@ export class NevadaScraper extends BaseScraper {
       reliability: 'high',
       updateFrequency: 24
     });
+  }
+
+  getCalendarSources(): { name: string; url: string; description: string }[] {
+    return [
+      {
+        name: 'Nevada Legislature Calendar',
+        url: 'https://www.leg.state.nv.us/App/Calendar/A/',
+        description: 'Assembly and Senate committee meeting schedules'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        description: 'Las Vegas city council meetings'
+      }
+    ];
   }
 
   async scrapeCalendar(): Promise<RawEvent[]> {
@@ -153,6 +169,9 @@ export class NevadaScraper extends BaseScraper {
             virtualMeetingUrl: virtualMeetingUrl || agendaViewerUrl, // Use Sliq viewer if no YouTube
             docketUrl: agendaViewerUrl || (detailUrl ? (detailUrl.startsWith('http') ? detailUrl : `https://www.leg.state.nv.us${detailUrl}`) : null)
           };
+          
+          // Apply unified tagging and participation detection
+          enrichEventMetadata(event, description);
           
           events.push(event);
           console.log(`[SCRAPER:NV] ✓ ${finalName} - ${currentDate} ${time}`);

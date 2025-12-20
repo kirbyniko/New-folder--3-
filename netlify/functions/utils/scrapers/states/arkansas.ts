@@ -1,5 +1,6 @@
 import * as cheerio from 'cheerio';
 import { BaseScraper, RawEvent, BillInfo } from '../base-scraper';
+import { enrichEventMetadata } from '../shared/tagging';
 
 /**
  * Arkansas Legislature Calendar Scraper
@@ -9,7 +10,7 @@ import { BaseScraper, RawEvent, BillInfo } from '../base-scraper';
  * - Parses month-view calendar with date headers and meeting rows
  * - Extracts agenda PDF URLs
  * - Parses PDFs for bill numbers, tags, virtual meeting links
- * - Detects public participation opportunities
+ * - Detects public participation opportunities (via shared tagging utility)
  */
 export class ArkansasScraper extends BaseScraper {
   constructor() {
@@ -20,6 +21,21 @@ export class ArkansasScraper extends BaseScraper {
       reliability: 'high',
       updateFrequency: 24
     });
+  }
+
+  getCalendarSources(): { name: string; url: string; description: string }[] {
+    return [
+      {
+        name: 'Arkansas Legislature Calendars',
+        url: 'https://www.arkleg.state.ar.us/Calendars',
+        description: 'House and Senate committee meeting calendars'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        description: 'Little Rock city council meetings'
+      }
+    ];
   }
 
   async scrapeCalendar(): Promise<RawEvent[]> {
@@ -231,10 +247,13 @@ export class ArkansasScraper extends BaseScraper {
         console.log(`[SCRAPER:Arkansas] 📋 Found ${uniqueBills.length} bills: ${uniqueBills.join(', ')}`);
       }
 
-      // Step 2: Generate tags from agenda text
-      event.tags = this.generateTags(pdfText);
+      // Step 2: Generate tags and detect public participation using shared utility
+      enrichEventMetadata(event, pdfText);
       if (event.tags && event.tags.length > 0) {
         console.log(`[SCRAPER:Arkansas] 🏷️ Tags: ${event.tags.join(', ')}`);
+      }
+      if (event.allowsPublicParticipation) {
+        console.log(`[SCRAPER:Arkansas] 💬 Public participation allowed`);
       }
 
       // Step 3: Check for virtual meeting links
@@ -253,22 +272,7 @@ export class ArkansasScraper extends BaseScraper {
         }
       }
 
-      // Step 4: Check for public participation
-      const characteristics: string[] = [];
-      if (lowerText.includes('public comment') || lowerText.includes('public testimony')) {
-        characteristics.push('Public comment period');
-      }
-      if (lowerText.includes('oral argument') || lowerText.includes('citizen input')) {
-        characteristics.push('Public participation allowed');
-      }
-      if (lowerText.includes('written testimony')) {
-        characteristics.push('Written testimony accepted');
-      }
-
-      if (characteristics.length > 0) {
-        event.description = `${event.committee} meeting - ${characteristics.join(', ')}`;
-        console.log(`[SCRAPER:Arkansas] 💬 Participation: ${characteristics.join(', ')}`);
-      }
+      // Step 4: Public participation is now handled by enrichEventMetadata above
 
       return true;
 
@@ -319,50 +323,5 @@ export class ArkansasScraper extends BaseScraper {
       console.error(`[SCRAPER:Arkansas] PDF extraction error:`, error);
       return '';
     }
-  }
-
-  /**
-   * Generate topic tags from text using keyword matching
-   */
-  private generateTags(text: string): string[] {
-    if (!text) return [];
-    
-    const tags: Set<string> = new Set();
-    const lowerText = text.toLowerCase();
-    
-    const topicKeywords: Record<string, string[]> = {
-      'Healthcare': ['health', 'medical', 'hospital', 'insurance', 'medicaid', 'medicare', 'patient'],
-      'Education': ['education', 'school', 'student', 'teacher', 'university', 'college'],
-      'Environment': ['environment', 'climate', 'pollution', 'conservation', 'water quality'],
-      'Transportation': ['transportation', 'highway', 'road', 'vehicle', 'traffic', 'infrastructure'],
-      'Public Safety': ['police', 'fire', 'emergency', 'safety', 'crime', 'law enforcement'],
-      'Tax': [' tax ', 'taxation', 'property tax', 'sales tax', 'revenue'],
-      'Veterans': ['veteran', 'military', 'armed forces', 'service member'],
-      'Technology': ['technology', 'digital', 'internet', 'cyber', 'data'],
-      'Housing': ['housing', 'residential', 'property', 'real estate', 'zoning'],
-      'Labor': ['labor', 'employment', 'worker', 'workplace', 'wage', 'employee'],
-      'Agriculture': ['agriculture', 'farm', 'farming', 'livestock', 'rural', 'crop'],
-      'Criminal Justice': ['criminal', 'prison', 'parole', 'sentencing', 'felony'],
-      'Commerce': ['business', 'commerce', 'trade', 'economic', 'industry'],
-      'Government Operations': ['government', 'administrative', 'agency', 'department'],
-      'Budget': ['budget', 'appropriation', 'funding', 'fiscal', 'expenditure'],
-      'Civil Rights': ['civil rights', 'discrimination', 'equal', 'accessibility']
-    };
-    
-    // Match keywords
-    for (const [tag, keywords] of Object.entries(topicKeywords)) {
-      if (keywords.some(keyword => lowerText.includes(keyword))) {
-        tags.add(tag);
-      }
-    }
-    
-    // Special patterns
-    if (lowerText.includes('amending')) tags.add('Amendment');
-    if (lowerText.includes('appropriation')) tags.add('Funding');
-    if (lowerText.includes('penalty') || lowerText.includes('enforcement')) tags.add('Enforcement');
-    if (lowerText.includes('regulation') || lowerText.includes('licensing')) tags.add('Regulation');
-    
-    // Limit to top 5 tags
-    return Array.from(tags).slice(0, 5);
   }
 }

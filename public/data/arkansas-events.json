@@ -430,5 +430,17 @@
       "bills": [],
       "tags": []
     }
+  ],
+  "calendarSources": [
+    {
+      "name": "Arkansas Legislature Calendars",
+      "url": "https://www.arkleg.state.ar.us/Calendars",
+      "description": "House and Senate committee meeting calendars"
+    },
+    {
+      "name": "Local City Meetings (Legistar API)",
+      "url": "https://webapi.legistar.com",
+      "description": "Little Rock city council meetings"
+    }
   ]
 }

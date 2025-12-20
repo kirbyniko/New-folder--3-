@@ -22,6 +22,21 @@ export class IllinoisScraper extends BaseScraper {
     this.log('🏛️ IL Scraper initialized');
   }
 
+  getCalendarSources(): { name: string; url: string; description: string }[] {
+    return [
+      {
+        name: 'Illinois General Assembly Schedules',
+        url: 'https://www.ilga.gov',
+        description: 'House and Senate committee schedules'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        description: 'City council meetings from major Illinois cities'
+      }
+    ];
+  }
+
   protected async getPageUrls(): Promise<string[]> {
     return [
       'https://www.ilga.gov/senate/schedules/',

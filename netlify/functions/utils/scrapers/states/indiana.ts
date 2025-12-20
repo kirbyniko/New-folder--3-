@@ -1,5 +1,6 @@
 import { BaseScraper } from '../base-scraper';
 import type { RawEvent, BillInfo, ScraperConfig } from '../base-scraper';
+import { enrichEventMetadata } from '../shared/tagging';
 
 /**
  * Indiana General Assembly Scraper
@@ -51,6 +52,16 @@ export class IndianaScraper extends BaseScraper {
     } else {
       this.log('🏛️  IN Scraper initialized with API key');
     }
+  }
+
+  getCalendarSources(): { name: string; url: string; description: string }[] {
+    return [
+      {
+        name: 'Indiana General Assembly Committee Calendar',
+        url: 'https://iga.in.gov/2026/committees/daily',
+        description: 'Daily meeting schedules for House and Senate committees'
+      }
+    ];
   }
 
   protected async getPageUrls(): Promise<string[]> {

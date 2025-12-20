@@ -1,4 +1,5 @@
 import { BaseScraper, type RawEvent } from '../base-scraper';
+import { enrichEventMetadata } from '../shared/tagging';
 import { scrapeWithPuppeteer } from '../puppeteer-helper';
 
 const CAPITOL_COORDS = {
@@ -28,6 +29,21 @@ export class OklahomaScraper extends BaseScraper {
       reliability: 'high',
       updateFrequency: 24
     });
+  }
+
+  getCalendarSources(): { name: string; url: string; description: string }[] {
+    return [
+      {
+        name: 'Oklahoma House Calendar',
+        url: 'https://www.okhouse.gov/calendars',
+        description: 'House committee meetings and floor schedules'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        description: 'Oklahoma City and Tulsa city council meetings'
+      }
+    ];
   }
   
   async scrapeCalendar(): Promise<RawEvent[]> {

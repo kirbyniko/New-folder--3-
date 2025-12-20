@@ -49,6 +49,21 @@ export class NewJerseyScraper extends BaseScraper {
     this.log('🏛️ NJ Scraper initialized');
   }
 
+  getCalendarSources(): { name: string; url: string; description: string }[] {
+    return [
+      {
+        name: 'New Jersey Legislature Committees',
+        url: 'https://www.njleg.state.nj.us/committees',
+        description: 'Senate and Assembly committee schedules'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        description: 'City council meetings from major New Jersey cities'
+      }
+    ];
+  }
+
   protected async getPageUrls(): Promise<string[]> {
     return [
       'https://www.njleg.state.nj.us/committees/senate-committees',

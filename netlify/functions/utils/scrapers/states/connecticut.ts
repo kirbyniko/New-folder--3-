@@ -10,6 +10,7 @@
  */
 
 import { BaseScraper, RawEvent } from '../base-scraper';
+import { enrichEventMetadata } from '../shared/tagging';
 import * as cheerio from 'cheerio';
 
 export class ConnecticutScraper extends BaseScraper {
@@ -21,6 +22,21 @@ export class ConnecticutScraper extends BaseScraper {
       reliability: 'high',
       updateFrequency: 24
     });
+  }
+
+  getCalendarSources(): { name: string; url: string; description: string }[] {
+    return [
+      {
+        name: 'Connecticut General Assembly Events',
+        url: 'https://www.cga.ct.gov/calendar/',
+        description: 'Public hearings, meetings, and legislative events'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        description: 'Bridgeport city council meetings'
+      }
+    ];
   }
 
   async scrapeCalendar(): Promise<RawEvent[]> {

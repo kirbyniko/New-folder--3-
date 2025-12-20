@@ -7,37 +7,48 @@ interface StateProgress {
   notes?: string;
 }
 
+interface StateSidebarProps {
+  onStateSelect?: (stateCode: string) => void;
+  selectedState?: string | null;
+}
+
 const STATE_PROGRESS: StateProgress[] = [
-  { code: 'PA', name: 'Pennsylvania', status: 'complete', notes: '61 events, 29 bills' },
-  { code: 'MI', name: 'Michigan', status: 'complete', notes: '34 bills' },
-  { code: 'TX', name: 'Texas', status: 'complete', notes: 'Ready for 2027 session' },
-  { code: 'FL', name: 'Florida', status: 'partial', notes: 'Session starts Jan 14, 2026' },
-  { code: 'NC', name: 'North Carolina', status: 'complete', notes: '4 committee meetings' },
-  { code: 'NY', name: 'New York', status: 'complete', notes: '2 public hearings' },
-  { code: 'NJ', name: 'New Jersey', status: 'complete', notes: 'Committee meetings with live bill scraping' },
-  { code: 'CA', name: 'California', status: 'complete', notes: 'Daily file scraper' },
-  { code: 'IL', name: 'Illinois', status: 'complete', notes: 'API-based scraper' },
-  { code: 'VA', name: 'Virginia', status: 'complete', notes: '42 events, 4 bills via Puppeteer (static)' },
-  { code: 'WA', name: 'Washington', status: 'complete', notes: 'POST form-based scraper with bill API' },
-  { code: 'AZ', name: 'Arizona', status: 'complete', notes: 'ALIS calendar API with bill extraction' },
-  { code: 'CO', name: 'Colorado', status: 'complete', notes: '19 interim events with hearing items (static)' },
-  { code: 'MN', name: 'Minnesota', status: 'complete', notes: '20 committee meetings (static)' },
-  { code: 'SC', name: 'South Carolina', status: 'complete', notes: '2 upcoming meetings (static)' },
-  { code: 'AL', name: 'Alabama', status: 'complete', notes: '3 events via OpenStates (static)' },
-    { code: 'CT', name: 'Connecticut', status: 'complete', notes: 'State + Bridgeport local' },
-    { code: 'IA', name: 'Iowa', status: 'complete', notes: 'State (out of session) + Des Moines local' },
-    { code: 'NV', name: 'Nevada', status: 'complete', notes: 'Interim committees' },
-  { code: 'OH', name: 'Ohio', status: 'pending' },
-  { code: 'GA', name: 'Georgia', status: 'complete', notes: '6 events via OpenStates' },
-  { code: 'NH', name: 'New Hampshire', status: 'complete', notes: 'Session + dockets' },
+  { code: 'AK', name: 'Alaska', status: 'complete', notes: 'BASIS committee system' },
+  { code: 'AL', name: 'Alabama', status: 'complete', notes: '3 state + Birmingham + Montgomery' },
+  { code: 'AR', name: 'Arkansas', status: 'complete', notes: '18 state + 23 Little Rock' },
+  { code: 'AZ', name: 'Arizona', status: 'complete', notes: 'ALIS calendar + bills' },
+  { code: 'CO', name: 'Colorado', status: 'complete', notes: '19 interim events' },
+  { code: 'CT', name: 'Connecticut', status: 'complete', notes: 'State + Bridgeport' },
+  { code: 'IA', name: 'Iowa', status: 'complete', notes: 'State + Des Moines' },
+  { code: 'IN', name: 'Indiana', status: 'complete', notes: 'Interim study committees' },
+  { code: 'KY', name: 'Kentucky', status: 'complete', notes: '4 state + 42 Lexington' },
+  { code: 'LA', name: 'Louisiana', status: 'complete', notes: '4 state + 81 Baton Rouge' },
+  { code: 'MA', name: 'Massachusetts', status: 'complete', notes: 'Joint hearings' },
+  { code: 'MD', name: 'Maryland', status: 'complete', notes: 'Interim hearings' },
+  { code: 'MN', name: 'Minnesota', status: 'complete', notes: '20 committee meetings' },
+  { code: 'MO', name: 'Missouri', status: 'complete', notes: 'House + Senate' },
+  { code: 'NV', name: 'Nevada', status: 'complete', notes: 'Interim + Las Vegas' },
+  { code: 'OK', name: 'Oklahoma', status: 'complete', notes: '5 state + 7 OKC' },
+  { code: 'OR', name: 'Oregon', status: 'complete', notes: '1 state + 48 Portland' },
+  { code: 'SC', name: 'South Carolina', status: 'complete', notes: '2 upcoming meetings' },
+  { code: 'TN', name: 'Tennessee', status: 'complete', notes: 'House + Senate' },
+  { code: 'VA', name: 'Virginia', status: 'complete', notes: '42 events + 4 bills' },
+  { code: 'WI', name: 'Wisconsin', status: 'complete', notes: 'Committee schedule' },
 ];
 
-export function StateSidebar() {
+export function StateSidebar({ onStateSelect, selectedState }: StateSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const complete = STATE_PROGRESS.filter(s => s.status === 'complete').length;
   const partial = STATE_PROGRESS.filter(s => s.status === 'partial').length;
   const total = STATE_PROGRESS.length;
+
+  const handleStateClick = (stateCode: string) => {
+    if (onStateSelect) {
+      // Toggle: if already selected, deselect
+      onStateSelect(selectedState === stateCode ? '' : stateCode);
+    }
+  };
 
   return (
     <div className={`state-sidebar ${isCollapsed ? 'collapsed' : ''}`}>
@@ -62,7 +73,12 @@ export function StateSidebar() {
 
           <div className="state-list">
             {STATE_PROGRESS.map((state) => (
-              <div key={state.code} className={`state-item ${state.status}`}>
+              <div 
+                key={state.code} 
+                className={`state-item ${state.status} ${selectedState === state.code ? 'selected' : ''}`}
+                onClick={() => state.status === 'complete' && handleStateClick(state.code)}
+                style={{ cursor: state.status === 'complete' ? 'pointer' : 'default' }}
+              >
                 <div className="state-header">
                   <input
                     type="checkbox"
@@ -89,7 +105,7 @@ export function StateSidebar() {
             <div className="legend">
               <div className="legend-item">
                 <span className="legend-badge complete">✓</span>
-                <span>Complete - Scraper working</span>
+                <span>Complete - Click to filter</span>
               </div>
               <div className="legend-item">
                 <span className="legend-badge partial">◐</span>

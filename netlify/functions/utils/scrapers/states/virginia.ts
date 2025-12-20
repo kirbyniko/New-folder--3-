@@ -1,5 +1,6 @@
 import { BaseScraper } from '../base-scraper';
 import type { RawEvent, ScraperConfig, BillInfo } from '../base-scraper';
+import { enrichEventMetadata } from '../shared/tagging';
 import { parseHTML } from '../html-parser';
 import puppeteer from 'puppeteer';
 
@@ -34,6 +35,16 @@ export class VirginiaScraper extends BaseScraper {
     };
     super(config);
     this.log('🏛️ VA Scraper initialized (Puppeteer mode)');
+  }
+
+  getCalendarSources(): { name: string; url: string; description: string }[] {
+    return [
+      {
+        name: 'Virginia Legislative Information System',
+        url: 'https://lis.virginia.gov/schedule',
+        description: 'Daily schedule of House and Senate committee meetings'
+      }
+    ];
   }
 
   protected async getPageUrls(): Promise<string[]> {

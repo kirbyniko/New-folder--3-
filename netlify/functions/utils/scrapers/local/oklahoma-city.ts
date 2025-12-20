@@ -12,7 +12,11 @@
  * - Returns upcoming meetings with agendas
  * - Includes meeting titles, dates, times, and document links
  * - Parses PDF agendas for agenda items and topics
+ * - Detects public participation opportunities from API flags
  */
+
+import { RawEvent } from '../base-scraper';
+import { enrichEventMetadata } from '../shared/tagging';
 
 import type { RawEvent } from '../../base-scraper';
 
@@ -162,6 +166,15 @@ async function convertToRawEvent(meeting: PrimeGovMeeting): Promise<RawEvent> {
     description += (description ? ' | ' : '') + `Video: ${meeting.videoUrl}`;
   }
   
+  // Check if public participation is allowed from API flags
+  const allowsPublicParticipation = meeting.allowPublicSpeaker || meeting.allowPublicComment;
+  if (allowsPublicParticipation) {
+    const participationMethods: string[] = [];
+    if (meeting.allowPublicSpeaker) participationMethods.push('public speaking');
+    if (meeting.allowPublicComment) participationMethods.push('public comment');
+    description += (description ? ' | ' : '') + `Open for ${participationMethods.join(' and ')}`;
+  }
+  
   const event: RawEvent = {
     id,
     name: meeting.title.trim(),
@@ -174,8 +187,13 @@ async function convertToRawEvent(meeting: PrimeGovMeeting): Promise<RawEvent> {
     docketUrl, // Direct link to PDF agenda
     virtualMeetingUrl: meeting.videoUrl || meeting.zoomMeetingLink || undefined,
     description: description || undefined,
-    bills: []
+    bills: [],
+    allowsPublicParticipation // Set from API flags
   };
+  
+  // Apply shared tagging and enrichment
+  const agendaText = agendaItems.join(' ');
+  enrichEventMetadata(event, agendaText);
   
   return event;
 }

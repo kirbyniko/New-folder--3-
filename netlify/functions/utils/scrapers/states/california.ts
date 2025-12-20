@@ -25,6 +25,21 @@ export class CaliforniaScraper extends BaseScraper {
     this.log('🏛️ CA Scraper initialized');
   }
 
+  getCalendarSources(): { name: string; url: string; description: string }[] {
+    return [
+      {
+        name: 'California Assembly Daily File',
+        url: 'https://assembly.ca.gov/dailyfile',
+        description: 'Assembly committee hearings and floor sessions'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        description: 'City council meetings from major California cities'
+      }
+    ];
+  }
+
   protected async getPageUrls(): Promise<string[]> {
     return ['https://assembly.ca.gov/dailyfile'];
   }

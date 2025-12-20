@@ -27,6 +27,21 @@ export class TexasScraper extends BaseScraper {
     this.log('🏛️ TX Scraper initialized');
   }
 
+  getCalendarSources(): { name: string; url: string; description: string }[] {
+    return [
+      {
+        name: 'Texas Legislature Upcoming Meetings',
+        url: 'https://capitol.texas.gov/Committees/MeetingsUpcoming.aspx',
+        description: 'House and Senate committee meeting schedules'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        description: 'City council meetings from major Texas cities'
+      }
+    ];
+  }
+
   protected async getPageUrls(): Promise<string[]> {
     return [
       'https://capitol.texas.gov/Committees/MeetingsUpcoming.aspx?Chamber=H',

@@ -41,6 +41,21 @@ export class GeorgiaScraper extends BaseScraper {
     }
   }
 
+  getCalendarSources(): { name: string; url: string; description: string }[] {
+    return [
+      {
+        name: 'Georgia Legislature',
+        url: 'https://www.legis.ga.gov',
+        description: 'Legislative calendar (via OpenStates API)'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        description: 'City council meetings from major Georgia cities'
+      }
+    ];
+  }
+
   protected async getPageUrls(): Promise<string[]> {
     return [`${this.OPENSTATES_API}/events?jurisdiction=${this.JURISDICTION_ID}`];
   }

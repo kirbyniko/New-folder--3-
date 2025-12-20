@@ -33,6 +33,21 @@ export class MichiganScraper extends BaseScraper {
     this.log('🏛️ MI Scraper initialized');
   }
 
+  getCalendarSources(): { name: string; url: string; description: string }[] {
+    return [
+      {
+        name: 'Michigan Legislature Committee Meetings',
+        url: 'https://www.legislature.mi.gov/Committees/Meetings',
+        description: 'House and Senate committee meeting schedules'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        description: 'City council meetings from major Michigan cities'
+      }
+    ];
+  }
+
   protected async getPageUrls(): Promise<string[]> {
     return [this.MEETINGS_URL];
   }

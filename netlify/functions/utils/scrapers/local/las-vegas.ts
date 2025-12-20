@@ -11,9 +11,11 @@
  * - JSON REST API (no Puppeteer needed)
  * - Returns upcoming meetings with agendas
  * - Includes meeting titles, dates, times, and document links
+ * - Detects public participation opportunities from API flags
  */
 
-import type { RawEvent } from '../../base-scraper';
+import { RawEvent } from '../base-scraper';
+import { enrichEventMetadata } from '../shared/tagging';
 
 interface PrimeGovDocument {
   id: number;
@@ -139,7 +141,7 @@ function convertToRawEvent(meeting: PrimeGovMeeting): RawEvent {
   const titleSlug = meeting.title.toLowerCase().replace(/[^a-z0-9]/g, '-').substring(0, 50);
   const id = `lasvegas-${idBase}-${titleSlug}`;
   
-  return {
+  const event: RawEvent = {
     id,
     title: meeting.title,
     name: meeting.title,
@@ -151,6 +153,12 @@ function convertToRawEvent(meeting: PrimeGovMeeting): RawEvent {
     state: 'NV',
     city: 'Las Vegas',
     sourceUrl,
-    docketUrl
+    docketUrl,
+    allowsPublicParticipation: meeting.allowPublicSpeaker || meeting.allowPublicComment
   };
+  
+  // Apply shared tagging
+  enrichEventMetadata(event);
+  
+  return event;
 }

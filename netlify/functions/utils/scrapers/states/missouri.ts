@@ -1,5 +1,6 @@
 import { BaseScraper } from '../base-scraper';
 import type { RawEvent, BillInfo, ScraperConfig } from '../base-scraper';
+import { enrichEventMetadata } from '../shared/tagging';
 import { parseHTML } from '../html-parser';
 
 /**
@@ -26,14 +27,29 @@ export class MissouriScraper extends BaseScraper {
     const config: ScraperConfig = {
       stateCode: 'MO',
       stateName: 'Missouri',
-      websiteUrl: 'https://house.mo.gov/AllHearings.aspx',
+      websiteUrl: 'https://house.mo.gov',
       reliability: 'high',
       updateFrequency: 6,
       maxRequestsPerMinute: 30,
-      requestDelay: 300
+      requestDelay: 200
     };
     super(config);
-    this.log('🏛️ MO Scraper initialized');
+    this.log('🍻 MO Scraper initialized');
+  }
+
+  getCalendarSources(): { name: string; url: string; description: string }[] {
+    return [
+      {
+        name: 'Missouri House Committee Hearings',
+        url: 'https://house.mo.gov/HearingsTimeOrder.aspx',
+        description: 'House committee hearing schedules'
+      },
+      {
+        name: 'Missouri Senate Hearings',
+        url: 'https://www.senate.mo.gov/hearingsschedule/hrings.htm',
+        description: 'Senate committee hearing schedules'
+      }
+    ];
   }
 
   protected async getPageUrls(): Promise<string[]> {

@@ -27,6 +27,21 @@ export class PennsylvaniaScraper extends BaseScraper {
     this.log('🏛️ PA Scraper initialized');
   }
 
+  getCalendarSources(): { name: string; url: string; description: string }[] {
+    return [
+      {
+        name: 'Pennsylvania Legislature Meeting Schedules',
+        url: 'https://www.palegis.us/house/committees/meeting-schedule',
+        description: 'House and Senate committee meeting schedules'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        description: 'City council meetings from major Pennsylvania cities'
+      }
+    ];
+  }
+
   protected async getPageUrls(): Promise<string[]> {
     return [
       'https://www.palegis.us/house/committees/meeting-schedule',

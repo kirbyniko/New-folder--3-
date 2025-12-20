@@ -75,5 +75,17 @@
       "description": "Agenda: Approval of November 04, 2025 Minutes; Proposed Legislation for the 2026 Session; Basic and Added Reparation (PIP) Benefits...",
       "bills": []
     }
+  ],
+  "calendarSources": [
+    {
+      "name": "Kentucky Legislative Calendar",
+      "url": "https://apps.legislature.ky.gov/legislativecalendar",
+      "description": "House, Senate, and committee meeting schedules"
+    },
+    {
+      "name": "Local City Meetings (Legistar API)",
+      "url": "https://webapi.legistar.com",
+      "description": "Lexington and Louisville city council meetings"
+    }
   ]
 }

@@ -1,5 +1,6 @@
 import { BaseScraper } from '../base-scraper';
 import type { RawEvent, ScraperConfig } from '../base-scraper';
+import { enrichEventMetadata } from '../shared/tagging';
 import * as cheerio from 'cheerio';
 
 interface KentuckyEvent {
@@ -37,6 +38,22 @@ export class KentuckyScraper extends BaseScraper {
     };
     super(config);
     this.log('🐴 KY Scraper initialized');
+  }
+
+  getCalendarSources(): { name: string; url: string; description: string }[] {
+    return [
+      {
+        name: 'Kentucky Legislative Calendar',
+        url: 'https://apps.legislature.ky.gov/legislativecalendar',
+        description: 'House, Senate, and committee meeting schedules'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        description: 'Lexington and Louisville city council meetings'
+      }
+    ];
+  }
   }
 
   async scrapeCalendar(): Promise<RawEvent[]> {

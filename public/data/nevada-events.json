@@ -1423,5 +1423,17 @@
       "tags": [],
       "sourceUrl": "https://www.leg.state.nv.us/App/InterimCommittee/REL/Interim2025/Meeting/34578"
     }
+  ],
+  "calendarSources": [
+    {
+      "name": "Nevada Legislature Calendar",
+      "url": "https://www.leg.state.nv.us/App/Calendar/A/",
+      "description": "Assembly and Senate committee meeting schedules"
+    },
+    {
+      "name": "Local City Meetings (Legistar API)",
+      "url": "https://webapi.legistar.com",
+      "description": "Las Vegas city council meetings"
+    }
   ]
 }

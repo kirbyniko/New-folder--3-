@@ -305,5 +305,12 @@
   ],
   "count": 10,
   "billsCount": 21,
-  "lastUpdated": "2025-12-17T08:12:51.837Z"
+  "lastUpdated": "2025-12-17T08:12:51.837Z",
+  "calendarSources": [
+    {
+      "name": "Wisconsin Legislature Committee Notices",
+      "url": "https://docs.legis.wisconsin.gov/raw/committee",
+      "description": "Joint, Assembly, and Senate committee public notices"
+    }
+  ]
 }

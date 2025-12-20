@@ -1,5 +1,6 @@
 import { BaseScraper } from '../base-scraper';
 import type { RawEvent, BillInfo, ScraperConfig } from '../base-scraper';
+import { enrichEventMetadata } from '../shared/tagging';
 import * as cheerio from 'cheerio';
 
 /**
@@ -27,14 +28,24 @@ export class SouthCarolinaScraper extends BaseScraper {
     const config: ScraperConfig = {
       stateCode: 'SC',
       stateName: 'South Carolina',
-      websiteUrl: 'https://www.scstatehouse.gov/meetings.php',
+      websiteUrl: 'https://www.scstatehouse.gov',
       reliability: 'high',
       updateFrequency: 6,
       maxRequestsPerMinute: 30,
-      requestDelay: 300
+      requestDelay: 200
     };
     super(config);
-    this.log('🏛️ SC Scraper initialized');
+    this.log('🌴 SC Scraper initialized (OpenStates)');
+  }
+
+  getCalendarSources(): { name: string; url: string; description: string }[] {
+    return [
+      {
+        name: 'South Carolina Legislature',
+        url: 'https://www.scstatehouse.gov',
+        description: 'House and Senate legislative calendars (via OpenStates)'
+      }
+    ];
   }
 
   protected async getPageUrls(): Promise<string[]> {

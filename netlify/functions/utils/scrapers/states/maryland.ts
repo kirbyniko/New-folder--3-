@@ -1,5 +1,6 @@
 import { BaseScraper } from '../base-scraper';
 import type { RawEvent, BillInfo, ScraperConfig } from '../base-scraper';
+import { enrichEventMetadata } from '../shared/tagging';
 import { parseHTML } from '../html-parser';
 
 /**
@@ -31,10 +32,20 @@ export class MarylandScraper extends BaseScraper {
       reliability: 'high',
       updateFrequency: 6,
       maxRequestsPerMinute: 30,
-      requestDelay: 300
+      requestDelay: 200
     };
     super(config);
-    this.log('🏛️ MD Scraper initialized');
+    this.log('🦀 MD Scraper initialized');
+  }
+
+  getCalendarSources(): { name: string; url: string; description: string }[] {
+    return [
+      {
+        name: 'Maryland General Assembly Meetings',
+        url: 'https://mgaleg.maryland.gov/mgawebsite/Meetings/Day',
+        description: 'Daily committee meeting schedules for both chambers'
+      }
+    ];
   }
 
   protected async getPageUrls(): Promise<string[]> {

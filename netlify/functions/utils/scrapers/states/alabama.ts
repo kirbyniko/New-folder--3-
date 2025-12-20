@@ -1,5 +1,6 @@
 import { BaseScraper } from '../base-scraper';
 import type { RawEvent, ScraperConfig, BillInfo } from '../base-scraper';
+import { enrichEventMetadata } from '../shared/tagging';
 
 /**
  * Alabama Legislature Scraper
@@ -36,12 +37,23 @@ export class AlabamaScraper extends BaseScraper {
     };
     super(config);
     this.log('🏛️ AL Scraper initialized (OpenStates API)');
-    
-    if (!this.API_KEY) {
-      this.log('⚠️ OPENSTATES_API_KEY not found in environment');
-    }
   }
 
+  getCalendarSources(): { name: string; url: string; description: string }[] {
+    return [
+      {
+        name: 'Alabama Legislature (ALISON)',
+        url: 'https://alison.legislature.state.al.us',
+        description: 'State legislative calendar (via OpenStates API)'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        description: 'Birmingham and Montgomery city council meetings'
+      }
+    ];
+  }
+    
   protected async getPageUrls(): Promise<string[]> {
     return [`${this.OPENSTATES_API}/events?jurisdiction=${this.JURISDICTION_ID}`];
   }

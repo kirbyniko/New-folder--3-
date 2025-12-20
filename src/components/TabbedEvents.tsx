@@ -11,6 +11,7 @@ interface TabbedEventsProps {
   centerLng: number;
   radius: number;
   selectedTags?: string[];
+  selectedState?: string;
 }
 
 type TabType = 'all' | 'state' | 'local';
@@ -22,9 +23,16 @@ export default function TabbedEvents({
   centerLat,
   centerLng,
   radius,
-  selectedTags = []
+  selectedTags = [],
+  selectedState
 }: TabbedEventsProps) {
   const [activeTab, setActiveTab] = useState<TabType>('all');
+
+  // Filter events by selected state (if any)
+  const filterByState = (events: LegislativeEvent[]) =>
+    !selectedState
+      ? events
+      : events.filter(e => e.state === selectedState);
 
   // Filter events by selected tags
   const filterByTags = (events: LegislativeEvent[]) =>
@@ -32,9 +40,9 @@ export default function TabbedEvents({
       ? events 
       : events.filter(e => e.tags?.some(t => selectedTags.includes(t)));
 
-  const filteredFederal = filterByTags(federalEvents);
-  const filteredState = filterByTags(stateEvents);
-  const filteredLocal = filterByTags(localEvents);
+  const filteredFederal = filterByTags(filterByState(federalEvents));
+  const filteredState = filterByTags(filterByState(stateEvents));
+  const filteredLocal = filterByTags(filterByState(localEvents));
 
   // Combine and deduplicate events (some events may appear in multiple sources)
   const allEventsMap = new Map<string, LegislativeEvent>();

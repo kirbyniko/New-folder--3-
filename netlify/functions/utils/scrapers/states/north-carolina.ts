@@ -50,6 +50,21 @@ export class NorthCarolinaScraper extends BaseScraper {
     super(config);
   }
 
+  getCalendarSources(): { name: string; url: string; description: string }[] {
+    return [
+      {
+        name: 'North Carolina Legislature',
+        url: 'https://www.ncleg.gov',
+        description: 'House and Senate committee meeting schedules'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        description: 'City council meetings from major North Carolina cities'
+      }
+    ];
+  }
+
   protected async scrapeCalendar(): Promise<RawEvent[]> {
     this.log('🔍 Starting NC Legislature scrape...');
     

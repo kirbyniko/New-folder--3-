@@ -1,4 +1,5 @@
 import { Event } from '../../interfaces';
+import { enrichEventMetadata } from '../shared/tagging';
 
 /**
  * Oregon Legislature Event Scraper (OpenStates)

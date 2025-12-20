@@ -1,5 +1,6 @@
 import { BaseScraper } from '../base-scraper';
 import type { RawEvent, BillInfo, ScraperConfig } from '../base-scraper';
+import { enrichEventMetadata } from '../shared/tagging';
 
 /**
  * Wisconsin Legislature Scraper
@@ -24,14 +25,24 @@ export class WisconsinScraper extends BaseScraper {
     const config: ScraperConfig = {
       stateCode: 'WI',
       stateName: 'Wisconsin',
-      websiteUrl: 'https://committeeschedule.legis.wisconsin.gov/',
+      websiteUrl: 'https://docs.legis.wisconsin.gov/raw/committee',
       reliability: 'high',
       updateFrequency: 6,
       maxRequestsPerMinute: 30,
-      requestDelay: 300
+      requestDelay: 200
     };
     super(config);
-    this.log('🏛️ WI Scraper initialized');
+    this.log('🧀 WI Scraper initialized');
+  }
+
+  getCalendarSources(): { name: string; url: string; description: string }[] {
+    return [
+      {
+        name: 'Wisconsin Legislature Committee Notices',
+        url: 'https://docs.legis.wisconsin.gov/raw/committee',
+        description: 'Joint, Assembly, and Senate committee public notices'
+      }
+    ];
   }
 
   protected async getPageUrls(): Promise<string[]> {

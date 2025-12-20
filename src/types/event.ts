@@ -23,6 +23,9 @@ export interface LegislativeEvent {
   virtualMeetingUrl?: string;   // Zoom/Teams/WebEx link for remote attendance
   bills?: Bill[];               // Bills being discussed (when available)
   sourceUrl?: string;           // URL of the page where data was scraped from
+  
+  // 🆕 Public Participation
+  allowsPublicParticipation?: boolean;  // Whether public comment/testimony is allowed
 }
 
 // 🆕 Bill information structure

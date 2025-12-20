@@ -1,5 +1,6 @@
 import { BaseScraper } from '../base-scraper';
 import type { RawEvent, BillInfo, ScraperConfig } from '../base-scraper';
+import { enrichEventMetadata } from '../shared/tagging';
 import { parseHTML } from '../html-parser';
 
 interface LouisianaEvent {
@@ -37,6 +38,21 @@ export class LouisianaScraper extends BaseScraper {
     };
     super(config);
     this.log('🎺 LA Scraper initialized');
+  }
+
+  getCalendarSources(): { name: string; url: string; description: string }[] {
+    return [
+      {
+        name: 'Louisiana Legislature Committee Calendar',
+        url: 'https://legis.la.gov/legis/ByCmte.aspx',
+        description: 'House, Senate, and Joint committee meeting schedules'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        description: 'Baton Rouge and New Orleans city council meetings'
+      }
+    ];
   }
 
   protected async getPageUrls(): Promise<string[]> {

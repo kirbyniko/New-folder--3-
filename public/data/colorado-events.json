@@ -308,5 +308,12 @@
       "url": "https://leg.colorado.gov/committees/2025a/Joint%20Committee/LegislativeAuditCommittee",
       "name": "Legislative Audit Committee"
     }
+  ],
+  "calendarSources": [
+    {
+      "name": "Colorado General Assembly Calendar",
+      "url": "https://leg.colorado.gov/schedule",
+      "description": "Daily legislative schedules and committee meetings"
+    }
   ]
 }

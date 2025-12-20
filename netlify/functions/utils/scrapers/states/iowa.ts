@@ -1,5 +1,5 @@
-import { BaseScraper } from '../base-scraper';
-import type { RawEvent } from '../../types';
+import { BaseScraper, RawEvent } from '../base-scraper';
+import { enrichEventMetadata } from '../shared/tagging';
 import * as cheerio from 'cheerio';
 
 /**
@@ -21,6 +21,21 @@ export class IowaScraper extends BaseScraper {
       reliability: 'high',
       updateFrequency: 24
     });
+  }
+
+  getCalendarSources(): { name: string; url: string; description: string }[] {
+    return [
+      {
+        name: 'Iowa General Assembly Hearings',
+        url: 'https://www.legis.iowa.gov/committees/meetings',
+        description: 'Committee public hearings and meetings'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        description: 'Des Moines city council meetings'
+      }
+    ];
   }
 
   async scrapeCalendar(): Promise<RawEvent[]> {

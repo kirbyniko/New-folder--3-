@@ -98,5 +98,17 @@
       "sourceUrl": "https://www.okhouse.gov/committees/house/approp/ap-gov",
       "bills": []
     }
+  ],
+  "calendarSources": [
+    {
+      "name": "Oklahoma House Calendar",
+      "url": "https://www.okhouse.gov/calendars",
+      "description": "House committee meetings and floor schedules"
+    },
+    {
+      "name": "Local City Meetings (Legistar API)",
+      "url": "https://webapi.legistar.com",
+      "description": "Oklahoma City and Tulsa city council meetings"
+    }
   ]
 }

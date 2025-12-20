@@ -1,5 +1,6 @@
 import { BaseScraper } from '../base-scraper';
 import type { RawEvent, BillInfo, ScraperConfig } from '../base-scraper';
+import { enrichEventMetadata } from '../shared/tagging';
 import { parseHTML } from '../html-parser';
 
 interface MassachusettsEvent {
@@ -32,14 +33,24 @@ export class MassachusettsScraper extends BaseScraper {
     const config: ScraperConfig = {
       stateCode: 'MA',
       stateName: 'Massachusetts',
-      websiteUrl: 'https://malegislature.gov/Events',
+      websiteUrl: 'https://malegislature.gov/Events/Hearings/SearchResults',
       reliability: 'high',
       updateFrequency: 6,
       maxRequestsPerMinute: 30,
-      requestDelay: 300
+      requestDelay: 200
     };
     super(config);
     this.log('🦞 MA Scraper initialized');
+  }
+
+  getCalendarSources(): { name: string; url: string; description: string }[] {
+    return [
+      {
+        name: 'Massachusetts Legislature Hearings',
+        url: 'https://malegislature.gov/Events/Hearings/SearchResults',
+        description: 'Joint committee public hearings and legislative events'
+      }
+    ];
   }
 
   protected async getPageUrls(): Promise<string[]> {

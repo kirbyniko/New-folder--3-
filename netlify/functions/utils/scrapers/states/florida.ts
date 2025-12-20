@@ -54,6 +54,21 @@ export class FloridaScraper extends BaseScraper {
     }
   }
 
+  getCalendarSources(): { name: string; url: string; description: string }[] {
+    return [
+      {
+        name: 'Florida Senate Committees',
+        url: 'https://www.flsenate.gov/Committees',
+        description: 'Senate and House committee meeting schedules'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        description: 'City council meetings from major Florida cities'
+      }
+    ];
+  }
+
   protected async getPageUrls(): Promise<string[]> {
     return [this.COMMITTEES_URL];
   }

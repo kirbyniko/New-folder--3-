@@ -6,6 +6,7 @@ import StateSelector from './components/StateSelector'
 import TagFilter from './components/TagFilter'
 import { EnrichmentNotice } from './components/EnrichmentNotice'
 import StateSidebar from './components/StateSidebar'
+import { SourceLinks } from './components/SourceLinks'
 import { getApiUrl } from './config/api'
 import { autoTagEvent } from './utils/tagging'
 import './App.css'
@@ -43,6 +44,7 @@ function App() {
   const [zipCode, setZipCode] = useState('03054')
   const [radius, setRadius] = useState(50)
   const [selectedState, setSelectedState] = useState<string | null>(null)
+  const [searchedState, setSearchedState] = useState<string | null>(null) // State from ZIP code search
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [federalEvents, setFederalEvents] = useState<LegislativeEvent[]>([])
   const [stateEvents, setStateEvents] = useState<LegislativeEvent[]>([])
@@ -51,6 +53,7 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isStateSearch, setIsStateSearch] = useState(false)
+  const [calendarSources, setCalendarSources] = useState<{ name: string; url: string; description: string }[]>([])
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -65,12 +68,14 @@ function App() {
     setFederalEvents([])
     setStateEvents([])
     setLocalEvents([])
+    setCalendarSources([]) // Reset calendar sources
     setIsStateSearch(false)
 
     try {
       // 1. Geocode ZIP code
       const location = await geocodeZipCode(zipCode)
       setUserLocation({ lat: location.lat, lng: location.lng })
+      setSearchedState(location.stateAbbr || null) // Store the state from ZIP lookup
       
       console.log(`🌍 Location: ${location.city}, ${location.stateAbbr} (${location.lat}, ${location.lng})`)
       
@@ -121,6 +126,18 @@ function App() {
         console.log('📥 State raw response:', stateText.substring(0, 200))
         state = JSON.parse(stateText)
         console.log(`🏢 State: ${state.length} events`, state.length > 0 ? state[0] : 'none')
+        
+        // Extract calendar sources from headers
+        const calendarSourcesHeader = stateResponse.headers.get('X-Calendar-Sources')
+        if (calendarSourcesHeader) {
+          try {
+            const sources = JSON.parse(calendarSourcesHeader)
+            setCalendarSources(sources)
+            console.log('📅 Calendar sources:', sources)
+          } catch (e) {
+            console.warn('Failed to parse calendar sources:', e)
+          }
+        }
         
         // Debug: Check bills field
         const eventsWithBills = state.filter(e => e.bills && e.bills.length > 0)
@@ -186,9 +203,22 @@ function App() {
     }
   }
 
+  const handleStateSelect = (stateCode: string) => {
+    if (stateCode === '') {
+      // Clear filter
+      setSelectedState(null)
+    } else {
+      // Set filter
+      setSelectedState(stateCode)
+    }
+  }
+
   return (
     <div className="app">
-      <StateSidebar />
+      <StateSidebar 
+        selectedState={selectedState || undefined}
+        onStateSelect={handleStateSelect}
+      />
       
       <header className="header">
         <h1>🏛️ Civitron</h1>
@@ -213,8 +243,10 @@ function App() {
             setRadius(500)  // Expand to 500 miles to cover entire state
             setLoading(true)
             setError(null)
+            setCalendarSources([]) // Reset calendar sources
             setIsStateSearch(true)
             setUserLocation({ lat: capitol.lat, lng: capitol.lng })
+            setSearchedState(stateAbbr) // Set the searched state
             
             try {
               // Create abort controller for 30-second timeout
@@ -246,6 +278,20 @@ function App() {
               const federal = federalResponse.ok ? await federalResponse.json() : []
               const state = stateResponse.ok ? await stateResponse.json() : []
               const local = localResponse.ok ? await localResponse.json() : []
+              
+              // Extract calendar sources from state response headers
+              if (stateResponse.ok) {
+                const calendarSourcesHeader = stateResponse.headers.get('X-Calendar-Sources')
+                if (calendarSourcesHeader) {
+                  try {
+                    const sources = JSON.parse(calendarSourcesHeader)
+                    setCalendarSources(sources)
+                    console.log('📅 Calendar sources:', sources)
+                  } catch (e) {
+                    console.warn('Failed to parse calendar sources:', e)
+                  }
+                }
+              }
               
               // Filter out malformed events missing required fields
               const validFederal = federal.filter((e: any) => e && e.level)
@@ -326,6 +372,42 @@ function App() {
           </div>
         )}
 
+        {/* Show source links when we have searched (regardless of results) */}
+        {userLocation && (
+          <SourceLinks
+            federalEvents={federalEvents}
+            stateEvents={stateEvents}
+            localEvents={localEvents}
+            selectedState={selectedState || searchedState || undefined}
+            searchedState={searchedState || undefined}
+            calendarSources={calendarSources}
+          />
+        )}
+
+        {/* Show "no results" message when search completed but found nothing */}
+        {!loading && !error && userLocation && 
+         federalEvents.length === 0 && stateEvents.length === 0 && localEvents.length === 0 && (
+          <div className="empty-results">
+            <div className="empty-results-icon">🔍</div>
+            <h3>No Events Found</h3>
+            <p>
+              {selectedState 
+                ? `No upcoming legislative events found for ${selectedState}.`
+                : `No upcoming legislative events found within ${radius} miles of ZIP ${zipCode}.`
+              }
+            </p>
+            <div className="empty-results-tips">
+              <h4>Suggestions:</h4>
+              <ul>
+                <li>The legislature may not be in session currently</li>
+                <li>Try selecting a different state from the sidebar</li>
+                <li>Check back during the regular legislative session (typically January-May)</li>
+                <li>Expand your search to include more states</li>
+              </ul>
+            </div>
+          </div>
+        )}
+
         {(federalEvents.length > 0 || stateEvents.length > 0 || localEvents.length > 0) && userLocation && (
           <div className="results">
             <h2 className="results-title">
@@ -351,6 +433,7 @@ function App() {
               centerLng={userLocation.lng}
               radius={radius}
               selectedTags={selectedTags}
+              selectedState={selectedState || undefined}
             />
           </div>
         )}

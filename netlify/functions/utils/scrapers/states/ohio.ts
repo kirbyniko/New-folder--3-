@@ -39,6 +39,21 @@ export class OhioScraper extends BaseScraper {
     this.log('🏛️ OH Scraper initialized');
   }
 
+  getCalendarSources(): { name: string; url: string; description: string }[] {
+    return [
+      {
+        name: 'Ohio Legislature',
+        url: 'https://www.legislature.ohio.gov',
+        description: 'House and Senate committee meeting schedules'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        description: 'City council meetings from major Ohio cities'
+      }
+    ];
+  }
+
   protected async getPageUrls(): Promise<string[]> {
     return ['https://www.legislature.ohio.gov/committees/house-committees', 
             'https://www.legislature.ohio.gov/committees/senate-committees'];

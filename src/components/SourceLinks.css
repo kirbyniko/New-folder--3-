@@ -1,0 +1,140 @@
+.source-links {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.source-links-toggle {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: white;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.source-links-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.source-links-icon {
+  font-size: 0.8rem;
+  transition: transform 0.2s;
+}
+
+.source-links-title {
+  flex: 1;
+  text-align: left;
+}
+
+.source-links-badge {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.source-links-content {
+  background: white;
+  padding: 1.5rem;
+  color: #333;
+}
+
+.source-section {
+  margin-bottom: 1.5rem;
+}
+
+.source-section:last-child {
+  margin-bottom: 0;
+}
+
+.source-section h4 {
+  margin: 0 0 0.75rem 0;
+  color: #667eea;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.source-section ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.source-section li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.source-section li:last-child {
+  border-bottom: none;
+}
+
+.source-section a {
+  color: #667eea;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.source-section a:hover {
+  color: #764ba2;
+  text-decoration: underline;
+}
+
+.source-desc {
+  display: block;
+  color: #666;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  margin-left: 1.5rem;
+}
+
+.source-state {
+  color: #333;
+  font-weight: 600;
+}
+
+.source-empty {
+  color: #666;
+  font-style: italic;
+  margin: 0;
+  padding: 0.5rem 0;
+  line-height: 1.6;
+}
+
+.source-info {
+  color: #333;
+  margin: 0 0 0.75rem 0;
+  padding: 0.5rem 0;
+  line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+  .source-links-toggle {
+    padding: 0.875rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .source-links-content {
+    padding: 1rem;
+  }
+
+  .source-section h4 {
+    font-size: 0.85rem;
+  }
+}

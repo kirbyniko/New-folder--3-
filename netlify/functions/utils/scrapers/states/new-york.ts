@@ -27,6 +27,21 @@ export class NewYorkScraper extends BaseScraper {
     this.log('🏛️ NY Scraper initialized');
   }
 
+  getCalendarSources(): { name: string; url: string; description: string }[] {
+    return [
+      {
+        name: 'New York Assembly Public Hearings',
+        url: 'https://nyassembly.gov/leg/?sh=hear',
+        description: 'Assembly and Senate public hearing schedules'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        description: 'New York City Council meetings'
+      }
+    ];
+  }
+
   protected async getPageUrls(): Promise<string[]> {
     return ['https://nyassembly.gov/leg/?sh=hear'];
   }

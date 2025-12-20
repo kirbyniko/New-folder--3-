@@ -1,5 +1,6 @@
 import { BaseScraper } from '../base-scraper';
 import type { RawEvent, ScraperConfig } from '../base-scraper';
+import { enrichEventMetadata } from '../shared/tagging';
 
 interface ArizonaAgenda {
   id: number;
@@ -51,6 +52,16 @@ export class ArizonaScraper extends BaseScraper {
     };
     super(config);
     this.log('🌵 AZ Scraper initialized');
+  }
+
+  getCalendarSources(): { name: string; url: string; description: string }[] {
+    return [
+      {
+        name: 'Arizona ALIS Today Calendar',
+        url: 'https://www.azleg.gov/alis-today/',
+        description: 'Daily committee meeting schedules for House, Senate, and Interim committees'
+      }
+    ];
   }
 
   protected async getPageUrls(): Promise<string[]> {

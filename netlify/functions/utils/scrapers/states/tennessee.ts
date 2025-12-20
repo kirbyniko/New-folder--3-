@@ -1,5 +1,6 @@
 import { BaseScraper } from '../base-scraper';
 import type { RawEvent, BillInfo, ScraperConfig } from '../base-scraper';
+import { enrichEventMetadata } from '../shared/tagging';
 import { parseHTML } from '../html-parser';
 
 interface TennesseeEvent {
@@ -32,14 +33,24 @@ export class TennesseeScraper extends BaseScraper {
     const config: ScraperConfig = {
       stateCode: 'TN',
       stateName: 'Tennessee',
-      websiteUrl: 'https://wapp.capitol.tn.gov/apps/schedule/',
+      websiteUrl: 'https://capitol.tn.gov/pages/calendar-display',
       reliability: 'high',
       updateFrequency: 6,
       maxRequestsPerMinute: 30,
-      requestDelay: 300
+      requestDelay: 200
     };
     super(config);
     this.log('🎸 TN Scraper initialized');
+  }
+
+  getCalendarSources(): { name: string; url: string; description: string }[] {
+    return [
+      {
+        name: 'Tennessee General Assembly Calendar',
+        url: 'https://capitol.tn.gov/pages/calendar-display',
+        description: 'Committee meetings and floor calendars for both chambers'
+      }
+    ];
   }
 
   protected async getPageUrls(): Promise<string[]> {

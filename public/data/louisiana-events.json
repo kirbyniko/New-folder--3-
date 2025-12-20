@@ -75,5 +75,17 @@
       "description": "",
       "bills": []
     }
+  ],
+  "calendarSources": [
+    {
+      "name": "Louisiana Legislature Committee Calendar",
+      "url": "https://legis.la.gov/legis/ByCmte.aspx",
+      "description": "House, Senate, and Joint committee meeting schedules"
+    },
+    {
+      "name": "Local City Meetings (Legistar API)",
+      "url": "https://webapi.legistar.com",
+      "description": "Baton Rouge and New Orleans city council meetings"
+    }
   ]
 }

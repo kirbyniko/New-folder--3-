@@ -35,6 +35,21 @@ export class WashingtonScraper extends BaseScraper {
     this.log('🌲 WA Scraper initialized');
   }
 
+  getCalendarSources(): { name: string; url: string; description: string }[] {
+    return [
+      {
+        name: 'Washington Legislature Committee Schedules',
+        url: 'https://app.leg.wa.gov/committeeschedules',
+        description: 'House and Senate committee meeting schedules'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        description: 'City council meetings from major Washington cities'
+      }
+    ];
+  }
+
   protected async getPageUrls(): Promise<string[]> {
     return [this.SCHEDULE_URL];
   }

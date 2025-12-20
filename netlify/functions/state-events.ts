@@ -185,7 +185,8 @@ export const handler: Handler = async (event) => {
               'Content-Type': 'application/json',
               'Cache-Control': 'public, max-age=21600', // 6 hours
               'X-Cache': 'HIT-BLOB',
-              'X-Cache-Age': String(ageHours)
+              'X-Cache-Age': String(ageHours),
+              'X-Calendar-Sources': JSON.stringify(blobData.calendarSources || [])
             },
             body: JSON.stringify(blobData.events || [])
           };
@@ -200,10 +201,10 @@ export const handler: Handler = async (event) => {
     // ===== STRATEGY 1: Try custom scraper (comprehensive but slower) =====
     console.log('🔍 Checking for custom scraper...');
     
-    // Special handling for Virginia, Arizona, Tennessee, Massachusetts, Indiana, Maryland, Missouri, Wisconsin, Colorado, Minnesota, South Carolina, Alabama, Louisiana, Kentucky, Oregon, Oklahoma, Nevada, Iowa & Arkansas - use pre-scraped static data
-    if (stateAbbr === 'VA' || stateAbbr === 'AZ' || stateAbbr === 'TN' || stateAbbr === 'MA' || stateAbbr === 'IN' || stateAbbr === 'MD' || stateAbbr === 'MO' || stateAbbr === 'WI' || stateAbbr === 'CO' || stateAbbr === 'MN' || stateAbbr === 'SC' || stateAbbr === 'AL' || stateAbbr === 'LA' || stateAbbr === 'KY' || stateAbbr === 'OR' || stateAbbr === 'OK' || stateAbbr === 'NV' || stateAbbr === 'IA' || stateAbbr === 'AR') {
-      const stateNames: Record<string, string> = { 'VA': 'Virginia', 'AZ': 'Arizona', 'TN': 'Tennessee', 'MA': 'Massachusetts', 'IN': 'Indiana', 'MD': 'Maryland', 'MO': 'Missouri', 'WI': 'Wisconsin', 'CO': 'Colorado', 'MN': 'Minnesota', 'SC': 'South Carolina', 'AL': 'Alabama', 'LA': 'Louisiana', 'KY': 'Kentucky', 'OR': 'Oregon', 'OK': 'Oklahoma', 'NV': 'Nevada', 'IA': 'Iowa', 'AR': 'Arkansas' };
-      const fileNames: Record<string, string> = { 'VA': 'virginia-events.json', 'AZ': 'arizona-events.json', 'TN': 'tennessee-events.json', 'MA': 'massachusetts-events.json', 'IN': 'indiana-events.json', 'MD': 'maryland-events.json', 'MO': 'missouri-events.json', 'WI': 'wisconsin-events.json', 'CO': 'colorado-events.json', 'MN': 'minnesota-events.json', 'SC': 'southcarolina-events.json', 'AL': 'alabama-events.json', 'LA': 'louisiana-events.json', 'KY': 'kentucky-events.json', 'OR': 'oregon-events.json', 'OK': 'oklahoma-events.json', 'NV': 'nevada-events.json', 'IA': 'iowa-events.json', 'AR': 'arkansas-events.json' };
+    // Special handling for Virginia, Arizona, Tennessee, Massachusetts, Indiana, Maryland, Missouri, Wisconsin, Colorado, Minnesota, South Carolina, Alabama, Louisiana, Kentucky, Oregon, Oklahoma, Nevada, Iowa, Arkansas & Alaska - use pre-scraped static data
+    if (stateAbbr === 'VA' || stateAbbr === 'AZ' || stateAbbr === 'TN' || stateAbbr === 'MA' || stateAbbr === 'IN' || stateAbbr === 'MD' || stateAbbr === 'MO' || stateAbbr === 'WI' || stateAbbr === 'CO' || stateAbbr === 'MN' || stateAbbr === 'SC' || stateAbbr === 'AL' || stateAbbr === 'LA' || stateAbbr === 'KY' || stateAbbr === 'OR' || stateAbbr === 'OK' || stateAbbr === 'NV' || stateAbbr === 'IA' || stateAbbr === 'AR' || stateAbbr === 'AK') {
+      const stateNames: Record<string, string> = { 'VA': 'Virginia', 'AZ': 'Arizona', 'TN': 'Tennessee', 'MA': 'Massachusetts', 'IN': 'Indiana', 'MD': 'Maryland', 'MO': 'Missouri', 'WI': 'Wisconsin', 'CO': 'Colorado', 'MN': 'Minnesota', 'SC': 'South Carolina', 'AL': 'Alabama', 'LA': 'Louisiana', 'KY': 'Kentucky', 'OR': 'Oregon', 'OK': 'Oklahoma', 'NV': 'Nevada', 'IA': 'Iowa', 'AR': 'Arkansas', 'AK': 'Alaska' };
+      const fileNames: Record<string, string> = { 'VA': 'virginia-events.json', 'AZ': 'arizona-events.json', 'TN': 'tennessee-events.json', 'MA': 'massachusetts-events.json', 'IN': 'indiana-events.json', 'MD': 'maryland-events.json', 'MO': 'missouri-events.json', 'WI': 'wisconsin-events.json', 'CO': 'colorado-events.json', 'MN': 'minnesota-events.json', 'SC': 'southcarolina-events.json', 'AL': 'alabama-events.json', 'LA': 'louisiana-events.json', 'KY': 'kentucky-events.json', 'OR': 'oregon-events.json', 'OK': 'oklahoma-events.json', 'NV': 'nevada-events.json', 'IA': 'iowa-events.json', 'AR': 'arkansas-events.json', 'AK': 'alaska-events.json' };
       const stateName = stateNames[stateAbbr];
       const fileName = fileNames[stateAbbr];
       console.log(`📄 Loading pre-scraped ${stateName} data from static file`);
@@ -255,7 +256,8 @@ export const handler: Handler = async (event) => {
             'Content-Type': 'application/json',
             'Cache-Control': 'public, max-age=86400', // 24 hours
             'X-Data-Source': 'static-file',
-            'X-Last-Updated': staticData.lastUpdated
+            'X-Last-Updated': staticData.lastUpdated,
+            'X-Calendar-Sources': JSON.stringify(staticData.calendarSources || [])
           },
           body: JSON.stringify(eventsWithCoords)
         };
@@ -277,12 +279,14 @@ export const handler: Handler = async (event) => {
       
       if (cached) {
         console.log(`🎯 Returning cached scraper results for ${stateAbbr}`);
+        const calendarSources = scraper.getCalendarSources ? scraper.getCalendarSources() : [];
         return {
           statusCode: 200,
           headers: {
             'Content-Type': 'application/json',
             'Cache-Control': 'public, max-age=86400', // 24 hours
-            'X-Cache': 'HIT-MEMORY'
+            'X-Cache': 'HIT-MEMORY',
+            'X-Calendar-Sources': JSON.stringify(calendarSources)
           },
           body: JSON.stringify(cached)
         };
@@ -312,11 +316,13 @@ export const handler: Handler = async (event) => {
         // Cache the results (24 hours)
         CacheManager.set(cacheKey, eventsWithCoords, 86400);
         
+        const calendarSources = scraper.getCalendarSources ? scraper.getCalendarSources() : [];
         return {
           statusCode: 200,
           headers: {
             'Content-Type': 'application/json',
-            'Cache-Control': 'public, max-age=86400' // 24 hours
+            'Cache-Control': 'public, max-age=86400', // 24 hours
+            'X-Calendar-Sources': JSON.stringify(calendarSources)
           },
           body: JSON.stringify(eventsWithCoords)
         };
@@ -400,11 +406,16 @@ export const handler: Handler = async (event) => {
         };
       });
 
+    // Try to get calendar sources from scraper if available
+    const scraperForSources = ScraperRegistry.get(stateAbbr);
+    const calendarSources = scraperForSources?.getCalendarSources ? scraperForSources.getCalendarSources() : [];
+    
     return {
       statusCode: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=3600'
+        'Cache-Control': 'public, max-age=3600',
+        'X-Calendar-Sources': JSON.stringify(calendarSources)
       },
       body: JSON.stringify(events)
     };

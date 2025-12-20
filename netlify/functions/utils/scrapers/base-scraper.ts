@@ -44,6 +44,7 @@ export interface RawEvent {
   bills?: BillInfo[];
   tags?: string[];
   sourceUrl?: string;  // URL of the page where data was scraped from
+  allowsPublicParticipation?: boolean;  // Whether public comment/testimony is allowed
 }
 
 // 🆕 Bill information for raw events
@@ -174,6 +175,21 @@ export abstract class BaseScraper {
   protected abstract scrapeCalendar(): Promise<RawEvent[]>;
 
   /**
+   * Optional: Get calendar source URLs that this scraper uses
+   * This helps users understand where the data comes from
+   * Override this in state scrapers to return actual calendar URLs
+   */
+  getCalendarSources(): { name: string; url: string; description: string }[] {
+    return [
+      {
+        name: `${this.config.stateName} Legislature`,
+        url: this.config.websiteUrl,
+        description: 'State legislative calendar'
+      }
+    ];
+  }
+
+  /**
    * Optional: Get multiple page URLs to scrape (for multi-page states)
    */
   protected async getPageUrls(): Promise<string[]> {
@@ -244,7 +260,8 @@ export abstract class BaseScraper {
         virtualMeetingUrl: raw.virtualMeetingUrl || null,
         bills: raw.bills || null,
         tags: raw.tags || [],
-        sourceUrl: raw.sourceUrl || this.config.websiteUrl
+        sourceUrl: raw.sourceUrl || this.config.websiteUrl,
+        allowsPublicParticipation: raw.allowsPublicParticipation || false
       }) as LegislativeEvent;
 
     } catch (error) {

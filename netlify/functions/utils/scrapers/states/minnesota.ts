@@ -1,5 +1,6 @@
 import { BaseScraper } from '../base-scraper';
 import type { RawEvent, BillInfo, ScraperConfig } from '../base-scraper';
+import { enrichEventMetadata } from '../shared/tagging';
 import * as cheerio from 'cheerio';
 
 /**
@@ -29,14 +30,24 @@ export class MinnesotaScraper extends BaseScraper {
     const config: ScraperConfig = {
       stateCode: 'MN',
       stateName: 'Minnesota',
-      websiteUrl: 'https://www.leg.mn.gov/cal.aspx',
+      websiteUrl: 'https://www.house.mn.gov/schedules/',
       reliability: 'high',
       updateFrequency: 6,
       maxRequestsPerMinute: 30,
-      requestDelay: 300
+      requestDelay: 200
     };
     super(config);
-    this.log('🏛️ MN Scraper initialized');
+    this.log('❄️ MN Scraper initialized');
+  }
+
+  getCalendarSources(): { name: string; url: string; description: string }[] {
+    return [
+      {
+        name: 'Minnesota House Schedules',
+        url: 'https://www.house.mn.gov/schedules/',
+        description: 'House committee and floor session schedules'
+      }
+    ];
   }
 
   protected async getPageUrls(): Promise<string[]> {
