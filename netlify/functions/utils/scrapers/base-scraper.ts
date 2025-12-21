@@ -13,6 +13,7 @@
 
 import { LegislativeEvent } from '../../../../src/types/event';
 import { sanitizeEvent } from '../security';
+import { autoTagEvent } from '../tagging';
 
 export interface ScraperConfig {
   stateCode: string;
@@ -251,6 +252,7 @@ export abstract class BaseScraper {
         committee: raw.committee || 'Legislature',
         type: raw.type || 'meeting',
         level: 'state',
+        state: this.config.stateCode,
         lat: 0, // Will be set by geocoder
         lng: 0,
         zipCode: null,
@@ -259,15 +261,53 @@ export abstract class BaseScraper {
         docketUrl: raw.docketUrl || null,
         virtualMeetingUrl: raw.virtualMeetingUrl || null,
         bills: raw.bills || null,
-        tags: raw.tags || [],
+        tags: raw.tags && raw.tags.length > 0 ? raw.tags : autoTagEvent({
+          name: raw.name,
+          description: raw.description,
+          committee: raw.committee,
+          location: raw.location
+        }),
         sourceUrl: raw.sourceUrl || this.config.websiteUrl,
-        allowsPublicParticipation: raw.allowsPublicParticipation || false
+        allowsPublicParticipation: raw.allowsPublicParticipation !== undefined 
+          ? raw.allowsPublicParticipation 
+          : this.detectPublicParticipation(raw)
       }) as LegislativeEvent;
 
     } catch (error) {
       this.logError('⚠️ Event transformation error', error, { raw });
       return null;
     }
+  }
+
+  /**
+   * Detect if event allows public participation based on content
+   */
+  protected detectPublicParticipation(raw: RawEvent): boolean {
+    const searchText = [
+      raw.name || '',
+      raw.description || '',
+      raw.type || ''
+    ].join(' ').toLowerCase();
+
+    const publicParticipationKeywords = [
+      'public comment',
+      'public participation',
+      'public testimony',
+      'public hearing',
+      'citizen input',
+      'community input',
+      'public input',
+      'public meeting',
+      'open to public',
+      'public invited',
+      'public attendance',
+      'town hall',
+      'public forum'
+    ];
+
+    return publicParticipationKeywords.some(keyword => 
+      searchText.includes(keyword)
+    );
   }
 
   /**

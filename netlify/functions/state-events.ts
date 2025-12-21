@@ -268,160 +268,131 @@ export const handler: Handler = async (event) => {
       }
     }
     
-    const scraper = ScraperRegistry.get(stateAbbr);
+    // ===== ONLY READ FROM DATABASE =====
+    // Scrapers should run on schedule and populate the database
+    // This endpoint NEVER scrapes - it only serves data
     
-    if (scraper && scraper.getHealth().enabled) {
-      console.log(`✅ Custom scraper available for ${stateAbbr}`);
+    console.log(`📊 Querying database for ${stateAbbr} events...`);
+    
+    try {
+      const { getPool } = await import('./utils/db/connection.js');
+      const pool = getPool();
       
-      // Check memory cache (24-hour TTL)
-      const cacheKey = `scraper:${stateAbbr}:events`;
-      const cached = CacheManager.get(cacheKey);
+      // Check if we have recent data (last 24 hours)
+      const dataAgeQuery = await pool.query(`
+        SELECT 
+          MAX(scraped_at) as last_scraped,
+          COUNT(*) as event_count
+        FROM events
+        WHERE state_code = $1
+          AND date >= CURRENT_DATE
+      `, [stateAbbr]);
       
-      if (cached) {
-        console.log(`🎯 Returning cached scraper results for ${stateAbbr}`);
-        const calendarSources = scraper.getCalendarSources ? scraper.getCalendarSources() : [];
+      const { last_scraped, event_count } = dataAgeQuery.rows[0];
+      
+      if (event_count === 0) {
+        console.log(`⚠️ No events found in database for ${stateAbbr}`);
         return {
           statusCode: 200,
           headers: {
             'Content-Type': 'application/json',
-            'Cache-Control': 'public, max-age=86400', // 24 hours
-            'X-Cache': 'HIT-MEMORY',
-            'X-Calendar-Sources': JSON.stringify(calendarSources)
+            'Cache-Control': 'public, max-age=3600',
+            'X-Data-Source': 'database-empty',
+            'X-Message': 'No events available. Scheduled scraper will populate data.'
           },
-          body: JSON.stringify(cached)
+          body: JSON.stringify([])
         };
       }
       
-      // Scrape fresh data
-      try {
-        console.log(`🕷️ Running custom scraper for ${stateAbbr}...`);
-        const scrapedEvents = await scraper.scrape();
-        
-        console.log(`✅ Scraper returned ${scrapedEvents.length} events`);
-        
-        // Add state capitol coordinates to events that don't have them
-        const eventsWithCoords = scrapedEvents.map(event => {
-          if (event.lat === 0 && event.lng === 0) {
-            return {
-              ...event,
-              lat: state.capitol.lat,
-              lng: state.capitol.lng
-            };
-          }
-          return event;
-        });
-        
-        console.log(`📍 Added coordinates to events (using ${state.capitol.city} capitol)`);
-        
-        // Cache the results (24 hours)
-        CacheManager.set(cacheKey, eventsWithCoords, 86400);
-        
-        const calendarSources = scraper.getCalendarSources ? scraper.getCalendarSources() : [];
-        return {
-          statusCode: 200,
-          headers: {
-            'Content-Type': 'application/json',
-            'Cache-Control': 'public, max-age=86400', // 24 hours
-            'X-Calendar-Sources': JSON.stringify(calendarSources)
-          },
-          body: JSON.stringify(eventsWithCoords)
-        };
-        
-      } catch (scraperError) {
-        console.error(`❌ Scraper failed for ${stateAbbr}:`, scraperError);
-        console.log(`⬇️ Falling back to OpenStates API...`);
-        // Continue to OpenStates fallback
-      }
-    } else {
-      console.log(`⚠️ No custom scraper for ${stateAbbr}, using OpenStates API`);
+      const dataAge = last_scraped ? Date.now() - new Date(last_scraped).getTime() : null;
+      const dataAgeHours = dataAge ? Math.floor(dataAge / 1000 / 60 / 60) : null;
+      
+      console.log(`✅ Found ${event_count} events, last scraped ${dataAgeHours}h ago`);
+      
+      // Query events with all related data
+      const eventsQuery = await pool.query(`
+        SELECT 
+          e.id,
+          e.name,
+          e.date,
+          e.time,
+          e.location_name as location,
+          e.lat,
+          e.lng,
+          e.level,
+          e.type,
+          e.state_code as state,
+          e.committee_name as committee,
+          e.description,
+          e.details_url as "detailsUrl",
+          e.docket_url as "docketUrl",
+          e.agenda_url as "agendaUrl",
+          e.virtual_meeting_url as "virtualMeetingUrl",
+          e.source_url as "sourceUrl",
+          e.allows_public_participation as "allowsPublicParticipation",
+          e.chamber,
+          COALESCE(
+            json_agg(
+              DISTINCT jsonb_build_object(
+                'id', b.bill_number,
+                'number', b.bill_number,
+                'title', b.title,
+                'url', b.url,
+                'status', b.status
+              )
+            ) FILTER (WHERE b.id IS NOT NULL),
+            '[]'::json
+          ) as bills,
+          COALESCE(
+            array_agg(DISTINCT et.tag) FILTER (WHERE et.tag IS NOT NULL),
+            ARRAY[]::text[]
+          ) as tags
+        FROM events e
+        LEFT JOIN event_bills eb ON e.id = eb.event_id
+        LEFT JOIN bills b ON eb.bill_id = b.id
+        LEFT JOIN event_tags et ON e.id = et.event_id
+        WHERE e.state_code = $1
+          AND e.date >= CURRENT_DATE
+        GROUP BY e.id
+        ORDER BY e.date ASC, e.time ASC
+      `, [stateAbbr]);
+      
+      // Clean up data
+      const cleanedEvents = eventsQuery.rows.map(event => ({
+        ...event,
+        bills: Array.isArray(event.bills) && event.bills[0] !== null ? event.bills : [],
+        tags: Array.isArray(event.tags) && event.tags[0] !== null ? event.tags.filter((t: any) => t !== null) : []
+      }));
+      
+      console.log(`📦 Returning ${cleanedEvents.length} events from database`);
+      
+      return {
+        statusCode: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'public, max-age=3600', // 1 hour browser cache
+          'X-Data-Source': 'database',
+          'X-Data-Age-Hours': String(dataAgeHours),
+          'X-Last-Scraped': last_scraped || 'unknown'
+        },
+        body: JSON.stringify(cleanedEvents)
+      };
+      
+    } catch (dbError: any) {
+      console.error(`❌ Database error for ${stateAbbr}:`, dbError);
+      return {
+        statusCode: 500,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          error: 'Database error',
+          message: 'Failed to retrieve events from database'
+        })
+      };
     }
-    
-    // ===== STRATEGY 2: Fallback to OpenStates API =====
-    console.log('🌐 Fetching from OpenStates API...');
-    
-    const today = new Date().toISOString().split('T')[0];
-    const futureDate = new Date();
-    futureDate.setDate(futureDate.getDate() + 90);
-    const endDate = futureDate.toISOString().split('T')[0];
-
-    const url = `https://v3.openstates.org/events?jurisdiction=${state.id}&start_date=${today}&end_date=${endDate}&per_page=20`;
-    console.log('Fetching OpenStates API:', url);
-    console.log('Date range:', today, 'to', endDate);
-
-    const response = await fetch(url, {
-      headers: {
-        'X-API-KEY': apiKey
-      }
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('OpenStates API Error:', response.status, errorText);
-      throw new Error(`OpenStates API error: ${response.status} ${response.statusText} - ${errorText}`);
-    }
-
-    const data: OpenStatesResponse = await response.json();
-    console.log(`Received ${data.results.length} total events from OpenStates`);
-    
-    if (data.results.length > 0) {
-      const sample = data.results[0];
-      console.log(`Sample event: ${sample.name}, Date: ${sample.start_date}, Status: ${sample.status}`);
-    }
-    
-    const now = new Date();
-    const events = data.results
-      .filter((event) => {
-        const eventDate = new Date(event.start_date);
-        const isFuture = eventDate >= now;
-        const notCancelled = event.status !== 'cancelled';
-        if (!isFuture || !notCancelled) {
-          console.log(`Filtered out: ${event.name} (${event.start_date}) - Future: ${isFuture}, NotCancelled: ${notCancelled}`);
-        }
-        return notCancelled && isFuture;
-      })
-      .map((event) => {
-        const startDate = new Date(event.start_date);
-        
-        return {
-          id: event.id,
-          name: event.name,
-          date: event.start_date,
-          time: startDate.toLocaleTimeString('en-US', {
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true
-          }),
-          location: event.location?.name || state.capitol.city,
-          committee: event.participants?.[0]?.name || 'State Legislature',
-          type: event.classification || 'meeting',
-          level: 'state',
-          lat: event.location?.coordinates?.latitude 
-            ? parseFloat(event.location.coordinates.latitude) 
-            : state.capitol.lat,
-          lng: event.location?.coordinates?.longitude 
-            ? parseFloat(event.location.coordinates.longitude) 
-            : state.capitol.lng,
-          zipCode: null,
-          url: event.location?.url || getStateLegislatureUrl(stateAbbr!) || null
-        };
-      });
-
-    // Try to get calendar sources from scraper if available
-    const scraperForSources = ScraperRegistry.get(stateAbbr);
-    const calendarSources = scraperForSources?.getCalendarSources ? scraperForSources.getCalendarSources() : [];
-    
-    return {
-      statusCode: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=3600',
-        'X-Calendar-Sources': JSON.stringify(calendarSources)
-      },
-      body: JSON.stringify(events)
-    };
-
   } catch (error) {
-    console.error('OpenStates API error:', error);
+    console.error('Error in state-events:', error);
     return {
       statusCode: 500,
       headers: {

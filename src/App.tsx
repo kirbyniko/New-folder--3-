@@ -5,6 +5,8 @@ import TabbedEvents from './components/TabbedEvents'
 import { EnrichmentNotice } from './components/EnrichmentNotice'
 import Navbar from './components/Navbar'
 import Sidebar from './components/Sidebar'
+import TopEvents from './components/TopEvents'
+import DataViewer from './components/DataViewer'
 import { getApiUrl } from './config/api'
 import { autoTagEvent } from './utils/tagging'
 import './App.css'
@@ -39,6 +41,7 @@ const STATE_CAPITOLS: Record<string, { lat: number; lng: number; zip: string }> 
 }
 
 function App() {
+  const [showAdmin, setShowAdmin] = useState(false)
   const [zipCode, setZipCode] = useState('')
   const [radius, setRadius] = useState(50)
   const [selectedState, setSelectedState] = useState<string | null>(null)
@@ -119,9 +122,7 @@ function App() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000);
       
-      // Use cache: 'default' to enable browser caching
-      // Add timestamp to bust cache for state events (they update frequently)
-      const cacheBuster = `&_t=${Date.now()}`;
+      // Use cache: 'default' to enable browser caching AND backend caching
       const fetchOptions: RequestInit = { 
         signal: controller.signal,
         cache: 'default'
@@ -270,7 +271,6 @@ function App() {
       };
       
       console.time('⏱️ State selector fetch time');
-      const stateCacheBuster = `&_t=${Date.now()}`;
       
       console.log('🚀 Fetching federal events...');
       console.log('🚀 Fetching state events:', `state-events?state=${stateAbbr}`);
@@ -278,8 +278,8 @@ function App() {
       
       const [federalResponse, stateResponse, localResponse] = await Promise.all([
         fetch(getApiUrl(`/.netlify/functions/congress-meetings`), fetchOptions),
-        fetch(getApiUrl(`/.netlify/functions/state-events?state=${stateAbbr}${stateCacheBuster}`), fetchOptions),
-        fetch(getApiUrl(`/.netlify/functions/local-meetings?lat=${capitol.lat}&lng=${capitol.lng}&radius=${radius}${stateCacheBuster}`), fetchOptions)
+        fetch(getApiUrl(`/.netlify/functions/state-events?state=${stateAbbr}`), fetchOptions),
+        fetch(getApiUrl(`/.netlify/functions/local-meetings?lat=${capitol.lat}&lng=${capitol.lng}&radius=${radius}`), fetchOptions)
       ]);
       console.timeEnd('⏱️ State selector fetch time');
       
@@ -341,10 +341,15 @@ function App() {
         onZipCodeChange={setZipCode}
         onSearch={handleSearch}
         loading={loading}
+        onAdminClick={() => setShowAdmin(!showAdmin)}
+        showAdmin={showAdmin}
       />
 
-      <div className="layout">
-        <Sidebar
+      {showAdmin ? (
+        <DataViewer />
+      ) : (
+        <div className="layout">
+          <Sidebar
           selectedTags={selectedTags}
           onTagsChange={setSelectedTags}
           selectedState={selectedState}
@@ -358,6 +363,11 @@ function App() {
         />
 
         <main className="main-content">
+          {/* Always show top events at the top */}
+          <div className="top-events-section">
+            <TopEvents />
+          </div>
+
           {error && (
             <div className="error-message">
               <strong>Error:</strong> {error}
@@ -422,7 +432,8 @@ function App() {
             </div>
           )}
         </main>
-      </div>
+        </div>
+      )}
 
       <footer className="footer">
         <p>
