@@ -54,9 +54,11 @@ export async function insertEvent(event: LegislativeEvent, scraperSource: string
       allows_public_participation, chamber, city, zip_code,
       scraper_source, external_id, fingerprint
     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
-    ON CONFLICT (scraper_source, external_id) 
+    ON CONFLICT (fingerprint) 
     DO UPDATE SET
       last_updated = NOW(),
+      scraper_source = COALESCE(EXCLUDED.scraper_source, events.scraper_source),
+      external_id = COALESCE(EXCLUDED.external_id, events.external_id),
       name = EXCLUDED.name,
       date = EXCLUDED.date,
       time = EXCLUDED.time,

@@ -9,6 +9,7 @@
       "committee": "PA House - House Agriculture & Rural AffairsSenate Agriculture & Rural Affairs",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -18,7 +19,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-01-26-appropriations",
@@ -29,6 +31,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -38,7 +41,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-01-27-appropriations",
@@ -49,6 +53,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -58,7 +63,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-01-28-appropriations",
@@ -69,6 +75,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -78,7 +85,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-02-02-appropriations",
@@ -89,6 +97,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -98,7 +107,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-02-03-appropriations",
@@ -109,6 +119,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -118,7 +129,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-02-04-appropriations",
@@ -129,6 +141,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -138,7 +151,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-03-23-appropriations",
@@ -149,6 +163,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -158,7 +173,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-03-24-appropriations",
@@ -169,6 +185,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -178,7 +195,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-03-25-appropriations",
@@ -189,6 +207,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -198,7 +217,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-04-13-appropriations",
@@ -209,6 +229,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -218,7 +239,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-04-14-appropriations",
@@ -229,6 +251,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -238,7 +261,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-04-15-appropriations",
@@ -249,6 +273,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -258,7 +283,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-04-27-appropriations",
@@ -269,6 +295,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -278,7 +305,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-04-28-appropriations",
@@ -289,6 +317,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -298,7 +327,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-04-29-appropriations",
@@ -309,6 +339,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -318,7 +349,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-05-04-appropriations",
@@ -329,6 +361,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -338,7 +371,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-05-05-appropriations",
@@ -349,6 +383,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -358,7 +393,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-05-06-appropriations",
@@ -369,6 +405,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -378,7 +415,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-06-01-appropriations",
@@ -389,6 +427,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -398,7 +437,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-06-02-appropriations",
@@ -409,6 +449,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -418,7 +459,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-06-03-appropriations",
@@ -429,6 +471,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -438,7 +481,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-06-08-appropriations",
@@ -449,6 +493,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -458,7 +503,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-06-09-appropriations",
@@ -469,6 +515,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -478,7 +525,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-06-10-appropriations",
@@ -489,6 +537,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -498,7 +547,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-06-15-appropriations",
@@ -509,6 +559,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -518,7 +569,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-06-16-appropriations",
@@ -529,6 +581,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -538,7 +591,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-06-17-appropriations",
@@ -549,6 +603,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -558,7 +613,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-06-22-appropriations",
@@ -569,6 +625,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -578,7 +635,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-06-23-appropriations",
@@ -589,6 +647,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -598,7 +657,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-06-24-appropriations",
@@ -609,6 +669,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -618,7 +679,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-06-25-appropriations",
@@ -629,6 +691,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -638,7 +701,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-06-26-appropriations",
@@ -649,6 +713,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -658,7 +723,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-06-27-appropriations",
@@ -669,6 +735,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -678,7 +745,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-06-28-appropriations",
@@ -689,6 +757,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -698,7 +767,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-06-29-appropriations",
@@ -709,6 +779,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -718,7 +789,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-06-30-appropriations",
@@ -729,6 +801,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -738,7 +811,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-09-28-appropriations",
@@ -749,6 +823,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -758,7 +833,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-09-29-appropriations",
@@ -769,6 +845,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -778,7 +855,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-09-30-appropriations",
@@ -789,6 +867,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -798,7 +877,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-10-05-appropriations",
@@ -809,6 +889,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -818,7 +899,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-10-06-appropriations",
@@ -829,6 +911,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -838,7 +921,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-10-07-appropriations",
@@ -849,6 +933,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -858,7 +943,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-10-19-appropriations",
@@ -869,6 +955,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -878,7 +965,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-10-20-appropriations",
@@ -889,6 +977,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -898,7 +987,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-10-21-appropriations",
@@ -909,6 +999,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -918,7 +1009,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-11-09-appropriations",
@@ -929,6 +1021,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -938,7 +1031,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-11-10-appropriations",
@@ -949,6 +1043,7 @@
       "committee": "PA House - Appropriations",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -958,7 +1053,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-01-14-senate-agriculture---rural-affairshouse-agricultur",
@@ -969,6 +1065,7 @@
       "committee": "PA Senate - Senate Agriculture & Rural AffairsHouse Agriculture & Rural Affairs",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -978,7 +1075,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-01-15-center-for-rural-pennsylvania---opens-in-a-new-tab",
@@ -989,6 +1087,7 @@
       "committee": "PA Senate - CENTER FOR RURAL PENNSYLVANIA - opens in a new tab",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -998,7 +1097,8 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     },
     {
       "id": "pa-2026-01-16-center-for-rural-pennsylvania---opens-in-a-new-tab",
@@ -1009,6 +1109,7 @@
       "committee": "PA Senate - CENTER FOR RURAL PENNSYLVANIA - opens in a new tab",
       "type": "meeting",
       "level": "state",
+      "state": "PA",
       "lat": 40.2732,
       "lng": -76.8867,
       "zipCode": null,
@@ -1018,9 +1119,10 @@
       "virtualMeetingUrl": null,
       "bills": null,
       "tags": [],
-      "sourceUrl": "https://www.palegis.us"
+      "sourceUrl": "https://www.palegis.us",
+      "allowsPublicParticipation": false
     }
   ],
-  "timestamp": 1766192950957,
-  "expiresAt": 1766279350957
+  "timestamp": 1766294402140,
+  "expiresAt": 1766380802140
 }

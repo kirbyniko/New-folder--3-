@@ -76,15 +76,29 @@ export class FloridaScraper extends BaseScraper {
   async scrapeCalendar(): Promise<RawEvent[]> {
     this.log('📅 Starting Florida calendar scrape with bill extraction');
     
+    // Check if in session period
+    const today = new Date();
+    if (today < this.SESSION_START_DATE) {
+      this.log('⏸️ Florida Legislature not in session - returning empty results');
+      return [];
+    }
+    
     try {
       // Step 1: Get all committees
       const committees = await this.fetchCommittees();
       this.log(`📋 Found ${committees.length} committees`);
 
       const allEvents: RawEvent[] = [];
+      const processedCommittees = new Set<string>(); // Track processed to prevent duplicates
 
       // Step 2: For each committee, get upcoming meetings
       for (const committee of committees) {
+        // Skip if already processed
+        if (processedCommittees.has(committee.code)) {
+          continue;
+        }
+        processedCommittees.add(committee.code);
+
         try {
           await this.delay(this.config.requestDelay || 250);
           const meetings = await this.fetchCommitteeMeetings(committee);
@@ -148,6 +162,7 @@ export class FloridaScraper extends BaseScraper {
     const html = await this.fetchPage(this.COMMITTEES_URL);
     const $ = parseHTML(html);
     const committees: FLCommittee[] = [];
+    const seenCodes = new Set<string>(); // Prevent duplicates
 
     // Parse standing committees from links like: /Committees/Show/AG/
     $('a[href*="/Committees/Show/"]').each((_, link) => {
@@ -158,9 +173,17 @@ export class FloridaScraper extends BaseScraper {
       if (href && name && !name.includes('Joint') && !name.includes('Select')) {
         const codeMatch = href.match(/\/Committees\/Show\/([A-Z]+)/);
         if (codeMatch) {
+          const code = codeMatch[1];
+          
+          // Skip if already added
+          if (seenCodes.has(code)) {
+            return;
+          }
+          seenCodes.add(code);
+          
           committees.push({
             name,
-            code: codeMatch[1],
+            code,
             url: href.startsWith('http') ? href : `${this.BASE_URL}${href}`
           });
         }

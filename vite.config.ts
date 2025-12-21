@@ -8,7 +8,8 @@ export default defineConfig({
     proxy: {
       '/.netlify/functions': {
         target: 'http://localhost:8888',
-        changeOrigin: true
+        changeOrigin: true,
+        secure: false
       }
     }
   },

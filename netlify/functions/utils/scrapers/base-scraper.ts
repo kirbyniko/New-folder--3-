@@ -97,6 +97,13 @@ export abstract class BaseScraper {
   }
 
   /**
+   * Get consistent scraper name for database operations
+   */
+  get name(): string {
+    return `scraper-${this.config.stateCode.toLowerCase()}`;
+  }
+
+  /**
    * Main entry point - scrapes events and updates health
    */
   async scrape(): Promise<LegislativeEvent[]> {

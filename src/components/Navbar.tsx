@@ -6,9 +6,11 @@ interface NavbarProps {
   onZipCodeChange: (value: string) => void
   onSearch: (e: React.FormEvent) => void
   loading: boolean
+  onAdminClick?: () => void
+  showAdmin?: boolean
 }
 
-const Navbar: React.FC<NavbarProps> = ({ zipCode, onZipCodeChange, onSearch, loading }) => {
+const Navbar: React.FC<NavbarProps> = ({ zipCode, onZipCodeChange, onSearch, loading, onAdminClick, showAdmin }) => {
   return (
     <nav className="navbar">
       <div className="navbar-content">
@@ -30,6 +32,12 @@ const Navbar: React.FC<NavbarProps> = ({ zipCode, onZipCodeChange, onSearch, loa
             {loading ? '...' : '🔍'}
           </button>
         </form>
+
+        {onAdminClick && (
+          <button onClick={onAdminClick} className="navbar-admin-button">
+            {showAdmin ? '🏠 Home' : '📊 Data Viewer'}
+          </button>
+        )}
       </div>
     </nav>
   )
