@@ -784,11 +784,19 @@ export const handler: Handler = async (event) => {
           return events.slice(0, 10);
         }
         
-        // Legistar public API endpoint with date filter
+        // Legistar public API endpoint with date filter - CHECK CACHE FIRST
+        const cacheKey = `local:legistar:${city.client}:events`;
+        const cachedEvents = CacheManager.get(cacheKey);
+        
+        if (cachedEvents) {
+          console.log(`✅ CACHE HIT: Returning cached ${city.name} events (${cachedEvents.length} events)`);
+          return cachedEvents.slice(0, 10);
+        }
+        
         // $filter parameter uses OData query syntax
         const startDateStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
         const url = `https://webapi.legistar.com/v1/${city.client}/events?$filter=EventDate ge datetime'${startDateStr}'`;
-        console.log(`Fetching from: ${url}`);
+        console.log(`🕷️ CACHE MISS - Fetching from: ${url}`);
         
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
@@ -816,7 +824,6 @@ export const handler: Handler = async (event) => {
             const eventDate = new Date(evt.EventDate);
             return eventDate >= today && eventDate <= futureDate;
           })
-          .slice(0, 10) // Limit per city
           .map(evt => sanitizeEvent({
             id: `legistar-${city.client}-${evt.EventId}`,
             name: evt.EventBodyName || 'City Council Meeting',
@@ -833,8 +840,12 @@ export const handler: Handler = async (event) => {
             state: city.state,
             url: evt.EventInSiteURL || null
           }));
+        
+        // Cache for 24 hours
+        CacheManager.set(cacheKey, upcomingEvents, 86400);
+        console.log(`💾 Cached ${upcomingEvents.length} ${city.name} events for 24 hours`);
 
-        return upcomingEvents;
+        return upcomingEvents.slice(0, 10);
       } catch (error: any) {
         if (error?.name === 'AbortError') {
           console.warn(`Timeout fetching ${city.name} events`);

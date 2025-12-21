@@ -278,6 +278,18 @@ export const handler: Handler = async (event) => {
       const { getPool } = await import('./utils/db/connection.js');
       const pool = getPool();
       
+      // Clean up old events (>24 hours) before querying
+      try {
+        const cleanupResult = await pool.query(
+          `DELETE FROM events WHERE scraped_at < NOW() - INTERVAL '24 hours'`
+        );
+        if (cleanupResult.rowCount && cleanupResult.rowCount > 0) {
+          console.log(`🧹 Cleaned up ${cleanupResult.rowCount} old events (>24h)`);
+        }
+      } catch (cleanupError) {
+        console.error('⚠️ Failed to clean up old events:', cleanupError);
+      }
+      
       // Check if we have recent data (last 24 hours)
       const dataAgeQuery = await pool.query(`
         SELECT 

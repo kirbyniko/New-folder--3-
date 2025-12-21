@@ -274,22 +274,19 @@ function App() {
       
       console.log('🚀 Fetching federal events...');
       console.log('🚀 Fetching state events:', `state-events?state=${stateAbbr}`);
-      console.log('🚀 Fetching local events:', `local-meetings?lat=${capitol.lat}&lng=${capitol.lng}&radius=${radius}`);
       
-      const [federalResponse, stateResponse, localResponse] = await Promise.all([
+      const [federalResponse, stateResponse] = await Promise.all([
         fetch(getApiUrl(`/.netlify/functions/congress-meetings`), fetchOptions),
-        fetch(getApiUrl(`/.netlify/functions/state-events?state=${stateAbbr}`), fetchOptions),
-        fetch(getApiUrl(`/.netlify/functions/local-meetings?lat=${capitol.lat}&lng=${capitol.lng}&radius=${radius}`), fetchOptions)
+        fetch(getApiUrl(`/.netlify/functions/state-events?state=${stateAbbr}`), fetchOptions)
       ]);
       console.timeEnd('⏱️ State selector fetch time');
       
-      console.log('📡 Response status - Federal:', federalResponse.status, 'State:', stateResponse.status, 'Local:', localResponse.status);
+      console.log('📡 Response status - Federal:', federalResponse.status, 'State:', stateResponse.status);
       
       clearTimeout(timeoutId);
       
       const federal = federalResponse.ok ? await federalResponse.json() : []
       const state = stateResponse.ok ? await stateResponse.json() : []
-      const local = localResponse.ok ? await localResponse.json() : []
       
       // Extract calendar sources from state response headers
       if (stateResponse.ok) {
@@ -308,9 +305,8 @@ function App() {
       // Filter out malformed events missing required fields
       const validFederal = federal.filter((e: any) => e && e.level)
       const validState = state.filter((e: any) => e && e.level)
-      const validLocal = local.filter((e: any) => e && e.level)
       
-      console.log('📊 Parsed results - Federal:', validFederal.length, 'State:', validState.length, 'Local:', validLocal.length);
+      console.log('📊 Parsed results - Federal:', validFederal.length, 'State:', validState.length);
       
       // Add distances and tags
       const addDistanceAndTags = (events: LegislativeEvent[]) => {
@@ -324,8 +320,8 @@ function App() {
       setFederalEvents(addDistanceAndTags(validFederal).filter(e => e.distance <= radius))
       // State events are NOT filtered by distance - they're statewide events
       setStateEvents(addDistanceAndTags(validState))
-      // Local events: no distance filter for state searches (show all in state)
-      setLocalEvents(addDistanceAndTags(validLocal))
+      // Local events: cleared when selecting state (local-meetings not called)
+      setLocalEvents([])
       
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch state events')
