@@ -11,18 +11,15 @@
 
 import { Capacitor } from '@capacitor/core';
 
-// Backend URL - set this to your Netlify deployment URL for production
-// For development with localhost, use: http://localhost:8888
-const NETLIFY_SITE_URL = 'http://localhost:8888';
+// Backend URL - from environment variable or fallback to localhost
+const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:8888';
 
 /**
  * Get the full API URL for a backend function
  * @param path - Function path like '/.netlify/functions/congress-meetings'
- * @returns Full URL on native platforms, relative URL on web
+ * @returns Full URL to backend
  */
 export function getApiUrl(path: string): string {
-  if (Capacitor.isNativePlatform()) {
-    return `${NETLIFY_SITE_URL}${path}`;
-  }
-  return path; // Web uses relative URLs
+  // Always use the backend URL (ngrok tunnel in production, localhost in dev)
+  return `${BACKEND_URL}${path}`;
 }
