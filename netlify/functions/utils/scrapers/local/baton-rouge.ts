@@ -82,6 +82,8 @@ export async function scrapeBaronRougeMeetings(): Promise<RawEvent[]> {
     console.log(`[Baton Rouge] Found ${agendaItems.length} agenda items`);
 
     const rawEvents: RawEvent[] = [];
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // Start of today
 
     for (const item of agendaItems) {
       // Parse date from format like "Dec 10, 2025"
@@ -92,6 +94,13 @@ export async function scrapeBaronRougeMeetings(): Promise<RawEvent[]> {
       }
 
       const { date, time } = parsedDate;
+
+      // Filter out past events
+      const eventDate = new Date(date);
+      if (eventDate < today) {
+        console.log(`[Baton Rouge] Skipping past event: ${item.title} on ${date}`);
+        continue;
+      }
 
       // Baton Rouge City Hall coordinates
       const lat = 30.4515;
@@ -116,7 +125,7 @@ export async function scrapeBaronRougeMeetings(): Promise<RawEvent[]> {
       });
     }
 
-    console.log(`[Baton Rouge] Extracted ${rawEvents.length} Metropolitan Council meetings`);
+    console.log(`[Baton Rouge] Extracted ${rawEvents.length} upcoming Metropolitan Council meetings (filtered past events)`);
     return rawEvents;
   } catch (error) {
     console.error('[Baton Rouge] Scraping failed:', error);

@@ -206,7 +206,21 @@ export class VirginiaScraper extends BaseScraper {
       const eventsWithBills = allEvents.filter(e => e.bills && e.bills.length > 0);
       this.log(`✅ Completed: ${eventsWithBills.length} events have bills`);
       
-      return allEvents;
+      // Filter out past events
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const upcomingEvents = allEvents.filter(event => {
+        const eventDate = new Date(event.date);
+        if (eventDate >= today) {
+          return true;
+        } else {
+          this.log(`Skipping past event: ${event.name} on ${event.date}`);
+          return false;
+        }
+      });
+      
+      this.log(`Returning ${upcomingEvents.length} upcoming Virginia events`);
+      return upcomingEvents;
 
     } catch (error) {
       this.log(`❌ Error scraping Virginia: ${error instanceof Error ? error.message : error}`);

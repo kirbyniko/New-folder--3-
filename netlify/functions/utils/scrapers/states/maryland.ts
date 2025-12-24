@@ -112,6 +112,14 @@ export class MarylandScraper extends BaseScraper {
 
     const [, , monthStr, dayStr, yearStr] = dateMatch;
     const eventDate = new Date(`${monthStr} ${dayStr}, ${yearStr}`);
+    
+    // Skip if date is in the past
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    if (eventDate < today) {
+      this.log(`Skipping past date: ${monthStr} ${dayStr}, ${yearStr}`);
+      return events;
+    }
 
     // Parse Senate meetings
     const senateSection = $('h5:contains("Senate")').parent();

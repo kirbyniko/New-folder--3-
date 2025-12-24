@@ -140,7 +140,21 @@ export class ArkansasScraper extends BaseScraper {
 
       console.log(`[SCRAPER:Arkansas] 📋 Enriched ${enrichedCount}/${events.length} events with agenda data`);
       
-      return events;
+      // Filter out past events
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const upcomingEvents = events.filter(event => {
+        const eventDate = new Date(event.date);
+        if (eventDate >= today) {
+          return true;
+        } else {
+          console.log(`[SCRAPER:Arkansas] Skipping past event: ${event.name} on ${event.date}`);
+          return false;
+        }
+      });
+      
+      console.log(`[SCRAPER:Arkansas] ✅ Returning ${upcomingEvents.length} upcoming events`);
+      return upcomingEvents;
 
     } catch (error) {
       console.error('[SCRAPER:Arkansas] ❌ Scraping failed:', error);

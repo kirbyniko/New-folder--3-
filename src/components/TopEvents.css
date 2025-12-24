@@ -18,6 +18,36 @@
   color: #1f2937;
 }
 
+.top-events-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 15px 0 10px 0;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.top-event-tab {
+  padding: 10px 20px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 500;
+  color: #6b7280;
+  transition: all 0.2s ease;
+  margin-bottom: -2px;
+}
+
+.top-event-tab:hover {
+  color: #1f2937;
+  background: #f9fafb;
+}
+
+.top-event-tab.active {
+  color: #3b82f6;
+  border-bottom-color: #3b82f6;
+}
+
 .subtitle {
   color: #6b7280;
   margin: 5px 0;
@@ -78,6 +108,23 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 16px;
+  animation: fadeIn 0.3s ease-in;
+}
+
+.search-map-tab {
+  animation: fadeIn 0.3s ease-in;
+  min-height: 400px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .top-event-card {

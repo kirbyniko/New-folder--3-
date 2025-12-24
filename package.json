@@ -17,6 +17,7 @@
     "@netlify/blobs": "^10.4.3",
     "@sparticuz/chromium": "^143.0.0",
     "@types/pg": "^8.16.0",
+    "@types/sanitize-html": "^2.16.0",
     "canvas": "^3.2.0",
     "cheerio": "^1.1.2",
     "date-fns": "^4.1.0",
@@ -29,7 +30,9 @@
     "puppeteer-core": "^24.33.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-leaflet": "^4.2.1"
+    "react-leaflet": "^4.2.1",
+    "sanitize-html": "^2.17.0",
+    "xml2js": "^0.6.2"
   },
   "devDependencies": {
     "@netlify/functions": "^2.4.0",
@@ -38,6 +41,7 @@
     "@types/node": "^20.10.0",
     "@types/react": "^18.2.43",
     "@types/react-dom": "^18.2.17",
+    "@types/xml2js": "^0.4.14",
     "@vitejs/plugin-react": "^4.2.1",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",

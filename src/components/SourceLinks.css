@@ -6,6 +6,17 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
+.source-links-simple {
+  background: transparent;
+  box-shadow: none;
+  margin-bottom: 0;
+}
+
+.source-links-simple .source-links-content {
+  background: transparent;
+  padding: 0;
+}
+
 .source-links-toggle {
   width: 100%;
   background: transparent;

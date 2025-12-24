@@ -3,6 +3,7 @@ import { getStore } from '@netlify/blobs';
 import { loadEnvFile } from './utils/env-loader.js';
 import { ScraperRegistry, CacheManager, initializeScrapers } from './utils/scrapers/index.js';
 import { sanitizeEvent } from './utils/security.js';
+import { rateLimit } from './utils/rate-limit.js';
 
 // Helper function to get state legislature homepage URL
 function getStateLegislatureUrl(stateCode: string): string | null {
@@ -184,6 +185,7 @@ export const handler: Handler = async (event) => {
             headers: {
               'Content-Type': 'application/json',
               'Cache-Control': 'public, max-age=21600', // 6 hours
+              'Access-Control-Expose-Headers': 'X-Cache, X-Cache-Age, X-Calendar-Sources',
               'X-Cache': 'HIT-BLOB',
               'X-Cache-Age': String(ageHours),
               'X-Calendar-Sources': JSON.stringify(blobData.calendarSources || [])
@@ -201,72 +203,8 @@ export const handler: Handler = async (event) => {
     // ===== STRATEGY 1: Try custom scraper (comprehensive but slower) =====
     console.log('🔍 Checking for custom scraper...');
     
-    // Special handling for Virginia, Arizona, Tennessee, Massachusetts, Indiana, Maryland, Missouri, Wisconsin, Colorado, Minnesota, South Carolina, Alabama, Louisiana, Kentucky, Oregon, Oklahoma, Nevada, Iowa, Arkansas & Alaska - use pre-scraped static data
-    if (stateAbbr === 'VA' || stateAbbr === 'AZ' || stateAbbr === 'TN' || stateAbbr === 'MA' || stateAbbr === 'IN' || stateAbbr === 'MD' || stateAbbr === 'MO' || stateAbbr === 'WI' || stateAbbr === 'CO' || stateAbbr === 'MN' || stateAbbr === 'SC' || stateAbbr === 'AL' || stateAbbr === 'LA' || stateAbbr === 'KY' || stateAbbr === 'OR' || stateAbbr === 'OK' || stateAbbr === 'NV' || stateAbbr === 'IA' || stateAbbr === 'AR' || stateAbbr === 'AK') {
-      const stateNames: Record<string, string> = { 'VA': 'Virginia', 'AZ': 'Arizona', 'TN': 'Tennessee', 'MA': 'Massachusetts', 'IN': 'Indiana', 'MD': 'Maryland', 'MO': 'Missouri', 'WI': 'Wisconsin', 'CO': 'Colorado', 'MN': 'Minnesota', 'SC': 'South Carolina', 'AL': 'Alabama', 'LA': 'Louisiana', 'KY': 'Kentucky', 'OR': 'Oregon', 'OK': 'Oklahoma', 'NV': 'Nevada', 'IA': 'Iowa', 'AR': 'Arkansas', 'AK': 'Alaska' };
-      const fileNames: Record<string, string> = { 'VA': 'virginia-events.json', 'AZ': 'arizona-events.json', 'TN': 'tennessee-events.json', 'MA': 'massachusetts-events.json', 'IN': 'indiana-events.json', 'MD': 'maryland-events.json', 'MO': 'missouri-events.json', 'WI': 'wisconsin-events.json', 'CO': 'colorado-events.json', 'MN': 'minnesota-events.json', 'SC': 'southcarolina-events.json', 'AL': 'alabama-events.json', 'LA': 'louisiana-events.json', 'KY': 'kentucky-events.json', 'OR': 'oregon-events.json', 'OK': 'oklahoma-events.json', 'NV': 'nevada-events.json', 'IA': 'iowa-events.json', 'AR': 'arkansas-events.json', 'AK': 'alaska-events.json' };
-      const stateName = stateNames[stateAbbr];
-      const fileName = fileNames[stateAbbr];
-      console.log(`📄 Loading pre-scraped ${stateName} data from static file`);
-      try {
-        const { readFileSync, existsSync } = await import('fs');
-        const { join } = await import('path');
-        
-        // Try multiple possible paths for the static file
-        const possiblePaths = [
-          join(process.cwd(), 'public', 'data', fileName),
-          join(process.cwd(), '..', '..', 'public', 'data', fileName),
-          join(__dirname, '..', '..', 'public', 'data', fileName),
-          join(__dirname, '..', '..', '..', 'public', 'data', fileName)
-        ];
-        
-        let dataPath = possiblePaths[0];
-        for (const path of possiblePaths) {
-          if (existsSync(path)) {
-            dataPath = path;
-            console.log(`📁 Found static file at: ${path}`);
-            break;
-          }
-        }
-        
-        if (!existsSync(dataPath)) {
-          throw new Error(`Static file not found. Tried: ${possiblePaths.join(', ')}`);
-        }
-        
-        const staticData = JSON.parse(readFileSync(dataPath, 'utf-8'));
-        
-        console.log(`✅ Loaded ${staticData.count} ${stateName} events from static file`);
-        console.log(`📋 Bills: ${staticData.billsCount} total`);
-        
-        // Add state capitol coordinates to events that don't have them
-        const eventsWithCoords = staticData.events.map((event: any) => {
-          if (event.lat === 0 && event.lng === 0) {
-            return {
-              ...event,
-              lat: state.capitol.lat,
-              lng: state.capitol.lng
-            };
-          }
-          return event;
-        });
-        
-        return {
-          statusCode: 200,
-          headers: {
-            'Content-Type': 'application/json',
-            'Cache-Control': 'public, max-age=86400', // 24 hours
-            'X-Data-Source': 'static-file',
-            'X-Last-Updated': staticData.lastUpdated,
-            'X-Calendar-Sources': JSON.stringify(staticData.calendarSources || [])
-          },
-          body: JSON.stringify(eventsWithCoords)
-        };
-      } catch (staticError) {
-        console.error(`❌ Failed to load static ${stateName} data:`, staticError);
-        console.log('⬇️ Falling back to OpenStates API...');
-        // Continue to OpenStates fallback
-      }
-    }
+    // All states now use the scheduled scraper flow (DB → Blobs → Frontend)
+    // No more static file bypass - everything goes through the scraper registry
     
     // ===== ONLY READ FROM DATABASE =====
     // Scrapers should run on schedule and populate the database
@@ -304,13 +242,20 @@ export const handler: Handler = async (event) => {
       
       if (event_count === 0) {
         console.log(`⚠️ No events found in database for ${stateAbbr}`);
+        
+        // Get calendar sources from scraper even when no events
+        const scraper = ScraperRegistry.get(stateAbbr);
+        const calendarSources = scraper?.getCalendarSources?.() || [];
+        
         return {
           statusCode: 200,
           headers: {
             'Content-Type': 'application/json',
             'Cache-Control': 'public, max-age=3600',
+            'Access-Control-Expose-Headers': 'X-Data-Source, X-Message, X-Calendar-Sources',
             'X-Data-Source': 'database-empty',
-            'X-Message': 'No events available. Scheduled scraper will populate data.'
+            'X-Message': 'No events available. Scheduled scraper will populate data.',
+            'X-Calendar-Sources': JSON.stringify(calendarSources)
           },
           body: JSON.stringify([])
         };
@@ -378,14 +323,20 @@ export const handler: Handler = async (event) => {
       
       console.log(`📦 Returning ${cleanedEvents.length} events from database`);
       
+      // Get calendar sources from scraper (if available)
+      const scraper = ScraperRegistry.get(stateAbbr);
+      const calendarSources = scraper?.getCalendarSources?.() || [];
+      
       return {
         statusCode: 200,
         headers: {
           'Content-Type': 'application/json',
           'Cache-Control': 'public, max-age=3600', // 1 hour browser cache
+          'Access-Control-Expose-Headers': 'X-Data-Source, X-Data-Age-Hours, X-Last-Scraped, X-Calendar-Sources',
           'X-Data-Source': 'database',
           'X-Data-Age-Hours': String(dataAgeHours),
-          'X-Last-Scraped': last_scraped || 'unknown'
+          'X-Last-Scraped': last_scraped || 'unknown',
+          'X-Calendar-Sources': JSON.stringify(calendarSources)
         },
         body: JSON.stringify(cleanedEvents)
       };

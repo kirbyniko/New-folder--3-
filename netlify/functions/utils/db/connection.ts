@@ -26,8 +26,8 @@ export function getPool(): Pool {
 
     pool = new Pool(
       connectionString
-        ? { connectionString, max: 10, idleTimeoutMillis: 30000, connectionTimeoutMillis: 2000 }
-        : { ...config, max: 10, idleTimeoutMillis: 30000, connectionTimeoutMillis: 2000 }
+        ? { connectionString, max: 20, idleTimeoutMillis: 30000, connectionTimeoutMillis: 10000 }
+        : { ...config, max: 20, idleTimeoutMillis: 30000, connectionTimeoutMillis: 10000 }
     );
 
     pool.on('error', (err) => {

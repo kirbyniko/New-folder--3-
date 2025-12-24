@@ -1,6 +1,7 @@
 import { getPool } from './connection';
 import { LegislativeEvent, BillInfo } from '../../../../src/types/event';
 import crypto from 'crypto';
+import { autoTagEvent } from './tagging.js';
 
 /**
  * Generate a fingerprint for deduplication
@@ -103,7 +104,20 @@ export async function insertEvent(event: LegislativeEvent, scraperSource: string
   
   try {
     const result = await pool.query(query, values);
-    return result.rows[0].id;
+    const eventId = result.rows[0].id;
+    
+    // Auto-generate and insert tags
+    const tags = autoTagEvent({
+      name: event.name,
+      description: event.description || null,
+      committee: event.committee || null
+    });
+    
+    if (tags.length > 0) {
+      await insertTags(eventId, tags);
+    }
+    
+    return eventId;
   } catch (err: any) {
     console.error('❌ Error inserting event:', err.message);
     throw err;
@@ -408,3 +422,103 @@ export async function countEventsToday(): Promise<number> {
   }
 }
 
+/**
+ * Get all events for a state from database (for blob export)
+ * This is the single source of truth for frontend data
+ */
+export async function getAllStateEventsForExport(stateCode: string): Promise<LegislativeEvent[]> {
+  const pool = getPool();
+  
+  const query = `
+    SELECT 
+      e.id,
+      e.name,
+      e.date,
+      e.time,
+      e.lat,
+      e.lng,
+      e.location_name,
+      e.location_address,
+      e.level,
+      e.type,
+      e.state_code,
+      e.city,
+      e.zip_code,
+      e.committee_name,
+      e.description,
+      e.details_url,
+      e.docket_url,
+      e.agenda_url,
+      e.virtual_meeting_url,
+      e.allows_public_participation,
+      e.chamber,
+      COALESCE(
+        json_agg(
+          DISTINCT jsonb_build_object(
+            'id', b.bill_number,
+            'number', b.bill_number,
+            'title', b.title,
+            'url', b.url,
+            'status', b.status
+          )
+        ) FILTER (WHERE b.id IS NOT NULL),
+        '[]'::json
+      ) as bills,
+      COALESCE(
+        array_agg(DISTINCT et.tag) FILTER (WHERE et.tag IS NOT NULL),
+        ARRAY[]::text[]
+      ) as tags
+    FROM events e
+    LEFT JOIN event_bills eb ON e.id = eb.event_id
+    LEFT JOIN bills b ON eb.bill_id = b.id
+    LEFT JOIN event_tags et ON e.id = et.event_id
+    WHERE e.state_code = $1
+      AND e.date >= CURRENT_DATE - INTERVAL '7 days'
+      AND e.date <= CURRENT_DATE + INTERVAL '90 days'
+    GROUP BY e.id
+    ORDER BY e.date ASC, e.time NULLS LAST
+  `;
+  
+  try {
+    const result = await pool.query(query, [stateCode.toUpperCase()]);
+    
+    // Transform to frontend format
+    return result.rows.map(row => {
+      const bills = Array.isArray(row.bills) && row.bills[0] !== null 
+        ? row.bills.filter((b: any) => b.id !== null)
+        : [];
+      
+      const tags = Array.isArray(row.tags) && row.tags[0] !== null 
+        ? row.tags.filter((t: any) => t !== null)
+        : [];
+      
+      return {
+        id: row.id,
+        name: row.name,
+        date: row.date,
+        time: row.time || undefined,
+        location: row.location_name || undefined,
+        lat: parseFloat(row.lat),
+        lng: parseFloat(row.lng),
+        state: row.state_code,
+        city: row.city || undefined,
+        zipCode: row.zip_code || undefined,
+        level: row.level,
+        type: row.type || undefined,
+        committee: row.committee_name || undefined,
+        description: row.description || undefined,
+        detailsUrl: row.details_url || undefined,
+        docketUrl: row.docket_url || undefined,
+        agendaUrl: row.agenda_url || undefined,
+        virtualMeetingUrl: row.virtual_meeting_url || undefined,
+        allowsPublicParticipation: row.allows_public_participation || false,
+        chamber: row.chamber || undefined,
+        bills: bills.length > 0 ? bills : undefined,
+        tags: tags.length > 0 ? tags : undefined,
+      } as LegislativeEvent;
+    });
+  } catch (err: any) {
+    console.error(`❌ Error getting events for ${stateCode}:`, err.message);
+    throw err;
+  }
+}

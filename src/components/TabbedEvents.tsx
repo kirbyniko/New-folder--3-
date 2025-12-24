@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { LegislativeEvent } from '../types/event';
 import EventMap from './EventMap';
+import { SourceLinks } from './SourceLinks';
 import { TAG_DEFINITIONS } from '../utils/tagging';
 
 interface TabbedEventsProps {
@@ -12,6 +13,10 @@ interface TabbedEventsProps {
   radius: number;
   selectedTags?: string[];
   selectedState?: string;
+  viewMode: 'list' | 'map';
+  onViewModeChange: (mode: 'list' | 'map') => void;
+  calendarSources?: any[];
+  searchedState?: string;
 }
 
 type TabType = 'all' | 'state' | 'local';
@@ -24,15 +29,31 @@ export default function TabbedEvents({
   centerLng,
   radius,
   selectedTags = [],
-  selectedState
+  selectedState,
+  viewMode,
+  onViewModeChange,
+  calendarSources = [],
+  searchedState
 }: TabbedEventsProps) {
   const [activeTab, setActiveTab] = useState<TabType>('all');
+  const [cardLayout, setCardLayout] = useState<'compact' | 'detailed'>('compact');
+  const [showSources, setShowSources] = useState(false);
 
   // Filter events by selected state (if any)
-  const filterByState = (events: LegislativeEvent[]) =>
-    !selectedState
-      ? events
-      : events.filter(e => e.state === selectedState);
+  const filterByState = (events: LegislativeEvent[]) => {
+    if (!selectedState) return events;
+    const filtered = events.filter(e => e.state === selectedState);
+    if (events.length > 0 && filtered.length !== events.length) {
+      console.log('🔍 State filter:', { 
+        selectedState, 
+        beforeFilter: events.length, 
+        afterFilter: filtered.length,
+        firstEventState: events[0]?.state,
+        sample: events.slice(0, 2).map(e => ({ name: e.name, state: e.state }))
+      });
+    }
+    return filtered;
+  };
 
   // Filter events by selected tags
   const filterByTags = (events: LegislativeEvent[]) =>
@@ -97,29 +118,6 @@ export default function TabbedEvents({
 
       {/* Tab Content */}
       <div className="tab-content">
-        {/* Debug Info */}
-        <div className="debug-info">
-          <strong>🐛 Debug:</strong> {activeEvents.length} events found | 
-          Center: {centerLat.toFixed(4)}, {centerLng.toFixed(4)} | 
-          Radius: {radius} mi
-        </div>
-
-        {/* Calendar Source Link */}
-        {activeEvents.length > 0 && activeEvents[0].sourceUrl && (
-          <div className="calendar-source">
-            <span className="source-icon">🔗</span>
-            <span className="source-label">Calendar Source:</span>
-            <a 
-              href={activeEvents[0].sourceUrl} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="source-link"
-            >
-              {activeEvents[0].sourceUrl}
-            </a>
-          </div>
-        )}
-
         {/* Map Visualization */}
         {activeEvents.length > 0 && (
           <div className="map-container">
@@ -133,9 +131,70 @@ export default function TabbedEvents({
           </div>
         )}
 
-        {/* Events List */}
+        {/* Layout Toggle Above Events List */}
+        {(activeEvents.length > 0 || calendarSources.length > 0) && (
+          <div className="events-header">
+            <h3 className="events-count">{activeEvents.length} Events</h3>
+            <div className="events-controls">
+              {activeEvents.length > 0 && (
+                <div className="layout-toggle">
+                  <button
+                    className={`layout-button ${cardLayout === 'compact' ? 'active' : ''}`}
+                    onClick={() => setCardLayout('compact')}
+                    title="Compact cards"
+                  >
+                    ⊞ Grid
+                  </button>
+                  <button
+                    className={`layout-button ${cardLayout === 'detailed' ? 'active' : ''}`}
+                    onClick={() => setCardLayout('detailed')}
+                    title="Detailed view"
+                  >
+                    ☰ List
+                  </button>
+                </div>
+              )}
+              {calendarSources.length > 0 && (
+                <button
+                  className="sources-button"
+                  onClick={() => setShowSources(!showSources)}
+                  title="View data sources"
+                >
+                  📁 Sources
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Sources Modal */}
+        {showSources && (
+          <div className="sources-modal-overlay" onClick={() => setShowSources(false)}>
+            <div className="sources-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="sources-modal-header">
+                <h3>Data Sources</h3>
+                <button className="sources-modal-close" onClick={() => setShowSources(false)}>
+                  ×
+                </button>
+              </div>
+              <div className="sources-modal-content">
+                <SourceLinks
+                  federalEvents={federalEvents}
+                  stateEvents={stateEvents}
+                  localEvents={localEvents}
+                  selectedState={selectedState}
+                  searchedState={searchedState}
+                  calendarSources={calendarSources}
+                  simpleMode={true}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Events List Below Map */}
         {activeEvents.length > 0 ? (
-          <div className="events-list">
+          <div className={`events-list events-list-${cardLayout}`}>
             {activeEvents.map((event) => (
               <article key={`${event.level}-${event.id}`} className="event-card">
                 <div className="event-header">
@@ -230,11 +289,11 @@ export default function TabbedEvents({
                     </div>
                   )}
 
-                  {event.sourceUrl && (
+                  {(event.sourceUrl || event.url) && (
                     <div className="event-detail">
                       <span className="detail-label">🔗 Source:</span>
                       <span className="detail-value">
-                        <a href={event.sourceUrl} target="_blank" rel="noopener noreferrer" className="source-link">
+                        <a href={event.sourceUrl || event.url} target="_blank" rel="noopener noreferrer" className="source-link">
                           View Details
                         </a>
                       </span>

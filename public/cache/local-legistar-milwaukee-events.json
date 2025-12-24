@@ -1,0 +1,38 @@
+{
+  "data": [
+    {
+      "id": "legistar-milwaukee-13675",
+      "name": "BOARD OF CITY SERVICE COMMISSIONERS",
+      "date": "2026-01-20T00:00:00",
+      "time": "9:00 AM",
+      "location": "City Hall, Room 301-B and Microsoft TEAMS",
+      "committee": "BOARD OF CITY SERVICE COMMISSIONERS",
+      "type": "meeting",
+      "level": "local",
+      "lat": 43.0389,
+      "lng": -87.9065,
+      "zipCode": null,
+      "city": "Milwaukee",
+      "state": "WI",
+      "url": "https://milwaukee.legistar.com/MeetingDetail.aspx?LEGID=13675&GID=5&G=08FEFB22-B33A-4882-9C5A-6D37E84EF01D"
+    },
+    {
+      "id": "legistar-milwaukee-13677",
+      "name": "GRANVILLE-HAVENWOODS ADVISORY COUNCIL",
+      "date": "2026-01-07T00:00:00",
+      "time": "9:00 AM",
+      "location": "Virtual",
+      "committee": "GRANVILLE-HAVENWOODS ADVISORY COUNCIL",
+      "type": "meeting",
+      "level": "local",
+      "lat": 43.0389,
+      "lng": -87.9065,
+      "zipCode": null,
+      "city": "Milwaukee",
+      "state": "WI",
+      "url": "https://milwaukee.legistar.com/MeetingDetail.aspx?LEGID=13677&GID=5&G=08FEFB22-B33A-4882-9C5A-6D37E84EF01D"
+    }
+  ],
+  "timestamp": 1766502625163,
+  "expiresAt": 1766589025163
+}

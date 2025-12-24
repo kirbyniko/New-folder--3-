@@ -137,16 +137,25 @@ export class LouisianaScraper extends BaseScraper {
 
       this.log(`Found ${agendaItems.length} Louisiana meetings to process`);
 
-      // Convert all events (with agenda parsing)
+      // Convert all events (with agenda parsing) and filter out past events
       const convertedEvents: RawEvent[] = [];
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // Start of today
+      
       for (const laEvent of agendaItems) {
         const rawEvent = await this.convertEventToRaw(laEvent);
         if (rawEvent) {
-          convertedEvents.push(rawEvent);
+          // Filter out events that are in the past
+          const eventDate = new Date(rawEvent.date);
+          if (eventDate >= today) {
+            convertedEvents.push(rawEvent);
+          } else {
+            this.log(`Skipping past event: ${rawEvent.name} on ${rawEvent.date}`);
+          }
         }
       }
 
-      this.log(`Found ${convertedEvents.length} Louisiana events with agenda details`);
+      this.log(`Found ${convertedEvents.length} upcoming Louisiana events (filtered out past events)`);
       return convertedEvents;
       
     } catch (error) {

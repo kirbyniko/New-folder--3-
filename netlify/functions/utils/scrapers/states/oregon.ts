@@ -18,7 +18,8 @@ import { enrichEventMetadata } from '../shared/tagging';
  * - Interim: Even-numbered years with limited committee activity
  */
 
-const OPENSTATE_API_KEY = process.env.OPENSTATES_API_KEY || process.env.VITE_OPENSTATES_API_KEY || 'cd952883-5eee-42d3-a2d4-1d1210129f59';
+// SECURITY: Hardcoded API key removed - must set OPENSTATES_API_KEY environment variable
+const OPENSTATE_API_KEY = process.env.OPENSTATES_API_KEY || process.env.VITE_OPENSTATES_API_KEY;
 const JURISDICTION = 'ocd-jurisdiction/country:us/state:or/government';
 const OR_CAPITOL = { lat: 44.9429, lng: -123.0307 }; // Salem, OR
 

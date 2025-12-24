@@ -76,15 +76,24 @@ export class TennesseeScraper extends BaseScraper {
       
       this.log(`Found ${allEvents.length} total events for Tennessee`);
 
+      // Get today's date for filtering
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
       // Convert events and fetch bills
       for (const tnEvent of allEvents) {
         const event = await this.convertEventToRaw(tnEvent);
         if (event) {
-          events.push(event);
+          const eventDate = new Date(event.date);
+          if (eventDate >= today) {
+            events.push(event);
+          } else {
+            this.log(`Skipping past event: ${event.name} on ${event.date}`);
+          }
         }
       }
 
-      this.log(`Converted ${events.length} Tennessee events`);
+      this.log(`Converted ${events.length} upcoming Tennessee events`);
       
       return events;
     } catch (error) {

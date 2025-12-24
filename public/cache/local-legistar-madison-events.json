@@ -1,0 +1,54 @@
+{
+  "data": [
+    {
+      "id": "legistar-madison-28028",
+      "name": "VENDING OVERSIGHT COMMITTEE",
+      "date": "2025-12-31T00:00:00",
+      "time": "5:00 PM",
+      "location": "Virtual meeting via Zoom",
+      "committee": "VENDING OVERSIGHT COMMITTEE",
+      "type": "meeting",
+      "level": "local",
+      "lat": 43.0731,
+      "lng": -89.4012,
+      "zipCode": null,
+      "city": "Madison",
+      "state": "WI",
+      "url": "https://madison.legistar.com/MeetingDetail.aspx?LEGID=28028&GID=205&G=D66739FE-4C3C-468C-A9F0-0198EFAA8EF8"
+    },
+    {
+      "id": "legistar-madison-28735",
+      "name": "BOARD OF HEALTH FOR MADISON AND DANE COUNTY",
+      "date": "2026-01-07T00:00:00",
+      "time": "5:30 PM",
+      "location": "Attend in person at:\r\nAtrium Community Room; \r\n2300 S Park St.\r\nMadison, WI 53713",
+      "committee": "BOARD OF HEALTH FOR MADISON AND DANE COUNTY",
+      "type": "meeting",
+      "level": "local",
+      "lat": 43.0731,
+      "lng": -89.4012,
+      "zipCode": null,
+      "city": "Madison",
+      "state": "WI",
+      "url": "https://madison.legistar.com/MeetingDetail.aspx?LEGID=28735&GID=205&G=D66739FE-4C3C-468C-A9F0-0198EFAA8EF8"
+    },
+    {
+      "id": "legistar-madison-28870",
+      "name": "CITY-COUNTY HOMELESS ISSUES COMMITTEE",
+      "date": "2026-01-05T00:00:00",
+      "time": "5:30 PM",
+      "location": "Virtual Meeting",
+      "committee": "CITY-COUNTY HOMELESS ISSUES COMMITTEE",
+      "type": "meeting",
+      "level": "local",
+      "lat": 43.0731,
+      "lng": -89.4012,
+      "zipCode": null,
+      "city": "Madison",
+      "state": "WI",
+      "url": "https://madison.legistar.com/MeetingDetail.aspx?LEGID=28870&GID=205&G=D66739FE-4C3C-468C-A9F0-0198EFAA8EF8"
+    }
+  ],
+  "timestamp": 1766502625203,
+  "expiresAt": 1766589025203
+}

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import './DataViewer.css';
 import { TAG_DEFINITIONS } from '../utils/tagging';
+import FilterBar from './FilterBar';
 
 interface Event {
   id: string;
@@ -13,7 +14,7 @@ interface Event {
   type: string;
   committee: string | null;
   description: string | null;
-  bills: Array<{ number: string; title: string }>;
+  bills: Array<{ number: string; title: string; url?: string }>;
   tags: string[];
   detailsUrl: string | null;
   docketUrl: string | null;
@@ -23,6 +24,16 @@ interface Event {
   chamber: string | null;
   scraperSource: string;
   scrapedAt: string;
+}
+
+interface Bill {
+  number: string;
+  title: string;
+  url?: string;
+  state: string;
+  eventName: string;
+  eventDate: string;
+  tags?: string[];
 }
 
 interface DataResponse {
@@ -38,9 +49,31 @@ interface DataResponse {
     level: string | null;
     date: string | null;
   };
+  stats?: {
+    withBills: number;
+    withTags: number;
+    withParticipation: number;
+  };
 }
 
-export default function DataViewer() {
+type ViewTab = 'events' | 'bills';
+type SortField = 'date' | 'state' | 'name' | 'bills';
+type SortDirection = 'asc' | 'desc';
+
+const US_STATES = [
+  'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
+  'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
+  'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
+  'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
+  'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'
+];
+
+interface DataViewerProps {
+  onStateSelect?: (state: string) => void;
+}
+
+export default function DataViewer({ onStateSelect }: DataViewerProps) {
+  const [activeTab, setActiveTab] = useState<ViewTab>('events');
   const [data, setData] = useState<DataResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,6 +82,12 @@ export default function DataViewer() {
   const [stateFilter, setStateFilter] = useState('');
   const [levelFilter, setLevelFilter] = useState('');
   const [dateFilter, setDateFilter] = useState('');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Sorting
+  const [sortField, setSortField] = useState<SortField>('date');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
   const fetchData = async () => {
     try {
@@ -58,7 +97,7 @@ export default function DataViewer() {
       if (stateFilter) params.set('state', stateFilter);
       if (levelFilter) params.set('level', levelFilter);
       if (dateFilter) params.set('date', dateFilter);
-      params.set('limit', '50');
+      params.set('limit', '500'); // Increased to get more events with bills
       
       const response = await fetch(`/.netlify/functions/admin-events?${params}`);
       
@@ -81,6 +120,67 @@ export default function DataViewer() {
     fetchData();
   }, [stateFilter, levelFilter, dateFilter]);
 
+  // Extract all bills from events
+  const allBills: Bill[] = data?.events.flatMap(event => 
+    (event.bills || []).map(bill => ({
+      ...bill,
+      state: event.state,
+      eventName: event.name,
+      eventDate: event.date,
+      tags: event.tags
+    }))
+  ) || [];
+
+  // Filter and sort events
+  const filteredEvents = (data?.events || [])
+    .filter(event => {
+      if (selectedTags.length > 0 && !event.tags?.some(t => selectedTags.includes(t))) return false;
+      if (searchQuery && !event.name.toLowerCase().includes(searchQuery.toLowerCase()) && 
+          !event.committee?.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      let comparison = 0;
+      switch (sortField) {
+        case 'date':
+          comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
+          break;
+        case 'state':
+          comparison = (a.state || '').localeCompare(b.state || '');
+          break;
+        case 'name':
+          comparison = a.name.localeCompare(b.name);
+          break;
+        case 'bills':
+          comparison = (a.bills?.length || 0) - (b.bills?.length || 0);
+          break;
+      }
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+
+  // Filter and sort bills
+  const filteredBills = allBills
+    .filter(bill => {
+      if (stateFilter && bill.state !== stateFilter) return false;
+      if (selectedTags.length > 0 && !bill.tags?.some(t => selectedTags.includes(t))) return false;
+      if (searchQuery && !bill.number.toLowerCase().includes(searchQuery.toLowerCase()) && 
+          !bill.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      const comparison = a.number.localeCompare(b.number);
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
+    }
+  };
+
   if (loading && !data) {
     return (
       <div className="data-viewer">
@@ -102,98 +202,150 @@ export default function DataViewer() {
   return (
     <div className="data-viewer">
       <header className="viewer-header">
-        <h1>📊 Database Event Viewer</h1>
-        <p className="subtitle">Verify data integrity: Scraper → PostgreSQL → Frontend</p>
+        <h1>📊 Database Viewer</h1>
+        <p className="subtitle">Browse all events and bills from the database</p>
       </header>
 
+      {/* Tab Navigation */}
+      <div className="viewer-tabs">
+        <button
+          className={`tab-button ${activeTab === 'events' ? 'active' : ''}`}
+          onClick={() => setActiveTab('events')}
+        >
+          📅 Events ({filteredEvents.length})
+        </button>
+        <button
+          className={`tab-button ${activeTab === 'bills' ? 'active' : ''}`}
+          onClick={() => setActiveTab('bills')}
+        >
+          📋 Bills ({allBills.length})
+        </button>
+      </div>
+
+      {/* Filter Bar - Horizontal like home view */}
+      <FilterBar
+        selectedTags={selectedTags}
+        onTagsChange={setSelectedTags}
+      />
+
+      {/* Search and Filters */}
       <div className="filters">
         <div className="filter-group">
-          <label>State:</label>
-          <select value={stateFilter} onChange={(e) => setStateFilter(e.target.value)}>
-            <option value="">All States</option>
-            <option value="CA">California</option>
-            <option value="NY">New York</option>
-            <option value="TX">Texas</option>
-            <option value="FL">Florida</option>
-            <option value="IL">Illinois</option>
-          </select>
-        </div>
-
-        <div className="filter-group">
-          <label>Level:</label>
-          <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)}>
-            <option value="">All Levels</option>
-            <option value="federal">Federal</option>
-            <option value="state">State</option>
-            <option value="local">Local</option>
-          </select>
-        </div>
-
-        <div className="filter-group">
-          <label>Date:</label>
-          <input 
-            type="date" 
-            value={dateFilter} 
-            onChange={(e) => setDateFilter(e.target.value)}
+          <label>🔍 Search:</label>
+          <input
+            type="text"
+            placeholder={activeTab === 'events' ? 'Search events...' : 'Search bills...'}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="search-input"
           />
         </div>
 
-        <button onClick={() => {
-          setStateFilter('');
-          setLevelFilter('');
-          setDateFilter('');
-        }}>
-          Clear Filters
+        <div className="filter-group">
+          <label>State:</label>
+          <select 
+            value={stateFilter} 
+            onChange={(e) => {
+              const newState = e.target.value;
+              setStateFilter(newState);
+              if (newState && onStateSelect) {
+                onStateSelect(newState);
+              }
+            }}
+          >
+            <option value="">All States</option>
+            {US_STATES.map(state => (
+              <option key={state} value={state}>{state}</option>
+            ))}
+          </select>
+        </div>
+
+        {activeTab === 'events' && (
+          <div className="filter-group">
+            <label>Level:</label>
+            <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)}>
+              <option value="">All Levels</option>
+              <option value="federal">Federal</option>
+              <option value="state">State</option>
+              <option value="local">Local</option>
+            </select>
+          </div>
+        )}
+
+        {activeTab === 'events' && (
+          <div className="filter-group">
+            <label>Date:</label>
+            <input 
+              type="date" 
+              value={dateFilter} 
+              onChange={(e) => setDateFilter(e.target.value)}
+            />
+          </div>
+        )}
+
+        <button 
+          onClick={() => {
+            setStateFilter('');
+            setLevelFilter('');
+            setDateFilter('');
+            setSelectedTags([]);
+            setSearchQuery('');
+          }}
+          className="clear-button"
+        >
+          Clear All
         </button>
       </div>
 
       {data && (
         <>
-          <div className="stats">
-            <div className="stat-card">
-              <div className="stat-value">{data.pagination.total}</div>
-              <div className="stat-label">Total Events</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-value">{data.events.length}</div>
-              <div className="stat-label">Showing</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-value">
-                {data.events.filter(e => e.bills && e.bills.length > 0).length}
+          {/* Events Table */}
+          {activeTab === 'events' && (
+            <div className="events-table-container">
+              <div className="table-header">
+                <h2>Events</h2>
+                <div className="sort-controls">
+                  <span>Sort by:</span>
+                  <button
+                    className={sortField === 'date' ? 'active' : ''}
+                    onClick={() => handleSort('date')}
+                  >
+                    Date {sortField === 'date' && (sortDirection === 'asc' ? '↑' : '↓')}
+                  </button>
+                  <button
+                    className={sortField === 'state' ? 'active' : ''}
+                    onClick={() => handleSort('state')}
+                  >
+                    State {sortField === 'state' && (sortDirection === 'asc' ? '↑' : '↓')}
+                  </button>
+                  <button
+                    className={sortField === 'name' ? 'active' : ''}
+                    onClick={() => handleSort('name')}
+                  >
+                    Name {sortField === 'name' && (sortDirection === 'asc' ? '↑' : '↓')}
+                  </button>
+                  <button
+                    className={sortField === 'bills' ? 'active' : ''}
+                    onClick={() => handleSort('bills')}
+                  >
+                    Bills {sortField === 'bills' && (sortDirection === 'asc' ? '↑' : '↓')}
+                  </button>
+                </div>
               </div>
-              <div className="stat-label">With Bills</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-value">
-                {data.events.filter(e => e.tags && e.tags.length > 0).length}
-              </div>
-              <div className="stat-label">With Tags</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-value">
-                {data.events.filter(e => e.allowsPublicParticipation === true).length}
-              </div>
-              <div className="stat-label">Public Participation</div>
-            </div>
-          </div>
-
-          <div className="events-table-container">
-            <table className="events-table">
-              <thead>
-                <tr>
-                  <th>Date/Time</th>
-                  <th>Event Details</th>
-                  <th>State</th>
-                  <th>Level</th>
-                  <th>Tags</th>
-                  <th>Bills</th>
-                  <th>URLs</th>
-                  <th>Scraper</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.events.map((event) => {
+              <table className="events-table">
+                <thead>
+                  <tr>
+                    <th>Date/Time</th>
+                    <th>Event Details</th>
+                    <th>State</th>
+                    <th>Level</th>
+                    <th>Bills</th>
+                    <th>Tags</th>
+                    <th>URLs</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredEvents.map((event) => {
                   const eventDate = new Date(event.date);
                   const dateStr = eventDate.toLocaleDateString('en-US', { 
                     weekday: 'short', 
@@ -213,8 +365,8 @@ export default function DataViewer() {
                       {event.committee && <div className="committee">🏛️ {event.committee}</div>}
                       {event.location && <div className="location">📍 {event.location}</div>}
                       {event.description && (
-                        <div className="description" title={event.description}>
-                          📄 {event.description.length > 100 ? event.description.substring(0, 100) + '...' : event.description}
+                        <div className="event-description" title={event.description}>
+                          📄 {event.description}
                         </div>
                       )}
                     </td>
@@ -247,7 +399,7 @@ export default function DataViewer() {
                     <td>
                       {event.tags && event.tags.length > 0 ? (
                         <div className="tags-list">
-                          {event.tags.slice(0, 3).map((tag, i) => {
+                          {event.tags.map((tag, i) => {
                             const tagDef = TAG_DEFINITIONS[tag];
                             return tagDef ? (
                               <span key={i} className="tag" style={{ backgroundColor: tagDef.color + '20', color: tagDef.color, border: `1px solid ${tagDef.color}` }}>
@@ -257,9 +409,6 @@ export default function DataViewer() {
                               <span key={i} className="tag">{tag}</span>
                             );
                           })}
-                          {event.tags.length > 3 && (
-                            <span className="more">+{event.tags.length - 3}</span>
-                          )}
                         </div>
                       ) : '-'}
                     </td>
@@ -270,28 +419,97 @@ export default function DataViewer() {
                       {event.agendaUrl && <a href={event.agendaUrl} target="_blank" rel="noopener noreferrer">📅</a>}
                       {!event.detailsUrl && !event.docketUrl && !event.virtualMeetingUrl && !event.agendaUrl && '-'}
                     </td>
-                    <td>
-                      <div className="scraper-info">
-                        <div className="scraper-name">{event.scraperSource}</div>
-                        <div className="scraped-time">
-                          {new Date(event.scrapedAt).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric',
-                            hour: 'numeric',
-                            minute: '2-digit'
-                          })}
-                        </div>
-                      </div>
-                    </td>
                   </tr>
                   );
                 })}
               </tbody>
             </table>
           </div>
-        </>
-      )}
+        )}
+
+        {/* Bills Table */}
+        {activeTab === 'bills' && (
+          <div className="bills-table-container">
+            <div className="table-header">
+              <h2>All Bills</h2>
+              <div className="sort-controls">
+                <span>Sort:</span>
+                <button onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}>
+                  Bill Number {sortDirection === 'asc' ? '↑' : '↓'}
+                </button>
+              </div>
+            </div>
+            <table className="bills-table">
+              <thead>
+                <tr>
+                  <th>Bill Number</th>
+                  <th>Title</th>
+                  <th>State</th>
+                  <th>Event</th>
+                  <th>Event Date</th>
+                  <th>Tags</th>
+                  <th>Link</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredBills.map((bill, index) => (
+                  <tr key={`${bill.number}-${index}`}>
+                    <td className="bill-number-cell">
+                      <strong>{bill.number}</strong>
+                    </td>
+                    <td className="bill-title-cell">
+                      {bill.title}
+                    </td>
+                    <td>
+                      <span className="state-badge">{bill.state}</span>
+                    </td>
+                    <td className="event-name-cell">
+                      {bill.eventName}
+                    </td>
+                    <td>
+                      {new Date(bill.eventDate).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                      })}
+                    </td>
+                    <td>
+                      {bill.tags && bill.tags.length > 0 ? (
+                        <div className="tags-list">
+                          {bill.tags.slice(0, 2).map((tag, i) => {
+                            const tagDef = TAG_DEFINITIONS[tag];
+                            return tagDef ? (
+                              <span key={i} className="tag" style={{ backgroundColor: tagDef.color + '20', color: tagDef.color, border: `1px solid ${tagDef.color}` }}>
+                                {tagDef.icon}
+                              </span>
+                            ) : null;
+                          })}
+                          {bill.tags.length > 2 && (
+                            <span className="more">+{bill.tags.length - 2}</span>
+                          )}
+                        </div>
+                      ) : '-'}
+                    </td>
+                    <td>
+                      {bill.url ? (
+                        <a href={bill.url} target="_blank" rel="noopener noreferrer" className="bill-link">
+                          View →
+                        </a>
+                      ) : '-'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {filteredBills.length === 0 && (
+              <div className="no-results">
+                No bills match your filters
+              </div>
+            )}
+          </div>
+        )}
+      </>
+    )}
     </div>
   );
 }

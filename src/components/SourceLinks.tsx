@@ -9,10 +9,11 @@ interface SourceLinksProps {
   selectedState?: string; // For display purposes (state name in messages)
   searchedState?: string; // The state from ZIP code search
   calendarSources?: { name: string; url: string; description: string }[];
+  simpleMode?: boolean; // If true, shows sources directly without dropdown
 }
 
-export function SourceLinks({ federalEvents, stateEvents, localEvents, selectedState, searchedState, calendarSources = [] }: SourceLinksProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+export function SourceLinks({ federalEvents, stateEvents, localEvents, selectedState, searchedState, calendarSources = [], simpleMode = false }: SourceLinksProps) {
+  const [isExpanded, setIsExpanded] = useState(simpleMode); // Start expanded if simpleMode
 
   const totalEvents = federalEvents.length + stateEvents.length + localEvents.length;
 
@@ -30,27 +31,29 @@ export function SourceLinks({ federalEvents, stateEvents, localEvents, selectedS
   if (!shouldShow) return null;
 
   return (
-    <div className="source-links">
-      <button 
-        className="source-links-toggle"
-        onClick={() => setIsExpanded(!isExpanded)}
-        aria-expanded={isExpanded}
-      >
-        <span className="source-links-icon">{isExpanded ? '▼' : '▶'}</span>
-        <span className="source-links-title">Data Sources</span>
-        {totalEvents > 0 && (
-          <span className="source-links-badge">
-            {totalEvents} events
-          </span>
-        )}
-      </button>
+    <div className={`source-links ${simpleMode ? 'source-links-simple' : ''}`}>
+      {!simpleMode && (
+        <button 
+          className="source-links-toggle"
+          onClick={() => setIsExpanded(!isExpanded)}
+          aria-expanded={isExpanded}
+        >
+          <span className="source-links-icon">{isExpanded ? '▼' : '▶'}</span>
+          <span className="source-links-title">Data Sources</span>
+          {totalEvents > 0 && (
+            <span className="source-links-badge">
+              {totalEvents} events
+            </span>
+          )}
+        </button>
+      )}
 
-      {isExpanded && (
+      {(isExpanded || simpleMode) && (
         <div className="source-links-content">
           {/* Display calendar sources from scraper */}
           {calendarSources.length > 0 && (
             <div className="source-section">
-              <h4>📅 Legislative Calendar Sources</h4>
+              {!simpleMode && <h4>📅 Legislative Calendar Sources</h4>}
               <ul>
                 {calendarSources.map((source, i) => (
                   <li key={i}>

@@ -1,5 +1,6 @@
 import puppeteer, { Browser, Page } from 'puppeteer';
 import chromium from '@sparticuz/chromium';
+import { isAllowedScraperUrl } from '../url-security.js';
 
 /**
  * Puppeteer Helper for Headless Browser Scraping
@@ -8,6 +9,8 @@ import chromium from '@sparticuz/chromium';
  * - Client-side rendered calendars (React/Next.js)
  * - Sites with JavaScript challenges (Akamai, Cloudflare)
  * - Dynamic content loading
+ * 
+ * SECURITY: All URLs are validated to prevent SSRF attacks
  */
 
 let browserInstance: Browser | null = null;
@@ -70,13 +73,47 @@ export async function createPage(): Promise<Page> {
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
   );
 
+  // Set extra HTTP headers to appear more like a real browser
+  await page.setExtraHTTPHeaders({
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Connection': 'keep-alive',
+    'Upgrade-Insecure-Requests': '1',
+    'Sec-Fetch-Dest': 'document',
+    'Sec-Fetch-Mode': 'navigate',
+    'Sec-Fetch-Site': 'none',
+    'Sec-Fetch-User': '?1',
+    'Cache-Control': 'max-age=0',
+  });
+
   await page.setViewport({
     width: 1920,
     height: 1080,
   });
 
   // Set timeout for navigation
-  page.setDefaultTimeout(30000); // 30 seconds
+  page.setDefaultTimeout(60000); // 60 seconds
+
+  // SECURITY: Block requests to private IPs and non-whitelisted domains
+  await page.setRequestInterception(true);
+  page.on('request', (request) => {
+    const reqUrl = request.url();
+    
+    // Allow data: URLs for inline resources
+    if (reqUrl.startsWith('data:')) {
+      request.continue();
+      return;
+    }
+    
+    // Validate all other URLs
+    if (!isAllowedScraperUrl(reqUrl)) {
+      console.warn(`⚠️ Blocked Puppeteer request to: ${reqUrl}`);
+      request.abort();
+    } else {
+      request.continue();
+    }
+  });
 
   return page;
 }
@@ -95,22 +132,24 @@ export async function scrapeWithPuppeteer<T = string>(
     waitFor?: string | number;
     evaluate?: (page: Page) => Promise<T>;
     screenshot?: boolean;
+    timeout?: number;
   } = {}
 ): Promise<T> {
   const page = await createPage();
 
   try {
-    console.log(`[Puppeteer] Navigating to: ${url}`);
+    const navigationTimeout = options.timeout || 30000;
+    console.log(`[Puppeteer] Navigating to: ${url} (timeout: ${navigationTimeout}ms)`);
     await page.goto(url, {
       waitUntil: 'networkidle2',
-      timeout: 30000,
+      timeout: navigationTimeout,
     });
 
     // Wait for specific selector or time
     if (options.waitFor) {
       if (typeof options.waitFor === 'string') {
         console.log(`[Puppeteer] Waiting for selector: ${options.waitFor}`);
-        await page.waitForSelector(options.waitFor, { timeout: 30000 });
+        await page.waitForSelector(options.waitFor, { timeout: navigationTimeout });
       } else {
         console.log(`[Puppeteer] Waiting ${options.waitFor}ms`);
         await new Promise(resolve => setTimeout(resolve, options.waitFor));

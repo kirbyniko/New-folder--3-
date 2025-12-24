@@ -17,9 +17,10 @@ interface EventMapProps {
   centerLat: number;
   centerLng: number;
   radius: number;
+  height?: string;
 }
 
-export default function EventMap({ events, centerLat, centerLng, radius }: EventMapProps) {
+export default function EventMap({ events, centerLat, centerLng, radius, height = '400px' }: EventMapProps) {
   // Custom marker colors based on level
   const getMarkerIcon = (level: string) => {
     const colors: Record<string, string> = {
@@ -46,7 +47,7 @@ export default function EventMap({ events, centerLat, centerLng, radius }: Event
   };
 
   return (
-    <div style={{ height: '400px', width: '100%', borderRadius: '8px', overflow: 'hidden' }}>
+    <div style={{ height, width: '100%', borderRadius: '8px', overflow: 'hidden' }}>
       <MapContainer
         center={[centerLat, centerLng]}
         zoom={9}

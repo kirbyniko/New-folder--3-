@@ -82,17 +82,27 @@ export class MassachusettsScraper extends BaseScraper {
       
       this.log(`Found ${allEvents.length} total events for Massachusetts`);
 
+      // Get today's date for filtering
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
       // Convert events and fetch bills (only for hearings, not sessions)
       for (const maEvent of allEvents) {
         if (maEvent.status === 'Confirmed' || maEvent.status === 'Underway') {
           const event = await this.convertEventToRaw(maEvent);
           if (event) {
-            events.push(event);
+            // Filter out past events
+            const eventDate = new Date(event.date);
+            if (eventDate >= today) {
+              events.push(event);
+            } else {
+              this.log(`Skipping past event: ${event.name} on ${event.date}`);
+            }
           }
         }
       }
 
-      this.log(`Converted ${events.length} Massachusetts events`);
+      this.log(`Converted ${events.length} upcoming Massachusetts events`);
       
       return events;
     } catch (error) {

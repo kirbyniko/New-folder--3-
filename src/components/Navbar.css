@@ -83,6 +83,36 @@
   cursor: not-allowed;
 }
 
+.navbar-state-select {
+  padding: 0.5rem 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  background: rgba(255, 255, 255, 0.9);
+  color: #1e3a8a;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 150px;
+}
+
+.navbar-state-select:hover:not(:disabled) {
+  background: white;
+  border-color: rgba(255, 255, 255, 0.8);
+}
+
+.navbar-state-select:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.8);
+  background: white;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+}
+
+.navbar-state-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .navbar-admin-button {
   padding: 0.5rem 1rem;
   background: rgba(255, 255, 255, 0.2);

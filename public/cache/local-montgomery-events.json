@@ -1,9 +1,9 @@
 {
   "data": [
     {
-      "id": "montgomery-70",
+      "id": "montgomery-62",
       "name": "Personnel Board Meeting",
-      "date": "2025-12-21",
+      "date": "2025-12-24",
       "time": "Time TBD",
       "location": "Montgomery City Hall",
       "committee": "City Council",
@@ -14,12 +14,15 @@
       "zipCode": null,
       "city": "Montgomery",
       "state": "AL",
-      "url": "https://www.montgomeryal.gov/Home/Components/Calendar/Event/10880/17"
+      "url": "https://www.montgomeryal.gov/Home/Components/Calendar/Event/10880/17",
+      "docketUrl": null,
+      "virtualMeetingUrl": null,
+      "description": null
     },
     {
       "id": "montgomery-172",
       "name": "Public Art Commission",
-      "date": "2025-12-21",
+      "date": "2025-12-24",
       "time": "Time TBD",
       "location": "Montgomery City Hall",
       "committee": "City Council",
@@ -30,12 +33,15 @@
       "zipCode": null,
       "city": "Montgomery",
       "state": "AL",
-      "url": "https://www.montgomeryal.gov/play/public-art-commission"
+      "url": "https://www.montgomeryal.gov/play/public-art-commission",
+      "docketUrl": null,
+      "virtualMeetingUrl": null,
+      "description": null
     },
     {
       "id": "montgomery-213",
       "name": "City Council",
-      "date": "2025-12-21",
+      "date": "2025-12-24",
       "time": "Time TBD",
       "location": "Montgomery City Hall",
       "committee": "City Council",
@@ -46,12 +52,15 @@
       "zipCode": null,
       "city": "Montgomery",
       "state": "AL",
-      "url": "https://www.montgomeryal.gov/government/city-government/city-council"
+      "url": "https://www.montgomeryal.gov/government/city-government/city-council",
+      "docketUrl": null,
+      "virtualMeetingUrl": null,
+      "description": null
     },
     {
       "id": "montgomery-250",
       "name": "Montgomery Military & Veterans Commission",
-      "date": "2025-12-21",
+      "date": "2025-12-24",
       "time": "Time TBD",
       "location": "Montgomery City Hall",
       "committee": "City Council",
@@ -62,12 +71,15 @@
       "zipCode": null,
       "city": "Montgomery",
       "state": "AL",
-      "url": "https://www.montgomeryal.gov/government/city-government/mayor-s-office/montgomery-military-veterans-commission"
+      "url": "https://www.montgomeryal.gov/government/city-government/mayor-s-office/montgomery-military-veterans-commission",
+      "docketUrl": null,
+      "virtualMeetingUrl": null,
+      "description": null
     },
     {
       "id": "montgomery-251",
       "name": "Mayor's Young Professional Council",
-      "date": "2025-12-21",
+      "date": "2025-12-24",
       "time": "Time TBD",
       "location": "Montgomery City Hall",
       "committee": "City Council",
@@ -78,12 +90,15 @@
       "zipCode": null,
       "city": "Montgomery",
       "state": "AL",
-      "url": "https://www.montgomeryal.gov/government/city-government/mayor-s-office/mayor-s-young-professional-council"
+      "url": "https://www.montgomeryal.gov/government/city-government/mayor-s-office/mayor-s-young-professional-council",
+      "docketUrl": null,
+      "virtualMeetingUrl": null,
+      "description": null
     },
     {
       "id": "montgomery-272",
       "name": "Public Meeting Videos",
-      "date": "2025-12-21",
+      "date": "2025-12-24",
       "time": "Time TBD",
       "location": "Montgomery City Hall",
       "committee": "City Council",
@@ -94,12 +109,15 @@
       "zipCode": null,
       "city": "Montgomery",
       "state": "AL",
-      "url": "https://www.montgomeryal.gov/government/stay-informed/video-library/public-meeting-videos"
+      "url": "https://www.montgomeryal.gov/government/stay-informed/video-library/public-meeting-videos",
+      "docketUrl": null,
+      "virtualMeetingUrl": null,
+      "description": null
     },
     {
       "id": "montgomery-279",
       "name": "For Boards and Commissions",
-      "date": "2025-12-21",
+      "date": "2025-12-24",
       "time": "Time TBD",
       "location": "Montgomery City Hall",
       "committee": "City Council",
@@ -110,12 +128,15 @@
       "zipCode": null,
       "city": "Montgomery",
       "state": "AL",
-      "url": "https://www.montgomeryal.gov/how-do-i/apply-for/for-boards-and-commissions"
+      "url": "https://www.montgomeryal.gov/how-do-i/apply-for/for-boards-and-commissions",
+      "docketUrl": null,
+      "virtualMeetingUrl": null,
+      "description": null
     },
     {
       "id": "montgomery-328",
       "name": "For Boards and Commissions",
-      "date": "2025-12-21",
+      "date": "2025-12-24",
       "time": "Time TBD",
       "location": "Montgomery City Hall",
       "committee": "City Council",
@@ -126,12 +147,15 @@
       "zipCode": null,
       "city": "Montgomery",
       "state": "AL",
-      "url": "https://www.montgomeryal.gov/how-do-i/volunteer/for-boards-and-commissions"
+      "url": "https://www.montgomeryal.gov/how-do-i/volunteer/for-boards-and-commissions",
+      "docketUrl": null,
+      "virtualMeetingUrl": null,
+      "description": null
     },
     {
       "id": "montgomery-334",
       "name": "City Council Meetings",
-      "date": "2025-12-21",
+      "date": "2025-12-24",
       "time": "Time TBD",
       "location": "Montgomery City Hall",
       "committee": "City Council",
@@ -142,12 +166,15 @@
       "zipCode": null,
       "city": "Montgomery",
       "state": "AL",
-      "url": "https://www.montgomeryal.gov/how-do-i/watch/city-council-meetings"
+      "url": "https://www.montgomeryal.gov/how-do-i/watch/city-council-meetings",
+      "docketUrl": null,
+      "virtualMeetingUrl": null,
+      "description": null
     },
     {
       "id": "montgomery-340",
       "name": "Meetings",
-      "date": "2025-12-21",
+      "date": "2025-12-24",
       "time": "Time TBD",
       "location": "Montgomery City Hall",
       "committee": "City Council",
@@ -158,9 +185,12 @@
       "zipCode": null,
       "city": "Montgomery",
       "state": "AL",
-      "url": "https://www.montgomeryal.gov/government/city-government/city-calendar"
+      "url": "https://www.montgomeryal.gov/government/city-government/city-calendar",
+      "docketUrl": null,
+      "virtualMeetingUrl": null,
+      "description": null
     }
   ],
-  "timestamp": 1766324595592,
-  "expiresAt": 1766410995592
+  "timestamp": 1766583435392,
+  "expiresAt": 1766669835392
 }

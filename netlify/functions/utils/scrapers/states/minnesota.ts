@@ -43,9 +43,19 @@ export class MinnesotaScraper extends BaseScraper {
   getCalendarSources(): { name: string; url: string; description: string }[] {
     return [
       {
+        name: 'Minnesota Legislature Calendar',
+        url: 'https://www.leg.mn.gov/cal.aspx?type=all',
+        description: 'Combined House, Senate, and Joint committee meetings'
+      },
+      {
         name: 'Minnesota House Schedules',
         url: 'https://www.house.mn.gov/schedules/',
         description: 'House committee and floor session schedules'
+      },
+      {
+        name: 'Minnesota Senate Calendar',
+        url: 'https://www.senate.mn/schedule/',
+        description: 'Senate committee and floor session schedules'
       }
     ];
   }
@@ -101,8 +111,21 @@ export class MinnesotaScraper extends BaseScraper {
         }
       }
 
-      this.log(`✓ Successfully scraped ${events.length} events`);
-      return events;
+      // Filter out past events
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const upcomingEvents = events.filter(event => {
+        const eventDate = new Date(event.date);
+        if (eventDate >= today) {
+          return true;
+        } else {
+          this.log(`Skipping past event: ${event.name} on ${event.date}`);
+          return false;
+        }
+      });
+
+      this.log(`✓ Successfully scraped ${upcomingEvents.length} upcoming events`);
+      return upcomingEvents;
     } catch (error) {
       const message = `Failed to scrape Minnesota: ${error instanceof Error ? error.message : 'Unknown'}`;
       this.log(message);
@@ -233,7 +256,7 @@ export class MinnesotaScraper extends BaseScraper {
       // Generate unique ID
       const eventId = `mn-${dateTime.getTime()}-${ref.id}`;
 
-      return {
+      const rawEvent = {
         id: eventId,
         name: ref.committee,
         date: dateTime.toISOString(),
@@ -253,6 +276,9 @@ export class MinnesotaScraper extends BaseScraper {
         url: `https://www.leg.mn.gov/cal?type=single&mtgid=${ref.id}`,
         bills: bills.length > 0 ? bills : undefined
       };
+
+      // Apply auto-tagging
+      return enrichEventMetadata(rawEvent);
     } catch (error) {
       this.log(`Error parsing details for ${ref.id}: ${error instanceof Error ? error.message : 'Unknown'}`);
       return null;

@@ -65,41 +65,62 @@ export class IllinoisScraper extends BaseScraper {
 
   private async scrapeChamber(chamber: 'senate' | 'house'): Promise<RawEvent[]> {
     const events: RawEvent[] = [];
-    const url = chamber === 'senate' 
-      ? 'https://www.ilga.gov/senate/schedules/'
-      : 'https://www.ilga.gov/house/schedules/';
-
-    this.log(`🌐 Fetching ${chamber} page`, { url, attempt: 1 });
     
-    const html = await this.fetchPage(url);
-    this.log(`✅ Page fetched`, { url, size: `${Math.round(html.length / 1024)}KB`, status: 200 });
-
-    const $ = parseHTML(html);
+    // Illinois uses an API - determine chamber ID and GA ID
+    const chamberId = chamber === 'senate' ? '2' : '1';
+    const gaId = '104'; // 104th General Assembly (current session)
     
-    // Parse Illinois hearing schedule table
-    $('.schedule-table tr, table tr').each((_, row) => {
-      const $row = $(row);
-      const cells = $row.find('td');
+    // Get hearings for next 90 days
+    const today = new Date();
+    const endDate = new Date();
+    endDate.setDate(endDate.getDate() + 90);
+    
+    const beginDateStr = `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()}`;
+    const endDateStr = `${endDate.getMonth() + 1}/${endDate.getDate()}/${endDate.getFullYear()}`;
+    
+    const apiUrl = `https://www.ilga.gov/API/Hearings/GetHearingsListByRange?ChamberId=${chamberId}&GaId=${gaId}&BeginDate=${beginDateStr}&EndDate=${endDateStr}`;
+    
+    this.log(`🌐 Fetching ${chamber} hearings from API`, { url: apiUrl });
+    
+    try {
+      const response = await fetch(apiUrl, {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'Mozilla/5.0'
+        }
+      });
       
-      if (cells.length >= 3) {
-        const committee = cells.eq(0).text().trim();
-        const dateText = cells.eq(1).text().trim();
-        const timeText = cells.eq(2).text().trim();
-        const location = cells.eq(3)?.text().trim() || `Illinois State Capitol`;
+      if (!response.ok) {
+        this.log(`❌ API request failed`, { status: response.status });
+        return events;
+      }
+      
+      const hearings = await response.json();
+      this.log(`✅ API returned ${hearings.length} hearings`);
+      
+      for (const hearing of hearings) {
+        // Parse date/time from scheduledDateTime (e.g., "12/21/2025 10:00 AM")
+        const dateTimeMatch = hearing.scheduledDateTime?.match(/(\d{1,2}\/\d{1,2}\/\d{4})\s+(\d{1,2}:\d{2}\s+[AP]M)/);
         
-        if (committee && dateText && dateText.match(/\d{1,2}\/\d{1,2}\/\d{4}/)) {
+        if (dateTimeMatch) {
+          const [, dateStr, timeStr] = dateTimeMatch;
+          const location = `${hearing.room || 'Room TBD'} - ${hearing.building || 'State House'} - ${hearing.city || 'Springfield'}`;
+          
           events.push({
-            name: committee,
-            date: this.parseDate(dateText),
-            time: this.parseTime(timeText),
-            location: location || 'Illinois State Capitol',
-            committee: `IL ${chamber === 'senate' ? 'Senate' : 'House'} - ${committee}`,
+            name: hearing.longDescription || hearing.textLine || 'Committee Hearing',
+            date: this.parseDate(dateStr),
+            time: timeStr,
+            location: location.trim(),
+            committee: `IL ${chamber === 'senate' ? 'Senate' : 'House'} - ${hearing.longDescription || 'Committee'}`,
             type: 'hearing',
-            detailsUrl: url
+            detailsUrl: `https://ilga.gov/${chamber}/hearings/details/${hearing.committeeID}/${hearing.hearingID}`
           });
         }
       }
-    });
+      
+    } catch (error) {
+      this.log(`❌ Error fetching ${chamber} API:`, error);
+    }
     
     this.log(`✅ ${chamber} calendar scraped`, { events: events.length });
     return events;

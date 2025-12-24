@@ -243,8 +243,20 @@ export class ColoradoScraper extends BaseScraper {
       });
     });
 
-    console.log(`Found ${events.length} Colorado committee meetings`);
-    return events;
+    // Filter out past events (reuse existing 'now' variable from line 161)
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const upcomingEvents = events.filter(event => {
+      const eventDate = new Date(event.date);
+      if (eventDate >= today) {
+        return true;
+      } else {
+        console.log(`Skipping past event: ${event.name} on ${event.date}`);
+        return false;
+      }
+    });
+
+    console.log(`Found ${upcomingEvents.length} upcoming Colorado committee meetings`);
+    return upcomingEvents;
   }
 
   /**

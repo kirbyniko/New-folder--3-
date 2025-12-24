@@ -1,0 +1,22 @@
+{
+  "data": [
+    {
+      "id": "legistar-naperville-3658",
+      "name": "Human Rights and Fair Housing Commission",
+      "date": "2026-01-05T00:00:00",
+      "time": "6:30 PM",
+      "location": "Meeting Room C",
+      "committee": "Human Rights and Fair Housing Commission",
+      "type": "meeting",
+      "level": "local",
+      "lat": 41.7508,
+      "lng": -88.1535,
+      "zipCode": null,
+      "city": "Naperville",
+      "state": "IL",
+      "url": "https://naperville.legistar.com/MeetingDetail.aspx?LEGID=3658&GID=682&G=A3C0667C-247A-4300-AD02-03FAB1F3968C"
+    }
+  ],
+  "timestamp": 1766502625089,
+  "expiresAt": 1766589025089
+}

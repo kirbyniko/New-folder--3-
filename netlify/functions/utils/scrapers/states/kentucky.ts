@@ -134,7 +134,21 @@ export class KentuckyScraper extends BaseScraper {
 
     console.log(`[SCRAPER:KY] Found ${events.length} Kentucky meetings`);
 
-    return events.map(event => this.convertEventToRaw(event));
+    // Filter out past events before converting
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const upcomingEvents = events.filter(event => {
+      const eventDate = new Date(event.date);
+      if (eventDate >= today) {
+        return true;
+      } else {
+        console.log(`[SCRAPER:KY] Skipping past event: ${event.committee} on ${event.date}`);
+        return false;
+      }
+    });
+
+    console.log(`[SCRAPER:KY] Returning ${upcomingEvents.length} upcoming meetings`);
+    return upcomingEvents.map(event => this.convertEventToRaw(event));
   }
 
   private convertEventToRaw(event: KentuckyEvent): RawEvent {

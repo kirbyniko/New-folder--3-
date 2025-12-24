@@ -4,16 +4,20 @@
  * Stores scraped data as JSON files in /public/cache
  * Persists across server restarts - perfect for development
  * 24-hour TTL to ensure data freshness
+ * 
+ * SECURITY: Uses HMAC signatures to prevent cache poisoning
  */
 
 import * as fs from 'fs';
 import * as path from 'path';
+import * as crypto from 'crypto';
 
 export interface CacheEntry<T> {
   data: T;
   timestamp: number;
   expiresAt: number;
   state?: string;
+  signature?: string; // HMAC signature for integrity
 }
 
 export interface CacheStats {
@@ -27,11 +31,38 @@ class CacheManagerClass {
   private cacheDir: string;
   private hits: number = 0;
   private misses: number = 0;
+  private readonly CACHE_SECRET: string;
 
   constructor() {
     // Use public/cache for persistence (works in dev and production)
     this.cacheDir = path.join(process.cwd(), 'public', 'cache');
+    this.CACHE_SECRET = process.env.CACHE_HMAC_SECRET || 
+                        'dev-secret-' + (process.env.NETLIFY_DEV || 'local');
     this.ensureCacheDir();
+  }
+
+  /**
+   * Generate HMAC signature for cache data
+   */
+  private sign(data: string): string {
+    return crypto.createHmac('sha256', this.CACHE_SECRET)
+      .update(data)
+      .digest('hex');
+  }
+
+  /**
+   * Verify HMAC signature
+   */
+  private verify(data: string, signature: string): boolean {
+    try {
+      const expected = this.sign(data);
+      return crypto.timingSafeEqual(
+        Buffer.from(signature, 'hex'),
+        Buffer.from(expected, 'hex')
+      );
+    } catch {
+      return false;
+    }
   }
 
   private ensureCacheDir(): void {
@@ -65,6 +96,17 @@ class CacheManagerClass {
       const fileContent = fs.readFileSync(filePath, 'utf-8');
       const entry: CacheEntry<T> = JSON.parse(fileContent);
 
+      // SECURITY: Verify signature if present
+      if (entry.signature) {
+        const dataStr = JSON.stringify(entry.data);
+        if (!this.verify(dataStr, entry.signature)) {
+          console.error(`⚠️ Cache integrity check failed for key: ${key}`);
+          fs.unlinkSync(filePath); // Delete corrupted cache
+          this.misses++;
+          return null;
+        }
+      }
+
       // Check if expired
       if (Date.now() > entry.expiresAt) {
         fs.unlinkSync(filePath);
@@ -95,10 +137,15 @@ class CacheManagerClass {
    * Set item in cache with TTL (time-to-live in seconds)
    */
   set<T>(key: string, data: T, ttlSeconds: number = 86400): void {
+    // SECURITY: Generate HMAC signature
+    const dataStr = JSON.stringify(data);
+    const signature = this.sign(dataStr);
+    
     const entry: CacheEntry<T> = {
       data,
       timestamp: Date.now(),
-      expiresAt: Date.now() + (ttlSeconds * 1000)
+      expiresAt: Date.now() + (ttlSeconds * 1000),
+      signature // Include HMAC signature for integrity
     };
 
     const filePath = this.getCacheFilePath(key);

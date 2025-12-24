@@ -6,6 +6,15 @@ import { getPool } from './utils/db/connection.js';
  * For data integrity verification
  */
 export const handler: Handler = async (event, context) => {
+  // SECURITY: Disable in production - this endpoint exposes entire database
+  // For production, implement proper authentication (Netlify Identity, API keys, etc.)
+  if (process.env.NETLIFY && !process.env.NETLIFY_DEV) {
+    return {
+      statusCode: 404,
+      body: JSON.stringify({ error: 'Not found' })
+    };
+  }
+
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type',
@@ -28,6 +37,24 @@ export const handler: Handler = async (event, context) => {
   try {
     const pool = getPool();
     const params = event.queryStringParameters || {};
+    
+    // SECURITY: Whitelist allowed filter columns to prevent SQL injection
+    const ALLOWED_FILTERS = ['state', 'level', 'date', 'startDate', 'endDate'];
+    const invalidFilters = Object.keys(params).filter(
+      key => !['limit', 'offset', ...ALLOWED_FILTERS].includes(key)
+    );
+    
+    if (invalidFilters.length > 0) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ 
+          error: 'Invalid filter parameters',
+          invalid: invalidFilters,
+          allowed: ALLOWED_FILTERS
+        }),
+      };
+    }
     
     // Build query with filters
     let whereConditions: string[] = [];
@@ -141,6 +168,20 @@ export const handler: Handler = async (event, context) => {
     const countResult = await pool.query(countQuery, queryParams.slice(0, -2));
     const totalCount = parseInt(countResult.rows[0].count);
 
+    // Get global stats for bills, tags, and participation
+    const statsQuery = `
+      SELECT 
+        COUNT(DISTINCT CASE WHEN eb.bill_id IS NOT NULL THEN e.id END) as with_bills,
+        COUNT(DISTINCT CASE WHEN et.tag IS NOT NULL THEN e.id END) as with_tags,
+        COUNT(DISTINCT CASE WHEN e.allows_public_participation = true THEN e.id END) as with_participation
+      FROM events e
+      LEFT JOIN event_bills eb ON e.id = eb.event_id
+      LEFT JOIN event_tags et ON e.id = et.event_id
+      ${whereClause}
+    `;
+    
+    const statsResult = await pool.query(statsQuery, queryParams.slice(0, -2));
+
     // Clean up the data - filter out null bills and tags
     const cleanedEvents = result.rows.map(event => ({
       ...event,
@@ -165,6 +206,11 @@ export const handler: Handler = async (event, context) => {
           date: params.date || null,
           startDate: params.startDate || null,
           endDate: params.endDate || null
+        },
+        stats: {
+          withBills: parseInt(statsResult.rows[0].with_bills),
+          withTags: parseInt(statsResult.rows[0].with_tags),
+          withParticipation: parseInt(statsResult.rows[0].with_participation)
         }
       }),
     };

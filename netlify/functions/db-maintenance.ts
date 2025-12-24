@@ -11,11 +11,28 @@ import { ScraperRegistry } from './utils/scrapers/index.js';
 import { insertEvent, insertBills, insertTags } from './utils/db/events.js';
 
 export const handler: Handler = async (event) => {
+  // SECURITY: Disable in production - use Netlify CLI for maintenance
+  if (process.env.NETLIFY && !process.env.NETLIFY_DEV) {
+    return {
+      statusCode: 404,
+      body: JSON.stringify({ error: 'Not found' })
+    };
+  }
+
   const action = event.queryStringParameters?.action;
   const apiKey = event.queryStringParameters?.key;
   
-  // Basic security - check for API key
-  if (apiKey !== process.env.DB_MAINTENANCE_KEY) {
+  // Require strong API key (min 32 characters)
+  const maintenanceKey = process.env.DB_MAINTENANCE_KEY;
+  if (!maintenanceKey || maintenanceKey.length < 32) {
+    console.error('⚠️ DB_MAINTENANCE_KEY not set or too weak (min 32 chars)');
+    return {
+      statusCode: 503,
+      body: JSON.stringify({ error: 'Service unavailable - maintenance key not configured' })
+    };
+  }
+  
+  if (!apiKey || apiKey !== maintenanceKey) {
     return {
       statusCode: 401,
       body: JSON.stringify({ error: 'Unauthorized' })
@@ -66,15 +83,11 @@ async function resetAndRescrape() {
       log.push(`  Found ${events.length} events`);
       
       for (const evt of events) {
+        // insertEvent now auto-generates and inserts tags
         const eventId = await insertEvent(evt, `scraper-${state.toLowerCase()}`);
         
         if (evt.bills?.length) {
           await insertBills(eventId, evt.bills, state);
-        }
-        
-        if (evt.tags?.length) {
-          await insertTags(eventId, evt.tags);
-          totalTags += evt.tags.length;
         }
         
         if ((evt as any).allowsPublicParticipation) {

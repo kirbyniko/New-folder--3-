@@ -1,7 +1,7 @@
 import { schedule } from '@netlify/functions';
 import { getStore } from '@netlify/blobs';
 import { ScraperRegistry, initializeScrapers } from './utils/scrapers/index.js';
-import { insertEvent, insertBills, insertTags, logScraperHealth, getTop100EventsToday } from './utils/db/events.js';
+import { insertEvent, insertBills, logScraperHealth, getTop100EventsToday, getAllStateEventsForExport } from './utils/db/events.js';
 import { checkDatabaseConnection } from './utils/db/connection.js';
 
 /**
@@ -68,11 +68,13 @@ const scheduledScraper = async () => {
 
     console.log(`📋 Scraping ${states.length} states...`);
     
-    // Process states in batches to avoid rate limits
-    const batchSize = 3;
+    // Process states in batches to avoid overwhelming the system
+    // Increased from 3 to 10 for faster execution
+    const batchSize = 10;
     
     for (let i = 0; i < states.length; i += batchSize) {
       const batch = states.slice(i, i + batchSize);
+      console.log(`\n🔄 Processing batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(states.length/batchSize)}: ${batch.join(', ')}`);
       
       await Promise.all(batch.map(async (state) => {
         const scraper = ScraperRegistry.get(state);
@@ -99,26 +101,7 @@ const scheduledScraper = async () => {
           const events = await scraper.scrape();
           const scrapeDuration = Date.now() - scrapeStart;
           
-          // Store in blob (PRIMARY)
-          await store.set(`state-${state}`, JSON.stringify({
-            state,
-            events: events,
-            count: events.length,
-            source: 'scheduled-scraper',
-            lastUpdated: timestamp
-          }), {
-            metadata: {
-              state,
-              count: String(events.length),
-              timestamp
-            }
-          });
-          
-          results.states[state] = { count: events.length };
-          results.successCount++;
-          console.log(`✅ ${state}: ${events.length} events stored in Blobs`);
-          
-          // Write to PostgreSQL (SECONDARY - non-blocking)
+          // Write to PostgreSQL FIRST (PRIMARY - Source of Truth)
           if (usePostgres && dbAvailable) {
             try {
               console.log(`📊 ${state}: Writing to PostgreSQL...`);
@@ -126,15 +109,12 @@ const scheduledScraper = async () => {
               
               for (const event of events) {
                 try {
+                  // insertEvent now auto-generates and inserts tags
                   const eventId = await insertEvent(event, `scraper-${state.toLowerCase()}`);
                   dbEventCount++;
                   
                   if (event.bills && event.bills.length > 0) {
                     await insertBills(eventId, event.bills, state);
-                  }
-                  
-                  if (event.tags && event.tags.length > 0) {
-                    await insertTags(eventId, event.tags);
                   }
                 } catch (eventErr: any) {
                   console.error(`❌ ${state}: Error inserting event "${event.name}":`, eventErr.message);
@@ -144,11 +124,75 @@ const scheduledScraper = async () => {
               await logScraperHealth(state, state, 'success', dbEventCount, undefined, scrapeDuration);
               results.dbWrites += dbEventCount;
               console.log(`✅ ${state}: ${dbEventCount} events written to PostgreSQL`);
+              
+              // Now export FROM database to blobs (SECONDARY - Frontend Cache)
+              console.log(`📦 ${state}: Exporting from DB to Blobs...`);
+              const dbEvents = await getAllStateEventsForExport(state);
+              
+              await store.set(`state-${state}`, JSON.stringify({
+                state,
+                events: dbEvents,
+                count: dbEvents.length,
+                source: 'postgresql-export',
+                lastUpdated: timestamp
+              }), {
+                metadata: {
+                  state,
+                  count: String(dbEvents.length),
+                  timestamp,
+                  source: 'postgresql'
+                }
+              });
+              
+              results.states[state] = { count: dbEvents.length };
+              results.successCount++;
+              console.log(`✅ ${state}: ${dbEvents.length} events exported to Blobs from PostgreSQL`);
+              
             } catch (dbErr: any) {
               results.dbErrors++;
-              console.error(`❌ ${state}: PostgreSQL write failed:`, dbErr.message);
+              console.error(`❌ ${state}: PostgreSQL write/export failed:`, dbErr.message);
               await logScraperHealth(state, state, 'failure', 0, dbErr.message, scrapeDuration);
+              
+              // Fallback: Store scraped data directly if DB fails
+              await store.set(`state-${state}`, JSON.stringify({
+                state,
+                events: events,
+                count: events.length,
+                source: 'scraper-fallback',
+                lastUpdated: timestamp,
+                error: 'Database unavailable, using direct scrape'
+              }), {
+                metadata: {
+                  state,
+                  count: String(events.length),
+                  timestamp,
+                  source: 'fallback'
+                }
+              });
+              
+              results.states[state] = { count: events.length };
+              results.successCount++;
+              console.log(`⚠️  ${state}: ${events.length} events stored via fallback`);
             }
+          } else {
+            // No database - fallback to direct blob storage
+            await store.set(`state-${state}`, JSON.stringify({
+              state,
+              events: events,
+              count: events.length,
+              source: 'scraper-no-db',
+              lastUpdated: timestamp
+            }), {
+              metadata: {
+                state,
+                count: String(events.length),
+                timestamp
+              }
+            });
+            
+            results.states[state] = { count: events.length };
+            results.successCount++;
+            console.log(`✅ ${state}: ${events.length} events stored in Blobs (no DB)`);
           }
           
         } catch (error: any) {

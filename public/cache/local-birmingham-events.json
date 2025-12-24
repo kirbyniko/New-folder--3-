@@ -1,25 +1,6 @@
 {
   "data": [
     {
-      "id": "birmingham-bham-29-1",
-      "name": "BUDGET AND FINANCE COMMITTEE MEETING, 12.22.2025",
-      "date": "2025-12-22",
-      "time": "3:30 PM",
-      "location": "Birmingham City Hall",
-      "committee": "City Council",
-      "type": "city-council",
-      "level": "local",
-      "lat": 33.5186,
-      "lng": -86.8104,
-      "zipCode": null,
-      "city": "Birmingham",
-      "state": "AL",
-      "url": "https://www.birminghamal.gov/events/2025-12-22budget-finance-committee-meeting-12222025",
-      "docketUrl": null,
-      "virtualMeetingUrl": null,
-      "description": null
-    },
-    {
       "id": "birmingham-bham-30-1",
       "name": "BIRMINGHAM CITY COUNCIL MEETING, 12.23.2025",
       "date": "2025-12-23",
@@ -77,6 +58,6 @@
       "description": null
     }
   ],
-  "timestamp": 1766324589923,
-  "expiresAt": 1766410989923
+  "timestamp": 1766583418886,
+  "expiresAt": 1766669818886
 }

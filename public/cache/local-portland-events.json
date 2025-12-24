@@ -230,25 +230,6 @@
     },
     {
       "id": "portland-1768453200000-12",
-      "name": "Labor and Workforce Development Committee Meeting",
-      "date": "2026-01-15T05:00:00.000Z",
-      "time": "12:00 PM",
-      "location": "City Council Chambers, City Hall",
-      "committee": "Labor and Workforce Development Committee Meeting",
-      "type": "Committee Meeting",
-      "level": "local",
-      "lat": 45.5152,
-      "lng": -122.6784,
-      "zipCode": null,
-      "city": "Portland",
-      "state": "OR",
-      "url": "https://www.portland.gov/auditor/council-clerk/events/2026/1/15/labor-and-workforce-development-committee-meeting",
-      "docketUrl": null,
-      "virtualMeetingUrl": null,
-      "description": "Portland Committee Meeting"
-    },
-    {
-      "id": "portland-1768453200000-13",
       "name": "City Council Work Session",
       "date": "2026-01-15T05:00:00.000Z",
       "time": "2:30 PM",
@@ -265,6 +246,25 @@
       "docketUrl": null,
       "virtualMeetingUrl": null,
       "description": "Portland Work Session"
+    },
+    {
+      "id": "portland-1768539600000-13",
+      "name": "Labor and Workforce Development Committee Meeting",
+      "date": "2026-01-16T05:00:00.000Z",
+      "time": "9:30 AM",
+      "location": "City Council Chambers, City Hall",
+      "committee": "Labor and Workforce Development Committee Meeting",
+      "type": "Committee Meeting",
+      "level": "local",
+      "lat": 45.5152,
+      "lng": -122.6784,
+      "zipCode": null,
+      "city": "Portland",
+      "state": "OR",
+      "url": "https://www.portland.gov/auditor/council-clerk/events/2026/1/16/labor-and-workforce-development-committee-meeting",
+      "docketUrl": null,
+      "virtualMeetingUrl": null,
+      "description": "Portland Committee Meeting"
     },
     {
       "id": "portland-1768971600000-14",
@@ -894,6 +894,6 @@
       "description": "Portland City Council Meeting"
     }
   ],
-  "timestamp": 1766324823967,
-  "expiresAt": 1766411223967
+  "timestamp": 1766583606626,
+  "expiresAt": 1766670006626
 }

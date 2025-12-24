@@ -1,22 +1,55 @@
 .data-viewer {
   padding: 2rem;
-  max-width: 1400px;
+  max-width: 1600px;
   margin: 0 auto;
+  background: #f8f9fa;
+  min-height: 100vh;
 }
 
 .viewer-header {
   margin-bottom: 2rem;
+  text-align: center;
 }
 
 .viewer-header h1 {
   margin: 0 0 0.5rem 0;
   color: #1a1a1a;
+  font-size: 2.5rem;
 }
 
 .viewer-header .subtitle {
   color: #666;
-  font-size: 0.95rem;
+  font-size: 1.1rem;
   margin: 0;
+}
+
+.viewer-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.viewer-tabs .tab-button {
+  padding: 1rem 2rem;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #666;
+}
+
+.viewer-tabs .tab-button:hover {
+  background: rgba(0, 123, 255, 0.05);
+  color: #007bff;
+}
+
+.viewer-tabs .tab-button.active {
+  color: #007bff;
+  border-bottom-color: #007bff;
 }
 
 .filters {
@@ -24,15 +57,18 @@
   gap: 1rem;
   margin-bottom: 2rem;
   padding: 1.5rem;
-  background: #f5f5f5;
+  background: white;
   border-radius: 8px;
   flex-wrap: wrap;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .filter-group {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  flex: 1;
+  min-width: 200px;
 }
 
 .filter-group label {
@@ -49,59 +85,156 @@
   font-size: 0.9rem;
 }
 
-.filters button {
+.search-input {
+  min-width: 300px !important;
+}
+
+.clear-button {
   align-self: flex-end;
-  padding: 0.5rem 1rem;
-  background: #007bff;
+  padding: 0.5rem 1.5rem;
+  background: #6c757d;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s;
 }
 
-.filters button:hover {
-  background: #0056b3;
+.clear-button:hover {
+  background: #5a6268;
 }
 
-.stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 1rem;
-  margin-bottom: 2rem;
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: #f8f9fa;
+  border-bottom: 2px solid #e0e0e0;
 }
 
-.stat-card {
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 1.5rem;
-  text-align: center;
+.table-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
 }
 
-.stat-value {
-  font-size: 2rem;
-  font-weight: bold;
-  color: #007bff;
+.sort-controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
 }
 
-.stat-label {
-  font-size: 0.85rem;
+.sort-controls span {
+  font-size: 0.9rem;
   color: #666;
-  margin-top: 0.5rem;
 }
 
-.events-table-container {
+.sort-controls button {
+  padding: 0.4rem 0.8rem;
+  background: #f8f9fa;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+
+.sort-controls button:hover {
+  background: #e9ecef;
+}
+
+.sort-controls button.active {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.events-table-container,
+.bills-table-container {
   overflow-x: auto;
   background: white;
-  border: 1px solid #e0e0e0;
   border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.events-table {
+.events-table,
+.bills-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.9rem;
+}
+
+.events-table th,
+.bills-table th {
+  background: #f8f9fa;
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #333;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.events-table td,
+.bills-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.events-table tbody tr:hover,
+.bills-table tbody tr:hover {
+  background: #f8f9fa;
+}
+
+.bill-number-cell {
+  font-weight: 700;
+  color: #007bff;
+  font-size: 0.95rem;
+}
+
+.bill-title-cell {
+  max-width: 400px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.event-name-cell {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bill-link {
+  color: #007bff;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 0.3rem 0.8rem;
+  border-radius: 4px;
+  transition: all 0.2s;
+  display: inline-block;
+}
+
+.bill-link:hover {
+  background: #007bff;
+  color: white;
+}
+
+.no-results {
+  text-align: center;
+  padding: 3rem;
+  color: #999;
+  font-size: 1.1rem;
+  font-style: italic;
+}
+
+.tag-icon {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  margin: 0 0.2rem;
+  background: #e9ecef;
+  border-radius: 4px;
+  font-size: 0.75rem;
 }
 
 .events-table th {
@@ -145,7 +278,8 @@
 }
 
 .name-cell {
-  max-width: 400px;
+  min-width: 400px;
+  max-width: 600px;
 }
 
 .event-name {
@@ -166,12 +300,18 @@
   margin-bottom: 0.25rem;
 }
 
-.description {
-  font-size: 0.85rem;
-  color: #777;
-  margin-top: 0.5rem;
-  line-height: 1.4;
-  font-style: italic;
+.event-description {
+  font-size: 0.95rem;
+  color: #333;
+  margin-top: 0.75rem;
+  line-height: 1.6;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-left: 3px solid #007bff;
+  border-radius: 4px;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .state-badge {
@@ -238,6 +378,13 @@
   color: #333;
 }
 
+.tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
 .tag {
   display: inline-flex;
   align-items: center;
@@ -246,15 +393,7 @@
   border-radius: 6px;
   font-size: 0.8rem;
   font-weight: 500;
-  margin-right: 0.4rem;
-  margin-bottom: 0.4rem;
   white-space: nowrap;
-}
-
-.tags-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
 }
 
 .more {

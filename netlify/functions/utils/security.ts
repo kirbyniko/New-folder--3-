@@ -1,4 +1,4 @@
-import * as DOMPurify from 'isomorphic-dompurify';
+import sanitizeHtml from 'sanitize-html';
 
 /**
  * Security utility to sanitize scraped HTML content
@@ -18,11 +18,6 @@ export interface SanitizeOptions {
  * @returns Safe HTML string with malicious code removed
  */
 export function sanitizeHTML(html: string, options: SanitizeOptions = {}): string {
-  // TEMPORARY: Skip sanitization in Node environment where DOMPurify doesn't work
-  // TODO: Use a proper server-side HTML sanitizer like 'sanitize-html' package
-  return html;
-  
-  /*
   const {
     allowLinks = true,
     allowFormatting = true,
@@ -31,9 +26,11 @@ export function sanitizeHTML(html: string, options: SanitizeOptions = {}): strin
 
   if (stripAll) {
     // Strip all HTML, return plain text only
-    return DOMPurify.sanitize(html, { ALLOWED_TAGS: [] });
+    return sanitizeHtml(html, { 
+      allowedTags: [], 
+      allowedAttributes: {} 
+    });
   }
-  */
 
   const allowedTags = ['p', 'br'];
   
@@ -45,12 +42,15 @@ export function sanitizeHTML(html: string, options: SanitizeOptions = {}): strin
     allowedTags.push('a');
   }
 
-  return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: allowedTags,
-    ALLOWED_ATTR: allowLinks ? ['href', 'title', 'target'] : [],
-    ALLOW_DATA_ATTR: false,
-    FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form', 'input'],
-    FORBID_ATTR: ['onerror', 'onclick', 'onload', 'onmouseover']
+  return sanitizeHtml(html, {
+    allowedTags,
+    allowedAttributes: allowLinks ? { 'a': ['href', 'title'] } : {},
+    allowedSchemes: ['http', 'https'], // Block javascript:, data:, etc.
+    allowedSchemesByTag: {
+      a: ['http', 'https']
+    },
+    disallowedTagsMode: 'discard',
+    enforceHtmlBoundary: true
   });
 }
 

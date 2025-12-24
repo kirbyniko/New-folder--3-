@@ -42,6 +42,24 @@ export class NewHampshireScraper extends BaseScraper {
   }
 
   /**
+   * Return calendar sources used by this scraper
+   */
+  getCalendarSources(): { name: string; url: string; description: string }[] {
+    return [
+      {
+        name: 'NH House Calendar',
+        url: 'https://www.gencourt.state.nh.us/house/schedule/dailyschedule.aspx',
+        description: 'Official House of Representatives meeting schedule'
+      },
+      {
+        name: 'NH Senate Calendar',
+        url: 'https://www.gencourt.state.nh.us/senate/schedule/',
+        description: 'Official Senate meeting schedule'
+      }
+    ];
+  }
+
+  /**
    * Get JSON endpoint URLs for both House and Senate calendars
    */
   protected async getPageUrls(): Promise<string[]> {

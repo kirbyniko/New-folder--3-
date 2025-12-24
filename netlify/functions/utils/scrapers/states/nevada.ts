@@ -182,10 +182,20 @@ export class NevadaScraper extends BaseScraper {
       });
       
       // Filter future events only
+      // Filter out past events (using start of day for consistency with other scrapers)
       const now = new Date();
-      const futureEvents = events.filter(e => new Date(e.date) >= now);
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const futureEvents = events.filter(e => {
+        const eventDate = new Date(e.date);
+        if (eventDate >= today) {
+          return true;
+        } else {
+          console.log(`[SCRAPER:NV] Skipping past event: ${e.name} on ${e.date}`);
+          return false;
+        }
+      });
       
-      console.log(`[SCRAPER:NV] Found ${futureEvents.length} future events (${events.length} total)`);
+      console.log(`[SCRAPER:NV] Found ${futureEvents.length} upcoming events (${events.length} total)`);
       
       // Enhance events with agenda details (async, with rate limiting)
       // Only fetch details for events that likely have useful info (first 10 upcoming)

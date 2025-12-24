@@ -104,9 +104,22 @@ export class ArizonaScraper extends BaseScraper {
         }
       }
 
-      this.log(`Converted ${events.length} Arizona agendas to events`);
+      // Filter out past events
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const upcomingEvents = events.filter(event => {
+        const eventDate = new Date(event.date);
+        if (eventDate >= today) {
+          return true;
+        } else {
+          this.log(`Skipping past event: ${event.name} on ${event.date}`);
+          return false;
+        }
+      });
+
+      this.log(`Converted ${upcomingEvents.length} upcoming Arizona agendas to events`);
       
-      return events;
+      return upcomingEvents;
     } catch (error) {
       const message = `Failed to scrape Arizona events: ${error instanceof Error ? error.message : 'Unknown error'}`;
       this.log(message);

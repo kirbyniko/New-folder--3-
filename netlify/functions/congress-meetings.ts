@@ -1,6 +1,7 @@
 import type { Handler } from '@netlify/functions';
 import { loadEnvFile } from './utils/env-loader';
 import { sanitizeEvent } from './utils/security';
+import { rateLimit } from './utils/rate-limit';
 
 interface CommitteeMeeting {
   eventId: string;
@@ -25,7 +26,12 @@ interface CommitteeMeetingsResponse {
   committeeMeetings: CommitteeMeeting[];
 }
 
-export const handler: Handler = async (event) => {
+export const handler: Handler = rateLimit(
+  {
+    windowMs: 60 * 1000, // 1 minute
+    maxRequests: 30 // 30 requests per minute per IP
+  },
+  async (event) => {
   loadEnvFile();
   const apiKey = process.env.CONGRESS_API_KEY || process.env.VITE_CONGRESS_API_KEY;
   

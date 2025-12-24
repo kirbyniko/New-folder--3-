@@ -102,8 +102,21 @@ export class AlabamaScraper extends BaseScraper {
         }
       }
 
-      this.log(`✅ Scraped ${allEvents.length} AL events from OpenStates`);
-      return allEvents;
+      // Filter out past events
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const upcomingEvents = allEvents.filter(event => {
+        const eventDate = new Date(event.date);
+        if (eventDate >= today) {
+          return true;
+        } else {
+          this.log(`Skipping past event: ${event.name} on ${event.date}`);
+          return false;
+        }
+      });
+
+      this.log(`✅ Scraped ${upcomingEvents.length} upcoming AL events from OpenStates`);
+      return upcomingEvents;
 
     } catch (error) {
       this.log(`❌ Error fetching from OpenStates: ${error instanceof Error ? error.message : error}`);
