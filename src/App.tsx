@@ -498,7 +498,7 @@ function App() {
       
       console.log('📍 After distance filter (radius:', stateRadius, 'miles) - Federal:', federalWithDistance.length, 'Local:', localWithDistance.length)
       if (validLocal.length > 0 && localWithDistance.length === 0) {
-        console.warn('⚠️ All local events filtered by distance! Closest:', Math.min(...validLocal.map(e => calculateDistance(capitol.lat, capitol.lng, e.lat, e.lng))).toFixed(1), 'miles')
+        console.warn('⚠️ All local events filtered by distance! Closest:', Math.min(...validLocal.map((e: LegislativeEvent) => calculateDistance(capitol.lat, capitol.lng, e.lat, e.lng))).toFixed(1), 'miles')
       }
       
       setFederalEvents(federalWithDistance)

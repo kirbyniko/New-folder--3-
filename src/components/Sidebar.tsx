@@ -3,7 +3,7 @@ import TagFilter from './TagFilter'
 import { SourceLinks } from './SourceLinks'
 import StateSelector from './StateSelector'
 import './Sidebar.css'
-import { LegislativeEvent } from '../types/legislative-event'
+import { LegislativeEvent } from '../types/event'
 
 interface SidebarProps {
   selectedTags: string[]

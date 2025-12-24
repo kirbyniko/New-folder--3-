@@ -293,7 +293,7 @@ export default function TabbedEvents({
                     <div className="event-detail">
                       <span className="detail-label">🔗 Source:</span>
                       <span className="detail-value">
-                        <a href={event.sourceUrl || event.url} target="_blank" rel="noopener noreferrer" className="source-link">
+                        <a href={(event.sourceUrl || event.url) ?? ''} target="_blank" rel="noopener noreferrer" className="source-link">
                           View Details
                         </a>
                       </span>

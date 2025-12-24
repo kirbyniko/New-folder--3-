@@ -23,6 +23,7 @@ export interface LegislativeEvent {
   virtualMeetingUrl?: string;   // Zoom/Teams/WebEx link for remote attendance
   bills?: Bill[];               // Bills being discussed (when available)
   sourceUrl?: string;           // URL of the page where data was scraped from
+  detailsUrl?: string;          // Link to event details page
   
   // 🆕 Public Participation
   allowsPublicParticipation?: boolean;  // Whether public comment/testimony is allowed
@@ -30,9 +31,10 @@ export interface LegislativeEvent {
 
 // 🆕 Bill information structure
 export interface Bill {
-  id: string;                   // Bill number (HB 1234, SB 567)
-  title: string;                // Bill title
-  url: string;                  // Link to full bill text
+  id?: string;                  // Bill ID
+  number?: string;              // Bill number (HB 1234, SB 567)
+  title?: string;               // Bill title
+  url?: string;                 // Link to full bill text
   status?: string;              // Current status
   sponsors?: string[];          // Bill sponsors
   tags?: string[];              // Policy area tags
