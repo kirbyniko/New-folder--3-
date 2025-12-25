@@ -1,6 +1,6 @@
 import 'dotenv/config';
 
-const url = 'https://7c205574.civitracker.pages.dev/state-events?state=CA';
+const url = 'https://67d6b663.civitracker.pages.dev/api/state-events?state=CA';
 
 console.log('🔍 Testing API:', url);
 
