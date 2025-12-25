@@ -40,16 +40,16 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  color: #666;
+  color: #666 !important;
 }
 
 .viewer-tabs .tab-button:hover {
   background: rgba(0, 123, 255, 0.05);
-  color: #007bff;
+  color: #007bff !important;
 }
 
 .viewer-tabs .tab-button.active {
-  color: #007bff;
+  color: #007bff !important;
   border-bottom-color: #007bff;
 }
 
@@ -75,7 +75,7 @@
 .filter-group label {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #555;
+  color: #555 !important;
 }
 
 .filter-group select,
@@ -129,7 +129,7 @@
 
 .sort-controls span {
   font-size: 0.9rem;
-  color: #666;
+  color: #666 !important;
 }
 
 .sort-controls button {
@@ -173,7 +173,7 @@
   padding: 1rem;
   text-align: left;
   font-weight: 600;
-  color: #333;
+  color: #333 !important; /* Force dark text */
   border-bottom: 2px solid #e0e0e0;
 }
 
@@ -181,6 +181,7 @@
 .bills-table td {
   padding: 1rem;
   border-bottom: 1px solid #f0f0f0;
+  color: #1a1a1a !important; /* Force dark text for table cells */
 }
 
 .events-table tbody tr:hover,
@@ -190,7 +191,7 @@
 
 .bill-number-cell {
   font-weight: 700;
-  color: #007bff;
+  color: #007bff !important; /* Force blue color for bill numbers */
   font-size: 0.95rem;
 }
 
@@ -198,16 +199,18 @@
   max-width: 400px;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: #1a1a1a !important; /* Force dark text */
 }
 
 .event-name-cell {
   max-width: 300px;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: #1a1a1a !important; /* Force dark text */
 }
 
 .bill-link {
-  color: #007bff;
+  color: #007bff !important;
   text-decoration: none;
   font-weight: 500;
   padding: 0.3rem 0.8rem;
@@ -218,13 +221,13 @@
 
 .bill-link:hover {
   background: #007bff;
-  color: white;
+  color: white !important;
 }
 
 .no-results {
   text-align: center;
   padding: 3rem;
-  color: #999;
+  color: #999 !important;
   font-size: 1.1rem;
   font-style: italic;
 }
@@ -243,7 +246,7 @@
   padding: 1rem 0.75rem;
   text-align: left;
   font-weight: 600;
-  color: #333;
+  color: #333 !important;
   border-bottom: 2px solid #dee2e6;
   position: sticky;
   top: 0;
@@ -267,13 +270,13 @@
 
 .event-date {
   font-weight: 600;
-  color: #1a1a1a;
+  color: #1a1a1a !important;
   font-size: 0.9rem;
 }
 
 .date-cell .time {
   font-size: 0.85rem;
-  color: #0066cc;
+  color: #0066cc !important;
   margin-top: 0.5rem;
   font-weight: 500;
 }
@@ -285,25 +288,25 @@
 
 .event-name {
   font-weight: 600;
-  color: #1a1a1a;
+  color: #1a1a1a !important;
   margin-bottom: 0.5rem;
 }
 
 .committee {
   font-size: 0.85rem;
-  color: #555;
+  color: #555 !important;
   margin-bottom: 0.25rem;
 }
 
 .location {
   font-size: 0.85rem;
-  color: #666;
+  color: #666 !important;
   margin-bottom: 0.25rem;
 }
 
 .event-description {
   font-size: 0.95rem;
-  color: #333;
+  color: #333 !important;
   margin-top: 0.75rem;
   line-height: 1.6;
   padding: 0.75rem;
@@ -319,7 +322,7 @@
   display: inline-block;
   padding: 0.25rem 0.5rem;
   background: #e7f3ff;
-  color: #0066cc;
+  color: #0066cc !important;
   border-radius: 4px;
   font-weight: 600;
   font-size: 0.85rem;
@@ -336,17 +339,17 @@
 
 .level-badge.federal {
   background: #fff3cd;
-  color: #856404;
+  color: #856404 !important;
 }
 
 .level-badge.state {
   background: #d1ecf1;
-  color: #0c5460;
+  color: #0c5460 !important;
 }
 
 .level-badge.local {
   background: #d4edda;
-  color: #155724;
+  color: #155724 !important;
 }
 
 .bills-list,
@@ -365,18 +368,18 @@
 }
 
 .bill-item a {
-  color: #0066cc;
+  color: #0066cc !important;
   text-decoration: none;
   font-weight: 500;
 }
 
 .bill-item a:hover {
   text-decoration: underline;
-  color: #004499;
+  color: #004499 !important;
 }
 
 .bill-item span {
-  color: #333;
+  color: #333 !important;
 }
 
 .tags-list {
@@ -399,7 +402,7 @@
 
 .more {
   font-size: 0.8rem;
-  color: #666;
+  color: #666 !important;
   font-style: italic;
 }
 
@@ -420,20 +423,20 @@
 
 .scraper-name {
   font-weight: 600;
-  color: #333;
+  color: #333 !important;
   font-size: 0.8rem;
   margin-bottom: 0.25rem;
 }
 
 .scraped-time {
-  color: #777;
+  color: #777 !important;
   font-size: 0.75rem;
 }
 
 .error {
   padding: 1rem;
   background: #f8d7da;
-  color: #721c24;
+  color: #721c24 !important;
   border: 1px solid #f5c6cb;
   border-radius: 4px;
 }
