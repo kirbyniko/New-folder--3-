@@ -42,60 +42,11 @@ export async function onRequest(context: any) {
       LIMIT ?
     `).bind(limit).all();
 
-    // Get all event IDs for batch queries
-    const eventIds = events.map((e: any) => e.id);
-    
-    if (eventIds.length > 0) {
-      // Batch fetch all bills for these events (single query)
-      const placeholders = eventIds.map(() => '?').join(',');
-      const { results: billResults } = await env.DB.prepare(`
-        SELECT 
-          eb.event_id,
-          b.bill_number as number,
-          b.title,
-          b.url,
-          b.summary
-        FROM bills b
-        INNER JOIN event_bills eb ON b.id = eb.bill_id
-        WHERE eb.event_id IN (${placeholders})
-      `).bind(...eventIds).all();
-      
-      // Batch fetch all tags for these events (single query)
-      const { results: tagResults } = await env.DB.prepare(`
-        SELECT event_id, tag 
-        FROM event_tags 
-        WHERE event_id IN (${placeholders})
-      `).bind(...eventIds).all();
-      
-      // Group bills and tags by event_id
-      const billsByEvent = new Map();
-      const tagsByEvent = new Map();
-      
-      for (const bill of (billResults || [])) {
-        if (!billsByEvent.has(bill.event_id)) {
-          billsByEvent.set(bill.event_id, []);
-        }
-        billsByEvent.get(bill.event_id).push(bill);
-      }
-      
-      for (const tag of (tagResults || [])) {
-        if (!tagsByEvent.has(tag.event_id)) {
-          tagsByEvent.set(tag.event_id, []);
-        }
-        tagsByEvent.get(tag.event_id).push(tag.tag);
-      }
-      
-      // Assign bills and tags to events
-      for (const event of events) {
-        event.bills = billsByEvent.get(event.id) || [];
-        event.tags = tagsByEvent.get(event.id) || [];
-      }
-    } else {
-      // No events, add empty arrays
-      for (const event of events) {
-        event.bills = [];
-        event.tags = [];
-      }
+    // Add empty bills and tags arrays (optimize: don't fetch for all events)
+    // Bills/tags can be fetched on-demand for individual events if needed
+    for (const event of events) {
+      event.bills = [];
+      event.tags = [];
     }
 
     return new Response(JSON.stringify({ events }), {
