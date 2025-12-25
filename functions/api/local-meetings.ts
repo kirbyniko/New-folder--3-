@@ -43,7 +43,11 @@ export async function onRequest(context: any) {
       SELECT 
         id, name, date, time, location_name as location, lat, lng,
         level, type, state_code as state, committee_name as committee, description,
-        source_url as sourceUrl
+        source_url as sourceUrl,
+        details_url as detailsUrl,
+        docket_url as docketUrl,
+        agenda_url as agendaUrl,
+        virtual_meeting_url as virtualMeetingUrl
       FROM events
       WHERE level = 'local'
         AND date >= date('now')

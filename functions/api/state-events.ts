@@ -44,9 +44,11 @@ export async function onRequest(context: any) {
         e.committee_name as committee,
         e.type,
         e.description,
-        e.details_url,
-        e.docket_url,
-        e.virtual_meeting_url,
+        e.details_url as detailsUrl,
+        e.source_url as sourceUrl,
+        e.docket_url as docketUrl,
+        e.agenda_url as agendaUrl,
+        e.virtual_meeting_url as virtualMeetingUrl,
         e.allows_public_participation
       FROM events e
       WHERE e.state_code = ?

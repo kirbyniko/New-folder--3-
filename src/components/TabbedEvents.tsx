@@ -38,7 +38,20 @@ export default function TabbedEvents({
   const [activeTab, setActiveTab] = useState<TabType>('all');
   const [cardLayout, setCardLayout] = useState<'compact' | 'detailed'>('compact');
   const [showSources, setShowSources] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<LegislativeEvent | null>(null);
+  const [expandedBills, setExpandedBills] = useState<Set<string>>(new Set());
+
+  const toggleBillExpansion = (eventId: string, billIndex: number) => {
+    const key = `${eventId}-${billIndex}`;
+    setExpandedBills(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(key)) {
+        newSet.delete(key);
+      } else {
+        newSet.add(key);
+      }
+      return newSet;
+    });
+  };
 
   // Filter events by selected state (if any)
   const filterByState = (events: LegislativeEvent[]) => {
@@ -305,39 +318,63 @@ export default function TabbedEvents({
                     <div className="event-detail bills-section">
                       <span className="detail-label">📋 Bills ({event.bills.length}):</span>
                       <div className="bills-list">
-                        {event.bills.slice(0, 3).map((bill, idx) => (
-                          <div key={idx} className="bill-item">
-                            <div className="bill-header">
-                              {bill.url ? (
-                                <a href={bill.url} target="_blank" rel="noopener noreferrer" className="bill-link">
-                                  {bill.id || bill.number}
-                                </a>
-                              ) : (
-                                <span className="bill-number">{bill.id || bill.number}</span>
+                        {event.bills.map((bill, idx) => {
+                          const billKey = `${event.id}-${idx}`;
+                          const isExpanded = expandedBills.has(billKey);
+                          const shouldTruncate = bill.summary && bill.summary.length > 200;
+                          
+                          return (
+                            <div key={idx} className="bill-item">
+                              <div className="bill-header">
+                                {bill.url ? (
+                                  <a href={bill.url} target="_blank" rel="noopener noreferrer" className="bill-link">
+                                    {bill.id || bill.number}
+                                  </a>
+                                ) : (
+                                  <span className="bill-number">{bill.id || bill.number}</span>
+                                )}
+                              </div>
+                              <p className="bill-title">{bill.title}</p>
+                              {bill.summary && (
+                                <div className="bill-summary-full">
+                                  <strong>AI Summary:</strong>
+                                  <p>
+                                    {shouldTruncate && !isExpanded 
+                                      ? `${bill.summary.substring(0, 200)}...` 
+                                      : bill.summary}
+                                  </p>
+                                  {shouldTruncate && (
+                                    <button 
+                                      className="read-more-btn"
+                                      onClick={() => toggleBillExpansion(event.id, idx)}
+                                    >
+                                      {isExpanded ? 'Show Less' : 'Read More'}
+                                    </button>
+                                  )}
+                                </div>
                               )}
                             </div>
-                            <p className="bill-title">{bill.title}</p>
-                            {bill.summary && (
-                              <p className="bill-summary-preview">
-                                {bill.summary.length > 100 ? `${bill.summary.substring(0, 100)}...` : bill.summary}
-                              </p>
-                            )}
-                          </div>
-                        ))}
-                        {event.bills.length > 3 && (
-                          <p className="more-bills">+{event.bills.length - 3} more bills</p>
-                        )}
+                          );
+                        })}
                       </div>
                     </div>
                   )}
                 </div>
                 
-                <button 
-                  className="view-details-btn-card"
-                  onClick={() => setSelectedEvent(event)}
-                >
-                  View Full Details
-                </button>
+                {(event.url || event.detailsUrl || event.sourceUrl) ? (
+                  <a 
+                    href={event.url || event.detailsUrl || event.sourceUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="view-details-btn-card"
+                  >
+                    View Event Details →
+                  </a>
+                ) : (
+                  <div className="no-link-message">
+                    No official event page available
+                  </div>
+                )}
               </article>
             ))}
           </div>
@@ -350,128 +387,6 @@ export default function TabbedEvents({
           </div>
         )}
       </div>
-      
-      {/* Event Details Modal */}
-      {selectedEvent && (
-        <div className="modal-overlay" onClick={() => setSelectedEvent(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{selectedEvent.name}</h2>
-              <button className="modal-close" onClick={() => setSelectedEvent(null)}>✕</button>
-            </div>
-            <div className="modal-body">
-              <div className="detail-section">
-                <h3>📅 Date & Time</h3>
-                <p>{formatDate(selectedEvent.date)}{selectedEvent.time && ` at ${selectedEvent.time}`}</p>
-              </div>
-              
-              {selectedEvent.committee && (
-                <div className="detail-section">
-                  <h3>🏛️ Committee</h3>
-                  <p>{selectedEvent.committee}</p>
-                </div>
-              )}
-              
-              {selectedEvent.location && (
-                <div className="detail-section">
-                  <h3>📍 Location</h3>
-                  <p>{selectedEvent.location}</p>
-                  {selectedEvent.city && selectedEvent.state && (
-                    <p className="city-state">{selectedEvent.city}, {selectedEvent.state}</p>
-                  )}
-                </div>
-              )}
-              
-              <div className="detail-section">
-                <h3>📊 Details</h3>
-                <p><strong>Level:</strong> {selectedEvent.level}</p>
-                {selectedEvent.type && <p><strong>Type:</strong> {selectedEvent.type}</p>}
-                {selectedEvent.distance !== undefined && (
-                  <p><strong>Distance:</strong> {selectedEvent.distance.toFixed(1)} miles</p>
-                )}
-              </div>
-              
-              {selectedEvent.description && (
-                <div className="detail-section">
-                  <h3>📄 Description</h3>
-                  <p className="event-description-full">{selectedEvent.description}</p>
-                </div>
-              )}
-              
-              {selectedEvent.bills && selectedEvent.bills.length > 0 && (
-                <div className="detail-section">
-                  <h3>📋 Bills ({selectedEvent.bills.length})</h3>
-                  <div className="bills-detail-list">
-                    {selectedEvent.bills.map((bill, i) => (
-                      <div key={i} className="bill-detail-item">
-                        <div className="bill-detail-header">
-                          <strong>{bill.id || bill.number}</strong>
-                          {bill.url && (
-                            <a href={bill.url} target="_blank" rel="noopener noreferrer" className="bill-link-btn">
-                              View Bill →
-                            </a>
-                          )}
-                        </div>
-                        <p className="bill-title">{bill.title}</p>
-                        {bill.summary && (
-                          <div className="bill-summary-detail">
-                            <strong>AI Summary:</strong>
-                            <p>{bill.summary}</p>
-                          </div>
-                        )}
-                        {bill.tags && bill.tags.length > 0 && (
-                          <div className="bill-tags-detail">
-                            {bill.tags.map((tag, tagIdx) => (
-                              <span key={tagIdx} className="bill-tag">{tag}</span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {selectedEvent.tags && selectedEvent.tags.length > 0 && (
-                <div className="detail-section">
-                  <h3>🏷️ Tags</h3>
-                  <div className="tags-list">
-                    {selectedEvent.tags.map((tagId, i) => {
-                      const tag = TAG_DEFINITIONS[tagId];
-                      return tag ? (
-                        <span key={i} className="tag" style={{ backgroundColor: tag.color + '20', color: tag.color, border: `1px solid ${tag.color}` }}>
-                          {tag.icon} {tag.label}
-                        </span>
-                      ) : null;
-                    })}
-                  </div>
-                </div>
-              )}
-              
-              <div className="detail-section">
-                <h3>🔗 Links</h3>
-                <div className="links-grid">
-                  {(selectedEvent.sourceUrl || selectedEvent.url) && (
-                    <a href={(selectedEvent.sourceUrl || selectedEvent.url) ?? ''} target="_blank" rel="noopener noreferrer" className="detail-link">
-                      📄 Event Details
-                    </a>
-                  )}
-                  {selectedEvent.docketUrl && (
-                    <a href={selectedEvent.docketUrl} target="_blank" rel="noopener noreferrer" className="detail-link">
-                      📋 Agenda PDF
-                    </a>
-                  )}
-                  {selectedEvent.virtualMeetingUrl && (
-                    <a href={selectedEvent.virtualMeetingUrl} target="_blank" rel="noopener noreferrer" className="detail-link">
-                      🎥 Virtual Meeting
-                    </a>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

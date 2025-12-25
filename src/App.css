@@ -531,17 +531,42 @@ body {
 }
 
 .events-list-compact {
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 1rem;
+  display: block;
+  column-count: 4;
+  column-gap: 1rem;
+}
+
+@media (max-width: 1400px) {
+  .events-list-compact {
+    column-count: 3;
+  }
+}
+
+@media (max-width: 1000px) {
+  .events-list-compact {
+    column-count: 2;
+  }
+}
+
+@media (max-width: 600px) {
+  .events-list-compact {
+    column-count: 1;
+  }
 }
 
 .events-list-detailed {
+  display: grid;
   grid-template-columns: 1fr;
   gap: 1.5rem;
 }
 
 .events-list-compact .event-card {
   padding: 1rem;
+  break-inside: avoid;
+  page-break-inside: avoid;
+  margin-bottom: 1rem;
+  display: inline-block;
+  width: 100%;
 }
 
 .events-list-compact .event-name {
@@ -1230,10 +1255,13 @@ body {
 
 /* View Details Button for Event Cards */
 .view-details-btn-card {
+  display: block;
   width: 100%;
   padding: 0.75rem;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
+  text-decoration: none;
+  text-align: center;
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -1247,26 +1275,61 @@ body {
 .view-details-btn-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  color: white;
 }
 
-/* Bill Summary Preview in Cards */
-.bill-summary-preview {
-  color: #555;
-  font-size: 0.85rem;
-  line-height: 1.5;
-  margin-top: 0.5rem;
-  padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.6);
+/* No Link Message */
+.no-link-message {
+  width: 100%;
+  padding: 0.75rem;
+  background: #f0f0f0;
+  color: #666;
+  text-align: center;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  margin-top: 1rem;
+  font-style: italic;
+}
+
+/* Bill Summary Full Display in Cards */
+.bill-summary-full {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(139, 92, 246, 0.05);
+  border-left: 3px solid #8b5cf6;
   border-radius: 4px;
 }
 
-.more-bills {
+.bill-summary-full strong {
   color: #8b5cf6;
-  font-weight: 600;
+  font-size: 0.85rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.bill-summary-full p {
+  color: #555;
   font-size: 0.9rem;
+  line-height: 1.6;
   margin: 0;
-  padding: 0.5rem;
-  text-align: center;
+}
+
+/* Read More Button */
+.read-more-btn {
+  background: #8b5cf6;
+  color: white;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  transition: all 0.2s;
+}
+
+.read-more-btn:hover {
+  background: #7c3aed;
+  transform: translateY(-1px);
 }
 
 /* Modal Styles (shared with DataViewer) */
