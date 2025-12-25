@@ -51,11 +51,11 @@ export async function insertEvent(event: LegislativeEvent, scraperSource: string
     INSERT INTO events (
       level, state_code, name, date, time,
       lat, lng, location_name, location_address, description,
-      committee_name, type, details_url, docket_url, agenda_url, virtual_meeting_url, source_url,
-      allows_public_participation, chamber, city, zip_code,
+      committee_name, type, details_url, docket_url, virtual_meeting_url, source_url,
+      allows_public_participation,
       scraper_source, external_id, fingerprint
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
-    ON CONFLICT (fingerprint) 
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+    ON CONFLICT (scraper_source, external_id) 
     DO UPDATE SET
       last_updated = NOW(),
       scraper_source = COALESCE(EXCLUDED.scraper_source, events.scraper_source),
@@ -67,11 +67,8 @@ export async function insertEvent(event: LegislativeEvent, scraperSource: string
       description = EXCLUDED.description,
       details_url = EXCLUDED.details_url,
       docket_url = EXCLUDED.docket_url,
-      agenda_url = EXCLUDED.agenda_url,
       virtual_meeting_url = EXCLUDED.virtual_meeting_url,
-      chamber = EXCLUDED.chamber,
-      city = EXCLUDED.city,
-      zip_code = EXCLUDED.zip_code
+      source_url = EXCLUDED.source_url
     RETURNING id
   `;
   
@@ -90,13 +87,9 @@ export async function insertEvent(event: LegislativeEvent, scraperSource: string
     event.type || null,
     event.detailsUrl || (event as any).url || null, // Map both detailsUrl and url
     event.docketUrl || null,
-    event.agendaUrl || null,
     event.virtualMeetingUrl || null,
     (event as any).sourceUrl || null,
     (event as any).allowsPublicParticipation || false,
-    (event as any).chamber || null,
-    event.city || null,
-    event.zipCode || null,
     scraperSource,
     externalId,
     fingerprint
@@ -448,10 +441,8 @@ export async function getAllStateEventsForExport(stateCode: string): Promise<Leg
       e.description,
       e.details_url,
       e.docket_url,
-      e.agenda_url,
       e.virtual_meeting_url,
       e.allows_public_participation,
-      e.chamber,
       COALESCE(
         json_agg(
           DISTINCT jsonb_build_object(
@@ -509,10 +500,8 @@ export async function getAllStateEventsForExport(stateCode: string): Promise<Leg
         description: row.description || undefined,
         detailsUrl: row.details_url || undefined,
         docketUrl: row.docket_url || undefined,
-        agendaUrl: row.agenda_url || undefined,
         virtualMeetingUrl: row.virtual_meeting_url || undefined,
         allowsPublicParticipation: row.allows_public_participation || false,
-        chamber: row.chamber || undefined,
         bills: bills.length > 0 ? bills : undefined,
         tags: tags.length > 0 ? tags : undefined,
       } as LegislativeEvent;

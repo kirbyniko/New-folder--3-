@@ -1,5 +1,5 @@
 import type { Handler } from '@netlify/functions';
-import { getStore } from '@netlify/blobs';
+// import { getStore } from '@netlify/blobs'; // Disabled - using database instead
 import { loadEnvFile } from './utils/env-loader.js';
 import { ScraperRegistry, CacheManager, initializeScrapers } from './utils/scrapers/index.js';
 import { sanitizeEvent } from './utils/security.js';
@@ -160,45 +160,12 @@ export const handler: Handler = async (event) => {
     const isLocal = !process.env.NETLIFY_DEV;
     let store: any = null;
     
-    // Only use blob storage in production
-    if (!isLocal) {
-      try {
-        store = getStore('events');
-      } catch (err) {
-        console.warn('⚠️  Blob storage not available, using local cache');
-      }
-    }
+    // Blob storage disabled - using database for caching
+    console.log(`🔍 Checking cache for ${stateAbbr}...`);
     
     // ===== STRATEGY 0: Check blob storage for pre-scraped data (FASTEST) =====
-    if (store) {
-      console.log(`💾 Checking blob storage for ${stateAbbr}...`);
-      try {
-        const blobData = await store.get(`state-${stateAbbr}`, { type: 'json' });
-        if (blobData) {
-          const age = Date.now() - new Date(blobData.lastUpdated).getTime();
-          const ageHours = Math.floor(age / (1000 * 60 * 60));
-          
-          console.log(`✅ Blob storage hit! Age: ${ageHours}h, Events: ${blobData.count}`);
-          
-          return {
-            statusCode: 200,
-            headers: {
-              'Content-Type': 'application/json',
-              'Cache-Control': 'public, max-age=21600', // 6 hours
-              'Access-Control-Expose-Headers': 'X-Cache, X-Cache-Age, X-Calendar-Sources',
-              'X-Cache': 'HIT-BLOB',
-              'X-Cache-Age': String(ageHours),
-              'X-Calendar-Sources': JSON.stringify(blobData.calendarSources || [])
-            },
-            body: JSON.stringify(blobData.events || [])
-          };
-        }
-      } catch (err) {
-        console.log(`⚠️ Blob storage miss for ${stateAbbr}, falling back to scraping`);
-      }
-    } else {
-      console.log(`🏠 Running in local dev, skipping blob storage`);
-    }
+    // Skipping blob storage - will use database or scrape directly
+    console.log(`📊 Skipping blob storage, using database/scraper`);
     
     // ===== STRATEGY 1: Try custom scraper (comprehensive but slower) =====
     console.log('🔍 Checking for custom scraper...');
@@ -283,11 +250,9 @@ export const handler: Handler = async (event) => {
           e.description,
           e.details_url as "detailsUrl",
           e.docket_url as "docketUrl",
-          e.agenda_url as "agendaUrl",
           e.virtual_meeting_url as "virtualMeetingUrl",
           e.source_url as "sourceUrl",
           e.allows_public_participation as "allowsPublicParticipation",
-          e.chamber,
           COALESCE(
             json_agg(
               DISTINCT jsonb_build_object(
@@ -331,7 +296,7 @@ export const handler: Handler = async (event) => {
         statusCode: 200,
         headers: {
           'Content-Type': 'application/json',
-          'Cache-Control': 'public, max-age=3600', // 1 hour browser cache
+          'Cache-Control': 'public, max-age=300', // 5 minutes browser cache
           'Access-Control-Expose-Headers': 'X-Data-Source, X-Data-Age-Hours, X-Last-Scraped, X-Calendar-Sources',
           'X-Data-Source': 'database',
           'X-Data-Age-Hours': String(dataAgeHours),

@@ -153,6 +153,17 @@ export class AlabamaScraper extends BaseScraper {
                       event.location?.address || 
                       'Alabama State House';
 
+      // Build source URL - prefer specific event URLs, then OpenStates detail page
+      let sourceUrl = event.sources?.[0]?.url;
+      if (!sourceUrl && event.id) {
+        // Link to OpenStates event detail page which has full information
+        sourceUrl = `https://openstates.org/al/events/${event.id}/`;
+      }
+      if (!sourceUrl) {
+        // Fallback to Alabama Legislature calendar
+        sourceUrl = 'https://alison.legislature.state.al.us/todays-schedule';
+      }
+
       return {
         name: event.name,
         date: startDate.toISOString(),
@@ -161,8 +172,9 @@ export class AlabamaScraper extends BaseScraper {
         committee: committeeName,
         type: 'hearing',
         bills: bills.length > 0 ? bills : undefined,
-        sourceUrl: event.sources?.[0]?.url || 'https://alison.legislature.state.al.us',
-        description: event.description || undefined
+        sourceUrl,
+        description: event.description || undefined,
+        externalId: event.id // Use OpenStates event ID for deduplication
       };
     } catch (error) {
       this.log(`⚠️ Failed to parse event: ${error instanceof Error ? error.message : error}`);
