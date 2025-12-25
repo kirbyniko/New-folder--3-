@@ -32,13 +32,25 @@ class CacheManagerClass {
   private hits: number = 0;
   private misses: number = 0;
   private readonly CACHE_SECRET: string;
+  private readonly isServerless: boolean;
 
   constructor() {
+    // Detect serverless environment (no writable filesystem)
+    this.isServerless = !!process.env.AWS_LAMBDA_FUNCTION_NAME || 
+                        !!process.env.NETLIFY || 
+                        !process.env.HOME;
+    
     // Use public/cache for persistence (works in dev and production)
     this.cacheDir = path.join(process.cwd(), 'public', 'cache');
     this.CACHE_SECRET = process.env.CACHE_HMAC_SECRET || 
                         'dev-secret-' + (process.env.NETLIFY_DEV || 'local');
-    this.ensureCacheDir();
+    
+    // Only create cache dir if not in serverless environment
+    if (!this.isServerless) {
+      this.ensureCacheDir();
+    } else {
+      console.log('[CACHE] ⚠️ Serverless environment detected - file caching disabled');
+    }
   }
 
   /**
@@ -82,6 +94,12 @@ class CacheManagerClass {
    * Get item from cache if not expired
    */
   get<T>(key: string): T | null {
+    // Skip in serverless
+    if (this.isServerless) {
+      this.misses++;
+      return null;
+    }
+    
     const filePath = this.getCacheFilePath(key);
     
     try {
@@ -137,6 +155,11 @@ class CacheManagerClass {
    * Set item in cache with TTL (time-to-live in seconds)
    */
   set<T>(key: string, data: T, ttlSeconds: number = 86400): void {
+    // Skip in serverless
+    if (this.isServerless) {
+      return;
+    }
+    
     // SECURITY: Generate HMAC signature
     const dataStr = JSON.stringify(data);
     const signature = this.sign(dataStr);
@@ -168,6 +191,11 @@ class CacheManagerClass {
    * Check if key exists and is not expired
    */
   has(key: string): boolean {
+    // Skip in serverless
+    if (this.isServerless) {
+      return false;
+    }
+    
     const filePath = this.getCacheFilePath(key);
     
     try {

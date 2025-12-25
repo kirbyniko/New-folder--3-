@@ -24,10 +24,27 @@ export function getPool(): Pool {
     // Use connection string if provided, otherwise use individual params
     const connectionString = process.env.DATABASE_URL;
 
+    // Neon requires SSL
+    const sslConfig = process.env.POSTGRES_HOST?.includes('neon.tech') 
+      ? { rejectUnauthorized: false } 
+      : false;
+
     pool = new Pool(
       connectionString
-        ? { connectionString, max: 20, idleTimeoutMillis: 30000, connectionTimeoutMillis: 10000 }
-        : { ...config, max: 20, idleTimeoutMillis: 30000, connectionTimeoutMillis: 10000 }
+        ? { 
+            connectionString, 
+            ssl: sslConfig,
+            max: 20, 
+            idleTimeoutMillis: 30000, 
+            connectionTimeoutMillis: 10000 
+          }
+        : { 
+            ...config, 
+            ssl: sslConfig,
+            max: 20, 
+            idleTimeoutMillis: 30000, 
+            connectionTimeoutMillis: 10000 
+          }
     );
 
     pool.on('error', (err) => {

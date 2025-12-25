@@ -1,0 +1,23 @@
+{
+  "name": "civitron-scraper-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Standalone scraper backend that runs on local PC and populates PostgreSQL database",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "scrape": "tsx src/scraper.ts",
+    "schedule": "node src/scheduler.js",
+    "test": "tsx src/test-connection.ts"
+  },
+  "dependencies": {
+    "@types/node": "^20.10.0",
+    "@types/pg": "^8.16.0",
+    "cheerio": "^1.1.2",
+    "date-fns": "^4.1.0",
+    "dotenv": "^17.2.3",
+    "node-cron": "^3.0.3",
+    "pg": "^8.16.3",
+    "puppeteer": "^24.33.0",
+    "tsx": "^4.7.0"
+  }
+}

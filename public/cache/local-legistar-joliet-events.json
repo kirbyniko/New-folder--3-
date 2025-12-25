@@ -65,6 +65,7 @@
       "url": "https://joliet.legistar.com/MeetingDetail.aspx?LEGID=2427&GID=791&G=67BB2001-2538-4583-A841-C35A63FD9538"
     }
   ],
-  "timestamp": 1766502625085,
-  "expiresAt": 1766589025085
+  "timestamp": 1766612074359,
+  "expiresAt": 1766698474359,
+  "signature": "b99aafc945b5db95f96c7628e61702f015f57d3015e931627ccc617b13cd8e72"
 }

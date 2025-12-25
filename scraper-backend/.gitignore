@@ -1,0 +1,13 @@
+# scraper-backend/.env
+# Contains database credentials and API keys
+.env
+
+# Node modules
+node_modules/
+
+# Logs
+*.log
+logs/
+
+# PM2
+.pm2/

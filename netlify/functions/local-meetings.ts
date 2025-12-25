@@ -3,7 +3,6 @@ import { loadEnvFile } from './utils/env-loader';
 import { findNearbyCities } from './utils/legistar-cities';
 import { sanitizeEvent } from './utils/security';
 import { rateLimit } from './utils/rate-limit';
-import { rateLimit } from './utils/rate-limit';
 import { scrapeNYCCouncil } from './utils/scrapers/local/nyc-council';
 import { scrapeBirminghamMeetings } from './utils/scrapers/local/birmingham';
 import { scrapeMontgomeryMeetings } from './utils/scrapers/local/montgomery';
@@ -28,7 +27,8 @@ interface LegistarEvent {
   EventItems?: Array<{
     EventItemTitle: string;
     EventItemAgendaNumber: string;
-  }>;\n}
+  }>;
+}
 
 export const handler: Handler = rateLimit(
   {
@@ -1414,4 +1414,4 @@ export const handler: Handler = rateLimit(
       })
     };
   }
-};
+});

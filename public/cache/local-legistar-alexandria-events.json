@@ -1,0 +1,55 @@
+{
+  "data": [
+    {
+      "id": "legistar-alexandria-2696",
+      "name": "Planning Commission",
+      "date": "2026-01-06T00:00:00",
+      "time": "7:00 PM",
+      "location": "4850 Mark Center Drive, Room 1305",
+      "committee": "Planning Commission",
+      "type": "meeting",
+      "level": "local",
+      "lat": 38.8048,
+      "lng": -77.0469,
+      "zipCode": null,
+      "city": "Alexandria",
+      "state": "VA",
+      "url": "https://alexandria.legistar.com/MeetingDetail.aspx?LEGID=2696&GID=239&G=188E7221-51C6-4DB4-965D-DA161BCFB1F6"
+    },
+    {
+      "id": "legistar-alexandria-2698",
+      "name": "Board of Zoning Appeals",
+      "date": "2026-01-12T00:00:00",
+      "time": "7:00 PM",
+      "location": "4850 Mark Center Drive, Room 1305",
+      "committee": "Board of Zoning Appeals",
+      "type": "meeting",
+      "level": "local",
+      "lat": 38.8048,
+      "lng": -77.0469,
+      "zipCode": null,
+      "city": "Alexandria",
+      "state": "VA",
+      "url": "https://alexandria.legistar.com/MeetingDetail.aspx?LEGID=2698&GID=239&G=188E7221-51C6-4DB4-965D-DA161BCFB1F6"
+    },
+    {
+      "id": "legistar-alexandria-2699",
+      "name": "Board of Architectural Review",
+      "date": "2026-01-07T00:00:00",
+      "time": "7:00 PM",
+      "location": "4850 Mark Center Drive, Room 1305",
+      "committee": "Board of Architectural Review",
+      "type": "meeting",
+      "level": "local",
+      "lat": 38.8048,
+      "lng": -77.0469,
+      "zipCode": null,
+      "city": "Alexandria",
+      "state": "VA",
+      "url": "https://alexandria.legistar.com/MeetingDetail.aspx?LEGID=2699&GID=239&G=188E7221-51C6-4DB4-965D-DA161BCFB1F6"
+    }
+  ],
+  "timestamp": 1766612056996,
+  "expiresAt": 1766698456996,
+  "signature": "3017f61286e62fe1d66bba1fb6ba199d7e6497b87128ffd208fac816b9970178"
+}

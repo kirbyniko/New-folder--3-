@@ -11,8 +11,8 @@
 
 import { Capacitor } from '@capacitor/core';
 
-// Backend URL - from environment variable or fallback to localhost
-const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:8888';
+// Backend URL - from environment variable or fallback
+const BACKEND_URL = import.meta.env.VITE_API_URL;
 
 /**
  * Get the full API URL for a backend function
@@ -20,6 +20,12 @@ const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:8888';
  * @returns Full URL to backend
  */
 export function getApiUrl(path: string): string {
-  // Always use the backend URL (ngrok tunnel in production, localhost in dev)
-  return `${BACKEND_URL}${path}`;
+  // If VITE_API_URL is set (e.g., ngrok tunnel for Android), use it
+  // Otherwise, use relative URLs for Netlify Dev local development
+  if (BACKEND_URL) {
+    return `${BACKEND_URL}${path}`;
+  }
+  
+  // For local development with Netlify Dev, use relative URLs
+  return path;
 }

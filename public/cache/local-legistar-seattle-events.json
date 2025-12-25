@@ -1,0 +1,23 @@
+{
+  "data": [
+    {
+      "id": "legistar-seattle-6510",
+      "name": "Council Briefing",
+      "date": "2026-01-05T00:00:00",
+      "time": "2:00 PM",
+      "location": "Council Chamber, City Hall\r\n600 4th Avenue\r\nSeattle, WA  98104",
+      "committee": "Council Briefing",
+      "type": "meeting",
+      "level": "local",
+      "lat": 47.6062,
+      "lng": -122.3321,
+      "zipCode": null,
+      "city": "Seattle",
+      "state": "WA",
+      "url": "https://seattle.legistar.com/MeetingDetail.aspx?LEGID=6510&GID=393&G=FFE3B678-CEF6-4197-84AC-5204EA4CFC0C"
+    }
+  ],
+  "timestamp": 1766615647879,
+  "expiresAt": 1766702047879,
+  "signature": "f4ac9eff8c761f87e9b41b750db68d8fbbc28ebf587d886cccb7600015cdbbf1"
+}

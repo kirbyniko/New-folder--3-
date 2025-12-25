@@ -153,16 +153,10 @@ export class AlabamaScraper extends BaseScraper {
                       event.location?.address || 
                       'Alabama State House';
 
-      // Build source URL - prefer specific event URLs, then OpenStates detail page
-      let sourceUrl = event.sources?.[0]?.url;
-      if (!sourceUrl && event.id) {
-        // Link to OpenStates event detail page which has full information
-        sourceUrl = `https://openstates.org/al/events/${event.id}/`;
-      }
-      if (!sourceUrl) {
-        // Fallback to Alabama Legislature calendar
-        sourceUrl = 'https://alison.legislature.state.al.us/todays-schedule';
-      }
+      // Build source URL
+      // Alabama Legislature doesn't provide individual event URLs
+      // OpenStates event pages don't exist (404), so use Today's Schedule page
+      let sourceUrl = event.sources?.[0]?.url || 'https://alison.legislature.state.al.us/todays-schedule';
 
       return {
         name: event.name,

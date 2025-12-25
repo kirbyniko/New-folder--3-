@@ -230,16 +230,22 @@ export class NewYorkScraper extends BaseScraper {
     const month = monthMap[match[1]];
     const day = parseInt(match[2], 10);
     
-    // Determine year (if month is before current month, assume next year)
+    // Determine year
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth();
     
     let year = currentYear;
     // If the hearing month is earlier than current month, it's next year
-    // Exception: if we're in December and hearing is in January, that's next month
-    if (month < currentMonth && !(currentMonth === 11 && month === 0)) {
+    // Exception: if we're in December (11) and hearing is in December, keep current year
+    if (month < currentMonth) {
       year = currentYear + 1;
+    } else if (month === currentMonth) {
+      // Same month - check if day has passed
+      const currentDay = now.getDate();
+      if (day < currentDay) {
+        year = currentYear + 1;
+      }
     }
     
     return new Date(year, month, day);

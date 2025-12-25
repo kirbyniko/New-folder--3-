@@ -31,8 +31,41 @@
       "city": "Milwaukee",
       "state": "WI",
       "url": "https://milwaukee.legistar.com/MeetingDetail.aspx?LEGID=13677&GID=5&G=08FEFB22-B33A-4882-9C5A-6D37E84EF01D"
+    },
+    {
+      "id": "legistar-milwaukee-13751",
+      "name": "HOUSING AUTHORITY EXECUTIVE SEARCH COMMITTEE",
+      "date": "2025-12-29T00:00:00",
+      "time": "12:30 PM",
+      "location": "Hillside Family Resource Center\r\n1452 N. Seventh St., Milwaukee WI 53205",
+      "committee": "HOUSING AUTHORITY EXECUTIVE SEARCH COMMITTEE",
+      "type": "meeting",
+      "level": "local",
+      "lat": 43.0389,
+      "lng": -87.9065,
+      "zipCode": null,
+      "city": "Milwaukee",
+      "state": "WI",
+      "url": "https://milwaukee.legistar.com/MeetingDetail.aspx?LEGID=13751&GID=5&G=08FEFB22-B33A-4882-9C5A-6D37E84EF01D"
+    },
+    {
+      "id": "legistar-milwaukee-13752",
+      "name": "HOUSING AUTHORITY EXECUTIVE SEARCH COMMITTEE",
+      "date": "2025-12-30T00:00:00",
+      "time": "12:30 PM",
+      "location": "Hillside Family Resource Center\r\n1452 N. Seventh St., Milwaukee WI 53205",
+      "committee": "HOUSING AUTHORITY EXECUTIVE SEARCH COMMITTEE",
+      "type": "meeting",
+      "level": "local",
+      "lat": 43.0389,
+      "lng": -87.9065,
+      "zipCode": null,
+      "city": "Milwaukee",
+      "state": "WI",
+      "url": "https://milwaukee.legistar.com/MeetingDetail.aspx?LEGID=13752&GID=5&G=08FEFB22-B33A-4882-9C5A-6D37E84EF01D"
     }
   ],
-  "timestamp": 1766502625163,
-  "expiresAt": 1766589025163
+  "timestamp": 1766616066690,
+  "expiresAt": 1766702466690,
+  "signature": "c784c9bf19645835a205b8cd4c3802978eddcd48dad7ba68a5f2ab53e096c9e7"
 }

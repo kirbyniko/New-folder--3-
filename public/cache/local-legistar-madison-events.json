@@ -9,11 +9,11 @@
       "committee": "VENDING OVERSIGHT COMMITTEE",
       "type": "meeting",
       "level": "local",
-      "lat": 43.0731,
-      "lng": -89.4012,
+      "lat": 32.4618,
+      "lng": -90.1151,
       "zipCode": null,
       "city": "Madison",
-      "state": "WI",
+      "state": "MS",
       "url": "https://madison.legistar.com/MeetingDetail.aspx?LEGID=28028&GID=205&G=D66739FE-4C3C-468C-A9F0-0198EFAA8EF8"
     },
     {
@@ -25,11 +25,11 @@
       "committee": "BOARD OF HEALTH FOR MADISON AND DANE COUNTY",
       "type": "meeting",
       "level": "local",
-      "lat": 43.0731,
-      "lng": -89.4012,
+      "lat": 32.4618,
+      "lng": -90.1151,
       "zipCode": null,
       "city": "Madison",
-      "state": "WI",
+      "state": "MS",
       "url": "https://madison.legistar.com/MeetingDetail.aspx?LEGID=28735&GID=205&G=D66739FE-4C3C-468C-A9F0-0198EFAA8EF8"
     },
     {
@@ -41,14 +41,15 @@
       "committee": "CITY-COUNTY HOMELESS ISSUES COMMITTEE",
       "type": "meeting",
       "level": "local",
-      "lat": 43.0731,
-      "lng": -89.4012,
+      "lat": 32.4618,
+      "lng": -90.1151,
       "zipCode": null,
       "city": "Madison",
-      "state": "WI",
+      "state": "MS",
       "url": "https://madison.legistar.com/MeetingDetail.aspx?LEGID=28870&GID=205&G=D66739FE-4C3C-468C-A9F0-0198EFAA8EF8"
     }
   ],
-  "timestamp": 1766502625203,
-  "expiresAt": 1766589025203
+  "timestamp": 1766612011459,
+  "expiresAt": 1766698411459,
+  "signature": "d59554f60c32a605ae10c06044b1ac21a19a4bd6ec12bc9886ccfccc9b735683"
 }
