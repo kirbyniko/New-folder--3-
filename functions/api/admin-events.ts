@@ -18,9 +18,10 @@ export async function onRequest(context: any) {
 
   try {
     const limit = parseInt(url.searchParams.get('limit') || '100', 10);
+    const stateFilter = url.searchParams.get('state')?.toUpperCase();
     
-    // Get events with D1
-    const { results: events } = await env.DB.prepare(`
+    // Build query with optional state filter
+    let query = `
       SELECT 
         e.id,
         e.name,
@@ -38,9 +39,19 @@ export async function onRequest(context: any) {
         e.scraped_at as scrapedAt
       FROM events e
       WHERE e.date >= date('now')
-      ORDER BY e.date ASC, e.time ASC
-      LIMIT ?
-    `).bind(limit).all();
+    `;
+    
+    const params: any[] = [];
+    
+    if (stateFilter) {
+      query += ` AND e.state_code = ?`;
+      params.push(stateFilter);
+    }
+    
+    query += ` ORDER BY e.date ASC, e.time ASC LIMIT ?`;
+    params.push(limit);
+    
+    const { results: events } = await env.DB.prepare(query).bind(...params).all();
 
     // Fetch bills and tags for events (optimized for small result sets)
     if (events.length > 0 && events.length <= 100) {
