@@ -79,6 +79,15 @@ export async function onRequest(context: any) {
       `).bind(event.id).all();
       
       event.tags = tags?.map((t: any) => t.tag) || [];
+      
+      // Get agenda summary
+      const { results: agendaSummaries } = await env.DB.prepare(`
+        SELECT summary FROM agenda_summaries WHERE event_id = ? LIMIT 1
+      `).bind(event.id).all();
+      
+      if (agendaSummaries && agendaSummaries.length > 0 && agendaSummaries[0].summary) {
+        event.agendaSummary = agendaSummaries[0].summary;
+      }
     }
 
     return new Response(JSON.stringify(events), {

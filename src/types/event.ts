@@ -24,6 +24,7 @@ export interface LegislativeEvent {
   bills?: Bill[];               // Bills being discussed (when available)
   sourceUrl?: string;           // URL of the page where data was scraped from
   detailsUrl?: string;          // Link to event details page
+  agendaSummary?: string;       // AI-generated summary of the agenda PDF
   
   // 🆕 Public Participation
   allowsPublicParticipation?: boolean;  // Whether public comment/testimony is allowed

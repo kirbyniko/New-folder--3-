@@ -56,17 +56,28 @@ export async function onRequest(context: any) {
     `).all();
     
     // Filter by distance using Haversine formula
-    const result = allEvents.filter((event: any) => {
+    const eventsWithinRadius = allEvents.filter((event: any) => {
       const dLat = (event.lat - lat) * 69; // 1 degree lat ≈ 69 miles
       const dLng = (event.lng - lng) * 69 * Math.cos(lat * Math.PI / 180);
       const distance = Math.sqrt(dLat * dLat + dLng * dLng);
       return distance <= radius;
     }).slice(0, 100);
     
-    console.log(`Found ${result.length} local events within ${radius} miles`);
+    // Get agenda summaries for events
+    for (const event of eventsWithinRadius) {
+      const { results: agendaSummaries } = await env.DB.prepare(`
+        SELECT summary FROM agenda_summaries WHERE event_id = ? LIMIT 1
+      `).bind(event.id).all();
+      
+      if (agendaSummaries && agendaSummaries.length > 0 && agendaSummaries[0].summary) {
+        event.agendaSummary = agendaSummaries[0].summary;
+      }
+    }
+    
+    console.log(`Found ${eventsWithinRadius.length} local events within ${radius} miles`);
     
     return new Response(
-      JSON.stringify(result),
+      JSON.stringify(eventsWithinRadius),
       {
         status: 200,
         headers: {

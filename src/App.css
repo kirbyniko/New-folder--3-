@@ -1314,6 +1314,32 @@ body {
   margin: 0;
 }
 
+/* Agenda Summary Styles */
+.agenda-summary-preview {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: rgba(59, 130, 246, 0.05);
+  border-left: 3px solid #3b82f6;
+  border-radius: 4px;
+  color: #555;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.agenda-summary-full {
+  padding: 0.75rem;
+  background: rgba(59, 130, 246, 0.05);
+  border-left: 3px solid #3b82f6;
+  border-radius: 4px;
+}
+
+.agenda-summary-full p {
+  color: #555;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
 /* Read More Button */
 .read-more-btn {
   background: #8b5cf6;

@@ -39,6 +39,8 @@ export default function TabbedEvents({
   const [cardLayout, setCardLayout] = useState<'compact' | 'detailed'>('compact');
   const [showSources, setShowSources] = useState(false);
   const [expandedBills, setExpandedBills] = useState<Set<string>>(new Set());
+  const [expandedAgendas, setExpandedAgendas] = useState<Set<string>>(new Set());
+  const [selectedEvent, setSelectedEvent] = useState<LegislativeEvent | null>(null);
 
   const toggleBillExpansion = (eventId: string, billIndex: number) => {
     const key = `${eventId}-${billIndex}`;
@@ -48,6 +50,18 @@ export default function TabbedEvents({
         newSet.delete(key);
       } else {
         newSet.add(key);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleAgendaExpansion = (eventId: string) => {
+    setExpandedAgendas(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(eventId)) {
+        newSet.delete(eventId);
+      } else {
+        newSet.add(eventId);
       }
       return newSet;
     });
@@ -210,7 +224,12 @@ export default function TabbedEvents({
         {activeEvents.length > 0 ? (
           <div className={`events-list events-list-${cardLayout}`}>
             {activeEvents.map((event) => (
-              <article key={`${event.level}-${event.id}`} className="event-card">
+              <article 
+                key={`${event.level}-${event.id}`} 
+                className="event-card"
+                onClick={() => setSelectedEvent(event)}
+                style={{ cursor: 'pointer' }}
+              >
                 <div className="event-header">
                   <span className={`event-badge event-badge-${event.level}`}>
                     {event.level}
@@ -286,8 +305,30 @@ export default function TabbedEvents({
                       <span className="detail-label">📋 Agenda:</span>
                       <span className="detail-value">
                         <a href={event.docketUrl} target="_blank" rel="noopener noreferrer" className="docket-link">
-                          View Agenda PDF
+                          View PDF
                         </a>
+                        {event.agendaSummary && (
+                          <div className="agenda-summary-preview">
+                            <p>
+                              {expandedAgendas.has(event.id)
+                                ? event.agendaSummary
+                                : event.agendaSummary.length > 150
+                                ? `${event.agendaSummary.substring(0, 150)}...`
+                                : event.agendaSummary}
+                            </p>
+                            {event.agendaSummary.length > 150 && (
+                              <button
+                                className="read-more-btn"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleAgendaExpansion(event.id);
+                                }}
+                              >
+                                {expandedAgendas.has(event.id) ? 'Show Less' : 'Read More'}
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </span>
                     </div>
                   )}
@@ -387,6 +428,137 @@ export default function TabbedEvents({
           </div>
         )}
       </div>
+
+      {/* Event Details Modal */}
+      {selectedEvent && (
+        <div className="modal-overlay" onClick={() => setSelectedEvent(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{selectedEvent.name}</h2>
+              <button className="modal-close" onClick={() => setSelectedEvent(null)}>✕</button>
+            </div>
+            <div className="modal-body">
+              <div className="detail-section">
+                <h3>📅 Date & Time</h3>
+                <p>{formatDate(selectedEvent.date)}{selectedEvent.time && ` at ${selectedEvent.time}`}</p>
+              </div>
+              
+              {selectedEvent.committee && (
+                <div className="detail-section">
+                  <h3>🏛️ Committee</h3>
+                  <p>{selectedEvent.committee}</p>
+                </div>
+              )}
+              
+              {selectedEvent.location && (
+                <div className="detail-section">
+                  <h3>📍 Location</h3>
+                  <p>{selectedEvent.location}</p>
+                  {selectedEvent.city && selectedEvent.state && (
+                    <p className="city-state">{selectedEvent.city}, {selectedEvent.state}</p>
+                  )}
+                </div>
+              )}
+              
+              <div className="detail-section">
+                <h3>📊 Details</h3>
+                <p><strong>Level:</strong> {selectedEvent.level}</p>
+                {selectedEvent.type && <p><strong>Type:</strong> {selectedEvent.type}</p>}
+                {selectedEvent.distance !== undefined && (
+                  <p><strong>Distance:</strong> {selectedEvent.distance.toFixed(1)} miles</p>
+                )}
+              </div>
+              
+              {selectedEvent.description && (
+                <div className="detail-section">
+                  <h3>📄 Description</h3>
+                  <p className="event-description-full">{selectedEvent.description}</p>
+                </div>
+              )}
+              
+              {selectedEvent.agendaSummary && (
+                <div className="detail-section">
+                  <h3>📋 Agenda Summary</h3>
+                  <div className="agenda-summary-full">
+                    <p>{selectedEvent.agendaSummary}</p>
+                  </div>
+                </div>
+              )}
+              
+              {selectedEvent.bills && selectedEvent.bills.length > 0 && (
+                <div className="detail-section">
+                  <h3>📋 Bills ({selectedEvent.bills.length})</h3>
+                  <div className="bills-detail-list">
+                    {selectedEvent.bills.map((bill, i) => (
+                      <div key={i} className="bill-detail-item">
+                        <div className="bill-detail-header">
+                          <strong>{bill.id || bill.number}</strong>
+                          {bill.url && (
+                            <a href={bill.url} target="_blank" rel="noopener noreferrer" className="bill-link-btn">
+                              View Bill →
+                            </a>
+                          )}
+                        </div>
+                        <p className="bill-title">{bill.title}</p>
+                        {bill.summary && (
+                          <div className="bill-summary-detail">
+                            <strong>AI Summary:</strong>
+                            <p>{bill.summary}</p>
+                          </div>
+                        )}
+                        {bill.tags && bill.tags.length > 0 && (
+                          <div className="bill-tags-detail">
+                            {bill.tags.map((tag, tagIdx) => (
+                              <span key={tagIdx} className="bill-tag">{tag}</span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {selectedEvent.tags && selectedEvent.tags.length > 0 && (
+                <div className="detail-section">
+                  <h3>🏷️ Tags</h3>
+                  <div className="tags-list">
+                    {selectedEvent.tags.map((tagId, i) => {
+                      const tag = TAG_DEFINITIONS[tagId];
+                      return tag ? (
+                        <span key={i} className="tag" style={{ backgroundColor: tag.color + '20', color: tag.color, border: `1px solid ${tag.color}` }}>
+                          {tag.icon} {tag.label}
+                        </span>
+                      ) : null;
+                    })}
+                  </div>
+                </div>
+              )}
+              
+              <div className="detail-section">
+                <h3>🔗 Links</h3>
+                <div className="links-grid">
+                  {(selectedEvent.url || selectedEvent.detailsUrl || selectedEvent.sourceUrl) && (
+                    <a href={(selectedEvent.url || selectedEvent.detailsUrl || selectedEvent.sourceUrl) ?? ''} target="_blank" rel="noopener noreferrer" className="detail-link">
+                      📄 Event Details
+                    </a>
+                  )}
+                  {selectedEvent.docketUrl && (
+                    <a href={selectedEvent.docketUrl} target="_blank" rel="noopener noreferrer" className="detail-link">
+                      📋 Agenda PDF
+                    </a>
+                  )}
+                  {selectedEvent.virtualMeetingUrl && (
+                    <a href={selectedEvent.virtualMeetingUrl} target="_blank" rel="noopener noreferrer" className="detail-link">
+                      🎥 Virtual Meeting
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
