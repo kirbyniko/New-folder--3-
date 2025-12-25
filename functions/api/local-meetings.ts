@@ -6,10 +6,8 @@
  * Scraping handled by PC backend.
  */
 
-import { getSQL } from '../utils/db/connection.js';
-
 export async function onRequest(context: any) {
-  const { request } = context;
+  const { request, env } = context;
   
   console.log('🏘️ LOCAL-MEETINGS: Request received');
   
@@ -38,31 +36,30 @@ export async function onRequest(context: any) {
     );
   }
 
-  const sql = getSQL(context.env);
-  
   try {
     // Query local events from database within radius
-    // Using Haversine formula for distance calculation
-    const result = await sql`
+    // SQLite doesn't have built-in geo functions, so get all local events and filter
+    const { results: allEvents } = await env.DB.prepare(`
       SELECT 
         id, name, date, time, location_name as location, lat, lng,
         level, type, state_code as state, committee_name as committee, description,
-        source_url as "sourceUrl"
+        source_url as sourceUrl
       FROM events
       WHERE level = 'local'
-        AND date >= CURRENT_DATE
-        AND (
-          6371 * acos(
-            cos(radians(${lat})) * cos(radians(lat)) *
-            cos(radians(lng) - radians(${lng})) +
-            sin(radians(${lat})) * sin(radians(lat))
-          )
-        ) <= ${radius}
+        AND date >= date('now')
       ORDER BY date ASC, time ASC
-      LIMIT 100
-    `;
+      LIMIT 500
+    `).all();
     
-    console.log(`Found ${result.length} local events within ${radius}km`);
+    // Filter by distance using Haversine formula
+    const result = allEvents.filter((event: any) => {
+      const dLat = (event.lat - lat) * 69; // 1 degree lat ≈ 69 miles
+      const dLng = (event.lng - lng) * 69 * Math.cos(lat * Math.PI / 180);
+      const distance = Math.sqrt(dLat * dLat + dLng * dLng);
+      return distance <= radius;
+    }).slice(0, 100);
+    
+    console.log(`Found ${result.length} local events within ${radius} miles`);
     
     return new Response(
       JSON.stringify(result),
@@ -75,12 +72,13 @@ export async function onRequest(context: any) {
         }
       }
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in local-meetings:', error);
     return new Response(
       JSON.stringify({ 
         error: 'Failed to fetch local meetings',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        message: error.message,
+        stack: error.stack
       }),
       {
         status: 500,

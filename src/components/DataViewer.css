@@ -461,3 +461,68 @@
   border: 1px solid #f5c6cb;
   border-radius: 4px;
 }
+
+/* Agendas Table Styles */
+.agendas-table-container {
+  overflow-x: auto;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.agendas-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.agendas-table th {
+  background: #f8f9fa;
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #333 !important;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.agendas-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #f0f0f0;
+  color: #1a1a1a !important;
+  vertical-align: top;
+}
+
+.agendas-table tbody tr:hover {
+  background: #f8f9fa;
+}
+
+.agenda-summary-cell {
+  max-width: 400px;
+}
+
+.agenda-summary {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #444 !important;
+}
+
+.agenda-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.agenda-link {
+  display: inline-block;
+  padding: 0.4rem 0.8rem;
+  background: #007bff;
+  color: white !important;
+  text-decoration: none;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  transition: background 0.2s;
+}
+
+.agenda-link:hover {
+  background: #0056b3;
+}

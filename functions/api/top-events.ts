@@ -3,14 +3,23 @@
  * Endpoint: /api/top-events
  */
 
-import { getSQL } from '../utils/db/connection.js';
-
 export async function onRequest(context: any) {
-  const sql = getSQL(context.env);
+  const { request, env } = context;
   
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Content-Type': 'application/json'
+  };
+
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
   try {
     // Get top 100 upcoming events sorted by date
-    const result = await sql`
+    const { results: events } = await env.DB.prepare(`
       SELECT 
         e.id,
         e.name,
@@ -24,25 +33,21 @@ export async function onRequest(context: any) {
         e.state_code as state,
         e.committee_name as committee,
         e.description,
-        e.source_url as "sourceUrl",
-        COALESCE(
-          array_agg(DISTINCT et.tag) FILTER (WHERE et.tag IS NOT NULL),
-          ARRAY[]::text[]
-        ) as tags
+        e.source_url as sourceUrl
       FROM events e
-      LEFT JOIN event_tags et ON e.id = et.event_id
-      WHERE e.date >= CURRENT_DATE
-      GROUP BY e.id
+      WHERE e.date >= date('now')
       ORDER BY e.date ASC, e.time ASC
       LIMIT 100
-    `;
+    `).all();
     
-    const events = result.map(event => ({
-      ...event,
-      tags: event.tags && Array.isArray(event.tags) && event.tags[0] !== null 
-        ? event.tags.filter((t: any) => t !== null) 
-        : []
-    }));
+    // Get tags for each event
+    for (const event of events) {
+      const { results: tags } = await env.DB.prepare(`
+        SELECT tag FROM event_tags WHERE event_id = ?
+      `).bind(event.id).all();
+      
+      event.tags = tags?.map((t: any) => t.tag) || [];
+    }
     
     const response = {
       events: events,
@@ -63,10 +68,14 @@ export async function onRequest(context: any) {
         }
       }
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching top events:', error);
     return new Response(
-      JSON.stringify({ error: 'Failed to fetch top events' }),
+      JSON.stringify({ 
+        error: 'Failed to fetch top events',
+        message: error.message,
+        stack: error.stack
+      }),
       {
         status: 500,
         headers: {

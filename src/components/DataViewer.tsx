@@ -37,6 +37,21 @@ interface Bill {
   summary?: string;
 }
 
+interface Agenda {
+  id: string;
+  name: string;
+  date: string;
+  time: string | null;
+  state: string;
+  committee: string | null;
+  docket_url: string;
+  details_url: string | null;
+  agenda_id: string | null;
+  agenda_url: string | null;
+  agenda_summary: string | null;
+  last_summarized_at: string | null;
+}
+
 interface DataResponse {
   events: Event[];
   pagination: {
@@ -57,7 +72,7 @@ interface DataResponse {
   };
 }
 
-type ViewTab = 'events' | 'bills';
+type ViewTab = 'events' | 'bills' | 'agendas';
 type SortField = 'date' | 'state' | 'name' | 'bills';
 type SortDirection = 'asc' | 'desc';
 
@@ -76,6 +91,7 @@ interface DataViewerProps {
 export default function DataViewer({ onStateSelect }: DataViewerProps) {
   const [activeTab, setActiveTab] = useState<ViewTab>('events');
   const [data, setData] = useState<DataResponse | null>(null);
+  const [agendas, setAgendas] = useState<Agenda[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -100,14 +116,23 @@ export default function DataViewer({ onStateSelect }: DataViewerProps) {
       if (dateFilter) params.set('date', dateFilter);
       params.set('limit', '500'); // Increased to get more events with bills
       
-      const response = await fetch(`/api/admin-events?${params}`);
+      const [eventsResponse, agendasResponse] = await Promise.all([
+        fetch(`/api/admin-events?${params}`),
+        fetch(`/api/agenda-summaries?${params}`)
+      ]);
       
-      if (!response.ok) {
-        throw new Error(`Failed to fetch: ${response.status}`);
+      if (!eventsResponse.ok) {
+        throw new Error(`Failed to fetch events: ${eventsResponse.status}`);
       }
       
-      const result = await response.json();
+      const result = await eventsResponse.json();
       setData(result);
+      
+      if (agendasResponse.ok) {
+        const agendasResult = await agendasResponse.json();
+        setAgendas(agendasResult.agendas || []);
+      }
+      
       setError(null);
     } catch (err: any) {
       console.error('Error fetching data:', err);
@@ -220,6 +245,12 @@ export default function DataViewer({ onStateSelect }: DataViewerProps) {
           onClick={() => setActiveTab('bills')}
         >
           📋 Bills ({allBills.length})
+        </button>
+        <button
+          className={`tab-button ${activeTab === 'agendas' ? 'active' : ''}`}
+          onClick={() => setActiveTab('agendas')}
+        >
+          📄 Agendas ({agendas.length})
         </button>
       </div>
 
@@ -513,6 +544,83 @@ export default function DataViewer({ onStateSelect }: DataViewerProps) {
             {filteredBills.length === 0 && (
               <div className="no-results">
                 No bills match your filters
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Agendas Table */}
+        {activeTab === 'agendas' && (
+          <div className="agendas-table-container">
+            <div className="table-header">
+              <h2>Meeting Agendas with Summaries</h2>
+              <p className="subtitle">Agendas from events with docket URLs</p>
+            </div>
+            <table className="agendas-table">
+              <thead>
+                <tr>
+                  <th>Event Name</th>
+                  <th>Committee</th>
+                  <th>Date</th>
+                  <th>State</th>
+                  <th>Summary</th>
+                  <th>Links</th>
+                </tr>
+              </thead>
+              <tbody>
+                {agendas
+                  .filter(agenda => {
+                    if (searchQuery && !agenda.name.toLowerCase().includes(searchQuery.toLowerCase()) && 
+                        !agenda.committee?.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+                    return true;
+                  })
+                  .map((agenda) => (
+                  <tr key={agenda.id}>
+                    <td className="event-name-cell">
+                      <strong>{agenda.name}</strong>
+                    </td>
+                    <td>
+                      {agenda.committee || '-'}
+                    </td>
+                    <td>
+                      {new Date(agenda.date).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                      })}
+                      {agenda.time && <div className="event-time">{agenda.time}</div>}
+                    </td>
+                    <td>
+                      <span className="state-badge">{agenda.state}</span>
+                    </td>
+                    <td className="agenda-summary-cell">
+                      {agenda.agenda_summary ? (
+                        <div className="agenda-summary">{agenda.agenda_summary}</div>
+                      ) : (
+                        <span className="no-summary">No summary available</span>
+                      )}
+                    </td>
+                    <td>
+                      <div className="agenda-links">
+                        {agenda.docket_url && (
+                          <a href={agenda.docket_url} target="_blank" rel="noopener noreferrer" className="agenda-link">
+                            📄 Agenda
+                          </a>
+                        )}
+                        {agenda.details_url && (
+                          <a href={agenda.details_url} target="_blank" rel="noopener noreferrer" className="agenda-link">
+                            🔗 Details
+                          </a>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {agendas.length === 0 && (
+              <div className="no-results">
+                No agendas available with docket URLs
               </div>
             )}
           </div>

@@ -11,8 +11,11 @@ enabled = true
 [vars]
 NODE_ENV = "production"
 
-# Database binding (Neon PostgreSQL)
-# Add your DATABASE_URL as a secret via: wrangler secret put DATABASE_URL
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "civitracker-db"
+database_id = "964e58ca-0add-41f2-8c31-84fb379b4ce2"
 
 # Note: Cron triggers for scheduled-scraper.ts are configured via Dashboard
 # Pages projects don't support [triggers] in wrangler.toml
