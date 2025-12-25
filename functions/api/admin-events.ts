@@ -55,7 +55,8 @@ export async function onRequest(context: any) {
               DISTINCT jsonb_build_object(
                 'number', b.bill_number,
                 'title', b.title,
-                'url', b.url
+                'url', b.url,
+                'summary', b.summary
               )
             ) FILTER (WHERE b.id IS NOT NULL),
             '[]'::json
