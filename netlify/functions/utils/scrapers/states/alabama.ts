@@ -70,7 +70,7 @@ export class AlabamaScraper extends BaseScraper {
     const allEvents: RawEvent[] = [];
 
     try {
-      // Fetch events from OpenStates API
+      // First, fetch events from OpenStates API
       const encodedJurisdiction = encodeURIComponent(this.JURISDICTION_ID);
       const url = `${this.OPENSTATES_API}/events?jurisdiction=${encodedJurisdiction}&per_page=20`;
       this.log(`🔍 Fetching from OpenStates API`);
@@ -153,10 +153,23 @@ export class AlabamaScraper extends BaseScraper {
                       event.location?.address || 
                       'Alabama State House';
 
-      // Build source URL
-      // Alabama Legislature doesn't provide individual event URLs
-      // OpenStates event pages don't exist (404), so use Today's Schedule page
-      let sourceUrl = event.sources?.[0]?.url || 'https://alison.legislature.state.al.us/todays-schedule';
+      // Build source URL - construct live-stream URL from location
+      let sourceUrl = event.sources?.[0]?.url;
+      
+      if (!sourceUrl && location) {
+        // Extract room number from location (e.g., "Room 617")
+        const roomMatch = location.match(/Room\s+(\d+)/i);
+        if (roomMatch) {
+          const roomNumber = roomMatch[1];
+          // Construct live-stream URL
+          sourceUrl = `https://alison.legislature.state.al.us/live-stream?location=Room+${roomNumber}`;
+        }
+      }
+      
+      // Fallback to Today's Schedule page
+      if (!sourceUrl) {
+        sourceUrl = 'https://alison.legislature.state.al.us/todays-schedule';
+      }
 
       return {
         name: event.name,
