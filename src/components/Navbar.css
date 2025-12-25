@@ -22,7 +22,7 @@
 .navbar-brand h1 {
   margin: 0;
   font-size: 1.5rem;
-  color: white;
+  color: white !important; /* Force white text on blue background */
   font-weight: 700;
   white-space: nowrap;
 }

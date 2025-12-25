@@ -4,6 +4,7 @@
   margin: 0 auto;
   background: #f8f9fa;
   min-height: 100vh;
+  color: #1a1a1a; /* Force dark text for light background */
 }
 
 .viewer-header {
@@ -13,12 +14,12 @@
 
 .viewer-header h1 {
   margin: 0 0 0.5rem 0;
-  color: #1a1a1a;
+  color: #1a1a1a !important; /* Force dark text, override root color */
   font-size: 2.5rem;
 }
 
 .viewer-header .subtitle {
-  color: #666;
+  color: #666 !important; /* Force gray text */
   font-size: 1.1rem;
   margin: 0;
 }
