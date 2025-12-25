@@ -109,6 +109,34 @@ export default function DataViewer({ onStateSelect }: DataViewerProps) {
   // Modal for event/bill details
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
+  
+  // Expanded agendas state
+  const [expandedAgendas, setExpandedAgendas] = useState<Set<string>>(new Set());
+  const [expandedBills, setExpandedBills] = useState<Set<string>>(new Set());
+  
+  const toggleAgendaExpansion = (agendaId: string) => {
+    setExpandedAgendas(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(agendaId)) {
+        newSet.delete(agendaId);
+      } else {
+        newSet.add(agendaId);
+      }
+      return newSet;
+    });
+  };
+  
+  const toggleBillExpansion = (billNumber: string) => {
+    setExpandedBills(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(billNumber)) {
+        newSet.delete(billNumber);
+      } else {
+        newSet.add(billNumber);
+      }
+      return newSet;
+    });
+  };
 
   const fetchData = async () => {
     try {
@@ -502,18 +530,23 @@ export default function DataViewer({ onStateSelect }: DataViewerProps) {
                     <td className="bill-summary-cell">
                       {bill.summary ? (
                         <div className="bill-summary-preview">
-                          {bill.summary.length > 150 ? (
-                            <>
-                              {bill.summary.substring(0, 150)}...
-                              <button 
-                                className="read-more-btn"
-                                onClick={() => setSelectedBill(bill)}
-                              >
-                                Read More
-                              </button>
-                            </>
-                          ) : (
-                            bill.summary
+                          <p>
+                            {expandedBills.has(bill.number)
+                              ? bill.summary
+                              : bill.summary.length > 150
+                              ? `${bill.summary.substring(0, 150)}...`
+                              : bill.summary}
+                          </p>
+                          {bill.summary.length > 150 && (
+                            <button 
+                              className="read-more-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleBillExpansion(bill.number);
+                              }}
+                            >
+                              {expandedBills.has(bill.number) ? 'Show Less' : 'Read More'}
+                            </button>
                           )}
                         </div>
                       ) : (
@@ -616,43 +649,23 @@ export default function DataViewer({ onStateSelect }: DataViewerProps) {
                     <td className="agenda-summary-cell">
                       {agenda.agenda_summary ? (
                         <div className="agenda-summary-preview">
-                          {agenda.agenda_summary.length > 200 ? (
-                            <>
-                              {agenda.agenda_summary.substring(0, 200)}...
-                              <button 
-                                className="read-more-btn"
-                                onClick={() => {
-                                  // Create a temporary event object for modal
-                                  const tempEvent: Event = {
-                                    id: agenda.agenda_id || agenda.id,
-                                    name: agenda.name,
-                                    date: agenda.date,
-                                    time: agenda.time,
-                                    location: '',
-                                    state: agenda.state,
-                                    level: 'local',
-                                    type: 'council-meeting',
-                                    committee: agenda.committee,
-                                    description: agenda.agenda_summary,
-                                    bills: [],
-                                    tags: [],
-                                    detailsUrl: agenda.details_url,
-                                    docketUrl: agenda.docket_url,
-                                    agendaUrl: agenda.agenda_url,
-                                    virtualMeetingUrl: null,
-                                    allowsPublicParticipation: false,
-                                    chamber: null,
-                                    scraperSource: '',
-                                    scrapedAt: ''
-                                  };
-                                  setSelectedEvent(tempEvent);
-                                }}
-                              >
-                                Read More
-                              </button>
-                            </>
-                          ) : (
-                            agenda.agenda_summary
+                          <p>
+                            {expandedAgendas.has(agenda.id)
+                              ? agenda.agenda_summary
+                              : agenda.agenda_summary.length > 200
+                              ? `${agenda.agenda_summary.substring(0, 200)}...`
+                              : agenda.agenda_summary}
+                          </p>
+                          {agenda.agenda_summary.length > 200 && (
+                            <button 
+                              className="read-more-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleAgendaExpansion(agenda.id);
+                              }}
+                            >
+                              {expandedAgendas.has(agenda.id) ? 'Show Less' : 'Read More'}
+                            </button>
                           )}
                         </div>
                       ) : (
