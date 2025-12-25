@@ -6,6 +6,12 @@ export default defineConfig({
   server: {
     port: 5341,
     proxy: {
+      '/api': {
+        target: 'http://localhost:8888/.netlify/functions',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api/, '')
+      },
       '/.netlify/functions': {
         target: 'http://localhost:8888',
         changeOrigin: true,
