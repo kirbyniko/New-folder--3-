@@ -163,7 +163,8 @@ export async function onRequest(context: any) {
               'number', b.bill_number,
               'title', b.title,
               'url', b.url,
-              'status', b.status
+              'status', b.status,
+              'summary', b.summary
             )
           ) FILTER (WHERE b.id IS NOT NULL),
           '[]'::json
