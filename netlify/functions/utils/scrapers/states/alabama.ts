@@ -1,6 +1,7 @@
 import { BaseScraper } from '../base-scraper';
 import type { RawEvent, ScraperConfig, BillInfo } from '../base-scraper';
 import { enrichEventMetadata } from '../shared/tagging';
+import meetingIdsData from './alabama-meeting-ids.json';
 
 /**
  * Alabama Legislature Scraper
@@ -19,11 +20,15 @@ import { enrichEventMetadata } from '../shared/tagging';
  * 
  * Alabama sessions typically run February-May annually (Regular Session).
  * Special Sessions may occur throughout the year.
+ * 
+ * Meeting IDs: alabama-meeting-ids.json maps OpenStates event IDs to Alabama's
+ * internal meeting IDs for constructing proper live-stream URLs.
  */
 export class AlabamaScraper extends BaseScraper {
   private readonly OPENSTATES_API = 'https://v3.openstates.org';
   private readonly JURISDICTION_ID = 'ocd-jurisdiction/country:us/state:al/government';
   private readonly API_KEY = process.env.OPENSTATES_API_KEY;
+  private readonly meetingIds: Record<string, any> = (meetingIdsData as any).mappings || {};
 
   constructor() {
     const config: ScraperConfig = {
@@ -153,16 +158,25 @@ export class AlabamaScraper extends BaseScraper {
                       event.location?.address || 
                       'Alabama State House';
 
-      // Build source URL - construct live-stream URL from location
+      // Build source URL - try mapping first, then extract room number
       let sourceUrl = event.sources?.[0]?.url;
       
-      if (!sourceUrl && location) {
-        // Extract room number from location (e.g., "Room 617")
+      // Check if we have a meeting ID mapping for this event
+      const mapping = this.meetingIds[event.id];
+      
+      if (mapping && mapping.room && mapping.meetingId) {
+        // Use the full URL with meeting ID from mapping
+        const encodedMeetingId = encodeURIComponent(mapping.meetingId);
+        sourceUrl = `https://alison.legislature.state.al.us/live-stream?location=Room+${mapping.room}&meeting=${encodedMeetingId}`;
+        this.log(`✓ Using mapped meeting ID for ${event.name}: ${mapping.meetingId}`);
+      } else if (!sourceUrl && location) {
+        // Fallback: Extract room number from location (e.g., "Room 617")
         const roomMatch = location.match(/Room\s+(\d+)/i);
         if (roomMatch) {
           const roomNumber = roomMatch[1];
-          // Construct live-stream URL
+          // Construct live-stream URL without meeting ID (less accurate)
           sourceUrl = `https://alison.legislature.state.al.us/live-stream?location=Room+${roomNumber}`;
+          this.log(`⚠ No meeting ID mapping for ${event.name}, using room-only URL`);
         }
       }
       
