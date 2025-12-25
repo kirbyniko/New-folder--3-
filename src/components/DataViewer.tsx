@@ -105,6 +105,10 @@ export default function DataViewer({ onStateSelect }: DataViewerProps) {
   // Sorting
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  
+  // Modal for event/bill details
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
 
   const fetchData = async () => {
     try {
@@ -373,7 +377,7 @@ export default function DataViewer({ onStateSelect }: DataViewerProps) {
                     <th>Level</th>
                     <th>Bills</th>
                     <th>Tags</th>
-                    <th>URLs</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -445,11 +449,13 @@ export default function DataViewer({ onStateSelect }: DataViewerProps) {
                       ) : '-'}
                     </td>
                     <td>
-                      {event.detailsUrl && <a href={event.detailsUrl} target="_blank" rel="noopener noreferrer">📄</a>}
-                      {event.docketUrl && <a href={event.docketUrl} target="_blank" rel="noopener noreferrer">📋</a>}
-                      {event.virtualMeetingUrl && <a href={event.virtualMeetingUrl} target="_blank" rel="noopener noreferrer">🎥</a>}
-                      {event.agendaUrl && <a href={event.agendaUrl} target="_blank" rel="noopener noreferrer">📅</a>}
-                      {!event.detailsUrl && !event.docketUrl && !event.virtualMeetingUrl && !event.agendaUrl && '-'}
+                      <button 
+                        className="view-details-btn"
+                        onClick={() => setSelectedEvent(event)}
+                        title="View full details"
+                      >
+                        View Details
+                      </button>
                     </td>
                   </tr>
                   );
@@ -495,7 +501,21 @@ export default function DataViewer({ onStateSelect }: DataViewerProps) {
                     </td>
                     <td className="bill-summary-cell">
                       {bill.summary ? (
-                        <div className="bill-summary">{bill.summary}</div>
+                        <div className="bill-summary-preview">
+                          {bill.summary.length > 150 ? (
+                            <>
+                              {bill.summary.substring(0, 150)}...
+                              <button 
+                                className="read-more-btn"
+                                onClick={() => setSelectedBill(bill)}
+                              >
+                                Read More
+                              </button>
+                            </>
+                          ) : (
+                            bill.summary
+                          )}
+                        </div>
                       ) : (
                         <span className="no-summary">No summary available</span>
                       )}
@@ -595,7 +615,46 @@ export default function DataViewer({ onStateSelect }: DataViewerProps) {
                     </td>
                     <td className="agenda-summary-cell">
                       {agenda.agenda_summary ? (
-                        <div className="agenda-summary">{agenda.agenda_summary}</div>
+                        <div className="agenda-summary-preview">
+                          {agenda.agenda_summary.length > 200 ? (
+                            <>
+                              {agenda.agenda_summary.substring(0, 200)}...
+                              <button 
+                                className="read-more-btn"
+                                onClick={() => {
+                                  // Create a temporary event object for modal
+                                  const tempEvent: Event = {
+                                    id: agenda.agenda_id || agenda.id,
+                                    name: agenda.name,
+                                    date: agenda.date,
+                                    time: agenda.time,
+                                    location: '',
+                                    state: agenda.state,
+                                    level: 'local',
+                                    type: 'council-meeting',
+                                    committee: agenda.committee,
+                                    description: agenda.agenda_summary,
+                                    bills: [],
+                                    tags: [],
+                                    detailsUrl: agenda.details_url,
+                                    docketUrl: agenda.docket_url,
+                                    agendaUrl: agenda.agenda_url,
+                                    virtualMeetingUrl: null,
+                                    allowsPublicParticipation: false,
+                                    chamber: null,
+                                    scraperSource: '',
+                                    scrapedAt: ''
+                                  };
+                                  setSelectedEvent(tempEvent);
+                                }}
+                              >
+                                Read More
+                              </button>
+                            </>
+                          ) : (
+                            agenda.agenda_summary
+                          )}
+                        </div>
                       ) : (
                         <span className="no-summary">No summary available</span>
                       )}
@@ -626,6 +685,192 @@ export default function DataViewer({ onStateSelect }: DataViewerProps) {
           </div>
         )}
       </>
+    )}
+
+    {/* Event Details Modal */}
+    {selectedEvent && (
+      <div className="modal-overlay" onClick={() => setSelectedEvent(null)}>
+        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-header">
+            <h2>{selectedEvent.name}</h2>
+            <button className="modal-close" onClick={() => setSelectedEvent(null)}>✕</button>
+          </div>
+          <div className="modal-body">
+            <div className="detail-section">
+              <h3>📅 Date & Time</h3>
+              <p>
+                {new Date(selectedEvent.date).toLocaleDateString('en-US', { 
+                  weekday: 'long', 
+                  month: 'long', 
+                  day: 'numeric', 
+                  year: 'numeric' 
+                })}
+                {selectedEvent.time && ` at ${selectedEvent.time}`}
+              </p>
+            </div>
+            
+            {selectedEvent.committee && (
+              <div className="detail-section">
+                <h3>🏛️ Committee</h3>
+                <p>{selectedEvent.committee}</p>
+              </div>
+            )}
+            
+            {selectedEvent.location && (
+              <div className="detail-section">
+                <h3>📍 Location</h3>
+                <p>{selectedEvent.location}</p>
+              </div>
+            )}
+            
+            <div className="detail-section">
+              <h3>📊 Details</h3>
+              <p><strong>State:</strong> {selectedEvent.state}</p>
+              <p><strong>Level:</strong> {selectedEvent.level}</p>
+              {selectedEvent.type && <p><strong>Type:</strong> {selectedEvent.type}</p>}
+            </div>
+            
+            {selectedEvent.description && (
+              <div className="detail-section">
+                <h3>📄 Description</h3>
+                <p>{selectedEvent.description}</p>
+              </div>
+            )}
+            
+            {selectedEvent.bills && selectedEvent.bills.length > 0 && (
+              <div className="detail-section">
+                <h3>📋 Bills ({selectedEvent.bills.length})</h3>
+                <div className="bills-detail-list">
+                  {selectedEvent.bills.map((bill, i) => (
+                    <div key={i} className="bill-detail-item">
+                      <div className="bill-detail-header">
+                        <strong>{bill.number}</strong>
+                        {bill.url && (
+                          <a href={bill.url} target="_blank" rel="noopener noreferrer" className="bill-link-btn">
+                            View Bill →
+                          </a>
+                        )}
+                      </div>
+                      <p className="bill-title">{bill.title}</p>
+                      {bill.summary && (
+                        <div className="bill-summary-detail">
+                          <strong>Summary:</strong>
+                          <p>{bill.summary}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {selectedEvent.tags && selectedEvent.tags.length > 0 && (
+              <div className="detail-section">
+                <h3>🏷️ Tags</h3>
+                <div className="tags-list">
+                  {selectedEvent.tags.map((tag, i) => {
+                    const tagDef = TAG_DEFINITIONS[tag];
+                    return tagDef ? (
+                      <span key={i} className="tag" style={{ backgroundColor: tagDef.color + '20', color: tagDef.color, border: `1px solid ${tagDef.color}` }}>
+                        {tagDef.icon} {tagDef.label}
+                      </span>
+                    ) : (
+                      <span key={i} className="tag">{tag}</span>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            
+            <div className="detail-section">
+              <h3>🔗 Links</h3>
+              <div className="links-grid">
+                {selectedEvent.detailsUrl && (
+                  <a href={selectedEvent.detailsUrl} target="_blank" rel="noopener noreferrer" className="detail-link">
+                    📄 Event Details
+                  </a>
+                )}
+                {selectedEvent.docketUrl && (
+                  <a href={selectedEvent.docketUrl} target="_blank" rel="noopener noreferrer" className="detail-link">
+                    📋 Docket/Agenda
+                  </a>
+                )}
+                {selectedEvent.virtualMeetingUrl && (
+                  <a href={selectedEvent.virtualMeetingUrl} target="_blank" rel="noopener noreferrer" className="detail-link">
+                    🎥 Virtual Meeting
+                  </a>
+                )}
+                {selectedEvent.agendaUrl && (
+                  <a href={selectedEvent.agendaUrl} target="_blank" rel="noopener noreferrer" className="detail-link">
+                    📅 Agenda
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* Bill Details Modal */}
+    {selectedBill && (
+      <div className="modal-overlay" onClick={() => setSelectedBill(null)}>
+        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-header">
+            <h2>{selectedBill.number}</h2>
+            <button className="modal-close" onClick={() => setSelectedBill(null)}>✕</button>
+          </div>
+          <div className="modal-body">
+            <div className="detail-section">
+              <h3>📄 Title</h3>
+              <p>{selectedBill.title}</p>
+            </div>
+            
+            {selectedBill.summary && (
+              <div className="detail-section">
+                <h3>📝 AI Summary</h3>
+                <p className="bill-full-summary">{selectedBill.summary}</p>
+              </div>
+            )}
+            
+            <div className="detail-section">
+              <h3>📊 Details</h3>
+              <p><strong>State:</strong> {selectedBill.state}</p>
+              <p><strong>Event:</strong> {selectedBill.eventName}</p>
+              <p><strong>Event Date:</strong> {new Date(selectedBill.eventDate).toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric'
+              })}</p>
+            </div>
+            
+            {selectedBill.tags && selectedBill.tags.length > 0 && (
+              <div className="detail-section">
+                <h3>🏷️ Tags</h3>
+                <div className="tags-list">
+                  {selectedBill.tags.map((tag, i) => {
+                    const tagDef = TAG_DEFINITIONS[tag];
+                    return tagDef ? (
+                      <span key={i} className="tag" style={{ backgroundColor: tagDef.color + '20', color: tagDef.color, border: `1px solid ${tagDef.color}` }}>
+                        {tagDef.icon} {tagDef.label}
+                      </span>
+                    ) : null;
+                  })}
+                </div>
+              </div>
+            )}
+            
+            {selectedBill.url && (
+              <div className="detail-section">
+                <a href={selectedBill.url} target="_blank" rel="noopener noreferrer" className="detail-link primary">
+                  View Full Bill Text →
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     )}
     </div>
   );

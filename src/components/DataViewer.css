@@ -526,3 +526,260 @@
 .agenda-link:hover {
   background: #0056b3;
 }
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  max-width: 800px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: modalSlideIn 0.2s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-header {
+  position: sticky;
+  top: 0;
+  background: white;
+  padding: 1.5rem;
+  border-bottom: 2px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10;
+}
+
+.modal-header h2 {
+  margin: 0;
+  color: #1a1a1a !important;
+  font-size: 1.5rem;
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #666;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.modal-close:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.detail-section {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.detail-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.detail-section h3 {
+  margin: 0 0 0.75rem 0;
+  color: #333 !important;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.detail-section p {
+  margin: 0.5rem 0;
+  color: #444 !important;
+  line-height: 1.6;
+}
+
+.bills-detail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.bill-detail-item {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 4px solid #007bff;
+}
+
+.bill-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.bill-detail-header strong {
+  color: #007bff !important;
+  font-size: 1.1rem;
+}
+
+.bill-link-btn {
+  padding: 0.4rem 0.8rem;
+  background: #007bff;
+  color: white !important;
+  text-decoration: none;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  transition: background 0.2s;
+}
+
+.bill-link-btn:hover {
+  background: #0056b3;
+}
+
+.bill-title {
+  color: #333 !important;
+  font-weight: 500;
+  margin: 0.5rem 0;
+}
+
+.bill-summary-detail {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+.bill-summary-detail strong {
+  color: #666 !important;
+  font-size: 0.9rem;
+}
+
+.bill-summary-detail p {
+  margin-top: 0.5rem;
+  color: #555 !important;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.bill-full-summary {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 6px;
+  border-left: 3px solid #28a745;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: #333 !important;
+}
+
+.links-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+.detail-link {
+  display: block;
+  padding: 0.75rem 1rem;
+  background: #f0f0f0;
+  color: #333 !important;
+  text-decoration: none;
+  border-radius: 6px;
+  transition: all 0.2s;
+  text-align: center;
+  font-weight: 500;
+}
+
+.detail-link:hover {
+  background: #e0e0e0;
+  transform: translateY(-2px);
+}
+
+.detail-link.primary {
+  background: #007bff;
+  color: white !important;
+  font-size: 1.05rem;
+  padding: 1rem;
+}
+
+.detail-link.primary:hover {
+  background: #0056b3;
+}
+
+/* View Details Button */
+.view-details-btn {
+  padding: 0.5rem 1rem;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.view-details-btn:hover {
+  background: #0056b3;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+}
+
+/* Read More Button */
+.read-more-btn {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.25rem 0.6rem;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.read-more-btn:hover {
+  background: #218838;
+  transform: scale(1.05);
+}
+
+.bill-summary-preview {
+  color: #444 !important;
+  line-height: 1.6;
+}
