@@ -44,6 +44,9 @@ export async function onRequest(context: any) {
 
     // Fetch bills and tags for events (optimized for small result sets)
     if (events.length > 0 && events.length <= 100) {
+      // Get event IDs as a comma-separated string for SQL IN clause
+      const eventIds = events.map(e => `'${e.id}'`).join(',');
+      
       // Build a map of event IDs to their bills and tags
       const billsMap = new Map();
       const tagsMap = new Map();
@@ -54,7 +57,7 @@ export async function onRequest(context: any) {
         tagsMap.set(event.id, []);
       }
       
-      // Fetch all bills for these events in one query
+      // Fetch bills for these specific events
       const { results: allBills } = await env.DB.prepare(`
         SELECT 
           eb.event_id,
@@ -64,13 +67,15 @@ export async function onRequest(context: any) {
           b.summary
         FROM event_bills eb
         INNER JOIN bills b ON eb.bill_id = b.id
+        WHERE eb.event_id IN (${eventIds})
         ORDER BY eb.event_id, b.bill_number
       `).all();
       
-      // Fetch all tags for these events in one query
+      // Fetch tags for these specific events
       const { results: allTags } = await env.DB.prepare(`
         SELECT event_id, tag
         FROM event_tags
+        WHERE event_id IN (${eventIds})
         ORDER BY event_id, tag
       `).all();
       
