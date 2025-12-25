@@ -29,6 +29,7 @@ interface Bill {
   id: string;
   bill_number: string;
   title: string;
+  description: string | null;
   state_code: string;
   url: string | null;
   summary: string | null;
@@ -87,23 +88,23 @@ async function listAvailableModels(): Promise<string[]> {
 async function generateSummary(
   billNumber: string,
   billTitle: string,
+  billDescription: string | null,
   billUrl: string | null,
   model: string
 ): Promise<string | null> {
-  const prompt = `You are a legislative bill analyst. Provide a clear, concise summary of the following bill.
+  const prompt = `Summarize this legislative bill concisely. Do not start with phrases like "Here's a summary" or "Okay" - just provide the summary directly.
 
-Bill Number: ${billNumber}
+Bill: ${billNumber}
 Title: ${billTitle}
-${billUrl ? `URL: ${billUrl}` : ''}
+${billDescription ? `\nDescription:\n${billDescription}` : ''}
+${billUrl ? `\nURL: ${billUrl}` : ''}
 
-Based on the title and bill number, provide:
-1. A brief 2-3 sentence summary of what this bill likely addresses
-2. Key stakeholders or affected groups
-3. Potential impact if passed
+Provide a 2-3 sentence summary covering:
+- What the bill does
+- Who it affects
+- Key impact if passed
 
-Keep the summary under 200 words and factual. If the title is unclear, acknowledge limitations.
-
-Summary:`;
+Be factual and concise (under 150 words). If information is limited, focus only on what's known from the title.`;
 
   try {
     const request: OllamaRequest = {
@@ -141,7 +142,7 @@ Summary:`;
  * Generate content hash for a bill to detect changes
  */
 function generateContentHash(bill: Bill): string {
-  const content = `${bill.bill_number}|${bill.title}|${bill.url || ''}`;
+  const content = `${bill.bill_number}|${bill.title}|${bill.description || ''}|${bill.url || ''}`;
   return crypto.createHash('sha256').update(content).digest('hex');
 }
 
@@ -225,6 +226,7 @@ async function main() {
             id,
             bill_number,
             title,
+            description,
             state_code,
             url,
             summary,
@@ -242,6 +244,7 @@ async function main() {
             id,
             bill_number,
             title,
+            description,
             state_code,
             url,
             summary,
@@ -249,9 +252,9 @@ async function main() {
             last_summarized_at
           FROM bills
           WHERE state_code = ${stateFilter}
-          AND (summary IS NULL OR content_hash IS NULL OR last_summarized_at IS NULL)
+            AND (summary IS NULL OR content_hash IS NULL OR last_summarized_at IS NULL)
           ORDER BY bill_number 
-          LIMIT 5
+          LIMIT 100
         `;
       }
     } else {
@@ -262,6 +265,7 @@ async function main() {
             id,
             bill_number,
             title,
+            description,
             state_code,
             url,
             summary,
@@ -278,6 +282,7 @@ async function main() {
             id,
             bill_number,
             title,
+            description,
             state_code,
             url,
             summary,
@@ -286,7 +291,7 @@ async function main() {
           FROM bills
           WHERE summary IS NULL OR content_hash IS NULL OR last_summarized_at IS NULL
           ORDER BY state_code, bill_number 
-          LIMIT 5
+          LIMIT 100
         `;
       }
     }
@@ -324,6 +329,7 @@ async function main() {
       const summary = await generateSummary(
         bill.bill_number,
         bill.title,
+        bill.description,
         bill.url,
         model
       );
