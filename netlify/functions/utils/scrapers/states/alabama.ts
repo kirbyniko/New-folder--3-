@@ -1,7 +1,9 @@
 import { BaseScraper } from '../base-scraper';
 import type { RawEvent, ScraperConfig, BillInfo } from '../base-scraper';
 import { enrichEventMetadata } from '../shared/tagging';
-import meetingIdsData from './alabama-meeting-ids.json';
+import { readFileSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
 /**
  * Alabama Legislature Scraper
@@ -28,7 +30,7 @@ export class AlabamaScraper extends BaseScraper {
   private readonly OPENSTATES_API = 'https://v3.openstates.org';
   private readonly JURISDICTION_ID = 'ocd-jurisdiction/country:us/state:al/government';
   private readonly API_KEY = process.env.OPENSTATES_API_KEY;
-  private readonly meetingIds: Record<string, any> = (meetingIdsData as any).mappings || {};
+  private meetingIds: Record<string, any> = {};
 
   constructor() {
     const config: ScraperConfig = {
@@ -41,7 +43,25 @@ export class AlabamaScraper extends BaseScraper {
       requestDelay: 200
     };
     super(config);
+    this.loadMeetingIds();
     this.log('🏛️ AL Scraper initialized (OpenStates API)');
+  }
+
+  /**
+   * Load meeting ID mappings from JSON file
+   */
+  private loadMeetingIds() {
+    try {
+      // Get the directory of the current file
+      const __dirname = dirname(fileURLToPath(import.meta.url));
+      const mappingPath = join(__dirname, 'alabama-meeting-ids.json');
+      const data = JSON.parse(readFileSync(mappingPath, 'utf-8'));
+      this.meetingIds = data.mappings || {};
+      this.log(`📋 Loaded ${Object.keys(this.meetingIds).length} meeting ID mappings`);
+    } catch (error) {
+      this.log(`⚠️ Could not load meeting ID mappings: ${error instanceof Error ? error.message : error}`);
+      this.meetingIds = {};
+    }
   }
 
   getCalendarSources(): { name: string; url: string; description: string }[] {
