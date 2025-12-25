@@ -38,4 +38,5 @@ export interface Bill {
   status?: string;              // Current status
   sponsors?: string[];          // Bill sponsors
   tags?: string[];              // Policy area tags
+  summary?: string;             // AI-generated summary of the bill
 }
