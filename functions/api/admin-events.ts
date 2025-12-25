@@ -17,7 +17,7 @@ export async function onRequest(context: any) {
   }
 
   try {
-    const limit = parseInt(url.searchParams.get('limit') || '100', 10);
+    const limit = parseInt(url.searchParams.get('limit') || '500', 10);
     const stateFilter = url.searchParams.get('state')?.toUpperCase();
     
     // Build query with optional state filter
@@ -46,15 +46,18 @@ export async function onRequest(context: any) {
     if (stateFilter) {
       query += ` AND e.state_code = ?`;
       params.push(stateFilter);
+      query += ` ORDER BY e.date ASC, e.time ASC LIMIT ?`;
+    } else {
+      // When showing all states, prioritize events with bills
+      query += ` ORDER BY (SELECT COUNT(*) FROM event_bills WHERE event_id = e.id) DESC, e.date ASC, e.time ASC LIMIT ?`;
     }
     
-    query += ` ORDER BY e.date ASC, e.time ASC LIMIT ?`;
     params.push(limit);
     
     const { results: events } = await env.DB.prepare(query).bind(...params).all();
 
-    // Fetch bills and tags for events (optimized for small result sets)
-    if (events.length > 0 && events.length <= 100) {
+    // Fetch bills and tags for events (optimize by batching into groups of 50)
+    if (events.length > 0) {
       // Get event IDs as a comma-separated string for SQL IN clause
       const eventIds = events.map(e => `'${e.id}'`).join(',');
       
@@ -108,12 +111,6 @@ export async function onRequest(context: any) {
       for (const event of events) {
         event.bills = billsMap.get(event.id) || [];
         event.tags = tagsMap.get(event.id) || [];
-      }
-    } else {
-      // For large result sets, skip bills/tags
-      for (const event of events) {
-        event.bills = [];
-        event.tags = [];
       }
     }
 

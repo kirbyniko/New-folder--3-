@@ -114,7 +114,7 @@ export default function DataViewer({ onStateSelect }: DataViewerProps) {
       if (stateFilter) params.set('state', stateFilter);
       if (levelFilter) params.set('level', levelFilter);
       if (dateFilter) params.set('date', dateFilter);
-      params.set('limit', '100'); // Limited to 100 for performance
+      params.set('limit', '500'); // Increased limit with bill prioritization
       
       const [eventsResponse, agendasResponse] = await Promise.all([
         fetch(`/api/admin-events?${params}`),
