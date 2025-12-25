@@ -34,6 +34,7 @@ interface Bill {
   eventName: string;
   eventDate: string;
   tags?: string[];
+  summary?: string;
 }
 
 interface DataResponse {
@@ -444,6 +445,7 @@ export default function DataViewer({ onStateSelect }: DataViewerProps) {
                 <tr>
                   <th>Bill Number</th>
                   <th>Title</th>
+                  <th>Summary</th>
                   <th>State</th>
                   <th>Event</th>
                   <th>Event Date</th>
@@ -459,6 +461,13 @@ export default function DataViewer({ onStateSelect }: DataViewerProps) {
                     </td>
                     <td className="bill-title-cell">
                       {bill.title}
+                    </td>
+                    <td className="bill-summary-cell">
+                      {bill.summary ? (
+                        <div className="bill-summary">{bill.summary}</div>
+                      ) : (
+                        <span className="no-summary">No summary available</span>
+                      )}
                     </td>
                     <td>
                       <span className="state-badge">{bill.state}</span>

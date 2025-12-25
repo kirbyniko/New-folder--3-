@@ -260,7 +260,8 @@ export const handler: Handler = async (event) => {
                 'number', b.bill_number,
                 'title', b.title,
                 'url', b.url,
-                'status', b.status
+                'status', b.status,
+                'summary', b.summary
               )
             ) FILTER (WHERE b.id IS NOT NULL),
             '[]'::json

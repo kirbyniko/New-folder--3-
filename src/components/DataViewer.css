@@ -196,10 +196,31 @@
 }
 
 .bill-title-cell {
-  max-width: 400px;
+  max-width: 300px;
   overflow: hidden;
   text-overflow: ellipsis;
   color: #1a1a1a !important; /* Force dark text */
+}
+
+.bill-summary-cell {
+  max-width: 500px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.bill-summary {
+  color: #333 !important;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.no-summary {
+  color: #999 !important;
+  font-style: italic;
+  font-size: 0.8rem;
 }
 
 .event-name-cell {
