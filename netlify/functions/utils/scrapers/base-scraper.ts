@@ -46,6 +46,7 @@ export interface RawEvent {
   tags?: string[];
   sourceUrl?: string;  // URL of the page where data was scraped from
   allowsPublicParticipation?: boolean;  // Whether public comment/testimony is allowed
+  externalId?: string;  // External ID for deduplication (e.g., from OpenStates API)
 }
 
 // 🆕 Bill information for raw events
