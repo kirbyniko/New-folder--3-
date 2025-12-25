@@ -1326,6 +1326,10 @@ body {
   line-height: 1.5;
 }
 
+.agenda-summary-preview p {
+  margin: 0 0 0.5rem 0;
+}
+
 .agenda-summary-full {
   padding: 0.75rem;
   background: rgba(59, 130, 246, 0.05);
@@ -1342,6 +1346,7 @@ body {
 
 /* Read More Button */
 .read-more-btn {
+  display: inline-block;
   background: #8b5cf6;
   color: white;
   border: none;
@@ -1349,7 +1354,7 @@ body {
   border-radius: 4px;
   font-size: 0.85rem;
   cursor: pointer;
-  margin-top: 0.5rem;
+  margin-top: 0.25rem;
   transition: all 0.2s;
 }
 
