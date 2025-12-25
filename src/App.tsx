@@ -11,6 +11,8 @@ import { SourceLinks } from './components/SourceLinks'
 import { getApiUrl } from './config/api'
 import './App.css'
 
+const APP_VERSION = '2025.12.25.03-defensive'; // Cache bust - defensive array parsing
+
 // State capitol coordinates for default locations
 const STATE_CAPITOLS: Record<string, { lat: number; lng: number; zip: string }> = {
   'AL': { lat: 32.3617, lng: -86.2792, zip: '36104' }, 'AK': { lat: 58.3019, lng: -134.4197, zip: '99801' },
@@ -202,9 +204,9 @@ function App() {
       console.log(`🌍 Location: ${location.city}, ${location.stateAbbr} (${location.lat}, ${location.lng})`)
       
       // 2. Fetch all tiers in parallel
-      console.log('📡 Fetching Federal:', '/.netlify/functions/congress-meetings')
-      console.log('📡 Fetching State:', location.stateAbbr ? `/.netlify/functions/state-events?state=${location.stateAbbr}` : 'SKIPPED')
-      console.log('📡 Fetching Local:', `/.netlify/functions/local-meetings?lat=${location.lat}&lng=${location.lng}&radius=${radius}`)
+      console.log('📡 Fetching Federal:', '/api/congress-meetings')
+      console.log('📡 Fetching State:', location.stateAbbr ? `/api/state-events?state=${location.stateAbbr}` : 'SKIPPED')
+      console.log('📡 Fetching Local:', `/api/local-meetings?lat=${location.lat}&lng=${location.lng}&radius=${radius}`)
       
       // Create abort controller for 30-second timeout
       const controller = new AbortController();
@@ -221,11 +223,11 @@ function App() {
       
       console.time('⏱️ Total fetch time');
       const [federalResponse, stateResponse, localResponse] = await Promise.all([
-        fetch(getApiUrl(`/.netlify/functions/congress-meetings`), fetchOptions),
+        fetch(getApiUrl(`/api/congress-meetings`), fetchOptions),
         location.stateAbbr 
-          ? fetch(getApiUrl(`/.netlify/functions/state-events?state=${location.stateAbbr}${cacheBuster}`), fetchOptions)
+          ? fetch(getApiUrl(`/api/state-events?state=${location.stateAbbr}${cacheBuster}`), fetchOptions)
           : Promise.resolve(null),
-        fetch(getApiUrl(`/.netlify/functions/local-meetings?lat=${location.lat}&lng=${location.lng}&radius=${radius}${cacheBuster}`), fetchOptions)
+        fetch(getApiUrl(`/api/local-meetings?lat=${location.lat}&lng=${location.lng}&radius=${radius}${cacheBuster}`), fetchOptions)
       ]);
       console.timeEnd('⏱️ Total fetch time');
       
@@ -236,8 +238,14 @@ function App() {
       if (federalResponse.ok) {
         const federalText = await federalResponse.text()
         console.log('📥 Federal raw response:', federalText.substring(0, 200))
-        federal = JSON.parse(federalText)
-        console.log(`🏛️ Federal: ${federal.length} events`, federal.length > 0 ? federal[0] : 'none')
+        try {
+          const parsed = JSON.parse(federalText)
+          federal = Array.isArray(parsed) ? parsed : []
+          console.log(`🏛️ Federal: ${federal.length} events`, federal.length > 0 ? federal[0] : 'none')
+        } catch (e) {
+          console.error('❌ Failed to parse federal events:', e)
+          federal = []
+        }
       } else {
         console.error('❌ Federal API error:', federalResponse.status, await federalResponse.text())
       }
@@ -247,8 +255,14 @@ function App() {
       if (stateResponse && stateResponse.ok) {
         const stateText = await stateResponse.text()
         console.log('📥 State raw response:', stateText.substring(0, 200))
-        state = JSON.parse(stateText)
-        console.log(`🏢 State: ${state.length} events`, state.length > 0 ? state[0] : 'none')
+        try {
+          const parsed = JSON.parse(stateText)
+          state = Array.isArray(parsed) ? parsed : []
+          console.log(`🏢 State: ${state.length} events`, state.length > 0 ? state[0] : 'none')
+        } catch (e) {
+          console.error('❌ Failed to parse state events:', e)
+          state = []
+        }
         
         // Extract calendar sources from headers
         const calendarSourcesHeader = stateResponse.headers.get('X-Calendar-Sources')
@@ -262,17 +276,19 @@ function App() {
           }
         }
         
-        // Debug: Check bills field
-        const eventsWithBills = state.filter(e => e.bills && e.bills.length > 0)
-        console.log(`📋 Events with bills: ${eventsWithBills.length}`)
-        if (eventsWithBills.length > 0) {
-          console.log(`📋 Sample event with bills:`, eventsWithBills[0].name, 'Bills:', eventsWithBills[0].bills)
-        }
-        
-        // Show enrichment message if events have detail URLs
-        const eventsWithDetails = state.filter(e => e.url).length
-        if (eventsWithDetails > 0) {
-          console.log(`ℹ️ Note: ${eventsWithDetails} events are being enriched with docket/Zoom data in the background. Refresh in a few minutes for full details.`)
+        // Debug: Check bills field (with safety check)
+        if (state && Array.isArray(state)) {
+          const eventsWithBills = state.filter(e => e && e.bills && e.bills.length > 0)
+          console.log(`📋 Events with bills: ${eventsWithBills.length}`)
+          if (eventsWithBills.length > 0) {
+            console.log(`📋 Sample event with bills:`, eventsWithBills[0].name, 'Bills:', eventsWithBills[0].bills)
+          }
+          
+          // Show enrichment message if events have detail URLs
+          const eventsWithDetails = state.filter(e => e && e.url).length
+          if (eventsWithDetails > 0) {
+            console.log(`ℹ️ Note: ${eventsWithDetails} events are being enriched with docket/Zoom data in the background. Refresh in a few minutes for full details.`)
+          }
         }
       } else if (stateResponse) {
         console.error('❌ State API error:', stateResponse.status, await stateResponse.text())
@@ -283,8 +299,14 @@ function App() {
       if (localResponse.ok) {
         const localText = await localResponse.text()
         console.log('📥 Local raw response:', localText.substring(0, 200))
-        local = JSON.parse(localText)
-        console.log(`🏘️ Local: ${local.length} events`, local.length > 0 ? local[0] : 'none')
+        try {
+          const parsed = JSON.parse(localText)
+          local = Array.isArray(parsed) ? parsed : []
+          console.log(`🏘️ Local: ${local.length} events`, local.length > 0 ? local[0] : 'none')
+        } catch (e) {
+          console.error('❌ Failed to parse local events:', e)
+          local = []
+        }
         
         // Extract local calendar sources
         const localCalendarSourcesHeader = localResponse.headers.get('X-Calendar-Sources')
@@ -395,9 +417,9 @@ function App() {
       console.log('🚀 Fetching local events for capital:', `local-meetings?lat=${capitol.lat}&lng=${capitol.lng}&radius=${stateRadius}`);
       
       const [federalResponse, stateResponse, localResponse] = await Promise.all([
-        fetch(getApiUrl(`/.netlify/functions/congress-meetings`), fetchOptions),
-        fetch(getApiUrl(`/.netlify/functions/state-events?state=${stateAbbr}${cacheBuster}`), fetchOptions),
-        fetch(getApiUrl(`/.netlify/functions/local-meetings?lat=${capitol.lat}&lng=${capitol.lng}&radius=${stateRadius}${cacheBuster}`), fetchOptions)
+        fetch(getApiUrl(`/api/congress-meetings`), fetchOptions),
+        fetch(getApiUrl(`/api/state-events?state=${stateAbbr}${cacheBuster}`), fetchOptions),
+        fetch(getApiUrl(`/api/local-meetings?lat=${capitol.lat}&lng=${capitol.lng}&radius=${stateRadius}${cacheBuster}`), fetchOptions)
       ]);
       console.timeEnd('⏱️ State selector fetch time');
       
@@ -405,13 +427,18 @@ function App() {
       
       clearTimeout(timeoutId);
       
-      const federal = federalResponse.ok ? await federalResponse.json() : []
-      const state = stateResponse.ok ? await stateResponse.json() : []
-      const local = localResponse.ok ? await localResponse.json() : []
+      const federal = federalResponse.ok ? (await federalResponse.json().catch(() => [])) : []
+      const state = stateResponse.ok ? (await stateResponse.json().catch(() => [])) : []
+      const local = localResponse.ok ? (await localResponse.json().catch(() => [])) : []
       
-      console.log('📥 Raw responses - Federal:', federal.length, 'State:', state.length, 'Local:', local.length)
-      if (local.length > 0) {
-        console.log('🏘️ First local event:', local[0])
+      // Ensure all are arrays
+      const federalArray = Array.isArray(federal) ? federal : []
+      const stateArray = Array.isArray(state) ? state : []
+      const localArray = Array.isArray(local) ? local : []
+      
+      console.log('📥 Raw responses - Federal:', federalArray.length, 'State:', stateArray.length, 'Local:', localArray.length)
+      if (localArray.length > 0) {
+        console.log('🏘️ First local event:', localArray[0])
       }
       
       // Extract and merge calendar sources from both state and local responses
@@ -475,14 +502,14 @@ function App() {
       }
       
       // Filter out malformed events missing required fields
-      const validFederal = federal.filter((e: any) => e && e.level)
-      const validState = state.filter((e: any) => e && e.level)
-      const validLocal = local.filter((e: any) => e && e.level)
+      const validFederal = federalArray.filter((e: any) => e && e.level)
+      const validState = stateArray.filter((e: any) => e && e.level)
+      const validLocal = localArray.filter((e: any) => e && e.level)
       
       console.log('📊 Valid events - Federal:', validFederal.length, 'State:', validState.length, 'Local:', validLocal.length);
       
-      if (local.length !== validLocal.length) {
-        console.warn('⚠️ Some local events filtered out:', local.length - validLocal.length, 'missing level field')
+      if (localArray.length !== validLocal.length) {
+        console.warn('⚠️ Some local events filtered out:', localArray.length - validLocal.length, 'missing level field')
       }
       
       // Add distances - tags now come from database via blobs

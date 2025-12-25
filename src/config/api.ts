@@ -1,8 +1,8 @@
 /**
  * API Configuration for Backend Access
  * 
- * This configures how the app reaches the Netlify Functions backend:
- * - Web: Uses relative URLs like /.netlify/functions/congress-meetings
+ * This configures how the app reaches the Cloudflare Pages Functions backend:
+ * - Web: Uses relative URLs like /api/congress-meetings
  * - Android: Uses absolute URL to backend server
  * 
  * For development, run: adb reverse tcp:8888 tcp:8888
@@ -16,7 +16,7 @@ const BACKEND_URL = import.meta.env.VITE_API_URL;
 
 /**
  * Get the full API URL for a backend function
- * @param path - Function path like '/.netlify/functions/congress-meetings'
+ * @param path - Function path like '/api/congress-meetings'
  * @returns Full URL to backend
  */
 export function getApiUrl(path: string): string {

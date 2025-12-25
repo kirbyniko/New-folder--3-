@@ -99,7 +99,7 @@ export default function DataViewer({ onStateSelect }: DataViewerProps) {
       if (dateFilter) params.set('date', dateFilter);
       params.set('limit', '500'); // Increased to get more events with bills
       
-      const response = await fetch(`/.netlify/functions/admin-events?${params}`);
+      const response = await fetch(`/api/admin-events?${params}`);
       
       if (!response.ok) {
         throw new Error(`Failed to fetch: ${response.status}`);

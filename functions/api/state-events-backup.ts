@@ -1,0 +1,336 @@
+import type { Handler } from '@netlify/functions';
+// import { getStore } from '@netlify/blobs'; // Disabled - using database instead
+import { loadEnvFile } from './utils/env-loader.js';
+import { ScraperRegistry, CacheManager, initializeScrapers } from './utils/scrapers/index.js';
+import { sanitizeEvent } from './utils/security.js';
+import { rateLimit } from './utils/rate-limit.js';
+
+// Helper function to get state legislature homepage URL
+function getStateLegislatureUrl(stateCode: string): string | null {
+  const urls: Record<string, string> = {
+    'IL': 'https://www.ilga.gov',
+    'OH': 'https://www.legislature.ohio.gov',
+    'GA': 'https://www.legis.ga.gov',
+    'NC': 'https://www.ncleg.gov',
+    'MI': 'https://www.legislature.mi.gov'
+  };
+  return urls[stateCode] || null;
+}
+
+interface StateJurisdiction {
+  id: string;
+  capitol: {
+    lat: number;
+    lng: number;
+    city: string;
+  };
+}
+
+const STATE_JURISDICTIONS: Record<string, StateJurisdiction> = {
+  'AL': { id: 'ocd-jurisdiction/country:us/state:al/government', capitol: { lat: 32.3617, lng: -86.2792, city: 'Montgomery' } },
+  'AK': { id: 'ocd-jurisdiction/country:us/state:ak/government', capitol: { lat: 58.3019, lng: -134.4197, city: 'Juneau' } },
+  'AZ': { id: 'ocd-jurisdiction/country:us/state:az/government', capitol: { lat: 33.4484, lng: -112.0740, city: 'Phoenix' } },
+  'AR': { id: 'ocd-jurisdiction/country:us/state:ar/government', capitol: { lat: 34.7465, lng: -92.2896, city: 'Little Rock' } },
+  'CA': { id: 'ocd-jurisdiction/country:us/state:ca/government', capitol: { lat: 38.5767, lng: -121.4934, city: 'Sacramento' } },
+  'CO': { id: 'ocd-jurisdiction/country:us/state:co/government', capitol: { lat: 39.7392, lng: -104.9903, city: 'Denver' } },
+  'CT': { id: 'ocd-jurisdiction/country:us/state:ct/government', capitol: { lat: 41.7658, lng: -72.6734, city: 'Hartford' } },
+  'DE': { id: 'ocd-jurisdiction/country:us/state:de/government', capitol: { lat: 39.1582, lng: -75.5244, city: 'Dover' } },
+  'FL': { id: 'ocd-jurisdiction/country:us/state:fl/government', capitol: { lat: 30.4383, lng: -84.2807, city: 'Tallahassee' } },
+  'GA': { id: 'ocd-jurisdiction/country:us/state:ga/government', capitol: { lat: 33.7490, lng: -84.3880, city: 'Atlanta' } },
+  'HI': { id: 'ocd-jurisdiction/country:us/state:hi/government', capitol: { lat: 21.3099, lng: -157.8581, city: 'Honolulu' } },
+  'ID': { id: 'ocd-jurisdiction/country:us/state:id/government', capitol: { lat: 43.6150, lng: -116.2023, city: 'Boise' } },
+  'IL': { id: 'ocd-jurisdiction/country:us/state:il/government', capitol: { lat: 39.7817, lng: -89.6501, city: 'Springfield' } },
+  'IN': { id: 'ocd-jurisdiction/country:us/state:in/government', capitol: { lat: 39.7684, lng: -86.1581, city: 'Indianapolis' } },
+  'IA': { id: 'ocd-jurisdiction/country:us/state:ia/government', capitol: { lat: 41.5868, lng: -93.6250, city: 'Des Moines' } },
+  'KS': { id: 'ocd-jurisdiction/country:us/state:ks/government', capitol: { lat: 39.0473, lng: -95.6752, city: 'Topeka' } },
+  'KY': { id: 'ocd-jurisdiction/country:us/state:ky/government', capitol: { lat: 38.1867, lng: -84.8753, city: 'Frankfort' } },
+  'LA': { id: 'ocd-jurisdiction/country:us/state:la/government', capitol: { lat: 30.4515, lng: -91.1871, city: 'Baton Rouge' } },
+  'ME': { id: 'ocd-jurisdiction/country:us/state:me/government', capitol: { lat: 44.3106, lng: -69.7795, city: 'Augusta' } },
+  'MD': { id: 'ocd-jurisdiction/country:us/state:md/government', capitol: { lat: 38.9784, lng: -76.4922, city: 'Annapolis' } },
+  'MA': { id: 'ocd-jurisdiction/country:us/state:ma/government', capitol: { lat: 42.3601, lng: -71.0589, city: 'Boston' } },
+  'MI': { id: 'ocd-jurisdiction/country:us/state:mi/government', capitol: { lat: 42.7325, lng: -84.5555, city: 'Lansing' } },
+  'MN': { id: 'ocd-jurisdiction/country:us/state:mn/government', capitol: { lat: 44.9537, lng: -93.0900, city: 'Saint Paul' } },
+  'MS': { id: 'ocd-jurisdiction/country:us/state:ms/government', capitol: { lat: 32.2988, lng: -90.1848, city: 'Jackson' } },
+  'MO': { id: 'ocd-jurisdiction/country:us/state:mo/government', capitol: { lat: 38.5767, lng: -92.1735, city: 'Jefferson City' } },
+  'MT': { id: 'ocd-jurisdiction/country:us/state:mt/government', capitol: { lat: 46.5884, lng: -112.0245, city: 'Helena' } },
+  'NE': { id: 'ocd-jurisdiction/country:us/state:ne/government', capitol: { lat: 40.8136, lng: -96.7026, city: 'Lincoln' } },
+  'NV': { id: 'ocd-jurisdiction/country:us/state:nv/government', capitol: { lat: 39.1638, lng: -119.7674, city: 'Carson City' } },
+  'NH': { id: 'ocd-jurisdiction/country:us/state:nh/government', capitol: { lat: 43.2081, lng: -71.5376, city: 'Concord' } },
+  'NJ': { id: 'ocd-jurisdiction/country:us/state:nj/government', capitol: { lat: 40.2206, lng: -74.7597, city: 'Trenton' } },
+  'NM': { id: 'ocd-jurisdiction/country:us/state:nm/government', capitol: { lat: 35.6870, lng: -105.9378, city: 'Santa Fe' } },
+  'NY': { id: 'ocd-jurisdiction/country:us/state:ny/government', capitol: { lat: 42.6526, lng: -73.7562, city: 'Albany' } },
+  'NC': { id: 'ocd-jurisdiction/country:us/state:nc/government', capitol: { lat: 35.7796, lng: -78.6382, city: 'Raleigh' } },
+  'ND': { id: 'ocd-jurisdiction/country:us/state:nd/government', capitol: { lat: 46.8083, lng: -100.7837, city: 'Bismarck' } },
+  'OH': { id: 'ocd-jurisdiction/country:us/state:oh/government', capitol: { lat: 39.9612, lng: -82.9988, city: 'Columbus' } },
+  'OK': { id: 'ocd-jurisdiction/country:us/state:ok/government', capitol: { lat: 35.4676, lng: -97.5164, city: 'Oklahoma City' } },
+  'OR': { id: 'ocd-jurisdiction/country:us/state:or/government', capitol: { lat: 44.9429, lng: -123.0351, city: 'Salem' } },
+  'PA': { id: 'ocd-jurisdiction/country:us/state:pa/government', capitol: { lat: 40.2732, lng: -76.8867, city: 'Harrisburg' } },
+  'RI': { id: 'ocd-jurisdiction/country:us/state:ri/government', capitol: { lat: 41.8240, lng: -71.4128, city: 'Providence' } },
+  'SC': { id: 'ocd-jurisdiction/country:us/state:sc/government', capitol: { lat: 34.0007, lng: -81.0348, city: 'Columbia' } },
+  'SD': { id: 'ocd-jurisdiction/country:us/state:sd/government', capitol: { lat: 44.3683, lng: -100.3510, city: 'Pierre' } },
+  'TN': { id: 'ocd-jurisdiction/country:us/state:tn/government', capitol: { lat: 36.1627, lng: -86.7816, city: 'Nashville' } },
+  'TX': { id: 'ocd-jurisdiction/country:us/state:tx/government', capitol: { lat: 30.2672, lng: -97.7431, city: 'Austin' } },
+  'UT': { id: 'ocd-jurisdiction/country:us/state:ut/government', capitol: { lat: 40.7608, lng: -111.8910, city: 'Salt Lake City' } },
+  'VT': { id: 'ocd-jurisdiction/country:us/state:vt/government', capitol: { lat: 44.2601, lng: -72.5754, city: 'Montpelier' } },
+  'VA': { id: 'ocd-jurisdiction/country:us/state:va/government', capitol: { lat: 37.5407, lng: -77.4360, city: 'Richmond' } },
+  'WA': { id: 'ocd-jurisdiction/country:us/state:wa/government', capitol: { lat: 47.0379, lng: -122.9007, city: 'Olympia' } },
+  'WV': { id: 'ocd-jurisdiction/country:us/state:wv/government', capitol: { lat: 38.3498, lng: -81.6326, city: 'Charleston' } },
+  'WI': { id: 'ocd-jurisdiction/country:us/state:wi/government', capitol: { lat: 43.0731, lng: -89.4012, city: 'Madison' } },
+  'WY': { id: 'ocd-jurisdiction/country:us/state:wy/government', capitol: { lat: 41.1400, lng: -104.8202, city: 'Cheyenne' } }
+};
+
+interface OpenStatesEvent {
+  id: string;
+  name: string;
+  description?: string;
+  classification: string;
+  start_date: string;
+  end_date?: string;
+  status: string;
+  location?: {
+    name?: string;
+    url?: string;
+    coordinates?: {
+      latitude?: string;
+      longitude?: string;
+    };
+  };
+  participants?: Array<{
+    name: string;
+    entity_type: string;
+  }>;
+}
+
+interface OpenStatesResponse {
+  results: OpenStatesEvent[];
+}
+
+// Initialize scrapers once (singleton pattern)
+let scrapersInitialized = false;
+
+export const handler: Handler = async (event) => {
+  loadEnvFile();
+  console.log('🏢 STATE-EVENTS: Request received');
+  console.log('Query params:', event.queryStringParameters);
+  
+  // Initialize scrapers on first request
+  if (!scrapersInitialized) {
+    await initializeScrapers();
+    scrapersInitialized = true;
+  }
+  
+  const stateAbbr = event.queryStringParameters?.state?.toUpperCase();
+  console.log(`State requested: ${stateAbbr}`);
+  
+  if (!stateAbbr || !STATE_JURISDICTIONS[stateAbbr]) {
+    console.error(`Invalid state: ${stateAbbr}`);
+    return {
+      statusCode: 400,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache'
+      },
+      body: JSON.stringify({ 
+        error: 'Valid state abbreviation required',
+        message: 'Please provide a valid 2-letter US state abbreviation'
+      })
+    };
+  }
+
+  const apiKey = process.env.OPENSTATES_API_KEY || process.env.VITE_OPENSTATES_API_KEY;
+  console.log('API Key present:', !!apiKey, 'Keys available:', Object.keys(process.env).filter(k => k.includes('OPENSTATES')));
+  
+  if (!apiKey) {
+    console.error('No OpenStates API key found');
+    return {
+      statusCode: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache'
+      },
+      body: JSON.stringify({ 
+        error: 'OpenStates API key not configured',
+        message: 'Please add VITE_OPENSTATES_API_KEY to your environment variables'
+      })
+    };
+  }
+
+  try {
+    const state = STATE_JURISDICTIONS[stateAbbr];
+    const isLocal = !process.env.NETLIFY_DEV;
+    let store: any = null;
+    
+    // Blob storage disabled - using database for caching
+    console.log(`🔍 Checking cache for ${stateAbbr}...`);
+    
+    // ===== STRATEGY 0: Check blob storage for pre-scraped data (FASTEST) =====
+    // Skipping blob storage - will use database or scrape directly
+    console.log(`📊 Skipping blob storage, using database/scraper`);
+    
+    // ===== STRATEGY 1: Try custom scraper (comprehensive but slower) =====
+    console.log('🔍 Checking for custom scraper...');
+    
+    // All states now use the scheduled scraper flow (DB → Blobs → Frontend)
+    // No more static file bypass - everything goes through the scraper registry
+    
+    // ===== ONLY READ FROM DATABASE =====
+    // Scrapers should run on schedule and populate the database
+    // This endpoint NEVER scrapes - it only serves data
+    
+    console.log(`📊 Querying database for ${stateAbbr} events...`);
+    
+    try {
+      const { getPool } = await import('./utils/db/connection.js');
+      const pool = getPool();
+      
+      // Clean up old events (>24 hours) before querying
+      try {
+        const cleanupResult = await pool.query(
+          `DELETE FROM events WHERE scraped_at < NOW() - INTERVAL '24 hours'`
+        );
+        if (cleanupResult.rowCount && cleanupResult.rowCount > 0) {
+          console.log(`🧹 Cleaned up ${cleanupResult.rowCount} old events (>24h)`);
+        }
+      } catch (cleanupError) {
+        console.error('⚠️ Failed to clean up old events:', cleanupError);
+      }
+      
+      // Check if we have recent data (last 24 hours)
+      const dataAgeQuery = await pool.query(`
+        SELECT 
+          MAX(scraped_at) as last_scraped,
+          COUNT(*) as event_count
+        FROM events
+        WHERE state_code = $1
+          AND date >= CURRENT_DATE
+      `, [stateAbbr]);
+      
+      const { last_scraped, event_count } = dataAgeQuery.rows[0];
+      
+      if (event_count === 0) {
+        console.log(`⚠️ No events found in database for ${stateAbbr}`);
+        
+        // Get calendar sources from scraper even when no events
+        const scraper = ScraperRegistry.get(stateAbbr);
+        const calendarSources = scraper?.getCalendarSources?.() || [];
+        
+        return {
+          statusCode: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'public, max-age=3600',
+            'Access-Control-Expose-Headers': 'X-Data-Source, X-Message, X-Calendar-Sources',
+            'X-Data-Source': 'database-empty',
+            'X-Message': 'No events available. Scheduled scraper will populate data.',
+            'X-Calendar-Sources': JSON.stringify(calendarSources)
+          },
+          body: JSON.stringify([])
+        };
+      }
+      
+      const dataAge = last_scraped ? Date.now() - new Date(last_scraped).getTime() : null;
+      const dataAgeHours = dataAge ? Math.floor(dataAge / 1000 / 60 / 60) : null;
+      
+      console.log(`✅ Found ${event_count} events, last scraped ${dataAgeHours}h ago`);
+      
+      // Query events with all related data
+      const eventsQuery = await pool.query(`
+        SELECT 
+          e.id,
+          e.name,
+          e.date,
+          e.time,
+          e.location_name as location,
+          e.lat,
+          e.lng,
+          e.level,
+          e.type,
+          e.state_code as state,
+          e.committee_name as committee,
+          e.description,
+          e.details_url as "detailsUrl",
+          e.docket_url as "docketUrl",
+          e.virtual_meeting_url as "virtualMeetingUrl",
+          e.source_url as "sourceUrl",
+          e.allows_public_participation as "allowsPublicParticipation",
+          COALESCE(
+            json_agg(
+              DISTINCT jsonb_build_object(
+                'id', b.bill_number,
+                'number', b.bill_number,
+                'title', b.title,
+                'url', b.url,
+                'status', b.status
+              )
+            ) FILTER (WHERE b.id IS NOT NULL),
+            '[]'::json
+          ) as bills,
+          COALESCE(
+            array_agg(DISTINCT et.tag) FILTER (WHERE et.tag IS NOT NULL),
+            ARRAY[]::text[]
+          ) as tags
+        FROM events e
+        LEFT JOIN event_bills eb ON e.id = eb.event_id
+        LEFT JOIN bills b ON eb.bill_id = b.id
+        LEFT JOIN event_tags et ON e.id = et.event_id
+        WHERE e.state_code = $1
+          AND e.date >= CURRENT_DATE
+        GROUP BY e.id
+        ORDER BY e.date ASC, e.time ASC
+      `, [stateAbbr]);
+      
+      // Clean up data
+      const cleanedEvents = eventsQuery.rows.map(event => ({
+        ...event,
+        bills: event.bills && Array.isArray(event.bills) && event.bills[0] !== null ? event.bills : [],
+        tags: event.tags && Array.isArray(event.tags) && event.tags[0] !== null ? event.tags.filter((t: any) => t !== null) : []
+      }));
+      
+      console.log(`📦 Returning ${cleanedEvents.length} events from database`);
+      
+      // Get calendar sources from scraper (if available)
+      const scraper = ScraperRegistry.get(stateAbbr);
+      const calendarSources = scraper?.getCalendarSources?.() || [];
+      
+      return {
+        statusCode: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'public, max-age=300', // 5 minutes browser cache
+          'Access-Control-Expose-Headers': 'X-Data-Source, X-Data-Age-Hours, X-Last-Scraped, X-Calendar-Sources',
+          'X-Data-Source': 'database',
+          'X-Data-Age-Hours': String(dataAgeHours),
+          'X-Last-Scraped': last_scraped || 'unknown',
+          'X-Calendar-Sources': JSON.stringify(calendarSources)
+        },
+        body: JSON.stringify(cleanedEvents)
+      };
+      
+    } catch (dbError: any) {
+      console.error(`❌ Database error for ${stateAbbr}:`, dbError);
+      return {
+        statusCode: 500,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          error: 'Database error',
+          message: 'Failed to retrieve events from database'
+        })
+      };
+    }
+  } catch (error) {
+    console.error('Error in state-events:', error);
+    return {
+      statusCode: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache'
+      },
+      body: JSON.stringify({ 
+        error: 'Failed to fetch state events',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      })
+    };
+  }
+};

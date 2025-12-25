@@ -34,7 +34,7 @@ export default function TopEvents({ searchMapComponent }: TopEventsProps) {
       setLoading(true);
       
       // Use relative URL - works on any port (Netlify dev proxies everything)
-      const response = await fetch('/.netlify/functions/top-events');
+      const response = await fetch('/api/top-events');
       
       if (!response.ok) {
         throw new Error(`Failed to fetch top events: ${response.status}`);
