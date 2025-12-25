@@ -14,7 +14,7 @@ interface Event {
   type: string;
   committee: string | null;
   description: string | null;
-  bills: Array<{ number: string; title: string; url?: string }>;
+  bills: Array<{ number: string; title: string; url?: string; summary?: string }>;
   tags: string[];
   detailsUrl: string | null;
   docketUrl: string | null;
