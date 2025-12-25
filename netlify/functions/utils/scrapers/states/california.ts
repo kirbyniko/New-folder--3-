@@ -191,6 +191,7 @@ export class CaliforniaScraper extends BaseScraper {
           bills.push({
             id: billId,
             title: topic || billId,
+            description: topic || undefined,  // Topic is the bill description on agenda
             url: billLink,
             status: 'Scheduled for Committee',
             sponsors: author ? [author] : undefined

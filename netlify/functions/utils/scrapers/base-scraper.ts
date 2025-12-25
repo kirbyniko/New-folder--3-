@@ -54,6 +54,7 @@ export interface BillInfo {
   id: string;
   title: string;
   url: string;
+  description?: string;  // Full bill text/summary from source page
   status?: string;
   sponsors?: string[];
   tags?: string[];

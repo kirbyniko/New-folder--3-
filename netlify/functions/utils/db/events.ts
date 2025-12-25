@@ -127,10 +127,11 @@ export async function insertBills(eventId: string, bills: BillInfo[], stateCode:
     try {
       // Insert or update bill
       const billQuery = `
-        INSERT INTO bills (state_code, bill_number, title, url, status)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO bills (state_code, bill_number, title, description, url, status)
+        VALUES ($1, $2, $3, $4, $5, $6)
         ON CONFLICT (state_code, bill_number) DO UPDATE SET
           title = COALESCE(EXCLUDED.title, bills.title),
+          description = COALESCE(EXCLUDED.description, bills.description),
           url = COALESCE(EXCLUDED.url, bills.url),
           status = COALESCE(EXCLUDED.status, bills.status)
         RETURNING id
@@ -140,6 +141,7 @@ export async function insertBills(eventId: string, bills: BillInfo[], stateCode:
         stateCode.toUpperCase(),
         bill.id, // Bill.id contains the bill number (e.g. "AB 123", "SB 456")
         bill.title || null,
+        bill.description || null,
         bill.url || null,
         bill.status || null
       ]);
