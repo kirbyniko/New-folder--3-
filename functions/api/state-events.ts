@@ -105,15 +105,17 @@ export async function onRequest(context: any) {
       // Continue without sources if query fails
     }
 
+    // Build headers
+    const responseHeaders = new Headers();
+    responseHeaders.set('Access-Control-Allow-Origin', '*');
+    responseHeaders.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    responseHeaders.set('Access-Control-Allow-Headers', 'Content-Type');
+    responseHeaders.set('Access-Control-Expose-Headers', 'X-Calendar-Sources');
+    responseHeaders.set('Content-Type', 'application/json');
+    responseHeaders.set('X-Calendar-Sources', JSON.stringify(calendarSources));
+
     return new Response(JSON.stringify(events), {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Expose-Headers': 'X-Calendar-Sources, X-Data-Source',
-        'Content-Type': 'application/json',
-        'X-Calendar-Sources': JSON.stringify(calendarSources)
-      }
+      headers: responseHeaders
     });
 
   } catch (error: any) {
