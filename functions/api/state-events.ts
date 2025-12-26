@@ -10,6 +10,7 @@ export async function onRequest(context: any) {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Expose-Headers': 'X-Calendar-Sources',
     'Content-Type': 'application/json'
   };
 
@@ -107,7 +108,6 @@ export async function onRequest(context: any) {
     return new Response(JSON.stringify(events), {
       headers: {
         ...corsHeaders,
-        'Access-Control-Expose-Headers': 'X-Calendar-Sources',
         'X-Calendar-Sources': JSON.stringify(calendarSources)
       }
     });

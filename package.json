@@ -7,13 +7,15 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
+    "wrangler:dev": "wrangler pages dev dist --port 8788 --live-reload",
+    "cf:local": "npm run build && npm run wrangler:dev",
     "netlify:dev": "netlify dev",
     "build-mappings:nh": "npx tsx tools/build-nh-mappings-manual.js"
   },
   "dependencies": {
-    "@capacitor/android": "^8.0.0",
-    "@capacitor/cli": "^8.0.0",
-    "@capacitor/core": "^8.0.0",
+    "@capacitor/android": "^6.2.1",
+    "@capacitor/cli": "^6.2.1",
+    "@capacitor/core": "^6.2.1",
     "@neondatabase/serverless": "^1.0.2",
     "@netlify/blobs": "^10.4.3",
     "@sparticuz/chromium": "^143.0.0",

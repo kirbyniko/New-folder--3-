@@ -11,8 +11,8 @@
 
 import { Capacitor } from '@capacitor/core';
 
-// Backend URL - from environment variable or fallback
-const BACKEND_URL = import.meta.env.VITE_API_URL;
+// Backend URL - from environment variable or fallback to production
+const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://40c0eb33.civitracker.pages.dev';
 
 /**
  * Get the full API URL for a backend function
@@ -20,12 +20,16 @@ const BACKEND_URL = import.meta.env.VITE_API_URL;
  * @returns Full URL to backend
  */
 export function getApiUrl(path: string): string {
-  // If VITE_API_URL is set (e.g., ngrok tunnel for Android), use it
-  // Otherwise, use relative URLs for Netlify Dev local development
-  if (BACKEND_URL) {
+  // On mobile (Capacitor), always use full URLs to avoid local file interception
+  if (Capacitor.isNativePlatform()) {
     return `${BACKEND_URL}${path}`;
   }
   
-  // For local development with Netlify Dev, use relative URLs
+  // On web, use relative URLs when in same domain, otherwise use BACKEND_URL
+  if (BACKEND_URL && !window.location.href.includes('localhost') && !window.location.href.includes('civitracker.pages.dev')) {
+    return `${BACKEND_URL}${path}`;
+  }
+  
+  // For local development or same-domain, use relative URLs
   return path;
 }

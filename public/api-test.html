@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        button { padding: 10px 20px; font-size: 16px; margin: 10px 0; }
+        pre { background: #f4f4f4; padding: 15px; overflow-x: auto; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Civitron API Test</h1>
+    <button onclick="testAPI()">Test Congress API</button>
+    <div id="result"></div>
+    
+    <script>
+        async function testAPI() {
+            const result = document.getElementById('result');
+            result.innerHTML = '<p>Testing...</p>';
+            
+            const apiUrl = 'https://40c0eb33.civitracker.pages.dev/api/congress-meetings';
+            
+            try {
+                result.innerHTML += `<p>Fetching: ${apiUrl}</p>`;
+                const response = await fetch(apiUrl);
+                result.innerHTML += `<p class="success">Status: ${response.status} ${response.statusText}</p>`;
+                
+                const text = await response.text();
+                result.innerHTML += `<p>Response length: ${text.length} characters</p>`;
+                
+                const json = JSON.parse(text);
+                result.innerHTML += `<p class="success">✓ Valid JSON!</p>`;
+                result.innerHTML += `<p>Events: ${Array.isArray(json) ? json.length : 'N/A'}</p>`;
+                result.innerHTML += `<pre>${JSON.stringify(json.slice(0, 2), null, 2)}</pre>`;
+            } catch (error) {
+                result.innerHTML += `<p class="error">✗ Error: ${error.message}</p>`;
+                result.innerHTML += `<pre>${error.stack}</pre>`;
+            }
+        }
+    </script>
+</body>
+</html>

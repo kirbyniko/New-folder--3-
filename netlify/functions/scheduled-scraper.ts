@@ -1,7 +1,18 @@
 import { schedule } from '@netlify/functions';
 import { getStore } from '@netlify/blobs';
 import { ScraperRegistry, initializeScrapers } from './utils/scrapers/index.js';
-import { insertEvent, insertBills, logScraperHealth, getTop100EventsToday, getAllStateEventsForExport } from './utils/db/events.js';
+import { 
+  insertEvent, 
+  insertBills, 
+  logScraperHealth, 
+  getTop100EventsToday, 
+  getAllStateEventsForExport,
+  markStateEventsAsUnseen,
+  incrementUnseenEventsCycleCount,
+  archiveRemovedEvents,
+  cleanupOldArchivedEvents,
+  cleanupOldRemovedEvents
+} from './utils/db/events.js';
 import { checkDatabaseConnection } from './utils/db/connection.js';
 
 /**
@@ -31,15 +42,12 @@ const scheduledScraper = async () => {
     dbAvailable = await checkDatabaseConnection();
     console.log(dbAvailable ? '✅ PostgreSQL available' : '⚠️  PostgreSQL unavailable, using Blobs only');
     
-    // Clean up events older than 24 hours to keep database fresh
+    // Clean up old archived/removed events to keep database fresh
     if (dbAvailable) {
       try {
-        const { getPool } = await import('./utils/db/connection');
-        const pool = getPool();
-        const cleanupResult = await pool.query(
-          `DELETE FROM events WHERE scraped_at < NOW() - INTERVAL '24 hours'`
-        );
-        console.log(`🧹 Cleaned up ${cleanupResult.rowCount} old events (>24h)`);
+        const archivedCleaned = await cleanupOldArchivedEvents();
+        const removedCleaned = await cleanupOldRemovedEvents();
+        console.log(`🧹 Cleaned up ${archivedCleaned} old archived events and ${removedCleaned} old removed events`);
       } catch (cleanupError) {
         console.error('⚠️  Failed to clean up old events:', cleanupError);
       }
@@ -98,8 +106,72 @@ const scheduledScraper = async () => {
           console.log(`🔄 ${state}: Starting scrape...`);
           const scrapeStart = Date.now();
           
+          // SMART SCRAPING: Mark all existing events as "not seen yet"
+          if (usePostgres && dbAvailable) {
+            try {
+              await markStateEventsAsUnseen(state);
+            } catch (markError) {
+              console.error(`⚠️  ${state}: Failed to mark events as unseen:`, markError);
+            }
+          }
+          
           const events = await scraper.scrape();
           const scrapeDuration = Date.now() - scrapeStart;
+          
+          // Handle case where scraper returns 0 events (out of session or temporary failure)
+          if (events.length === 0) {
+            console.log(`⚠️  ${state}: 0 events scraped - preserving existing data`);
+            
+            if (usePostgres && dbAvailable) {
+              try {
+                // Increment cycle count for unseen events (they weren't in this scrape)
+                const unseenCount = await incrementUnseenEventsCycleCount(state);
+                console.log(`📊 ${state}: ${unseenCount} existing events not found in this scrape`);
+                
+                // Still export existing data to blobs
+                const dbEvents = await getAllStateEventsForExport(state);
+                
+                await store.set(`state-${state}`, JSON.stringify({
+                  state,
+                  events: dbEvents,
+                  count: dbEvents.length,
+                  source: 'postgresql-preserved',
+                  lastUpdated: timestamp,
+                  note: 'Scraper returned 0 events - existing data preserved'
+                }), {
+                  metadata: {
+                    state,
+                    count: String(dbEvents.length),
+                    timestamp,
+                    source: 'preserved'
+                  }
+                });
+                
+                results.states[state] = { count: dbEvents.length, preserved: true };
+                results.successCount++;
+                await logScraperHealth(state, state, 'success', 0, 'No new events, data preserved', scrapeDuration);
+                
+              } catch (preserveErr: any) {
+                console.error(`❌ ${state}: Failed to preserve data:`, preserveErr.message);
+                results.errors.push({ state, error: preserveErr.message });
+                results.errorCount++;
+              }
+            } else {
+              // No DB available - just store empty result
+              await store.set(`state-${state}`, JSON.stringify({
+                state,
+                events: [],
+                count: 0,
+                source: 'scraper-empty',
+                lastUpdated: timestamp
+              }));
+              
+              results.states[state] = { count: 0 };
+              results.successCount++;
+            }
+            
+            return; // Skip to next state
+          }
           
           // Write to PostgreSQL FIRST (PRIMARY - Source of Truth)
           if (usePostgres && dbAvailable) {
@@ -124,6 +196,16 @@ const scheduledScraper = async () => {
               await logScraperHealth(state, state, 'success', dbEventCount, undefined, scrapeDuration);
               results.dbWrites += dbEventCount;
               console.log(`✅ ${state}: ${dbEventCount} events written to PostgreSQL`);
+              
+              // SMART SCRAPING: Archive events that weren't seen (removed from source)
+              try {
+                const archivedCount = await archiveRemovedEvents(state, 2); // Archive after 2 missed cycles
+                if (archivedCount > 0) {
+                  console.log(`🗑️  ${state}: Archived ${archivedCount} removed events`);
+                }
+              } catch (archiveErr) {
+                console.error(`⚠️  ${state}: Failed to archive removed events:`, archiveErr);
+              }
               
               // Now export FROM database to blobs (SECONDARY - Frontend Cache)
               console.log(`📦 ${state}: Exporting from DB to Blobs...`);

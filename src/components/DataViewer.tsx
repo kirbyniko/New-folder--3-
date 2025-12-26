@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import './DataViewer.css';
 import { TAG_DEFINITIONS } from '../utils/tagging';
 import FilterBar from './FilterBar';
+import { getApiUrl } from '../config/api';
 
 interface Event {
   id: string;
@@ -149,8 +150,8 @@ export default function DataViewer({ onStateSelect }: DataViewerProps) {
       params.set('limit', '500'); // Increased limit with bill prioritization
       
       const [eventsResponse, agendasResponse] = await Promise.all([
-        fetch(`/api/admin-events?${params}`),
-        fetch(`/api/agenda-summaries?${params}`)
+        fetch(getApiUrl(`/api/admin-events?${params}`)),
+        fetch(getApiUrl(`/api/agenda-summaries?${params}`))
       ]);
       
       if (!eventsResponse.ok) {

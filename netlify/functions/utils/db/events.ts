@@ -53,11 +53,16 @@ export async function insertEvent(event: LegislativeEvent, scraperSource: string
       lat, lng, location_name, location_address, description,
       committee_name, type, details_url, docket_url, virtual_meeting_url, source_url,
       allows_public_participation,
-      scraper_source, external_id, fingerprint
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+      scraper_source, external_id, fingerprint,
+      last_seen_at, seen_in_current_scrape, scrape_cycle_count
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, NOW(), TRUE, 1)
     ON CONFLICT (scraper_source, external_id) 
     DO UPDATE SET
       last_updated = NOW(),
+      last_seen_at = NOW(),
+      seen_in_current_scrape = TRUE,
+      scrape_cycle_count = 1,
+      removed_at = NULL,
       scraper_source = COALESCE(EXCLUDED.scraper_source, events.scraper_source),
       external_id = COALESCE(EXCLUDED.external_id, events.external_id),
       name = EXCLUDED.name,
@@ -210,6 +215,7 @@ export async function getStateEvents(stateCode: string): Promise<LegislativeEven
     WHERE e.state_code = $1
       AND e.date >= CURRENT_DATE - INTERVAL '7 days'
       AND e.date <= CURRENT_DATE + INTERVAL '90 days'
+      AND e.removed_at IS NULL
     GROUP BY e.id
     ORDER BY e.date, e.time NULLS LAST
   `;
@@ -264,6 +270,7 @@ export async function getEventsNearLocation(
     LEFT JOIN event_tags et ON e.id = et.event_id
     WHERE e.date >= CURRENT_DATE
       AND e.date <= CURRENT_DATE + INTERVAL '90 days'
+      AND e.removed_at IS NULL
     GROUP BY e.id
     HAVING (
       3959 * acos(
@@ -380,6 +387,7 @@ export async function getTop100EventsToday(): Promise<LegislativeEvent[]> {
     LEFT JOIN event_tags et ON e.id = et.event_id
     WHERE e.date >= CURRENT_DATE
       AND e.date <= CURRENT_DATE + INTERVAL '90 days'
+      AND e.removed_at IS NULL
     GROUP BY e.id
     ORDER BY 
       priority_score DESC,
@@ -409,6 +417,7 @@ export async function countEventsToday(): Promise<number> {
       FROM events 
       WHERE date >= CURRENT_DATE
         AND date <= CURRENT_DATE + INTERVAL '90 days'
+        AND removed_at IS NULL
     `);
     return parseInt(result.rows[0].count, 10);
   } catch (err: any) {
@@ -468,6 +477,7 @@ export async function getAllStateEventsForExport(stateCode: string): Promise<Leg
     WHERE e.state_code = $1
       AND e.date >= CURRENT_DATE - INTERVAL '7 days'
       AND e.date <= CURRENT_DATE + INTERVAL '90 days'
+      AND e.removed_at IS NULL
     GROUP BY e.id
     ORDER BY e.date ASC, e.time NULLS LAST
   `;
@@ -510,6 +520,141 @@ export async function getAllStateEventsForExport(stateCode: string): Promise<Leg
     });
   } catch (err: any) {
     console.error(`❌ Error getting events for ${stateCode}:`, err.message);
+    throw err;
+  }
+}
+
+/**
+ * Mark all events for a state as "not seen" at the start of a scrape cycle
+ */
+export async function markStateEventsAsUnseen(stateCode: string): Promise<void> {
+  const pool = getPool();
+  
+  try {
+    await pool.query(`
+      UPDATE events 
+      SET seen_in_current_scrape = false 
+      WHERE state_code = $1 AND removed_at IS NULL
+    `, [stateCode.toUpperCase()]);
+  } catch (err: any) {
+    console.error(`❌ Error marking events as unseen for ${stateCode}:`, err.message);
+    throw err;
+  }
+}
+
+/**
+ * Increment scrape cycle count for events that weren't seen
+ */
+export async function incrementUnseenEventsCycleCount(stateCode: string): Promise<number> {
+  const pool = getPool();
+  
+  try {
+    const result = await pool.query(`
+      UPDATE events 
+      SET scrape_cycle_count = scrape_cycle_count + 1
+      WHERE state_code = $1 
+        AND seen_in_current_scrape = false
+        AND removed_at IS NULL
+      RETURNING id
+    `, [stateCode.toUpperCase()]);
+    
+    return result.rowCount || 0;
+  } catch (err: any) {
+    console.error(`❌ Error incrementing cycle count for ${stateCode}:`, err.message);
+    throw err;
+  }
+}
+
+/**
+ * Archive events that haven't been seen in multiple scrape cycles
+ */
+export async function archiveRemovedEvents(stateCode: string, cycleThreshold: number = 2): Promise<number> {
+  const pool = getPool();
+  
+  try {
+    // First, copy to archived_events table
+    await pool.query(`
+      INSERT INTO archived_events (
+        id, level, state_code, name, date, time,
+        lat, lng, location_name, location_address, description,
+        committee_name, type, details_url, docket_url, virtual_meeting_url, source_url,
+        allows_public_participation,
+        scraper_source, external_id, fingerprint,
+        created_at, last_updated, scraped_at, last_seen_at, scrape_cycle_count,
+        removed_at, archived_at, removal_reason
+      )
+      SELECT 
+        id, level, state_code, name, date, time,
+        lat, lng, location_name, location_address, description,
+        committee_name, type, details_url, docket_url, virtual_meeting_url, source_url,
+        allows_public_participation,
+        scraper_source, external_id, fingerprint,
+        created_at, last_updated, scraped_at, last_seen_at, scrape_cycle_count,
+        NOW(), NOW(), 
+        'Not found in source calendar for ' || scrape_cycle_count || ' consecutive scrape cycles'
+      FROM events
+      WHERE state_code = $1 
+        AND seen_in_current_scrape = false
+        AND scrape_cycle_count >= $2
+        AND removed_at IS NULL
+      ON CONFLICT (id) DO NOTHING
+    `, [stateCode.toUpperCase(), cycleThreshold]);
+    
+    // Then soft-delete from events table
+    const result = await pool.query(`
+      UPDATE events 
+      SET removed_at = NOW()
+      WHERE state_code = $1 
+        AND seen_in_current_scrape = false
+        AND scrape_cycle_count >= $2
+        AND removed_at IS NULL
+      RETURNING id
+    `, [stateCode.toUpperCase(), cycleThreshold]);
+    
+    return result.rowCount || 0;
+  } catch (err: any) {
+    console.error(`❌ Error archiving removed events for ${stateCode}:`, err.message);
+    throw err;
+  }
+}
+
+/**
+ * Clean up old archived events (>30 days)
+ */
+export async function cleanupOldArchivedEvents(): Promise<number> {
+  const pool = getPool();
+  
+  try {
+    const result = await pool.query(`
+      DELETE FROM archived_events 
+      WHERE archived_at < NOW() - INTERVAL '30 days'
+      RETURNING id
+    `);
+    
+    return result.rowCount || 0;
+  } catch (err: any) {
+    console.error('❌ Error cleaning up archived events:', err.message);
+    throw err;
+  }
+}
+
+/**
+ * Clean up old removed events from main events table (>7 days)
+ */
+export async function cleanupOldRemovedEvents(): Promise<number> {
+  const pool = getPool();
+  
+  try {
+    const result = await pool.query(`
+      DELETE FROM events 
+      WHERE removed_at IS NOT NULL 
+        AND removed_at < NOW() - INTERVAL '7 days'
+      RETURNING id
+    `);
+    
+    return result.rowCount || 0;
+  } catch (err: any) {
+    console.error('❌ Error cleaning up removed events:', err.message);
     throw err;
   }
 }

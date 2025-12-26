@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { LegislativeEvent } from '../types/event';
+import { getApiUrl } from '../config/api';
 import './TopEventsList.css';
 
 interface TopEventsData {
@@ -13,11 +14,10 @@ interface TopEventsData {
 }
 
 interface TopEventsListProps {
-  isCollapsed: boolean;
-  onToggle: () => void;
+  // No props needed anymore
 }
 
-export default function TopEventsList({ isCollapsed, onToggle }: TopEventsListProps) {
+export default function TopEventsList({}: TopEventsListProps = {}) {
   const [topEvents, setTopEvents] = useState<LegislativeEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +31,7 @@ export default function TopEventsList({ isCollapsed, onToggle }: TopEventsListPr
     try {
       setLoading(true);
       
-      const response = await fetch('/api/top-events');
+      const response = await fetch(getApiUrl('/api/top-events'));
       
       if (!response.ok) {
         throw new Error(`Failed to fetch top events: ${response.status}`);
@@ -57,14 +57,9 @@ export default function TopEventsList({ isCollapsed, onToggle }: TopEventsListPr
 
   if (loading) {
     return (
-      <div className={`top-events-list ${isCollapsed ? 'collapsed' : ''}`}>
+      <div className="top-events-list">
         <div className="top-events-list-header">
-          <div className="header-top">
-            <h2>🔥 Top Upcoming Events</h2>
-            <button className="collapse-toggle" onClick={onToggle} title={isCollapsed ? 'Expand' : 'Collapse'}>
-              {isCollapsed ? '▶' : '◀'}
-            </button>
-          </div>
+          <h2>🔥 Top Upcoming Events</h2>
         </div>
         <div className="top-events-list-content">
           <p className="loading-message">Loading events...</p>
@@ -75,14 +70,9 @@ export default function TopEventsList({ isCollapsed, onToggle }: TopEventsListPr
 
   if (error) {
     return (
-      <div className={`top-events-list ${isCollapsed ? 'collapsed' : ''}`}>
+      <div className="top-events-list">
         <div className="top-events-list-header">
-          <div className="header-top">
-            <h2>🔥 Top Upcoming Events</h2>
-            <button className="collapse-toggle" onClick={onToggle} title={isCollapsed ? 'Expand' : 'Collapse'}>
-              {isCollapsed ? '▶' : '◀'}
-            </button>
-          </div>
+          <h2>🔥 Top Upcoming Events</h2>
         </div>
         <div className="top-events-list-content">
           <p className="error-message">{error}</p>
@@ -96,14 +86,9 @@ export default function TopEventsList({ isCollapsed, onToggle }: TopEventsListPr
   const withTags = topEvents.filter(e => e.tags && e.tags.length > 0).length;
 
   return (
-    <div className={`top-events-list ${isCollapsed ? 'collapsed' : ''}`}>
+    <div className="top-events-list">
       <div className="top-events-list-header">
-        <div className="header-top">
-          <h2>🔥 Top {topEvents.length} Upcoming Events</h2>
-          <button className="collapse-toggle" onClick={onToggle} title={isCollapsed ? 'Expand' : 'Collapse'}>
-            {isCollapsed ? '▶' : '◀'}
-          </button>
-        </div>
+        <h2>🔥 Top {topEvents.length} Upcoming Events</h2>
         <div className="stats-summary">
           <span className="stat-item">📄 {withBills}</span>
           <span className="stat-item">👥 {withParticipation}</span>

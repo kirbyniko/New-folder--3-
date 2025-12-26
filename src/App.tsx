@@ -42,8 +42,9 @@ const STATE_CAPITOLS: Record<string, { lat: number; lng: number; zip: string }> 
   'WI': { lat: 43.0731, lng: -89.4012, zip: '53703' }, 'WY': { lat: 41.1400, lng: -104.8202, zip: '82001' }
 }
 
+type MainTab = 'search' | 'top-events' | 'admin';
+
 function App() {
-  const [showAdmin, setShowAdmin] = useState(false)
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list')
   const [zipCode, setZipCode] = useState('')
   const [radius, setRadius] = useState(50)
@@ -59,7 +60,7 @@ function App() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [isStateSearch, setIsStateSearch] = useState(false)
   const isStateSearchRef = useRef(false) // Ref for async callbacks to check current value
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [activeTab, setActiveTab] = useState<MainTab>('top-events')
 
   // Auto-detect user location on mount
   useEffect(() => {
@@ -193,7 +194,7 @@ function App() {
     setCalendarSources([]) // Reset calendar sources
     setIsStateSearch(false)
     isStateSearchRef.current = false // Reset ref for async callbacks
-    setSidebarCollapsed(true) // Auto-collapse on ZIP search
+    setActiveTab('search') // Switch to search tab on search
 
     try {
       // 1. Geocode ZIP code
@@ -204,9 +205,14 @@ function App() {
       console.log(`🌍 Location: ${location.city}, ${location.stateAbbr} (${location.lat}, ${location.lng})`)
       
       // 2. Fetch all tiers in parallel
-      console.log('📡 Fetching Federal:', '/api/congress-meetings')
-      console.log('📡 Fetching State:', location.stateAbbr ? `/api/state-events?state=${location.stateAbbr}` : 'SKIPPED')
-      console.log('📡 Fetching Local:', `/api/local-meetings?lat=${location.lat}&lng=${location.lng}&radius=${radius}`)
+      const congressUrl = getApiUrl(`/api/congress-meetings`);
+      const stateUrl = location.stateAbbr ? getApiUrl(`/api/state-events?state=${location.stateAbbr}`) : 'SKIPPED';
+      const localUrl = getApiUrl(`/api/local-meetings?lat=${location.lat}&lng=${location.lng}&radius=${radius}`);
+      
+      console.log('📡 Full API URLs:');
+      console.log('  Federal:', congressUrl);
+      console.log('  State:', stateUrl);
+      console.log('  Local:', localUrl);
       
       // Create abort controller for 30-second timeout
       const controller = new AbortController();
@@ -543,141 +549,151 @@ function App() {
 
   return (
     <div className="app">
-      <Navbar
-        zipCode={zipCode}
-        onZipCodeChange={setZipCode}
-        onSearch={handleSearch}
-        loading={loading}
-        onAdminClick={() => setShowAdmin(!showAdmin)}
-        showAdmin={showAdmin}
-        selectedState={selectedState}
-        onStateSelect={handleStateSelect}
-      />
-      
-      {!showAdmin && (
-        <div className="filter-bar-wrapper">
-          <FilterBar
-            selectedTags={selectedTags}
-            onTagsChange={setSelectedTags}
+      {activeTab === 'search' && (
+        <>
+          <Navbar
+            zipCode={zipCode}
+            onZipCodeChange={setZipCode}
+            onSearch={handleSearch}
+            loading={loading}
+            onAdminClick={() => setActiveTab('admin')}
+            showAdmin={false}
+            selectedState={selectedState}
+            onStateSelect={handleStateSelect}
           />
-        </div>
-      )}
-
-      {showAdmin ? (
-        <DataViewer 
-          onStateSelect={(state) => {
-            setShowAdmin(false);
-            setSelectedState(state);
-          }}
-        />
-      ) : (
-        <div className="layout">
-          {/* Left Column: Top Events List */}
-          <div className="events-list-column">
-            <TopEventsList 
-              isCollapsed={sidebarCollapsed}
-              onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+          
+          <div className="filter-bar-wrapper">
+            <FilterBar
+              selectedTags={selectedTags}
+              onTagsChange={setSelectedTags}
             />
           </div>
+        </>
+      )}
 
-          {/* Right Column: Map */}
-          <div className="map-column">
-            {(federalEvents.length > 0 || stateEvents.length > 0 || localEvents.length > 0) && userLocation ? (
-              <>
-                {/* Show enrichment notice for state events */}
-                <EnrichmentNotice 
-                  eventsCount={stateEvents.length}
-                  enrichableCount={stateEvents.filter(e => e.url && (!e.docketUrl || !e.bills)).length}
-                />
-                
-                <TabbedEvents
-                  federalEvents={federalEvents}
-                  stateEvents={stateEvents}
-                  localEvents={localEvents}
-                  centerLat={userLocation.lat}
-                  centerLng={userLocation.lng}
-                  radius={radius}
-                  selectedTags={selectedTags}
-                  selectedState={selectedState || undefined}
-                  viewMode="map"
-                  onViewModeChange={setViewMode}
-                  calendarSources={calendarSources}
-                  searchedState={searchedState || undefined}
-                />
-              </>
-            ) : error ? (
-              <div className="error-message">
-                <strong>Error:</strong> {error}
-              </div>
-            ) : loading ? (
-              <div className="loading-state">
-                <div className="spinner"></div>
-                <p>Loading legislative events...</p>
-              </div>
-            ) : !loading && userLocation && 
-               federalEvents.length === 0 && stateEvents.length === 0 && localEvents.length === 0 ? (
-              <div className="empty-results">
-                <div className="empty-results-icon">🔍</div>
-                <h3>No Events Found</h3>
-                <p>
-                  {selectedState 
-                    ? `No upcoming legislative events found for ${selectedState}.`
-                    : `No upcoming legislative events found within ${radius} miles of ZIP ${zipCode}.`
-                  }
-                </p>
-                
-                {/* Show data sources at the top */}
-                {calendarSources.length > 0 && (
-                  <div className="empty-results-sources">
-                    <h4>📅 Official Calendar Sources</h4>
-                    <SourceLinks 
+      <div className="main-content">
+        <div className="content-area">
+          {activeTab === 'search' ? (
+            <>
+              {(federalEvents.length > 0 || stateEvents.length > 0 || localEvents.length > 0) && userLocation ? (
+                  <>
+                    {/* Show enrichment notice for state events */}
+                    <EnrichmentNotice 
+                      eventsCount={stateEvents.length}
+                      enrichableCount={stateEvents.filter(e => e.url && (!e.docketUrl || !e.bills)).length}
+                    />
+                    
+                    <TabbedEvents
                       federalEvents={federalEvents}
                       stateEvents={stateEvents}
                       localEvents={localEvents}
+                      centerLat={userLocation.lat}
+                      centerLng={userLocation.lng}
+                      radius={radius}
+                      selectedTags={selectedTags}
                       selectedState={selectedState || undefined}
-                      searchedState={searchedState || undefined}
+                      viewMode="map"
+                      onViewModeChange={setViewMode}
                       calendarSources={calendarSources}
-                      simpleMode={true}
+                      searchedState={searchedState || undefined}
                     />
-                    <p className="sources-explanation">
-                      👆 Click above to verify the official calendar
-                    </p>
+                  </>
+                ) : error ? (
+                  <div className="error-message">
+                    <strong>Error:</strong> {error}
                   </div>
-                )}
-                
-                <div className="empty-results-tips">
-                  <h4>Possible reasons:</h4>
-                  <ul>
-                    <li><strong>Legislature not in session</strong> - Most state legislatures meet January-May</li>
-                    <li><strong>Between sessions</strong> - Check the data sources above to verify the official calendar</li>
-                    <li><strong>No meetings scheduled yet</strong> - Committees often schedule meetings 1-2 weeks in advance</li>
-                    <li>Try selecting a different state or checking back during the regular session</li>
-                  </ul>
-                </div>
-              </div>
-            ) : !loading && !userLocation ? (
-              <div className="empty-state">
-                <p>Enter a ZIP code to find legislative events near you</p>
-                <p className="empty-state-hint">
-                  Real-time data from Congress.gov, OpenStates, and Legistar APIs
+                ) : loading ? (
+                  <div className="loading-state">
+                    <div className="spinner"></div>
+                    <p>Loading legislative events...</p>
+                  </div>
+                ) : !loading && userLocation && 
+                   federalEvents.length === 0 && stateEvents.length === 0 && localEvents.length === 0 ? (
+                  <div className="empty-results">
+                    <div className="empty-results-icon">🔍</div>
+                    <h3>No Events Found</h3>
+                    <p>
+                      {selectedState 
+                        ? `No upcoming legislative events found for ${selectedState}.`
+                        : `No upcoming legislative events found within ${radius} miles of ZIP ${zipCode}.`
+                      }
+                    </p>
+                    
+                    {/* Show data sources at the top */}
+                    {calendarSources.length > 0 && (
+                      <div className="empty-results-sources">
+                        <h4>📅 Official Calendar Sources</h4>
+                        <SourceLinks 
+                          federalEvents={federalEvents}
+                          stateEvents={stateEvents}
+                          localEvents={localEvents}
+                          selectedState={selectedState || undefined}
+                          searchedState={searchedState || undefined}
+                          calendarSources={calendarSources}
+                          simpleMode={true}
+                        />
+                        <p className="sources-explanation">
+                          👆 Click above to verify the official calendar
+                        </p>
+                      </div>
+                    )}
+                    
+                    <div className="empty-results-tips">
+                      <h4>Possible reasons:</h4>
+                      <ul>
+                        <li><strong>Legislature not in session</strong> - Most state legislatures meet January-May</li>
+                        <li><strong>Between sessions</strong> - Check the data sources above to verify the official calendar</li>
+                        <li><strong>No meetings scheduled yet</strong> - Committees often schedule meetings 1-2 weeks in advance</li>
+                        <li>Try selecting a different state or checking back during the regular session</li>
+                      </ul>
+                    </div>
+                  </div>
+                ) : !loading && !userLocation ? (
+                  <div className="empty-state">
+                    <p>Enter a ZIP code to find legislative events near you</p>
+                    <p className="empty-state-hint">
+                      Real-time data from Congress.gov, OpenStates, and Legistar APIs
                 </p>
               </div>
             ) : null}
-          </div>
+          </>
+          ) : activeTab === 'top-events' ? (
+            <TopEventsList />
+          ) : activeTab === 'admin' ? (
+            <DataViewer 
+              onStateSelect={(state) => {
+                setActiveTab('search');
+                setSelectedState(state);
+              }}
+            />
+          ) : null}
         </div>
-      )}
 
-      <footer className="footer">
-        <p>
-          Data sources: <a href="https://api.congress.gov" target="_blank" rel="noopener noreferrer">Congress.gov</a>
-          {' '}&bull;{' '}
-          <a href="https://docs.openstates.org" target="_blank" rel="noopener noreferrer">OpenStates</a>
-          {' '}&bull;{' '}
-          <a href="https://webapi.legistar.com" target="_blank" rel="noopener noreferrer">Legistar</a>
-        </p>
-      </footer>
+        {/* Bottom Tab Navigation */}
+        <div className="bottom-tabs">
+          <button
+            className={`tab-button ${activeTab === 'search' ? 'active' : ''}`}
+            onClick={() => setActiveTab('search')}
+          >
+            <span className="tab-icon">🔍</span>
+            <span className="tab-label">Search</span>
+          </button>
+          <button
+            className={`tab-button ${activeTab === 'top-events' ? 'active' : ''}`}
+            onClick={() => setActiveTab('top-events')}
+          >
+            <span className="tab-icon">📋</span>
+            <span className="tab-label">Top 100</span>
+          </button>
+          <button
+            className={`tab-button ${activeTab === 'admin' ? 'active' : ''}`}
+            onClick={() => setActiveTab('admin')}
+          >
+            <span className="tab-icon">⚙️</span>
+            <span className="tab-label">Admin</span>
+          </button>
+        </div>
+      </div>
     </div>
   )
-}
-
-export default App
+}export default App

@@ -6,7 +6,11 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   server: {
     androidScheme: 'https',
-    cleartext: true
+    cleartext: true,
+    // Don't intercept API calls - let them go to the actual server
+    allowNavigation: [
+      'https://40c0eb33.civitracker.pages.dev/*'
+    ]
   }
 };
 

@@ -1,0 +1,40 @@
+[
+  {
+    "id": "ri-1767848400000-special-legislative-commission",
+    "name": "Special Legislative Commission to Study the Entire Area of Land Use, Preservation, Development, Housing, Environment, and Regulation",
+    "date": "2026-01-08T05:00:00.000Z",
+    "time": "01:30 PM",
+    "location": "Room 135 - State House",
+    "committee": "Special Legislative Commission to Study the Entire Area of Land Use, Preservation, Development, Housing, Environment, and Regulation",
+    "type": "commission-meeting",
+    "level": "state",
+    "state": "RI",
+    "city": "Providence",
+    "lat": 41.8299,
+    "lng": -71.416,
+    "zipCode": null,
+    "description": "Special Legislative Commission to Study the Entire Area of Land Use, Preservation, Development, Housing, Environment, and Regulation meeting",
+    "sourceUrl": "https://status.rilegislature.gov/commission_board_calendar.aspx",
+    "docketUrl": "http://status.rilegislature.gov/documents/LAND USE 1-8.pdf",
+    "virtualMeetingUrl": "http://status.rilegislature.gov/documents/LAND USE 1-8.html"
+  },
+  {
+    "id": "ri-1768885200000-child-care-in-rhode-island",
+    "name": "Child Care in Rhode Island",
+    "date": "2026-01-20T05:00:00.000Z",
+    "time": "02:30 PM",
+    "location": "Room 135 - State House",
+    "committee": "Child Care in Rhode Island",
+    "type": "commission-meeting",
+    "level": "state",
+    "state": "RI",
+    "city": "Providence",
+    "lat": 41.8299,
+    "lng": -71.416,
+    "zipCode": null,
+    "description": "Child Care in Rhode Island meeting",
+    "sourceUrl": "https://status.rilegislature.gov/commission_board_calendar.aspx",
+    "docketUrl": "http://status.rilegislature.gov/documents/Child Care in RI 1-20-2026.pdf",
+    "virtualMeetingUrl": "http://status.rilegislature.gov/documents/Child Care in RI 1-20-2026.html"
+  }
+]
