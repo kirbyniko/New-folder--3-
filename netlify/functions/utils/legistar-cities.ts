@@ -48,7 +48,8 @@ export const LEGISTAR_CITIES: LegistarCity[] = [
   { name: 'Baltimore', client: 'baltimore', state: 'MD', lat: 39.2904, lng: -76.6122, population: 585708 },
   { name: 'Milwaukee', client: 'milwaukee', state: 'WI', lat: 43.0389, lng: -87.9065, population: 577222 },
   { name: 'Albuquerque', client: 'albuquerque', state: 'NM', lat: 35.0844, lng: -106.6504, population: 564559 },
-  { name: 'Tucson', client: 'tucson', state: 'AZ', lat: 32.2226, lng: -110.9747, population: 548073 },
+  // Tucson removed - Legistar API returns 500 errors
+  // { name: 'Tucson', client: 'tucson', state: 'AZ', lat: 32.2226, lng: -110.9747, population: 548073 },
   { name: 'Fresno', client: 'fresno', state: 'CA', lat: 36.7378, lng: -119.7871, population: 542107 },
   { name: 'Sacramento', client: 'sacramento', state: 'CA', lat: 38.5816, lng: -121.4944, population: 524943 },
   { name: 'Mesa', client: 'mesa', state: 'AZ', lat: 33.4152, lng: -111.8315, population: 504258 },

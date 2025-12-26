@@ -60,6 +60,11 @@ export class ArizonaScraper extends BaseScraper {
         name: 'Arizona ALIS Today Calendar',
         url: 'https://www.azleg.gov/alis-today/',
         description: 'Daily committee meeting schedules for House, Senate, and Interim committees'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        description: 'City council meetings from Phoenix, Mesa, Scottsdale, and other Arizona cities'
       }
     ];
   }
