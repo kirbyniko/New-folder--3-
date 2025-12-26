@@ -64,7 +64,7 @@ export class ArizonaScraper extends BaseScraper {
       {
         name: 'Local City Meetings (Legistar API)',
         url: 'https://webapi.legistar.com',
-        description: 'City council meetings from Phoenix, Mesa, Scottsdale, and other Arizona cities'
+        description: 'City council meetings from Phoenix, Mesa, and other Arizona cities'
       }
     ];
   }
