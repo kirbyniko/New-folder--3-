@@ -8,6 +8,8 @@ import { execSync } from 'child_process';
 
 loadEnvFile();
 
+const GENERATE_ONLY = process.argv.includes('--generate-only');
+
 async function syncDataSources() {
   console.log('🔄 Syncing data sources...');
   
@@ -72,6 +74,13 @@ INSERT OR REPLACE INTO data_sources (
   writeFileSync('temp-sync-sources.sql', statements.join('\n\n'));
 
   console.log(`📊 Generated ${count} source records`);
+  
+  if (GENERATE_ONLY) {
+    console.log('✅ SQL file generated: temp-sync-sources.sql');
+    console.log('📝 Run manually: wrangler d1 execute civitracker-db --remote --file temp-sync-sources.sql');
+    return;
+  }
+  
   console.log('🚀 Executing D1 migration...');
 
   try {
