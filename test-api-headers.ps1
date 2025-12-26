@@ -1,4 +1,4 @@
-// Test API headers
+# Test API headers
 $response = Invoke-WebRequest -Uri "https://civitracker.pages.dev/api/state-events?state=ND" -Method GET -UseBasicParsing
 
 Write-Host "Status: $($response.StatusCode)"
