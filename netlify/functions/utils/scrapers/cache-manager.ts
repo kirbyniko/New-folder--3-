@@ -407,9 +407,13 @@ class CacheManagerClass {
 // Export singleton instance
 export const CacheManager = new CacheManagerClass();
 
-// Auto-cleanup every 5 minutes
-if (typeof setInterval !== 'undefined') {
+// Auto-cleanup disabled in serverless environments (Cloudflare Workers, Netlify Functions)
+// Global setInterval is not allowed in Workers
+// Cleanup will happen lazily when cache is accessed
+/*
+if (typeof setInterval !== 'undefined' && !process.env.NETLIFY && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
   setInterval(() => {
     CacheManager.cleanup();
   }, 5 * 60 * 1000);
 }
+*/
