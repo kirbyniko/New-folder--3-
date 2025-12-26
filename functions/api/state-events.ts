@@ -90,8 +90,26 @@ export async function onRequest(context: any) {
       }
     }
 
+    // Get data sources for this state
+    let calendarSources = [];
+    try {
+      const { results: sources } = await env.DB.prepare(`
+        SELECT name, url, type, description, notes, status
+        FROM data_sources
+        WHERE state_code = ?
+      `).bind(stateAbbr).all();
+      calendarSources = sources || [];
+    } catch (sourcesError: any) {
+      console.error('Error fetching data sources:', sourcesError);
+      // Continue without sources if query fails
+    }
+
     return new Response(JSON.stringify(events), {
-      headers: corsHeaders
+      headers: {
+        ...corsHeaders,
+        'Access-Control-Expose-Headers': 'X-Calendar-Sources',
+        'X-Calendar-Sources': JSON.stringify(calendarSources)
+      }
     });
 
   } catch (error: any) {

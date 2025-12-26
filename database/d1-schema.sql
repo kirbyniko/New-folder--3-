@@ -95,6 +95,22 @@ CREATE TABLE scraper_health (
   duration_ms INTEGER
 );
 
+-- Data sources table (stores scraper metadata)
+CREATE TABLE data_sources (
+  id TEXT PRIMARY KEY,
+  state_code TEXT NOT NULL,
+  name TEXT NOT NULL,
+  url TEXT NOT NULL,
+  type TEXT NOT NULL, -- 'primary', 'secondary', 'supplementary'
+  description TEXT,
+  last_checked TEXT,
+  status TEXT DEFAULT 'active', -- 'active', 'inactive', 'unreliable'
+  notes TEXT,
+  update_frequency_hours INTEGER,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);
+
 -- Agenda summaries table
 CREATE TABLE agenda_summaries (
   id TEXT PRIMARY KEY,
@@ -118,3 +134,5 @@ CREATE INDEX idx_event_bills_bill ON event_bills(bill_id);
 CREATE INDEX idx_event_tags_event ON event_tags(event_id);
 CREATE INDEX idx_agenda_summaries_event ON agenda_summaries(event_id);
 CREATE INDEX idx_agenda_summaries_hash ON agenda_summaries(content_hash);
+CREATE INDEX idx_data_sources_state ON data_sources(state_code);
+CREATE INDEX idx_data_sources_status ON data_sources(status);
