@@ -10,7 +10,7 @@ export async function onRequest(context: any) {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Expose-Headers': 'X-Calendar-Sources',
+    'Access-Control-Expose-Headers': 'X-Calendar-Sources, X-Data-Source',
     'Content-Type': 'application/json'
   };
 
