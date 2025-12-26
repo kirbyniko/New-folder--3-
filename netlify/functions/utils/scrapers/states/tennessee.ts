@@ -49,6 +49,11 @@ export class TennesseeScraper extends BaseScraper {
         name: 'Tennessee General Assembly Calendar',
         url: 'https://capitol.tn.gov/pages/calendar-display',
         description: 'Committee meetings and floor calendars for both chambers'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        description: 'City council meetings from Nashville, Memphis, Knoxville, Chattanooga, and other Tennessee cities'
       }
     ];
   }

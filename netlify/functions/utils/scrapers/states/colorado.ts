@@ -58,6 +58,11 @@ export class ColoradoScraper extends BaseScraper {
         name: 'Colorado General Assembly Calendar',
         url: 'https://leg.colorado.gov/schedule',
         description: 'Daily legislative schedules and committee meetings'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        description: 'City council meetings from Denver, Colorado Springs, Aurora, and other Colorado cities'
       }
     ];
   }

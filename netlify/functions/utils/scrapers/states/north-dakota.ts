@@ -21,6 +21,14 @@ export class NorthDakotaScraper extends BaseScraper {
         lastChecked: new Date().toISOString(),
         status: 'active' as const,
         notes: 'Interim and session committee meetings'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        type: 'supplementary' as const,
+        lastChecked: new Date().toISOString(),
+        status: 'active' as const,
+        notes: 'City council meetings from Fargo, Bismarck, and other North Dakota cities'
       }
     ];
   }

@@ -41,6 +41,12 @@ export class MaineScraper extends BaseScraper {
         url: 'https://legislature.maine.gov/calendar',
         type: 'primary' as const,
         description: 'Official Maine Legislature committee meetings and public hearings'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        type: 'supplemental' as const,
+        description: 'City council meetings from Portland and other Maine cities'
       }
     ];
   }

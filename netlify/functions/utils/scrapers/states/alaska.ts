@@ -66,6 +66,11 @@ export class AlaskaScraper extends BaseScraper {
         name: 'BASIS Committee Details',
         url: `${this.baseUrl}/Committee/Details/${CURRENT_SESSION}`,
         description: 'Individual committee meeting schedules and documents'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        description: 'City council meetings from Anchorage and other Alaska municipalities'
       }
     ];
   }

@@ -54,7 +54,6 @@ export class KentuckyScraper extends BaseScraper {
       }
     ];
   }
-  }
 
   async scrapeCalendar(): Promise<RawEvent[]> {
     console.log('[SCRAPER:KY] Fetching Kentucky committee meetings...');

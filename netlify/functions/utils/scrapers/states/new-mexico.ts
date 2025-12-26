@@ -54,6 +54,14 @@ export class NewMexicoScraper extends BaseScraper {
         lastChecked: new Date().toISOString(),
         status: 'active' as const,
         notes: 'Official legislative calendar (data via OpenStates API)'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        type: 'supplementary' as const,
+        lastChecked: new Date().toISOString(),
+        status: 'active' as const,
+        notes: 'City council meetings from Albuquerque, Santa Fe, and other New Mexico cities'
       }
     ];
   }

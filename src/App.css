@@ -54,6 +54,34 @@ body {
   padding-bottom: 70px; /* Space for bottom tabs */
 }
 
+.data-sources-wrapper {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.data-sources-header-bar {
+  padding: 1rem;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 1rem;
+}
+
+.back-button {
+  padding: 0.75rem 1.5rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.back-button:hover {
+  background: #2563eb;
+}
+
 .bottom-tabs {
   display: flex;
   background: white;

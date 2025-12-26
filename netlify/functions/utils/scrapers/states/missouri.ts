@@ -48,6 +48,11 @@ export class MissouriScraper extends BaseScraper {
         name: 'Missouri Senate Hearings',
         url: 'https://www.senate.mo.gov/hearingsschedule/hrings.htm',
         description: 'Senate committee hearing schedules'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        description: 'City council meetings from Kansas City, St. Louis, Springfield, and other Missouri cities'
       }
     ];
   }

@@ -227,6 +227,11 @@ export class HawaiiScraper extends BaseScraper {
         name: 'Hawaii State Legislature Hearings',
         url: this.hearingsUrl,
         description: 'Upcoming committee hearings for House and Senate'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        description: 'City council meetings from Honolulu and other Hawaii counties'
       }
     ];
   }

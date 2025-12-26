@@ -35,6 +35,12 @@ export class WyomingScraper {
   private readonly stateCode = 'WY';
   private readonly stateName = 'Wyoming';
 
+  readonly config = {
+    updateFrequency: 24,
+    reliability: 'medium' as const,
+    requiresPuppeteer: true
+  };
+
   /**
    * Get calendar sources for Wyoming
    */
@@ -47,6 +53,14 @@ export class WyomingScraper {
         lastChecked: new Date().toISOString(),
         status: 'active' as const,
         notes: 'Official legislative calendar with committee meetings and hearings'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        type: 'supplementary' as const,
+        lastChecked: new Date().toISOString(),
+        status: 'active' as const,
+        notes: 'City council meetings from Cheyenne, Casper, and other Wyoming cities'
       }
     ];
   }

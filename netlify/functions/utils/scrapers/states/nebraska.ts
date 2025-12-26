@@ -24,6 +24,14 @@ export class NebraskaScraper extends BaseScraper {
         lastChecked: new Date().toISOString(),
         status: 'active' as const,
         notes: 'Official Unicameral Legislature calendar with committee hearings'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        type: 'supplementary' as const,
+        lastChecked: new Date().toISOString(),
+        status: 'active' as const,
+        notes: 'City council meetings from Omaha, Lincoln, and other Nebraska cities'
       }
     ];
   }

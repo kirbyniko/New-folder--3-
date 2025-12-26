@@ -18,6 +18,21 @@ export class IdahoScraper extends BaseScraper {
     super(config);
   }
 
+  getCalendarSources(): { name: string; url: string; description: string }[] {
+    return [
+      {
+        name: 'Idaho Legislature Committee Agendas',
+        url: 'https://legislature.idaho.gov/sessioninfo/agenda/',
+        description: 'House and Senate committee meeting agendas'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        description: 'City council meetings from Boise and other Idaho cities'
+      }
+    ];
+  }
+
   protected async scrapeCalendar(): Promise<RawEvent[]> {
     try {
       // Scrape both chambers in parallel

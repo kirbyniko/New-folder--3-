@@ -41,6 +41,11 @@ export class WisconsinScraper extends BaseScraper {
         name: 'Wisconsin Legislature Committee Notices',
         url: 'https://docs.legis.wisconsin.gov/raw/committee',
         description: 'Joint, Assembly, and Senate committee public notices'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        description: 'City council meetings from Milwaukee, Madison, Green Bay, and other Wisconsin cities'
       }
     ];
   }

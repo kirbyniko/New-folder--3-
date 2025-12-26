@@ -89,6 +89,12 @@ export class KansasScraper extends BaseScraper {
         url: `https://openstates.org/ks/`,
         type: 'supplemental' as const,
         description: 'Legislative event data from OpenStates API'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        type: 'supplemental' as const,
+        description: 'City council meetings from Wichita, Kansas City, Overland Park, and other Kansas cities'
       }
     ];
   }

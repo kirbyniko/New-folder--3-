@@ -238,6 +238,14 @@ export class MontanaScraper extends BaseScraper {
         lastChecked: new Date().toISOString(),
         status: 'active' as const,
         notes: 'Official legislative events calendar (interim committees)'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        type: 'supplementary' as const,
+        lastChecked: new Date().toISOString(),
+        status: 'active' as const,
+        notes: 'City council meetings from Billings, Missoula, and other Montana cities'
       }
     ];
   }

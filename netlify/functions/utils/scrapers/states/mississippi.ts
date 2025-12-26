@@ -428,6 +428,14 @@ export class MississippiScraper extends BaseScraper {
         lastChecked: new Date().toISOString(),
         status: 'active',
         notes: 'Senate legislative calendar'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        type: 'supplementary',
+        lastChecked: new Date().toISOString(),
+        status: 'active',
+        notes: 'City council meetings from Jackson and other Mississippi cities'
       }
     ];
   }

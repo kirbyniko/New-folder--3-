@@ -3,6 +3,7 @@ import './DataViewer.css';
 import { TAG_DEFINITIONS } from '../utils/tagging';
 import FilterBar from './FilterBar';
 import { getApiUrl } from '../config/api';
+import DataSourcesView from './DataSourcesView';
 
 interface Event {
   id: string;
@@ -73,7 +74,7 @@ interface DataResponse {
   };
 }
 
-type ViewTab = 'events' | 'bills' | 'agendas';
+type ViewTab = 'events' | 'bills' | 'agendas' | 'sources';
 type SortField = 'date' | 'state' | 'name' | 'bills';
 type SortDirection = 'asc' | 'desc';
 
@@ -285,16 +286,25 @@ export default function DataViewer({ onStateSelect }: DataViewerProps) {
         >
           📄 Agendas ({agendas.length})
         </button>
+        <button
+          className={`tab-button ${activeTab === 'sources' ? 'active' : ''}`}
+          onClick={() => setActiveTab('sources')}
+        >
+          🌐 Data Sources (50 States)
+        </button>
       </div>
 
       {/* Filter Bar - Horizontal like home view */}
-      <FilterBar
-        selectedTags={selectedTags}
-        onTagsChange={setSelectedTags}
-      />
+      {activeTab !== 'sources' && (
+        <FilterBar
+          selectedTags={selectedTags}
+          onTagsChange={setSelectedTags}
+        />
+      )}
 
       {/* Search and Filters */}
-      <div className="filters">
+      {activeTab !== 'sources' && (
+        <div className="filters">
         <div className="filter-group">
           <label>🔍 Search:</label>
           <input
@@ -361,8 +371,14 @@ export default function DataViewer({ onStateSelect }: DataViewerProps) {
           Clear All
         </button>
       </div>
+      )}
 
-      {data && (
+      {/* Data Sources View */}
+      {activeTab === 'sources' && (
+        <DataSourcesView />
+      )}
+
+      {data && activeTab !== 'sources' && (
         <>
           {/* Events Table */}
           {activeTab === 'events' && (

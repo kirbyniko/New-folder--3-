@@ -21,6 +21,14 @@ export class VermontScraper extends BaseScraper {
         lastChecked: new Date().toISOString(),
         status: 'active' as const,
         notes: 'General Assembly reconvenes January 6, 2026 per J.R.S.28'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        type: 'supplementary' as const,
+        lastChecked: new Date().toISOString(),
+        status: 'active' as const,
+        notes: 'City council meetings from Burlington and other Vermont municipalities'
       }
     ];
   }

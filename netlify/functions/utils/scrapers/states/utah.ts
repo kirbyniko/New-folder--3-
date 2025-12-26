@@ -172,6 +172,14 @@ export class UtahScraper extends BaseScraper {
         lastChecked: new Date().toISOString(),
         status: 'active',
         notes: 'Official legislative calendar with committee meetings and floor sessions'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        type: 'supplementary',
+        lastChecked: new Date().toISOString(),
+        status: 'active',
+        notes: 'City council meetings from Salt Lake City, Provo, and other Utah cities'
       }
     ];
   }

@@ -49,6 +49,11 @@ export class MassachusettsScraper extends BaseScraper {
         name: 'Massachusetts Legislature Hearings',
         url: 'https://malegislature.gov/Events/Hearings/SearchResults',
         description: 'Joint committee public hearings and legislative events'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        description: 'City council meetings from Boston, Worcester, Springfield, Cambridge, and other Massachusetts cities'
       }
     ];
   }

@@ -55,6 +55,11 @@ export class NewHampshireScraper extends BaseScraper {
         name: 'NH Senate Calendar',
         url: 'https://www.gencourt.state.nh.us/senate/schedule/',
         description: 'Official Senate meeting schedule'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        description: 'City council meetings from Manchester, Nashua, and other New Hampshire cities'
       }
     ];
   }

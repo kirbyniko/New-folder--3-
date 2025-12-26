@@ -40,13 +40,20 @@
   border-radius: 8px;
   font-size: 1rem;
   background: rgba(255, 255, 255, 0.9);
+  color: #1e3a8a; /* Dark blue text */
   transition: all 0.2s;
+}
+
+.navbar-input::placeholder {
+  color: #64748b; /* Gray placeholder text */
+  opacity: 1;
 }
 
 .navbar-input:focus {
   outline: none;
   border-color: rgba(255, 255, 255, 0.8);
   background: white;
+  color: #1e3a8a; /* Ensure text stays dark on focus */
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
 }
 

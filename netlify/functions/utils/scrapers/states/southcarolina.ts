@@ -44,6 +44,11 @@ export class SouthCarolinaScraper extends BaseScraper {
         name: 'South Carolina Legislature',
         url: 'https://www.scstatehouse.gov',
         description: 'House and Senate legislative calendars (via OpenStates)'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        description: 'City council meetings from Columbia, Charleston, Greenville, and other South Carolina cities'
       }
     ];
   }

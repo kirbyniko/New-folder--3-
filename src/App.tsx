@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { Capacitor } from '@capacitor/core'
 import { geocodeZipCode, calculateDistance } from './utils/geocoding'
 import type { LegislativeEvent } from './types/event'
 import TabbedEvents from './components/TabbedEvents'
@@ -6,12 +7,14 @@ import { EnrichmentNotice } from './components/EnrichmentNotice'
 import Navbar from './components/Navbar'
 import TopEventsList from './components/TopEventsList'
 import DataViewer from './components/DataViewer'
+import DataSourcesView from './components/DataSourcesView'
 import FilterBar from './components/FilterBar'
 import { SourceLinks } from './components/SourceLinks'
 import { getApiUrl } from './config/api'
 import './App.css'
 
 const APP_VERSION = '2025.12.25.03-defensive'; // Cache bust - defensive array parsing
+const IS_MOBILE_APP = Capacitor.isNativePlatform(); // Detect if running in mobile app
 
 // State capitol coordinates for default locations
 const STATE_CAPITOLS: Record<string, { lat: number; lng: number; zip: string }> = {
@@ -61,6 +64,7 @@ function App() {
   const [isStateSearch, setIsStateSearch] = useState(false)
   const isStateSearchRef = useRef(false) // Ref for async callbacks to check current value
   const [activeTab, setActiveTab] = useState<MainTab>('top-events')
+  const [showDataSources, setShowDataSources] = useState(false)
 
   // Auto-detect user location on mount
   useEffect(() => {
@@ -549,7 +553,29 @@ function App() {
 
   return (
     <div className="app">
-      {activeTab === 'search' && (
+      {!IS_MOBILE_APP && !showDataSources && (
+        <>
+          <Navbar
+            zipCode={zipCode}
+            onZipCodeChange={setZipCode}
+            onSearch={handleSearch}
+            loading={loading}
+            onAdminClick={() => setShowDataSources(true)}
+            showAdmin={false}
+            selectedState={selectedState}
+            onStateSelect={handleStateSelect}
+          />
+          
+          <div className="filter-bar-wrapper">
+            <FilterBar
+              selectedTags={selectedTags}
+              onTagsChange={setSelectedTags}
+            />
+          </div>
+        </>
+      )}
+
+      {IS_MOBILE_APP && activeTab === 'search' && (
         <>
           <Navbar
             zipCode={zipCode}
@@ -573,7 +599,18 @@ function App() {
 
       <div className="main-content">
         <div className="content-area">
-          {activeTab === 'search' ? (
+          {!IS_MOBILE_APP && showDataSources && (
+            <div className="data-sources-wrapper">
+              <div className="data-sources-header-bar">
+                <button onClick={() => setShowDataSources(false)} className="back-button">
+                  ← Back to Search
+                </button>
+              </div>
+              <DataSourcesView />
+            </div>
+          )}
+
+          {!IS_MOBILE_APP && !showDataSources && (
             <>
               {(federalEvents.length > 0 || stateEvents.length > 0 || localEvents.length > 0) && userLocation ? (
                   <>
@@ -653,46 +690,92 @@ function App() {
                     <p>Enter a ZIP code to find legislative events near you</p>
                     <p className="empty-state-hint">
                       Real-time data from Congress.gov, OpenStates, and Legistar APIs
-                </p>
-              </div>
-            ) : null}
-          </>
-          ) : activeTab === 'top-events' ? (
+                    </p>
+                  </div>
+                ) : null}
+            </>
+          )}
+
+          {IS_MOBILE_APP && activeTab === 'search' && (
+            <>
+              {(federalEvents.length > 0 || stateEvents.length > 0 || localEvents.length > 0) && userLocation ? (
+                <TabbedEvents
+                  federalEvents={federalEvents}
+                  stateEvents={stateEvents}
+                  localEvents={localEvents}
+                  centerLat={userLocation.lat}
+                  centerLng={userLocation.lng}
+                  radius={radius}
+                  selectedTags={selectedTags}
+                  selectedState={selectedState || undefined}
+                  viewMode={viewMode}
+                  onViewModeChange={setViewMode}
+                  calendarSources={calendarSources}
+                  searchedState={searchedState || undefined}
+                />
+              ) : loading ? (
+                <div className="empty-state">
+                  <div className="spinner"></div>
+                  <p>Loading legislative events...</p>
+                </div>
+              ) : (federalEvents.length === 0 && stateEvents.length === 0 && localEvents.length === 0 && userLocation) ? (
+                <div className="empty-state">
+                  <h3>No upcoming events found</h3>
+                  <p>
+                    {selectedState 
+                      ? `No scheduled legislative events found in ${selectedState} for the next 30 days.`
+                      : `No scheduled legislative events found near ${zipCode} for the next 30 days.`
+                    }
+                  </p>
+                </div>
+              ) : !loading && !userLocation ? (
+                <div className="empty-state">
+                  <p>Enter a ZIP code to find legislative events near you</p>
+                </div>
+              ) : null}
+            </>
+          )}
+
+          {IS_MOBILE_APP && activeTab === 'top-events' && (
             <TopEventsList />
-          ) : activeTab === 'admin' ? (
+          )}
+          
+          {IS_MOBILE_APP && activeTab === 'admin' && (
             <DataViewer 
               onStateSelect={(state) => {
                 setActiveTab('search');
                 setSelectedState(state);
               }}
             />
-          ) : null}
+          )}
         </div>
 
-        {/* Bottom Tab Navigation */}
-        <div className="bottom-tabs">
-          <button
-            className={`tab-button ${activeTab === 'search' ? 'active' : ''}`}
-            onClick={() => setActiveTab('search')}
-          >
-            <span className="tab-icon">🔍</span>
-            <span className="tab-label">Search</span>
-          </button>
-          <button
-            className={`tab-button ${activeTab === 'top-events' ? 'active' : ''}`}
-            onClick={() => setActiveTab('top-events')}
-          >
-            <span className="tab-icon">📋</span>
-            <span className="tab-label">Top 100</span>
-          </button>
-          <button
-            className={`tab-button ${activeTab === 'admin' ? 'active' : ''}`}
-            onClick={() => setActiveTab('admin')}
-          >
-            <span className="tab-icon">⚙️</span>
-            <span className="tab-label">Admin</span>
-          </button>
-        </div>
+        {/* Bottom Tab Navigation - MOBILE ONLY */}
+        {IS_MOBILE_APP && (
+          <div className="bottom-tabs">
+            <button
+              className={`tab-button ${activeTab === 'search' ? 'active' : ''}`}
+              onClick={() => setActiveTab('search')}
+            >
+              <span className="tab-icon">🔍</span>
+              <span className="tab-label">Search</span>
+            </button>
+            <button
+              className={`tab-button ${activeTab === 'top-events' ? 'active' : ''}`}
+              onClick={() => setActiveTab('top-events')}
+            >
+              <span className="tab-icon">📋</span>
+              <span className="tab-label">Top 100</span>
+            </button>
+            <button
+              className={`tab-button ${activeTab === 'admin' ? 'active' : ''}`}
+              onClick={() => setActiveTab('admin')}
+            >
+              <span className="tab-icon">⚙️</span>
+              <span className="tab-label">Admin</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -20,6 +20,14 @@ export class SouthDakotaScraper extends BaseScraper {
         lastChecked: new Date().toISOString(),
         status: 'active' as const,
         notes: 'JavaScript-based calendar, requires dynamic scraping. 2026 session starts January 13, 2026.'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        type: 'supplementary' as const,
+        lastChecked: new Date().toISOString(),
+        status: 'active' as const,
+        notes: 'City council meetings from Sioux Falls, Rapid City, and other South Dakota cities'
       }
     ];
   }

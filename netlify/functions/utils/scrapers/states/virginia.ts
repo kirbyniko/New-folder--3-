@@ -43,6 +43,11 @@ export class VirginiaScraper extends BaseScraper {
         name: 'Virginia Legislative Information System',
         url: 'https://lis.virginia.gov/schedule',
         description: 'Daily schedule of House and Senate committee meetings'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        description: 'City council meetings from Richmond, Virginia Beach, Norfolk, Alexandria, and other Virginia cities'
       }
     ];
   }

@@ -56,6 +56,11 @@ export class MinnesotaScraper extends BaseScraper {
         name: 'Minnesota Senate Calendar',
         url: 'https://www.senate.mn/schedule/',
         description: 'Senate committee and floor session schedules'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        description: 'City council meetings from Minneapolis, St. Paul, Rochester, and other Minnesota cities'
       }
     ];
   }

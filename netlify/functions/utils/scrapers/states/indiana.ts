@@ -53,6 +53,11 @@ export class IndianaScraper extends BaseScraper {
         name: 'OpenStates Indiana Events',
         url: 'https://openstates.org/in/committees/',
         description: 'Committee meetings and legislative events'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        description: 'City council meetings from Indianapolis, Fort Wayne, and other Indiana cities'
       }
     ];
   }

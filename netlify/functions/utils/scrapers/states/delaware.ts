@@ -61,6 +61,21 @@ export class DelawareScraper extends BaseScraper {
     super(config);
   }
 
+  getCalendarSources(): { name: string; url: string; description: string }[] {
+    return [
+      {
+        name: 'Delaware General Assembly Committee Meetings',
+        url: 'https://legis.delaware.gov/CommitteeMeetings',
+        description: 'House, Senate, and Joint committee meeting schedules'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        description: 'City council meetings from Wilmington and other Delaware municipalities'
+      }
+    ];
+  }
+
   protected async scrapeCalendar(): Promise<RawEvent[]> {
     try {
       const response = await fetch(this.apiUrl, {

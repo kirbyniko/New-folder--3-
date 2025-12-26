@@ -44,6 +44,11 @@ export class MarylandScraper extends BaseScraper {
         name: 'Maryland General Assembly Meetings',
         url: 'https://mgaleg.maryland.gov/mgawebsite/Meetings/Day',
         description: 'Daily committee meeting schedules for both chambers'
+      },
+      {
+        name: 'Local City Meetings (Legistar API)',
+        url: 'https://webapi.legistar.com',
+        description: 'City council meetings from Baltimore, Rockville, Frederick, and other Maryland cities'
       }
     ];
   }
