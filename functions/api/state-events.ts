@@ -107,7 +107,11 @@ export async function onRequest(context: any) {
 
     return new Response(JSON.stringify(events), {
       headers: {
-        ...corsHeaders,
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Expose-Headers': 'X-Calendar-Sources, X-Data-Source',
+        'Content-Type': 'application/json',
         'X-Calendar-Sources': JSON.stringify(calendarSources)
       }
     });
