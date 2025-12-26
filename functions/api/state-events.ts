@@ -1,5 +1,5 @@
-// Cloudflare Pages Function: State Events API
-// Uses D1 database binding
+// Cloudflare Pages Function: State Events API (D1)
+// Uses D1 database binding - Updated 2025-12-26
 
 export async function onRequest(context: any) {
   const { request, env } = context;
