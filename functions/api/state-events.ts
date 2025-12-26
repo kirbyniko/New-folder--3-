@@ -58,36 +58,71 @@ export async function onRequest(context: any) {
       LIMIT ?
     `).bind(stateAbbr, limit).all();
 
-    // Get bills and tags for each event
-    for (const event of events) {
-      // Get bills
-      const { results: bills } = await env.DB.prepare(`
+    // Batch fetch bills, tags, and agenda summaries for all events at once
+    const eventIds = events.map(e => e.id);
+    
+    // Get all bills for these events in one query
+    const billsMap = new Map();
+    if (eventIds.length > 0) {
+      const placeholders = eventIds.map(() => '?').join(',');
+      const { results: allBills } = await env.DB.prepare(`
         SELECT 
+          eb.event_id,
           b.bill_number as number,
           b.title,
           b.url,
           b.summary
         FROM bills b
         INNER JOIN event_bills eb ON b.id = eb.bill_id
-        WHERE eb.event_id = ?
-      `).bind(event.id).all();
+        WHERE eb.event_id IN (${placeholders})
+      `).bind(...eventIds).all();
       
-      event.bills = bills || [];
+      for (const bill of (allBills || [])) {
+        if (!billsMap.has(bill.event_id)) {
+          billsMap.set(bill.event_id, []);
+        }
+        const { event_id, ...billData } = bill;
+        billsMap.get(bill.event_id).push(billData);
+      }
+    }
+    
+    // Get all tags for these events in one query
+    const tagsMap = new Map();
+    if (eventIds.length > 0) {
+      const placeholders = eventIds.map(() => '?').join(',');
+      const { results: allTags } = await env.DB.prepare(`
+        SELECT event_id, tag FROM event_tags WHERE event_id IN (${placeholders})
+      `).bind(...eventIds).all();
       
-      // Get tags
-      const { results: tags } = await env.DB.prepare(`
-        SELECT tag FROM event_tags WHERE event_id = ?
-      `).bind(event.id).all();
+      for (const tagRow of (allTags || [])) {
+        if (!tagsMap.has(tagRow.event_id)) {
+          tagsMap.set(tagRow.event_id, []);
+        }
+        tagsMap.get(tagRow.event_id).push(tagRow.tag);
+      }
+    }
+    
+    // Get all agenda summaries for these events in one query
+    const summariesMap = new Map();
+    if (eventIds.length > 0) {
+      const placeholders = eventIds.map(() => '?').join(',');
+      const { results: allSummaries } = await env.DB.prepare(`
+        SELECT event_id, summary FROM agenda_summaries WHERE event_id IN (${placeholders})
+      `).bind(...eventIds).all();
       
-      event.tags = tags?.map((t: any) => t.tag) || [];
-      
-      // Get agenda summary
-      const { results: agendaSummaries } = await env.DB.prepare(`
-        SELECT summary FROM agenda_summaries WHERE event_id = ? LIMIT 1
-      `).bind(event.id).all();
-      
-      if (agendaSummaries && agendaSummaries.length > 0 && agendaSummaries[0].summary) {
-        event.agendaSummary = agendaSummaries[0].summary;
+      for (const summaryRow of (allSummaries || [])) {
+        if (summaryRow.summary) {
+          summariesMap.set(summaryRow.event_id, summaryRow.summary);
+        }
+      }
+    }
+    
+    // Attach bills, tags, and summaries to each event
+    for (const event of events) {
+      event.bills = billsMap.get(event.id) || [];
+      event.tags = tagsMap.get(event.id) || [];
+      if (summariesMap.has(event.id)) {
+        event.agendaSummary = summariesMap.get(event.id);
       }
     }
 
@@ -112,6 +147,7 @@ export async function onRequest(context: any) {
     responseHeaders.set('Access-Control-Allow-Headers', 'Content-Type');
     responseHeaders.set('Access-Control-Expose-Headers', 'X-Calendar-Sources');
     responseHeaders.set('Content-Type', 'application/json');
+    responseHeaders.set('Cache-Control', 'public, max-age=300, s-maxage=600'); // Cache for 5min browser, 10min CDN
     responseHeaders.set('X-Calendar-Sources', JSON.stringify(calendarSources));
 
     return new Response(JSON.stringify(events), {
