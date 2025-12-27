@@ -231,7 +231,7 @@ export default function DataSourcesView() {
       <div className="data-sources-header">
         <h2>Legislative Data Sources</h2>
         <p className="subtitle">
-          {totalSources} sources • {totalEvents} upcoming events • {statesWithNoEvents.length} states with NO events
+          {totalSources} data sources • {totalEvents} upcoming events • {statesWithNoEvents.length} states missing coverage
         </p>
         
         {statesWithNoEvents.length > 0 && (
