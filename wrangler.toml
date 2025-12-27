@@ -17,6 +17,11 @@ binding = "DB"
 database_name = "civitracker-db"
 database_id = "964e58ca-0add-41f2-8c31-84fb379b4ce2"
 
+# KV binding for scraper cache
+[[kv_namespaces]]
+binding = "SCRAPER_CACHE"
+id = "abdeb4d15d6e4cb99ad7d3fe664169e9"
+
 # Note: Cron triggers for scheduled-scraper.ts are configured via Dashboard
 # Pages projects don't support [triggers] in wrangler.toml
 # Configure via: Cloudflare Dashboard -> Workers & Pages -> civitracker -> Triggers
