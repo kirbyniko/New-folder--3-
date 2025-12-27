@@ -8,6 +8,7 @@
 import { initializeScrapers, ScraperRegistry } from '../../lib/functions/utils/scrapers/index.js';
 import { insertEvent, insertBills, logScraperHealth, generateInsertSQL, batchInsertEvents } from './db/events.js';
 import { cleanupOldEvents } from './db/maintenance.js';
+import { execSync } from 'child_process';
 
 const ALL_STATES = [
   'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
@@ -26,7 +27,31 @@ interface ScraperResult {
   error?: string;
 }
 
-export async function runAllScrapers(): Promise<void> {
+/**
+ * Check which states need scraping (no events or failed last scrape)
+ */
+async function getStatesNeedingScrape(): Promise<string[]> {
+  try {
+    // Query D1 to see which states have events
+    const result = execSync(
+      'wrangler d1 execute civitracker-db --remote --command "SELECT DISTINCT state_code FROM events WHERE date >= date(\'now\')" --json',
+      { encoding: 'utf-8', stdio: 'pipe' }
+    );
+    
+    const data = JSON.parse(result);
+    const statesWithData = data[0]?.results?.map((row: any) => row.state_code) || [];
+    
+    // Return states that don't have data
+    const statesNeedingScrape = ALL_STATES.filter(state => !statesWithData.includes(state));
+    
+    return statesNeedingScrape;
+  } catch (error) {
+    console.error('⚠️  Could not query existing data, will scrape all states:', error);
+    return ALL_STATES; // Fallback to scraping everything if query fails
+  }
+}
+
+export async function runAllScrapers(forceRescrape: boolean = false): Promise<void> {
   const startTime = Date.now();
   console.log(`\n${'='.repeat(60)}`);
   console.log(`🚀 SCRAPER RUN STARTED: ${new Date().toISOString()}`);
@@ -39,14 +64,34 @@ export async function runAllScrapers(): Promise<void> {
   console.log('🧹 Cleaning up old events...');
   await cleanupOldEvents(24);
   
+  // Determine which states need scraping
+  let statesToScrape = ALL_STATES;
+  
+  if (!forceRescrape) {
+    console.log('🔍 Checking which states need updates...');
+    // Only scrape states with no data or failed last run
+    const statesNeedingScrape = await getStatesNeedingScrape();
+    statesToScrape = ALL_STATES.filter(state => statesNeedingScrape.includes(state));
+    
+    if (statesToScrape.length === 0) {
+      console.log('✅ All states have recent data, nothing to scrape!');
+      return;
+    }
+    
+    console.log(`📋 Need to scrape ${statesToScrape.length} states: ${statesToScrape.join(', ')}`);
+    console.log(`⏭️  Skipping ${ALL_STATES.length - statesToScrape.length} states with recent data\n`);
+  } else {
+    console.log('⚠️  Force rescrape mode - scraping all 51 states\n');
+  }
+  
   const results: ScraperResult[] = [];
   const batchSize = 5; // Process 5 states at a time
 
   // Process states in batches
-  for (let i = 0; i < ALL_STATES.length; i += batchSize) {
-    const batch = ALL_STATES.slice(i, i + batchSize);
+  for (let i = 0; i < statesToScrape.length; i += batchSize) {
+    const batch = statesToScrape.slice(i, i + batchSize);
     const batchNum = Math.floor(i / batchSize) + 1;
-    const totalBatches = Math.ceil(ALL_STATES.length / batchSize);
+    const totalBatches = Math.ceil(statesToScrape.length / batchSize);
     
     console.log(`\n📦 Batch ${batchNum}/${totalBatches}: ${batch.join(', ')}`);
     
@@ -57,7 +102,7 @@ export async function runAllScrapers(): Promise<void> {
     results.push(...batchResults);
     
     // Brief pause between batches to avoid overwhelming servers
-    if (i + batchSize < ALL_STATES.length) {
+    if (i + batchSize < statesToScrape.length) {
       await new Promise(resolve => setTimeout(resolve, 2000));
     }
   }
