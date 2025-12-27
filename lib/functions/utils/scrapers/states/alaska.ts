@@ -7,6 +7,7 @@ import * as cheerio from 'cheerio';
 /**
  * Alaska Legislature Scraper
  * Source: https://www.akleg.gov/basis/Committee/
+ *
  * 
  * Alaska uses the BASIS (Bill Actions and Status Inquiry System) for tracking
  * committee meetings. Each committee has detailed meeting schedules with:
