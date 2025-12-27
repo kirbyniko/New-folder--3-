@@ -1,0 +1,42 @@
+﻿Reading temp-bpda.pdf...
+PDF size: 87578 bytes
+
+Extracting text with pdf-parse...
+node.exe : TypeError: 
+pdfParse is not a function
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" "C:
+\Users\nikow\AppData\Roami
+ng\ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo        
+      : NotSpecified: (T  
+  ypeError: pdfParse is   
+  not a function:Strin    
+g) [], RemoteExceptio    n
+    + FullyQualifiedError 
+   Id : NativeCommandErr  
+  or
+ 
+    at testPdfExtraction 
+(C:\Users\nikow\New 
+folder (3)\test-pdf-extrac
+tion.ts:16:25)
+    at <anonymous> 
+(C:\Users\nikow\New 
+folder (3)\test-pdf-extrac
+tion.ts:32:1)
+    at ModuleJob.run (node
+:internal/modules/esm/modu
+le_job:343:25)
+    at async onImport.trac
+ePromise.__proto__ (node:i
+nternal/modules/esm/loader
+:647:26)
+    at async asyncRunEntry
+PointWithESMLoader (node:i
+nternal/modules/run_main:1
+17:5)

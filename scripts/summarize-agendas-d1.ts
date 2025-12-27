@@ -45,7 +45,14 @@ async function generateSummary(eventName: string, agendaText: string): Promise<s
     ? agendaText.substring(0, 3000) + '...' 
     : agendaText;
 
-  const prompt = `Write a concise summary of this meeting agenda. Use 2-6 sentences depending on what's needed to cover the key topics and items. Do not include preambles like "Here's a summary" - just provide the summary directly.
+  const prompt = `You are summarizing a government meeting agenda. Follow these rules strictly:
+
+1. ONLY summarize information that is explicitly present in the agenda text below
+2. If the agenda lacks specific details, state "Agenda details not available" or "No detailed agenda provided"
+3. NEVER invent or assume meeting topics, project names, addresses, or other specific details
+4. If you see generic text like "View the full agenda at [URL]", respond with "Detailed agenda not available"
+5. Use 2-6 sentences only if there is actual content to summarize
+6. Do not include preambles - provide the summary directly
 
 Meeting: ${eventName}
 
@@ -62,8 +69,9 @@ Summary:`;
       prompt,
       stream: false,
       options: {
-        temperature: 0.3,
-        top_p: 0.9
+        temperature: 0.1,
+        top_p: 0.9,
+        repeat_penalty: 1.1
       }
     })
   });
@@ -111,11 +119,16 @@ function executeD1Query(query: string): any[] {
 /**
  * Insert or update agenda summary
  */
-function upsertSummary(eventId: string, agendaUrl: string, summary: string, contentHash: string) {
+function upsertSummary(eventId: string, agendaUrl: string, agendaText: string, summary: string, contentHash: string) {
   const id = `agenda-${eventId}`;
   const now = new Date().toISOString();
   
-  const query = `INSERT INTO agenda_summaries (id, event_id, agenda_url, summary, content_hash, last_summarized_at, created_at) VALUES ('${id}', '${eventId}', '${agendaUrl.replace(/'/g, "''")}', '${summary.replace(/'/g, "''")}', '${contentHash}', '${now}', '${now}') ON CONFLICT(id) DO UPDATE SET summary = '${summary.replace(/'/g, "''")}', content_hash = '${contentHash}', last_summarized_at = '${now}'`;
+  // Escape single quotes in all text fields
+  const escapedUrl = agendaUrl.replace(/'/g, "''");
+  const escapedText = agendaText.replace(/'/g, "''");
+  const escapedSummary = summary.replace(/'/g, "''");
+  
+  const query = `INSERT INTO agenda_summaries (id, event_id, agenda_url, agenda_text, summary, content_hash, last_summarized_at, created_at) VALUES ('${id}', '${eventId}', '${escapedUrl}', '${escapedText}', '${escapedSummary}', '${contentHash}', '${now}', '${now}') ON CONFLICT(id) DO UPDATE SET agenda_text = '${escapedText}', summary = '${escapedSummary}', content_hash = '${contentHash}', last_summarized_at = '${now}'`;
   
   const tempFile = 'temp-insert.sql';
   writeFileSync(tempFile, query, 'utf-8');
@@ -212,8 +225,8 @@ async function main() {
       console.log('   🤖 Generating summary...');
       const summary = await generateSummary(event.name, agendaText);
       
-      console.log(`   💾 Saving summary...`);
-      upsertSummary(event.id, event.docket_url, summary, contentHash);
+      console.log(`   💾 Saving summary and source text...`);
+      upsertSummary(event.id, event.docket_url, agendaText, summary, contentHash);
       
       console.log(`   ✅ Done`);
       processed++;
