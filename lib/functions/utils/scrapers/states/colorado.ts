@@ -68,6 +68,11 @@ export class ColoradoScraper extends BaseScraper {
   }
 
   protected async getPageUrls(): Promise<string[]> {
+    return [this.scheduleUrl];
+  }
+
+  async scrapeCalendar(): Promise<RawEvent[]> {
+    return this.scrapeSchedule();
   }
 
   async scrapeSchedule(): Promise<StateEvent[]> {

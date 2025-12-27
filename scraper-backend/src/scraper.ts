@@ -162,7 +162,14 @@ async function scrapeState(state: string): Promise<ScraperResult> {
   return result;
 }
 
-// Allow running this script directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-  runAllScrapers().catch(console.error);
-}
+// Run the scraper
+console.log('🎬 Starting scraper script...');
+runAllScrapers()
+  .then(() => {
+    console.log('🏁 Script completed successfully');
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.error('💥 Script failed:', error);
+    process.exit(1);
+  });

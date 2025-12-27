@@ -97,6 +97,8 @@ export class NewYorkScraper extends BaseScraper {
     
     this.log(`✅ Returning ${events.length} NY public hearings (${hearings.length} total found)`);
 
+    const allEvents: RawEvent[] = [...events];
+
     // Add NYC local government meetings
 
     console.log('Fetching NYC local government meetings...');

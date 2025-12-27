@@ -148,6 +148,7 @@ export class UtahScraper extends BaseScraper {
       }
     }
 
+    const allEvents: RawEvent[] = [...events];
 
     // Add Salt Lake City local government meetings
 
