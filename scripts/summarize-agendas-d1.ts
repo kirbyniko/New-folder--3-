@@ -181,6 +181,7 @@ async function main() {
     FROM events e
     LEFT JOIN agenda_summaries a ON e.id = a.event_id
     WHERE e.docket_url IS NOT NULL 
+      AND e.state_code != 'AL'
       AND (a.summary IS NULL OR a.summary = '')
     ORDER BY e.state_code ASC, e.date ASC
     LIMIT ${limit}
