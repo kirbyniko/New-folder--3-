@@ -133,3 +133,5 @@ export async function initializeScrapers(): Promise<void> {
 
   console.log('[SCRAPERS] ✅ Scraper system initialized');
 }
+
+// Workflow trigger
