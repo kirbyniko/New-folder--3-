@@ -95,10 +95,14 @@
         </div>
       </div>
       <div class="form-group">
-        <label>
-          <input type="checkbox" id="requires-js">
-          Requires JavaScript (dynamic content)
-        </label>
+        <label>Requires Puppeteer (Browser Automation)?</label>
+        <div class="radio-group">
+          <label><input type="radio" name="puppeteer" value="yes"> Yes - Calendar is JavaScript-rendered</label>
+          <label><input type="radio" name="puppeteer" value="no" checked> No - Static HTML works</label>
+          <label><input type="radio" name="puppeteer" value="unknown"> I don't know</label>
+        </div>
+        <button type="button" id="auto-detect-puppeteer" class="btn-secondary" style="margin-top: 8px;">🔍 Auto-Detect</button>
+        <div id="puppeteer-result" class="info-text" style="margin-top: 8px;"></div>
       </div>
       <div class="form-group">
         <label>Notes (optional)</label>
@@ -126,14 +130,22 @@
       </div>
 
       <div class="field-capture">
-        <h3>Event List *</h3>
-        <button class="capture-btn required" data-field="event-container">
-          <span class="status">⭕</span> Event List Container
-        </button>
-        <button class="capture-btn required" data-field="event-item">
-          <span class="status">⭕</span> Single Event Item
-        </button>
-        <div id="events-count" class="info-text"></div>
+        <h3>Event List (Optional)</h3>
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="has-event-list" checked>
+            Page has a visible event list (uncheck if calendar only shows via Puppeteer)
+          </label>
+        </div>
+        <div id="event-list-fields" style="margin-top: 12px;">
+          <button class="capture-btn" data-field="event-container">
+            <span class="status">⭕</span> Event List Container
+          </button>
+          <button class="capture-btn" data-field="event-item">
+            <span class="status">⭕</span> Single Event Item
+          </button>
+          <div id="events-count" class="info-text"></div>
+        </div>
       </div>
 
       <div class="btn-group">

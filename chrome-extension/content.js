@@ -397,9 +397,81 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     });
     
     sendResponse({ count: elements.length });
+  } else if (message.type === 'DETECT_PUPPETEER') {
+    // Detect if page needs Puppeteer
+    const needsPuppeteer = detectPuppeteerRequirement();
+    sendResponse({ needsPuppeteer });
   }
   
   return true; // Keep channel open for async response
 });
+
+// Detect if page requires Puppeteer
+function detectPuppeteerRequirement() {
+  // Check 1: Is the body nearly empty?
+  const bodyText = document.body.innerText.trim();
+  const bodyHTML = document.body.innerHTML;
+  
+  if (bodyText.length < 500 && bodyHTML.includes('id="root"')) {
+    // React/Vue app with minimal content
+    return true;
+  }
+  
+  if (bodyText.length < 500 && (bodyHTML.includes('ng-app') || bodyHTML.includes('data-ng-'))) {
+    // Angular app
+    return true;
+  }
+  
+  // Check 2: Look for skeleton loaders or loading indicators
+  const skeletonSelectors = [
+    '[class*="skeleton"]',
+    '[class*="loading"]',
+    '[class*="spinner"]',
+    '[class*="placeholder"]',
+    '.animate-pulse'
+  ];
+  
+  for (const selector of skeletonSelectors) {
+    if (document.querySelectorAll(selector).length > 3) {
+      return true; // Many loading placeholders = dynamic content
+    }
+  }
+  
+  // Check 3: View source comparison (heuristic)
+  // If most content is generated, the static HTML will be minimal
+  const scripts = document.querySelectorAll('script[src]');
+  const hasReact = Array.from(scripts).some(s => s.src.includes('react'));
+  const hasVue = Array.from(scripts).some(s => s.src.includes('vue'));
+  const hasNext = Array.from(scripts).some(s => s.src.includes('_next'));
+  
+  if ((hasReact || hasVue || hasNext) && bodyText.length < 1000) {
+    return true;
+  }
+  
+  // Check 4: Calendar-specific checks
+  const calendarIndicators = document.querySelectorAll(
+    '[class*="calendar"], [id*="calendar"], ' +
+    '[class*="event"], [data-event], ' +
+    '[class*="meeting"], [class*="agenda"]'
+  );
+  
+  if (calendarIndicators.length > 0) {
+    // Has calendar elements - check if they have meaningful content
+    let hasContent = false;
+    calendarIndicators.forEach(el => {
+      if (el.innerText.trim().length > 50) {
+        hasContent = true;
+      }
+    });
+    
+    if (!hasContent && calendarIndicators.length > 5) {
+      // Many calendar elements but no content = waiting for JS
+      return true;
+    }
+  }
+  
+  // Default: probably doesn't need Puppeteer
+  return false;
+}
 
 console.log('🔧 Scraper Builder content script loaded');
