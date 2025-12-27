@@ -12,9 +12,9 @@ const state = {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-  loadState();
+  console.log('🔧 Popup script loaded');
   setupEventListeners();
-  updateUI();
+  loadState();
 });
 
 // Load state from storage
@@ -22,8 +22,8 @@ function loadState() {
   chrome.storage.local.get(['scraperBuilderState'], (result) => {
     if (result.scraperBuilderState) {
       Object.assign(state, result.scraperBuilderState);
-      updateUI();
     }
+    updateUI();
   });
 }
 
@@ -171,7 +171,9 @@ function goToStep(stepNumber) {
 
 // Auto-fill current URL
 function autoFillCurrentURL() {
+  console.log('🔗 AutoFill Current URL clicked');
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    console.log('Tabs query result:', tabs);
     if (chrome.runtime.lastError) {
       console.error('Error querying tabs:', chrome.runtime.lastError);
       alert('Could not access current tab. Make sure the extension has permission.');
@@ -180,6 +182,7 @@ function autoFillCurrentURL() {
     
     if (tabs && tabs[0] && tabs[0].url) {
       const urlInput = document.getElementById('calendar-url');
+      console.log('URL input element:', urlInput);
       if (urlInput) {
         urlInput.value = tabs[0].url;
         state.metadata.calendarUrl = tabs[0].url;
@@ -188,6 +191,7 @@ function autoFillCurrentURL() {
         // Visual feedback
         urlInput.style.backgroundColor = '#d4edda';
         setTimeout(() => { urlInput.style.backgroundColor = ''; }, 500);
+        console.log('✅ URL filled:', tabs[0].url);
       }
     } else {
       alert('Could not get current tab URL');
@@ -197,7 +201,9 @@ function autoFillCurrentURL() {
 
 // Auto-fill base URL
 function autoFillBaseURL() {
+  console.log('🔗 AutoFill Base URL clicked');
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    console.log('Tabs query result:', tabs);
     if (chrome.runtime.lastError) {
       console.error('Error querying tabs:', chrome.runtime.lastError);
       alert('Could not access current tab. Make sure the extension has permission.');
@@ -209,6 +215,7 @@ function autoFillBaseURL() {
         const url = new URL(tabs[0].url);
         const baseUrl = `${url.protocol}//${url.host}`;
         const baseUrlInput = document.getElementById('base-url');
+        console.log('Base URL input element:', baseUrlInput);
         
         if (baseUrlInput) {
           baseUrlInput.value = baseUrl;
@@ -218,6 +225,7 @@ function autoFillBaseURL() {
           // Visual feedback
           baseUrlInput.style.backgroundColor = '#d4edda';
           setTimeout(() => { baseUrlInput.style.backgroundColor = ''; }, 500);
+          console.log('✅ Base URL filled:', baseUrl);
         }
       } catch (error) {
         console.error('Error parsing URL:', error);
