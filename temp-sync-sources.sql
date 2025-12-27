@@ -11,7 +11,7 @@ INSERT OR REPLACE INTO data_sources (
   'Main committee directory for Session 34 (2025-2026)',
   NULL,
   'active',
-  '2025-12-26T23:46:13.818Z',
+  '2025-12-27T00:00:46.546Z',
   12,
   datetime('now')
 );
@@ -29,7 +29,7 @@ INSERT OR REPLACE INTO data_sources (
   'Individual committee meeting schedules and documents',
   NULL,
   'active',
-  '2025-12-26T23:46:13.818Z',
+  '2025-12-27T00:00:46.546Z',
   12,
   datetime('now')
 );
@@ -47,7 +47,7 @@ INSERT OR REPLACE INTO data_sources (
   'City council meetings from Anchorage and other Alaska municipalities',
   NULL,
   'active',
-  '2025-12-26T23:46:13.818Z',
+  '2025-12-27T00:00:46.546Z',
   12,
   datetime('now')
 );
@@ -65,7 +65,7 @@ INSERT OR REPLACE INTO data_sources (
   'State legislative calendar (via OpenStates API)',
   NULL,
   'active',
-  '2025-12-26T23:46:13.818Z',
+  '2025-12-27T00:00:46.546Z',
   6,
   datetime('now')
 );
@@ -83,7 +83,7 @@ INSERT OR REPLACE INTO data_sources (
   'Birmingham and Montgomery city council meetings',
   NULL,
   'active',
-  '2025-12-26T23:46:13.818Z',
+  '2025-12-27T00:00:46.546Z',
   6,
   datetime('now')
 );
@@ -101,7 +101,7 @@ INSERT OR REPLACE INTO data_sources (
   'House and Senate committee meeting calendars',
   NULL,
   'active',
-  '2025-12-26T23:46:13.819Z',
+  '2025-12-27T00:00:46.546Z',
   24,
   datetime('now')
 );
@@ -119,7 +119,7 @@ INSERT OR REPLACE INTO data_sources (
   'Little Rock city council meetings',
   NULL,
   'active',
-  '2025-12-26T23:46:13.819Z',
+  '2025-12-27T00:00:46.546Z',
   24,
   datetime('now')
 );
@@ -137,7 +137,7 @@ INSERT OR REPLACE INTO data_sources (
   'Daily committee meeting schedules for House, Senate, and Interim committees',
   NULL,
   'active',
-  '2025-12-26T23:46:13.819Z',
+  '2025-12-27T00:00:46.546Z',
   6,
   datetime('now')
 );
@@ -155,7 +155,7 @@ INSERT OR REPLACE INTO data_sources (
   'City council meetings from Phoenix, Mesa, and other Arizona cities',
   NULL,
   'active',
-  '2025-12-26T23:46:13.819Z',
+  '2025-12-27T00:00:46.546Z',
   6,
   datetime('now')
 );
@@ -173,7 +173,7 @@ INSERT OR REPLACE INTO data_sources (
   'Assembly committee hearings and floor sessions',
   NULL,
   'active',
-  '2025-12-26T23:46:13.819Z',
+  '2025-12-27T00:00:46.546Z',
   6,
   datetime('now')
 );
@@ -191,7 +191,7 @@ INSERT OR REPLACE INTO data_sources (
   'City council meetings from major California cities',
   NULL,
   'active',
-  '2025-12-26T23:46:13.819Z',
+  '2025-12-27T00:00:46.546Z',
   6,
   datetime('now')
 );
@@ -209,7 +209,7 @@ INSERT OR REPLACE INTO data_sources (
   'Daily legislative schedules and committee meetings',
   NULL,
   'active',
-  '2025-12-26T23:46:13.819Z',
+  '2025-12-27T00:00:46.547Z',
   6,
   datetime('now')
 );
@@ -227,7 +227,7 @@ INSERT OR REPLACE INTO data_sources (
   'City council meetings from Denver, Colorado Springs, Aurora, and other Colorado cities',
   NULL,
   'active',
-  '2025-12-26T23:46:13.819Z',
+  '2025-12-27T00:00:46.547Z',
   6,
   datetime('now')
 );
@@ -245,7 +245,7 @@ INSERT OR REPLACE INTO data_sources (
   'Public hearings, meetings, and legislative events',
   NULL,
   'active',
-  '2025-12-26T23:46:13.819Z',
+  '2025-12-27T00:00:46.547Z',
   24,
   datetime('now')
 );
@@ -263,7 +263,7 @@ INSERT OR REPLACE INTO data_sources (
   'Bridgeport city council meetings',
   NULL,
   'active',
-  '2025-12-26T23:46:13.819Z',
+  '2025-12-27T00:00:46.547Z',
   24,
   datetime('now')
 );
@@ -281,7 +281,7 @@ INSERT OR REPLACE INTO data_sources (
   'House, Senate, and Joint committee meeting schedules',
   NULL,
   'active',
-  '2025-12-26T23:46:13.819Z',
+  '2025-12-27T00:00:46.547Z',
   6,
   datetime('now')
 );
@@ -299,7 +299,7 @@ INSERT OR REPLACE INTO data_sources (
   'City council meetings from Wilmington and other Delaware municipalities',
   NULL,
   'active',
-  '2025-12-26T23:46:13.819Z',
+  '2025-12-27T00:00:46.547Z',
   6,
   datetime('now')
 );
@@ -317,7 +317,7 @@ INSERT OR REPLACE INTO data_sources (
   'Senate and House committee meeting schedules',
   NULL,
   'active',
-  '2025-12-26T23:46:13.819Z',
+  '2025-12-27T00:00:46.547Z',
   6,
   datetime('now')
 );
@@ -335,7 +335,7 @@ INSERT OR REPLACE INTO data_sources (
   'City council meetings from major Florida cities',
   NULL,
   'active',
-  '2025-12-26T23:46:13.819Z',
+  '2025-12-27T00:00:46.547Z',
   6,
   datetime('now')
 );
@@ -353,7 +353,7 @@ INSERT OR REPLACE INTO data_sources (
   'Legislative calendar (via OpenStates API)',
   NULL,
   'active',
-  '2025-12-26T23:46:13.819Z',
+  '2025-12-27T00:00:46.547Z',
   6,
   datetime('now')
 );
@@ -371,7 +371,7 @@ INSERT OR REPLACE INTO data_sources (
   'City council meetings from major Georgia cities',
   NULL,
   'active',
-  '2025-12-26T23:46:13.819Z',
+  '2025-12-27T00:00:46.547Z',
   6,
   datetime('now')
 );
@@ -389,7 +389,7 @@ INSERT OR REPLACE INTO data_sources (
   'Upcoming committee hearings for House and Senate',
   NULL,
   'active',
-  '2025-12-26T23:46:13.819Z',
+  '2025-12-27T00:00:46.547Z',
   6,
   datetime('now')
 );
@@ -407,7 +407,7 @@ INSERT OR REPLACE INTO data_sources (
   'City council meetings from Honolulu and other Hawaii counties',
   NULL,
   'active',
-  '2025-12-26T23:46:13.819Z',
+  '2025-12-27T00:00:46.547Z',
   6,
   datetime('now')
 );
@@ -425,7 +425,7 @@ INSERT OR REPLACE INTO data_sources (
   'Committee public hearings and meetings',
   NULL,
   'active',
-  '2025-12-26T23:46:13.819Z',
+  '2025-12-27T00:00:46.547Z',
   24,
   datetime('now')
 );
@@ -443,7 +443,7 @@ INSERT OR REPLACE INTO data_sources (
   'Des Moines city council meetings',
   NULL,
   'active',
-  '2025-12-26T23:46:13.819Z',
+  '2025-12-27T00:00:46.547Z',
   24,
   datetime('now')
 );
@@ -461,7 +461,7 @@ INSERT OR REPLACE INTO data_sources (
   'House and Senate committee meeting agendas',
   NULL,
   'active',
-  '2025-12-26T23:46:13.819Z',
+  '2025-12-27T00:00:46.547Z',
   24,
   datetime('now')
 );
@@ -479,7 +479,7 @@ INSERT OR REPLACE INTO data_sources (
   'City council meetings from Boise and other Idaho cities',
   NULL,
   'active',
-  '2025-12-26T23:46:13.819Z',
+  '2025-12-27T00:00:46.547Z',
   24,
   datetime('now')
 );
@@ -497,7 +497,7 @@ INSERT OR REPLACE INTO data_sources (
   'House and Senate committee schedules',
   NULL,
   'active',
-  '2025-12-26T23:46:13.819Z',
+  '2025-12-27T00:00:46.547Z',
   6,
   datetime('now')
 );
@@ -515,7 +515,7 @@ INSERT OR REPLACE INTO data_sources (
   'City council meetings from major Illinois cities',
   NULL,
   'active',
-  '2025-12-26T23:46:13.819Z',
+  '2025-12-27T00:00:46.547Z',
   6,
   datetime('now')
 );
@@ -533,7 +533,7 @@ INSERT OR REPLACE INTO data_sources (
   'Daily meeting schedules for House and Senate committees',
   NULL,
   'active',
-  '2025-12-26T23:46:13.819Z',
+  '2025-12-27T00:00:46.547Z',
   6,
   datetime('now')
 );
@@ -551,7 +551,7 @@ INSERT OR REPLACE INTO data_sources (
   'Committee meetings and legislative events',
   NULL,
   'active',
-  '2025-12-26T23:46:13.819Z',
+  '2025-12-27T00:00:46.547Z',
   6,
   datetime('now')
 );
@@ -569,7 +569,7 @@ INSERT OR REPLACE INTO data_sources (
   'City council meetings from Indianapolis, Fort Wayne, and other Indiana cities',
   NULL,
   'active',
-  '2025-12-26T23:46:13.819Z',
+  '2025-12-27T00:00:46.547Z',
   6,
   datetime('now')
 );
@@ -587,7 +587,7 @@ INSERT OR REPLACE INTO data_sources (
   'Official Kansas Legislature committee meetings and hearings',
   NULL,
   'active',
-  '2025-12-26T23:46:13.819Z',
+  '2025-12-27T00:00:46.547Z',
   6,
   datetime('now')
 );
@@ -605,7 +605,7 @@ INSERT OR REPLACE INTO data_sources (
   'Legislative event data from OpenStates API',
   NULL,
   'active',
-  '2025-12-26T23:46:13.819Z',
+  '2025-12-27T00:00:46.547Z',
   6,
   datetime('now')
 );
@@ -623,7 +623,7 @@ INSERT OR REPLACE INTO data_sources (
   'City council meetings from Wichita, Kansas City, Overland Park, and other Kansas cities',
   NULL,
   'active',
-  '2025-12-26T23:46:13.819Z',
+  '2025-12-27T00:00:46.547Z',
   6,
   datetime('now')
 );
@@ -641,7 +641,7 @@ INSERT OR REPLACE INTO data_sources (
   'House, Senate, and committee meeting schedules',
   NULL,
   'active',
-  '2025-12-26T23:46:13.819Z',
+  '2025-12-27T00:00:46.547Z',
   6,
   datetime('now')
 );
@@ -659,7 +659,7 @@ INSERT OR REPLACE INTO data_sources (
   'Lexington and Louisville city council meetings',
   NULL,
   'active',
-  '2025-12-26T23:46:13.819Z',
+  '2025-12-27T00:00:46.547Z',
   6,
   datetime('now')
 );
@@ -677,7 +677,7 @@ INSERT OR REPLACE INTO data_sources (
   'House, Senate, and Joint committee meeting schedules',
   NULL,
   'active',
-  '2025-12-26T23:46:13.819Z',
+  '2025-12-27T00:00:46.547Z',
   6,
   datetime('now')
 );
@@ -695,7 +695,7 @@ INSERT OR REPLACE INTO data_sources (
   'Baton Rouge and New Orleans city council meetings',
   NULL,
   'active',
-  '2025-12-26T23:46:13.819Z',
+  '2025-12-27T00:00:46.547Z',
   6,
   datetime('now')
 );
@@ -713,7 +713,7 @@ INSERT OR REPLACE INTO data_sources (
   'Joint committee public hearings and legislative events',
   NULL,
   'active',
-  '2025-12-26T23:46:13.819Z',
+  '2025-12-27T00:00:46.547Z',
   6,
   datetime('now')
 );
@@ -731,7 +731,7 @@ INSERT OR REPLACE INTO data_sources (
   'City council meetings from Boston, Worcester, Springfield, Cambridge, and other Massachusetts cities',
   NULL,
   'active',
-  '2025-12-26T23:46:13.820Z',
+  '2025-12-27T00:00:46.547Z',
   6,
   datetime('now')
 );
@@ -749,7 +749,7 @@ INSERT OR REPLACE INTO data_sources (
   'Daily committee meeting schedules for both chambers',
   NULL,
   'active',
-  '2025-12-26T23:46:13.820Z',
+  '2025-12-27T00:00:46.547Z',
   6,
   datetime('now')
 );
@@ -767,7 +767,7 @@ INSERT OR REPLACE INTO data_sources (
   'City council meetings from Baltimore, Rockville, Frederick, and other Maryland cities',
   NULL,
   'active',
-  '2025-12-26T23:46:13.820Z',
+  '2025-12-27T00:00:46.547Z',
   6,
   datetime('now')
 );
@@ -785,7 +785,7 @@ INSERT OR REPLACE INTO data_sources (
   'Official Maine Legislature committee meetings and public hearings',
   NULL,
   'active',
-  '2025-12-26T23:46:13.820Z',
+  '2025-12-27T00:00:46.547Z',
   12,
   datetime('now')
 );
@@ -803,7 +803,7 @@ INSERT OR REPLACE INTO data_sources (
   'City council meetings from Portland and other Maine cities',
   NULL,
   'active',
-  '2025-12-26T23:46:13.820Z',
+  '2025-12-27T00:00:46.547Z',
   12,
   datetime('now')
 );
@@ -821,7 +821,7 @@ INSERT OR REPLACE INTO data_sources (
   'House and Senate committee meeting schedules',
   NULL,
   'active',
-  '2025-12-26T23:46:13.820Z',
+  '2025-12-27T00:00:46.547Z',
   6,
   datetime('now')
 );
@@ -839,7 +839,7 @@ INSERT OR REPLACE INTO data_sources (
   'City council meetings from major Michigan cities',
   NULL,
   'active',
-  '2025-12-26T23:46:13.820Z',
+  '2025-12-27T00:00:46.547Z',
   6,
   datetime('now')
 );
@@ -857,7 +857,7 @@ INSERT OR REPLACE INTO data_sources (
   'Combined House, Senate, and Joint committee meetings',
   NULL,
   'active',
-  '2025-12-26T23:46:13.820Z',
+  '2025-12-27T00:00:46.547Z',
   6,
   datetime('now')
 );
@@ -875,7 +875,7 @@ INSERT OR REPLACE INTO data_sources (
   'House committee and floor session schedules',
   NULL,
   'active',
-  '2025-12-26T23:46:13.820Z',
+  '2025-12-27T00:00:46.547Z',
   6,
   datetime('now')
 );
@@ -893,7 +893,7 @@ INSERT OR REPLACE INTO data_sources (
   'Senate committee and floor session schedules',
   NULL,
   'active',
-  '2025-12-26T23:46:13.820Z',
+  '2025-12-27T00:00:46.547Z',
   6,
   datetime('now')
 );
@@ -911,7 +911,7 @@ INSERT OR REPLACE INTO data_sources (
   'City council meetings from Minneapolis, St. Paul, Rochester, and other Minnesota cities',
   NULL,
   'active',
-  '2025-12-26T23:46:13.820Z',
+  '2025-12-27T00:00:46.547Z',
   6,
   datetime('now')
 );
@@ -929,7 +929,7 @@ INSERT OR REPLACE INTO data_sources (
   'House committee hearing schedules',
   NULL,
   'active',
-  '2025-12-26T23:46:13.820Z',
+  '2025-12-27T00:00:46.547Z',
   6,
   datetime('now')
 );
@@ -947,7 +947,7 @@ INSERT OR REPLACE INTO data_sources (
   'Senate committee hearing schedules',
   NULL,
   'active',
-  '2025-12-26T23:46:13.820Z',
+  '2025-12-27T00:00:46.547Z',
   6,
   datetime('now')
 );
@@ -965,7 +965,7 @@ INSERT OR REPLACE INTO data_sources (
   'City council meetings from Kansas City, St. Louis, Springfield, and other Missouri cities',
   NULL,
   'active',
-  '2025-12-26T23:46:13.820Z',
+  '2025-12-27T00:00:46.548Z',
   6,
   datetime('now')
 );
@@ -983,7 +983,7 @@ INSERT OR REPLACE INTO data_sources (
   NULL,
   'House floor session schedule',
   'active',
-  '2025-12-26T23:46:13.820Z',
+  '2025-12-27T00:00:46.548Z',
   12,
   datetime('now')
 );
@@ -1001,7 +1001,7 @@ INSERT OR REPLACE INTO data_sources (
   NULL,
   'Senate floor session schedule',
   'active',
-  '2025-12-26T23:46:13.820Z',
+  '2025-12-27T00:00:46.548Z',
   12,
   datetime('now')
 );
@@ -1019,7 +1019,7 @@ INSERT OR REPLACE INTO data_sources (
   NULL,
   'Senate committee meetings',
   'active',
-  '2025-12-26T23:46:13.820Z',
+  '2025-12-27T00:00:46.548Z',
   12,
   datetime('now')
 );
@@ -1037,7 +1037,7 @@ INSERT OR REPLACE INTO data_sources (
   NULL,
   'House legislative calendar',
   'active',
-  '2025-12-26T23:46:13.820Z',
+  '2025-12-27T00:00:46.548Z',
   12,
   datetime('now')
 );
@@ -1055,7 +1055,7 @@ INSERT OR REPLACE INTO data_sources (
   NULL,
   'Senate legislative calendar',
   'active',
-  '2025-12-26T23:46:13.820Z',
+  '2025-12-27T00:00:46.548Z',
   12,
   datetime('now')
 );
@@ -1073,7 +1073,7 @@ INSERT OR REPLACE INTO data_sources (
   NULL,
   'City council meetings from Jackson and other Mississippi cities',
   'active',
-  '2025-12-26T23:46:13.820Z',
+  '2025-12-27T00:00:46.548Z',
   12,
   datetime('now')
 );
@@ -1091,7 +1091,7 @@ INSERT OR REPLACE INTO data_sources (
   NULL,
   'Official legislative events calendar (interim committees)',
   'active',
-  '2025-12-26T23:46:13.820Z',
+  '2025-12-27T00:00:46.548Z',
   24,
   datetime('now')
 );
@@ -1109,7 +1109,7 @@ INSERT OR REPLACE INTO data_sources (
   NULL,
   'City council meetings from Billings, Missoula, and other Montana cities',
   'active',
-  '2025-12-26T23:46:13.820Z',
+  '2025-12-27T00:00:46.548Z',
   24,
   datetime('now')
 );
@@ -1127,7 +1127,7 @@ INSERT OR REPLACE INTO data_sources (
   'House and Senate committee meeting schedules',
   NULL,
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.548Z',
   6,
   datetime('now')
 );
@@ -1145,7 +1145,7 @@ INSERT OR REPLACE INTO data_sources (
   'City council meetings from major North Carolina cities',
   NULL,
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.548Z',
   6,
   datetime('now')
 );
@@ -1163,7 +1163,7 @@ INSERT OR REPLACE INTO data_sources (
   NULL,
   'Interim and session committee meetings',
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.548Z',
   24,
   datetime('now')
 );
@@ -1181,7 +1181,7 @@ INSERT OR REPLACE INTO data_sources (
   NULL,
   'City council meetings from Fargo, Bismarck, and other North Dakota cities',
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.548Z',
   24,
   datetime('now')
 );
@@ -1199,7 +1199,7 @@ INSERT OR REPLACE INTO data_sources (
   NULL,
   'Official Unicameral Legislature calendar with committee hearings',
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.548Z',
   24,
   datetime('now')
 );
@@ -1217,7 +1217,7 @@ INSERT OR REPLACE INTO data_sources (
   NULL,
   'City council meetings from Omaha, Lincoln, and other Nebraska cities',
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.548Z',
   24,
   datetime('now')
 );
@@ -1235,7 +1235,7 @@ INSERT OR REPLACE INTO data_sources (
   'Official House of Representatives meeting schedule',
   NULL,
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.548Z',
   6,
   datetime('now')
 );
@@ -1253,7 +1253,7 @@ INSERT OR REPLACE INTO data_sources (
   'Official Senate meeting schedule',
   NULL,
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.548Z',
   6,
   datetime('now')
 );
@@ -1271,7 +1271,7 @@ INSERT OR REPLACE INTO data_sources (
   'City council meetings from Manchester, Nashua, and other New Hampshire cities',
   NULL,
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.548Z',
   6,
   datetime('now')
 );
@@ -1289,7 +1289,7 @@ INSERT OR REPLACE INTO data_sources (
   'Senate and Assembly committee schedules',
   NULL,
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.548Z',
   12,
   datetime('now')
 );
@@ -1307,7 +1307,7 @@ INSERT OR REPLACE INTO data_sources (
   'City council meetings from major New Jersey cities',
   NULL,
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.548Z',
   12,
   datetime('now')
 );
@@ -1325,7 +1325,7 @@ INSERT OR REPLACE INTO data_sources (
   NULL,
   'Official legislative calendar (data via OpenStates API)',
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.548Z',
   6,
   datetime('now')
 );
@@ -1343,7 +1343,7 @@ INSERT OR REPLACE INTO data_sources (
   NULL,
   'City council meetings from Albuquerque, Santa Fe, and other New Mexico cities',
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.548Z',
   6,
   datetime('now')
 );
@@ -1361,7 +1361,7 @@ INSERT OR REPLACE INTO data_sources (
   'Assembly and Senate committee meeting schedules',
   NULL,
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.548Z',
   24,
   datetime('now')
 );
@@ -1379,7 +1379,7 @@ INSERT OR REPLACE INTO data_sources (
   'Las Vegas city council meetings',
   NULL,
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.548Z',
   24,
   datetime('now')
 );
@@ -1397,7 +1397,7 @@ INSERT OR REPLACE INTO data_sources (
   'Assembly and Senate public hearing schedules',
   NULL,
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.548Z',
   6,
   datetime('now')
 );
@@ -1415,7 +1415,7 @@ INSERT OR REPLACE INTO data_sources (
   'New York City Council meetings',
   NULL,
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.548Z',
   6,
   datetime('now')
 );
@@ -1433,7 +1433,7 @@ INSERT OR REPLACE INTO data_sources (
   'House and Senate committee meeting schedules',
   NULL,
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.548Z',
   6,
   datetime('now')
 );
@@ -1451,7 +1451,7 @@ INSERT OR REPLACE INTO data_sources (
   'City council meetings from major Ohio cities',
   NULL,
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.548Z',
   6,
   datetime('now')
 );
@@ -1469,7 +1469,7 @@ INSERT OR REPLACE INTO data_sources (
   'House committee meetings and floor schedules',
   NULL,
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.548Z',
   24,
   datetime('now')
 );
@@ -1487,7 +1487,7 @@ INSERT OR REPLACE INTO data_sources (
   'Oklahoma City and Tulsa city council meetings',
   NULL,
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.548Z',
   24,
   datetime('now')
 );
@@ -1505,7 +1505,7 @@ INSERT OR REPLACE INTO data_sources (
   'House and Senate committee meetings (via OpenStates API)',
   NULL,
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.548Z',
   6,
   datetime('now')
 );
@@ -1523,7 +1523,7 @@ INSERT OR REPLACE INTO data_sources (
   'City council meetings from Portland, Salem, Eugene, and other Oregon cities',
   NULL,
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.548Z',
   6,
   datetime('now')
 );
@@ -1541,7 +1541,7 @@ INSERT OR REPLACE INTO data_sources (
   'House and Senate committee meeting schedules',
   NULL,
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.548Z',
   6,
   datetime('now')
 );
@@ -1559,7 +1559,7 @@ INSERT OR REPLACE INTO data_sources (
   'City council meetings from major Pennsylvania cities',
   NULL,
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.548Z',
   6,
   datetime('now')
 );
@@ -1577,7 +1577,7 @@ INSERT OR REPLACE INTO data_sources (
   NULL,
   'Commissions, task forces, and special legislative bodies',
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.548Z',
   24,
   datetime('now')
 );
@@ -1595,7 +1595,7 @@ INSERT OR REPLACE INTO data_sources (
   NULL,
   'City council meetings from Providence and other Rhode Island cities',
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.549Z',
   24,
   datetime('now')
 );
@@ -1613,7 +1613,7 @@ INSERT OR REPLACE INTO data_sources (
   'House and Senate legislative calendars (via OpenStates)',
   NULL,
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.549Z',
   6,
   datetime('now')
 );
@@ -1631,7 +1631,7 @@ INSERT OR REPLACE INTO data_sources (
   'City council meetings from Columbia, Charleston, Greenville, and other South Carolina cities',
   NULL,
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.549Z',
   6,
   datetime('now')
 );
@@ -1649,7 +1649,7 @@ INSERT OR REPLACE INTO data_sources (
   NULL,
   'JavaScript-based calendar, requires dynamic scraping. 2026 session starts January 13, 2026.',
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.549Z',
   24,
   datetime('now')
 );
@@ -1667,7 +1667,7 @@ INSERT OR REPLACE INTO data_sources (
   NULL,
   'City council meetings from Sioux Falls, Rapid City, and other South Dakota cities',
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.549Z',
   24,
   datetime('now')
 );
@@ -1685,7 +1685,7 @@ INSERT OR REPLACE INTO data_sources (
   'Committee meetings and floor calendars for both chambers',
   NULL,
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.549Z',
   6,
   datetime('now')
 );
@@ -1703,7 +1703,7 @@ INSERT OR REPLACE INTO data_sources (
   'City council meetings from Nashville, Memphis, Knoxville, Chattanooga, and other Tennessee cities',
   NULL,
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.549Z',
   6,
   datetime('now')
 );
@@ -1721,7 +1721,7 @@ INSERT OR REPLACE INTO data_sources (
   'House and Senate committee meeting schedules',
   NULL,
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.549Z',
   6,
   datetime('now')
 );
@@ -1739,7 +1739,7 @@ INSERT OR REPLACE INTO data_sources (
   'City council meetings from major Texas cities',
   NULL,
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.549Z',
   6,
   datetime('now')
 );
@@ -1757,7 +1757,7 @@ INSERT OR REPLACE INTO data_sources (
   NULL,
   'Official legislative calendar with committee meetings and floor sessions',
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.549Z',
   6,
   datetime('now')
 );
@@ -1775,7 +1775,7 @@ INSERT OR REPLACE INTO data_sources (
   NULL,
   'City council meetings from Salt Lake City, Provo, and other Utah cities',
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.549Z',
   6,
   datetime('now')
 );
@@ -1793,7 +1793,7 @@ INSERT OR REPLACE INTO data_sources (
   'Daily schedule of House and Senate committee meetings',
   NULL,
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.549Z',
   6,
   datetime('now')
 );
@@ -1811,7 +1811,7 @@ INSERT OR REPLACE INTO data_sources (
   'City council meetings from Richmond, Virginia Beach, Norfolk, Alexandria, and other Virginia cities',
   NULL,
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.549Z',
   6,
   datetime('now')
 );
@@ -1829,7 +1829,7 @@ INSERT OR REPLACE INTO data_sources (
   NULL,
   'General Assembly reconvenes January 6, 2026 per J.R.S.28',
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.549Z',
   24,
   datetime('now')
 );
@@ -1847,7 +1847,7 @@ INSERT OR REPLACE INTO data_sources (
   NULL,
   'City council meetings from Burlington and other Vermont municipalities',
   'active',
-  '2025-12-26T23:46:13.821Z',
+  '2025-12-27T00:00:46.549Z',
   24,
   datetime('now')
 );
@@ -1865,7 +1865,7 @@ INSERT OR REPLACE INTO data_sources (
   'House and Senate committee meeting schedules',
   NULL,
   'active',
-  '2025-12-26T23:46:13.822Z',
+  '2025-12-27T00:00:46.549Z',
   6,
   datetime('now')
 );
@@ -1883,7 +1883,7 @@ INSERT OR REPLACE INTO data_sources (
   'City council meetings from major Washington cities',
   NULL,
   'active',
-  '2025-12-26T23:46:13.822Z',
+  '2025-12-27T00:00:46.549Z',
   6,
   datetime('now')
 );
@@ -1901,7 +1901,7 @@ INSERT OR REPLACE INTO data_sources (
   'Joint, Assembly, and Senate committee public notices',
   NULL,
   'active',
-  '2025-12-26T23:46:13.822Z',
+  '2025-12-27T00:00:46.549Z',
   6,
   datetime('now')
 );
@@ -1919,7 +1919,7 @@ INSERT OR REPLACE INTO data_sources (
   'City council meetings from Milwaukee, Madison, Green Bay, and other Wisconsin cities',
   NULL,
   'active',
-  '2025-12-26T23:46:13.822Z',
+  '2025-12-27T00:00:46.549Z',
   6,
   datetime('now')
 );
@@ -1937,7 +1937,7 @@ INSERT OR REPLACE INTO data_sources (
   NULL,
   'Official committee meeting schedule',
   'active',
-  '2025-12-26T23:46:13.822Z',
+  '2025-12-27T00:00:46.549Z',
   24,
   datetime('now')
 );
@@ -1955,7 +1955,7 @@ INSERT OR REPLACE INTO data_sources (
   NULL,
   'City council meetings from Charleston, Huntington, and other West Virginia cities',
   'active',
-  '2025-12-26T23:46:13.822Z',
+  '2025-12-27T00:00:46.549Z',
   24,
   datetime('now')
 );
@@ -1973,7 +1973,7 @@ INSERT OR REPLACE INTO data_sources (
   NULL,
   'Official legislative calendar with committee meetings and hearings',
   'active',
-  '2025-12-26T23:46:13.822Z',
+  '2025-12-27T00:00:46.549Z',
   24,
   datetime('now')
 );
@@ -1991,7 +1991,7 @@ INSERT OR REPLACE INTO data_sources (
   NULL,
   'City council meetings from Cheyenne, Casper, and other Wyoming cities',
   'active',
-  '2025-12-26T23:46:13.822Z',
+  '2025-12-27T00:00:46.549Z',
   24,
   datetime('now')
 );
