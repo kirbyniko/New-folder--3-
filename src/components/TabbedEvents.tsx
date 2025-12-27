@@ -481,6 +481,30 @@ export default function TabbedEvents({
                   <h3>📋 Agenda Summary</h3>
                   <div className="agenda-summary-full">
                     <p>{selectedEvent.agendaSummary}</p>
+                    <div style={{ 
+                      marginTop: '12px', 
+                      padding: '8px 12px', 
+                      backgroundColor: 'rgba(59, 130, 246, 0.1)', 
+                      borderLeft: '3px solid #3b82f6',
+                      borderRadius: '4px',
+                      fontSize: '0.85em',
+                      color: '#64748b'
+                    }}>
+                      <div style={{ fontWeight: '500', marginBottom: '4px' }}>ℹ️ AI-Generated Summary</div>
+                      <div>Generated from the meeting agenda PDF using local AI (Ollama).</div>
+                      {selectedEvent.docketUrl && (
+                        <div style={{ marginTop: '4px' }}>
+                          Source: <a 
+                            href={selectedEvent.docketUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            style={{ color: '#3b82f6', textDecoration: 'underline' }}
+                          >
+                            View Original PDF
+                          </a>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
