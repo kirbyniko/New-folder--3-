@@ -6,7 +6,7 @@
  */
 
 import { initializeScrapers, ScraperRegistry } from '../../lib/functions/utils/scrapers/index.js';
-import { insertEvent, insertBills, logScraperHealth } from './db/events.js';
+import { insertEvent, insertBills, logScraperHealth, generateInsertSQL, batchInsertEvents } from './db/events.js';
 import { cleanupOldEvents } from './db/maintenance.js';
 
 const ALL_STATES = [
@@ -121,22 +121,27 @@ async function scrapeState(state: string): Promise<ScraperResult> {
 
     // Insert events into database
     let insertCount = 0;
+    const sqlStatements: string[] = [];
+    
     for (const event of events) {
       try {
-        const eventId = await insertEvent(event);
-        
-        // Insert associated bills if any
-        if (event.bills && event.bills.length > 0) {
-          await insertBills(eventId, event.bills);
-        }
-        
+        const sql = generateInsertSQL(event);
+        sqlStatements.push(sql);
         insertCount++;
       } catch (insertError: any) {
-        // Skip duplicate events (fingerprint constraint)
-        if (!insertError.message?.includes('duplicate key') && 
-            !insertError.message?.includes('fingerprint')) {
-          console.error(`   ⚠️  ${state}: Failed to insert event:`, insertError.message);
-        }
+        console.error(`   ⚠️  ${state}: Failed to generate SQL:`, insertError.message);
+      }
+    }
+    
+    // Batch insert all events at once
+    if (sqlStatements.length > 0) {
+      try {
+        await batchInsertEvents(sqlStatements, state);
+      } catch (batchError: any) {
+        console.error(`   ❌ ${state}: Batch insert failed:`, batchError.message);
+        result.error = batchError.message;
+        result.duration = Date.now() - startTime;
+        return result;
       }
     }
 

@@ -8,7 +8,7 @@
  * - States with 0 events
  */
 
-import { initializeScrapers, ScraperRegistry } from './lib/functions/utils/scrapers/index.js';
+import { initializeScrapers, ScraperRegistry } from '../lib/functions/utils/scrapers/index.js';
 
 const ALL_STATES = [
   'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',

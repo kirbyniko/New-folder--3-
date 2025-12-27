@@ -133,6 +133,7 @@ export class ConnecticutScraper extends BaseScraper {
       this.log(`✅ Found ${events.length} Connecticut events`);
 
       // Add Bridgeport local government meetings
+      const allEvents = [...events];
 
       console.log('Fetching Bridgeport local government meetings...');
 
@@ -153,7 +154,7 @@ export class ConnecticutScraper extends BaseScraper {
 
       console.log(`Found ${allEvents.length} total Connecticut events (state + local)`);
 
-      return events;
+      return allEvents;
       
     } catch (error) {
       this.logError('Failed to scrape Connecticut', error);

@@ -5,7 +5,7 @@
   "description": "Standalone scraper backend that runs on local PC and populates PostgreSQL database",
   "scripts": {
     "start": "tsx src/index.ts",
-    "scrape": "tsx src/scraper.ts",
+    "scrape": "cross-env NODE_TLS_REJECT_UNAUTHORIZED=0 tsx src/scraper.ts",
     "schedule": "node src/scheduler.js",
     "test": "tsx src/test-connection.ts"
   },
@@ -19,5 +19,8 @@
     "pg": "^8.16.3",
     "puppeteer": "^24.33.0",
     "tsx": "^4.7.0"
+  },
+  "devDependencies": {
+    "cross-env": "^10.1.0"
   }
 }

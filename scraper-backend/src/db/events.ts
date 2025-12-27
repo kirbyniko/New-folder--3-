@@ -67,6 +67,69 @@ function executeD1Command(sql: string): void {
 }
 
 /**
+ * Generate INSERT SQL for an event (without executing)
+ */
+export function generateInsertSQL(event: LegislativeEvent): string {
+  const fingerprint = generateFingerprint(event);
+  const normalizedTime = normalizeTime(event.time);
+  const id = crypto.randomUUID();
+
+  return `
+    INSERT OR REPLACE INTO events (
+      id, level, type, state_code, name, date, time, 
+      location_name, location_address, lat, lng,
+      description, committee_name, details_url, docket_url,
+      virtual_meeting_url, source_url, allows_public_participation,
+      scraped_at, last_updated, scraper_source, external_id, fingerprint
+    ) VALUES (
+      ${escapeSQL(id)},
+      ${escapeSQL(event.level)},
+      ${escapeSQL(event.type)},
+      ${escapeSQL(event.state)},
+      ${escapeSQL(event.name)},
+      ${escapeSQL(event.date)},
+      ${escapeSQL(normalizedTime)},
+      ${escapeSQL(event.location)},
+      ${escapeSQL(event.location)},
+      ${event.lat || 0},
+      ${event.lng || 0},
+      ${escapeSQL(event.description)},
+      ${escapeSQL(event.committee)},
+      ${escapeSQL(event.detailsUrl)},
+      ${escapeSQL(event.docketUrl)},
+      ${escapeSQL(event.virtualMeetingUrl)},
+      ${escapeSQL(event.sourceUrl)},
+      ${event.allowsPublicParticipation ? 1 : 0},
+      datetime('now'),
+      datetime('now'),
+      ${escapeSQL(`${event.state}-scraper`)},
+      ${escapeSQL(event.sourceUrl)},
+      ${escapeSQL(fingerprint)}
+    );
+  `;
+}
+
+/**
+ * Batch insert multiple events at once (MUCH faster than one-by-one)
+ */
+export function batchInsertEvents(sqlStatements: string[], stateName: string): void {
+  const tempFile = `temp-batch-${stateName}-${Date.now()}.sql`;
+  try {
+    const combinedSQL = sqlStatements.join('\n');
+    writeFileSync(tempFile, combinedSQL);
+    console.log(`   💾 Executing batch insert of ${sqlStatements.length} events for ${stateName}...`);
+    execSync(`wrangler d1 execute civitracker-db --remote --file="${tempFile}"`, {
+      stdio: 'pipe'
+    });
+    console.log(`   ✅ Batch insert completed for ${stateName}`);
+  } finally {
+    try {
+      unlinkSync(tempFile);
+    } catch {}
+  }
+}
+
+/**
  * Insert event into D1 database
  */
 export async function insertEvent(event: LegislativeEvent): Promise<string> {
