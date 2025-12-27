@@ -2,6 +2,7 @@
  * Scraper System Entry Point
  * 
  * Exports all scraper utilities and initializes the registry.
+ * Last updated: 2024-12-27
  */
 
 export { BaseScraper } from './base-scraper';
