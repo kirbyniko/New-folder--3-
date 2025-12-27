@@ -1,5 +1,6 @@
 import { BaseScraper } from '../base-scraper';
 import type { RawEvent, BillReference, ScraperConfig } from '../base-scraper';
+import { scrapeSantaFeMeetings } from '../local/santa-fe.js';
 
 interface OpenStatesEvent {
   id: string;
@@ -111,6 +112,28 @@ export class NewMexicoScraper extends BaseScraper {
       }
 
       this.log(`✅ Scraped ${allEvents.length} upcoming NM events from OpenStates`);
+
+      // Add Santa Fe local government meetings
+
+      console.log('Fetching Santa Fe local government meetings...');
+
+      try {
+
+        const santafeEvents = await scrapeSantaFeMeetings();
+
+        console.log(`Found ${santafeEvents.length} Santa Fe local meetings`);
+
+        allEvents.push(...santafeEvents);
+
+      } catch (error) {
+
+        console.error('Error fetching Santa Fe meetings:', error);
+
+      }
+
+
+      console.log(`Found ${allEvents.length} total New Mexico events (state + local)`);
+
       return allEvents;
 
     } catch (error) {

@@ -12,6 +12,7 @@
 import { BaseScraper, RawEvent } from '../base-scraper';
 import { enrichEventMetadata } from '../shared/tagging';
 import * as cheerio from 'cheerio';
+import { scrapeBridgeportMeetings } from '../local/bridgeport.js';
 
 export class ConnecticutScraper extends BaseScraper {
   constructor() {
@@ -130,6 +131,28 @@ export class ConnecticutScraper extends BaseScraper {
       });
       
       this.log(`✅ Found ${events.length} Connecticut events`);
+
+      // Add Bridgeport local government meetings
+
+      console.log('Fetching Bridgeport local government meetings...');
+
+      try {
+
+        const bridgeportEvents = await scrapeBridgeportMeetings();
+
+        console.log(`Found ${bridgeportEvents.length} Bridgeport local meetings`);
+
+        allEvents.push(...bridgeportEvents);
+
+      } catch (error) {
+
+        console.error('Error fetching Bridgeport meetings:', error);
+
+      }
+
+
+      console.log(`Found ${allEvents.length} total Connecticut events (state + local)`);
+
       return events;
       
     } catch (error) {

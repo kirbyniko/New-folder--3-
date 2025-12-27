@@ -1,6 +1,7 @@
 import { BaseScraper } from '../base-scraper';
 import type { RawEvent, ScraperConfig } from '../base-scraper';
 import { enrichEventMetadata } from '../shared/tagging';
+import { scrapePortlandMeetings } from '../local/portland.js';
 
 /**
  * Oregon Legislature Event Scraper (OpenStates)
@@ -128,6 +129,38 @@ export class OregonScraper extends BaseScraper {
 
       // Parse OpenStates data to RawEvent format
       const events = data.results.map(osEvent => this.parseOpenstatesEvent(osEvent));
+
+
+      // Add Portland local government meetings
+
+
+      console.log('Fetching Portland local government meetings...');
+
+
+      try {
+
+
+        const portlandEvents = await scrapePortlandMeetings();
+
+
+        console.log(`Found ${portlandEvents.length} Portland local meetings`);
+
+
+        allEvents.push(...portlandEvents);
+
+
+      } catch (error) {
+
+
+        console.error('Error fetching Portland meetings:', error);
+
+
+      }
+
+
+
+      console.log(`Found ${allEvents.length} total Oregon events (state + local)`);
+
 
       return events;
     } catch (error) {

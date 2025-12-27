@@ -1,6 +1,7 @@
 import { BaseScraper, RawEvent } from '../base-scraper';
 import { enrichEventMetadata } from '../shared/tagging';
 import * as cheerio from 'cheerio';
+import { scrapeLasVegasMeetings } from '../local/las-vegas.js';
 
 /**
  * Nevada Legislature Calendar Scraper

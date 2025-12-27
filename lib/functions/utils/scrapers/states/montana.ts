@@ -1,6 +1,7 @@
 import { BaseScraper, ScraperConfig } from '../base-scraper';
 import { RawEvent, CalendarSource } from '../../../types/events';
 import { scrapeWithPuppeteer } from '../puppeteer-helper';
+import { scrapeHelenaMeetings } from '../local/helena.js';
 
 interface MontanaEvent {
   title: string;
@@ -118,6 +119,38 @@ export class MontanaScraper extends BaseScraper {
                 console.error('Error processing event:', err);
               }
             });
+
+            
+            // Add Helena local government meetings
+
+            
+            console.log('Fetching Helena local government meetings...');
+
+            
+            try {
+
+            
+              const helenaEvents = await scrapeHelenaMeetings();
+
+            
+              console.log(`Found ${helenaEvents.length} Helena local meetings`);
+
+            
+              allEvents.push(...helenaEvents);
+
+            
+            } catch (error) {
+
+            
+              console.error('Error fetching Helena meetings:', error);
+
+            
+            }
+
+
+            
+            console.log(`Found ${allEvents.length} total Montana events (state + local)`);
+
             
             return events;
           });

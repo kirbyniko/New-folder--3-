@@ -1,6 +1,7 @@
 import { BaseScraper, type RawEvent } from '../base-scraper';
 import { enrichEventMetadata } from '../shared/tagging';
 import { scrapeWithPuppeteer } from '../puppeteer-helper';
+import { scrapeOklahomaCityMeetings } from '../local/oklahoma-city.js';
 
 const CAPITOL_COORDS = {
   lat: 35.4922,

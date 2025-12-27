@@ -1,6 +1,7 @@
 import * as cheerio from 'cheerio';
 import { BaseScraper, RawEvent, BillInfo } from '../base-scraper';
 import { enrichEventMetadata } from '../shared/tagging';
+import { scrapeLittleRockMeetings } from '../local/little-rock.js';
 
 /**
  * Arkansas Legislature Calendar Scraper

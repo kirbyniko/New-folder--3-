@@ -4,6 +4,8 @@ import { enrichEventMetadata } from '../shared/tagging';
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { scrapeMontgomeryMeetings } from '../local/montgomery.js';
+import { scrapeBirminghamMeetings } from '../local/birmingham.js';
 
 /**
  * Alabama Legislature Scraper

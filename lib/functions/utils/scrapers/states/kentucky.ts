@@ -2,6 +2,7 @@ import { BaseScraper } from '../base-scraper';
 import type { RawEvent, ScraperConfig } from '../base-scraper';
 import { enrichEventMetadata } from '../shared/tagging';
 import * as cheerio from 'cheerio';
+import { scrapeLexingtonMeetings } from '../local/lexington.js';
 
 interface KentuckyEvent {
   date: string;

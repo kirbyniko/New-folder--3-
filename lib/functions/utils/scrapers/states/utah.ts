@@ -1,5 +1,6 @@
 import { BaseScraper } from '../base-scraper.js';
 import type { RawEvent, LegislativeEvent, CalendarSource } from '../../../types/events.js';
+import { scrapeSaltLakeCityMeetings } from '../local/salt-lake-city.js';
 
 interface UtahDay {
   day: number;
@@ -146,6 +147,38 @@ export class UtahScraper extends BaseScraper {
         console.error(`Error scraping Utah calendar for ${month}/${year}:`, error);
       }
     }
+
+
+    // Add Salt Lake City local government meetings
+
+
+    console.log('Fetching Salt Lake City local government meetings...');
+
+
+    try {
+
+
+      const saltlakecityEvents = await scrapeSaltLakeCityMeetings();
+
+
+      console.log(`Found ${saltlakecityEvents.length} Salt Lake City local meetings`);
+
+
+      allEvents.push(...saltlakecityEvents);
+
+
+    } catch (error) {
+
+
+      console.error('Error fetching Salt Lake City meetings:', error);
+
+
+    }
+
+
+
+    console.log(`Found ${allEvents.length} total Utah events (state + local)`);
+
 
     return events;
   }

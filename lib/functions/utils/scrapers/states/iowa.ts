@@ -1,6 +1,7 @@
 import { BaseScraper, RawEvent } from '../base-scraper';
 import { enrichEventMetadata } from '../shared/tagging';
 import * as cheerio from 'cheerio';
+import { scrapeDesMoinesMeetings } from '../local/des-moines.js';
 
 /**
  * Iowa Legislature Public Hearings Scraper

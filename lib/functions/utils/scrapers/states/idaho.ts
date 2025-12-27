@@ -1,6 +1,7 @@
 import { BaseScraper } from '../base-scraper';
 import type { RawEvent, ScraperConfig } from '../base-scraper';
 import * as cheerio from 'cheerio';
+import { scrapeBoiseMeetings } from '../local/boise.js';
 
 export class IdahoScraper extends BaseScraper {
   private readonly senateUrl = 'https://legislature.idaho.gov/sessioninfo/agenda/sagenda/';
@@ -122,6 +123,28 @@ export class IdahoScraper extends BaseScraper {
       });
 
       console.log(`[SCRAPER:ID] ${chamber}: Found ${events.length} events`);
+
+      // Add Boise local government meetings
+
+      console.log('Fetching Boise local government meetings...');
+
+      try {
+
+        const boiseEvents = await scrapeBoiseMeetings();
+
+        console.log(`Found ${boiseEvents.length} Boise local meetings`);
+
+        allEvents.push(...boiseEvents);
+
+      } catch (error) {
+
+        console.error('Error fetching Boise meetings:', error);
+
+      }
+
+
+      console.log(`Found ${allEvents.length} total Idaho events (state + local)`);
+
       return events;
     } catch (error) {
       console.error(`[SCRAPER:ID] Error scraping ${chamber}:`, error);

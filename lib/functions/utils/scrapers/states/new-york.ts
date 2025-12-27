@@ -1,5 +1,6 @@
 import { BaseScraper, ScraperConfig, RawEvent } from '../base-scraper';
 import { parseHTML } from '../html-parser';
+import { scrapeNYCCouncilMeetings } from '../local/nyc-council.js';
 
 interface PublicHearing {
   date: string;
@@ -95,6 +96,28 @@ export class NewYorkScraper extends BaseScraper {
     }
     
     this.log(`✅ Returning ${events.length} NY public hearings (${hearings.length} total found)`);
+
+    // Add NYC local government meetings
+
+    console.log('Fetching NYC local government meetings...');
+
+    try {
+
+      const nycEvents = await scrapeNYCCouncilMeetings();
+
+      console.log(`Found ${nycEvents.length} NYC local meetings`);
+
+      allEvents.push(...nycEvents);
+
+    } catch (error) {
+
+      console.error('Error fetching NYC meetings:', error);
+
+    }
+
+
+    console.log(`Found ${allEvents.length} total New York events (state + local)`);
+
     return events;
   }
 

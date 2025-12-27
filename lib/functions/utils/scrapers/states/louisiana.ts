@@ -2,6 +2,7 @@ import { BaseScraper } from '../base-scraper';
 import type { RawEvent, BillInfo, ScraperConfig } from '../base-scraper';
 import { enrichEventMetadata } from '../shared/tagging';
 import { parseHTML } from '../html-parser';
+import { scrapeBatonRougeMeetings } from '../local/baton-rouge.js';
 
 interface LouisianaEvent {
   committee: string;

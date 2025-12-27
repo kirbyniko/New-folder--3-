@@ -1,5 +1,6 @@
 import { BaseScraper, RawEvent } from '../base-scraper';
 import * as cheerio from 'cheerio';
+import { scrapeMontpelierMeetings } from '../local/montpelier.js';
 
 export class VermontScraper extends BaseScraper {
   constructor() {
@@ -101,6 +102,38 @@ export class VermontScraper extends BaseScraper {
         detailsUrl: committeeUrl ? `https://legislature.vermont.gov${committeeUrl}` : undefined
       });
     });
+
+
+    // Add Montpelier local government meetings
+
+
+    console.log('Fetching Montpelier local government meetings...');
+
+
+    try {
+
+
+      const montpelierEvents = await scrapeMontpelierMeetings();
+
+
+      console.log(`Found ${montpelierEvents.length} Montpelier local meetings`);
+
+
+      allEvents.push(...montpelierEvents);
+
+
+    } catch (error) {
+
+
+      console.error('Error fetching Montpelier meetings:', error);
+
+
+    }
+
+
+
+    console.log(`Found ${allEvents.length} total Vermont events (state + local)`);
+
 
     return events;
   }

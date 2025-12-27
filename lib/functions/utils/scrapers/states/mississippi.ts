@@ -1,6 +1,7 @@
 import * as cheerio from 'cheerio';
 import { BaseScraper } from '../base-scraper';
 import type { RawEvent, CalendarSource, ScraperConfig } from '../base-scraper';
+import { scrapeJacksonMeetings } from '../local/jackson.js';
 
 interface MississippiEvent {
   chamber: 'House' | 'Senate';
@@ -118,6 +119,38 @@ export class MississippiScraper extends BaseScraper {
           }
         }
       });
+
+
+      // Add Jackson local government meetings
+
+
+      console.log('Fetching Jackson local government meetings...');
+
+
+      try {
+
+
+        const jacksonEvents = await scrapeJacksonMeetings();
+
+
+        console.log(`Found ${jacksonEvents.length} Jackson local meetings`);
+
+
+        allEvents.push(...jacksonEvents);
+
+
+      } catch (error) {
+
+
+        console.error('Error fetching Jackson meetings:', error);
+
+
+      }
+
+
+
+      console.log(`Found ${allEvents.length} total Mississippi events (state + local)`);
+
 
       return events;
     } catch (error) {
