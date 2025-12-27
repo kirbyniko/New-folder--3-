@@ -7,7 +7,6 @@ import { onRequest as __api_congress_meetings_ts_onRequest } from "C:\\Users\\ni
 import { onRequest as __api_db_maintenance_ts_onRequest } from "C:\\Users\\nikow\\New folder (3)\\functions\\api\\db-maintenance.ts"
 import { onRequest as __api_invalidate_cache_ts_onRequest } from "C:\\Users\\nikow\\New folder (3)\\functions\\api\\invalidate-cache.ts"
 import { onRequest as __api_local_meetings_ts_onRequest } from "C:\\Users\\nikow\\New folder (3)\\functions\\api\\local-meetings.ts"
-import { onRequest as __api_rescrape_ts_onRequest } from "C:\\Users\\nikow\\New folder (3)\\functions\\api\\rescrape.ts"
 import { onRequest as __api_state_events_ts_onRequest } from "C:\\Users\\nikow\\New folder (3)\\functions\\api\\state-events.ts"
 import { onRequest as __api_state_events_backup2_ts_onRequest } from "C:\\Users\\nikow\\New folder (3)\\functions\\api\\state-events-backup2.ts"
 import { onRequest as __api_state_events_simple_ts_onRequest } from "C:\\Users\\nikow\\New folder (3)\\functions\\api\\state-events-simple.ts"
@@ -80,13 +79,6 @@ export const routes = [
       method: "",
       middlewares: [],
       modules: [__api_local_meetings_ts_onRequest],
-    },
-  {
-      routePath: "/api/rescrape",
-      mountPath: "/api",
-      method: "",
-      middlewares: [],
-      modules: [__api_rescrape_ts_onRequest],
     },
   {
       routePath: "/api/state-events",
