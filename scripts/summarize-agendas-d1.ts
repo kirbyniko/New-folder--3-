@@ -14,9 +14,8 @@ import { createRequire } from 'module';
 import { Buffer } from 'buffer';
 
 const require = createRequire(import.meta.url);
-// pdf-parse exports an object with PDFParse property, not a function directly
-const pdfParseModule = require('pdf-parse');
-const pdfParse = pdfParseModule.PDFParse || pdfParseModule;
+// pdf-parse exports a PDFParse class
+const { PDFParse } = require('pdf-parse');
 
 const OLLAMA_API_URL = process.env.OLLAMA_API_URL || 'http://localhost:11434';
 const MODEL = 'gemma3:4b';
@@ -103,7 +102,11 @@ function executeD1Query(query: string): any[] {
       { encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 }
     );
     
-    unlinkSync(tempFile);
+    try {
+      unlinkSync(tempFile);
+    } catch (err: any) {
+      if (err.code !== 'ENOENT') throw err; // Ignore "file not found" errors
+    }
     
     // Find the JSON array in the output
     const lines = result.split('\n');
@@ -141,7 +144,11 @@ function upsertSummary(eventId: string, agendaUrl: string, agendaText: string, s
     { stdio: 'ignore' }
   );
   
-  unlinkSync(tempFile);
+  try {
+    unlinkSync(tempFile);
+  } catch (err: any) {
+    if (err.code !== 'ENOENT') throw err; // Ignore "file not found" errors
+  }
 }
 
 /**
@@ -204,11 +211,13 @@ async function main() {
 
       console.log('   📖 Extracting text from PDF...');
       
-      const pdfBuffer = Buffer.from(await pdfResponse.arrayBuffer());
+      const pdfBuffer = new Uint8Array(await pdfResponse.arrayBuffer());
       let agendaText: string;
       
       try {
-        const pdfData = await pdfParse(pdfBuffer);
+        // PDFParse is a class that needs to be instantiated
+        const parser = new PDFParse({ data: pdfBuffer });
+        const pdfData = await parser.getText();
         agendaText = pdfData.text;
         
         if (!agendaText || agendaText.trim().length < 50) {
