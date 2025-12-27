@@ -2,6 +2,7 @@ import { BaseScraper } from '../base-scraper';
 import type { RawEvent, BillInfo, ScraperConfig } from '../base-scraper';
 import { enrichEventMetadata } from '../shared/tagging';
 import { parseHTML } from '../html-parser';
+import { scrapeBostonMeetings } from '../local/boston.js';
 
 interface MassachusettsEvent {
   id: string;
@@ -108,6 +109,13 @@ export class MassachusettsScraper extends BaseScraper {
       }
 
       this.log(`Converted ${events.length} upcoming Massachusetts events`);
+      
+      // Fetch Boston city council and BPDA meetings
+      console.log('Fetching Boston local government meetings...');
+      const bostonEvents = await scrapeBostonMeetings();
+      events.push(...bostonEvents);
+      
+      console.log(`Found ${events.length} total Massachusetts events (state: ${events.length - bostonEvents.length}, local: ${bostonEvents.length})`);
       
       return events;
     } catch (error) {
