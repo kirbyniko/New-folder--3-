@@ -11,9 +11,12 @@
 import { execSync } from 'child_process';
 import { writeFileSync, unlinkSync } from 'fs';
 import { createRequire } from 'module';
+import { Buffer } from 'buffer';
 
 const require = createRequire(import.meta.url);
-const pdfParse = require('pdf-parse');
+// pdf-parse exports an object with PDFParse property, not a function directly
+const pdfParseModule = require('pdf-parse');
+const pdfParse = pdfParseModule.PDFParse || pdfParseModule;
 
 const OLLAMA_API_URL = process.env.OLLAMA_API_URL || 'http://localhost:11434';
 const MODEL = 'gemma3:4b';
