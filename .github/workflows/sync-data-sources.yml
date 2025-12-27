@@ -5,8 +5,8 @@ on:
     branches:
       - main
     paths:
-      - 'netlify/functions/utils/scrapers/states/**'
-      - 'netlify/functions/utils/scrapers/index.ts'
+      - 'lib/functions/utils/scrapers/states/**'
+      - 'lib/functions/utils/scrapers/index.ts'
 
   workflow_dispatch: # Allow manual trigger
 
