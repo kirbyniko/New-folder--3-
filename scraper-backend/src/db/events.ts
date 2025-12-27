@@ -1,10 +1,11 @@
 /**
  * Event Database Operations
  * 
- * Handles inserting scraped events and bills into PostgreSQL
+ * Handles inserting scraped events and bills into D1 via wrangler CLI
  */
 
-import { getPool } from './connection.js';
+import { execSync } from 'child_process';
+import { writeFileSync, unlinkSync } from 'fs';
 import crypto from 'crypto';
 import type { LegislativeEvent, Bill } from '../../../lib/functions/utils/scrapers/types.js';
 
@@ -17,7 +18,7 @@ function generateFingerprint(event: LegislativeEvent): string {
 }
 
 /**
- * Normalize time format for PostgreSQL TIME type
+ * Normalize time format for D1 (SQLite)
  */
 function normalizeTime(time: string | undefined): string | null {
   if (!time) return null;
@@ -43,95 +44,84 @@ function normalizeTime(time: string | undefined): string | null {
   return `${hours.toString().padStart(2, '0')}:${minutes}:00`;
 }
 
+function escapeSQL(str: string | undefined | null): string {
+  if (!str) return 'NULL';
+  return `'${str.replace(/'/g, "''")}'`;
+}
+
 /**
- * Insert event into database
+ * Execute SQL command on D1 via wrangler CLI
+ */
+function executeD1Command(sql: string): void {
+  const tempFile = `temp-d1-${Date.now()}.sql`;
+  try {
+    writeFileSync(tempFile, sql);
+    execSync(`wrangler d1 execute civitracker-db --remote --file="${tempFile}"`, {
+      stdio: 'pipe'
+    });
+  } finally {
+    try {
+      unlinkSync(tempFile);
+    } catch {}
+  }
+}
+
+/**
+ * Insert event into D1 database
  */
 export async function insertEvent(event: LegislativeEvent): Promise<string> {
-  const pool = getPool();
   const fingerprint = generateFingerprint(event);
   const normalizedTime = normalizeTime(event.time);
+  const id = crypto.randomUUID();
 
-  const query = `
-    INSERT INTO events (
-      id, name, date, time, location, lat, lng,
-      level, type, state_code, committee, description,
-      details_url, docket_url, agenda_url, virtual_meeting_url,
-      source_url, allows_public_participation, chamber,
-      scraper_source, fingerprint
+  const sql = `
+    INSERT OR REPLACE INTO events (
+      id, level, type, state_code, name, date, time, 
+      location_name, location_address, lat, lng,
+      description, committee_name, details_url, docket_url,
+      virtual_meeting_url, source_url, allows_public_participation,
+      scraped_at, last_updated, scraper_source, external_id, fingerprint
     ) VALUES (
-      gen_random_uuid(), $1, $2, $3, $4, $5, $6,
-      $7, $8, $9, $10, $11,
-      $12, $13, $14, $15,
-      $16, $17, $18,
-      $19, $20
-    )
-    ON CONFLICT (fingerprint) DO NOTHING
-    RETURNING id
+      ${escapeSQL(id)},
+      ${escapeSQL(event.level)},
+      ${escapeSQL(event.type)},
+      ${escapeSQL(event.state)},
+      ${escapeSQL(event.name)},
+      ${escapeSQL(event.date)},
+      ${escapeSQL(normalizedTime)},
+      ${escapeSQL(event.location)},
+      ${escapeSQL(event.location)},
+      ${event.lat || 0},
+      ${event.lng || 0},
+      ${escapeSQL(event.description)},
+      ${escapeSQL(event.committee)},
+      ${escapeSQL(event.detailsUrl)},
+      ${escapeSQL(event.docketUrl)},
+      ${escapeSQL(event.virtualMeetingUrl)},
+      ${escapeSQL(event.sourceUrl)},
+      ${event.allowsPublicParticipation ? 1 : 0},
+      datetime('now'),
+      datetime('now'),
+      ${escapeSQL(`${event.state}-scraper`)},
+      ${escapeSQL(event.sourceUrl)},
+      ${escapeSQL(fingerprint)}
+    );
   `;
 
-  const values = [
-    event.name,
-    event.date,
-    normalizedTime,
-    event.location,
-    event.lat,
-    event.lng,
-    event.level,
-    event.type,
-    event.state,
-    event.committee || null,
-    event.description || null,
-    event.detailsUrl || null,
-    event.docketUrl || null,
-    event.agendaUrl || null,
-    event.virtualMeetingUrl || null,
-    event.sourceUrl || null,
-    event.allowsPublicParticipation || false,
-    event.chamber || null,
-    `${event.state}-scraper`,
-    fingerprint
-  ];
-
-  const result = await pool.query(query, values);
-  
-  if (result.rows.length === 0) {
-    throw new Error('Event already exists (duplicate fingerprint)');
-  }
-  
-  return result.rows[0].id;
+  executeD1Command(sql);
+  return id;
 }
 
 /**
- * Insert bills associated with an event
+ * Insert bills associated with an event (not implemented for D1 yet)
  */
 export async function insertBills(eventId: string, bills: Bill[]): Promise<void> {
-  const pool = getPool();
-  
-  for (const bill of bills) {
-    const query = `
-      INSERT INTO bills (
-        id, event_id, bill_number, title, sponsors, summary, status
-      ) VALUES (
-        gen_random_uuid(), $1, $2, $3, $4, $5, $6
-      )
-      ON CONFLICT DO NOTHING
-    `;
-
-    const values = [
-      eventId,
-      bill.billNumber,
-      bill.title || null,
-      bill.sponsors ? JSON.stringify(bill.sponsors) : null,
-      bill.summary || null,
-      bill.status || null
-    ];
-
-    await pool.query(query, values);
-  }
+  // TODO: Implement D1 bill insertion if needed
+  console.log(`⏭️  Skipping ${bills.length} bills (not implemented for D1)`);
 }
 
 /**
- * Log scraper health metrics
+ * Log scraper health metrics (stored in memory, not persisted)
  */
 export async function logScraperHealth(
   state: string,
@@ -139,15 +129,6 @@ export async function logScraperHealth(
   eventsCount: number,
   error: string | null
 ): Promise<void> {
-  const pool = getPool();
-  
-  const query = `
-    INSERT INTO scraper_health (
-      state_code, success, events_found, error_message, scraped_at
-    ) VALUES (
-      $1, $2, $3, $4, NOW()
-    )
-  `;
-
-  await pool.query(query, [state, success, eventsCount, error]);
+  console.log(`📊 Scraper health: ${state} - ${success ? '✅' : '❌'} - ${eventsCount} events`);
+  if (error) console.error(`   Error: ${error}`);
 }
