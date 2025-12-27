@@ -148,6 +148,7 @@ function convertToRawEvent(meeting: PrimeGovMeeting): RawEvent {
     date: isoDate,
     time: meeting.time,
     location: 'City Hall, 495 S. Main St., Las Vegas, NV 89101',
+    level: 'local',
     description: meeting.title,
     committee: meeting.title,
     state: 'NV',

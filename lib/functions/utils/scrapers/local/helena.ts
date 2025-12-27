@@ -371,6 +371,7 @@ export async function scrapeHelenaMeetings(): Promise<RawEvent[]> {
           date: meeting.date,
           time: detailInfo.time,
           location: detailInfo.location,
+          level: 'local',
           description: detailInfo.description || `Helena City meeting: ${meeting.title}`,
           sourceUrl: meeting.url || 'https://www.helenamt.gov/Meetings',
           docketUrl: detailInfo.agendaUrl || undefined,

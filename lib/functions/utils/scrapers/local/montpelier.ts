@@ -273,6 +273,7 @@ export async function scrapeMontpelierMeetings(): Promise<RawEvent[]> {
               date: dateStr,
               time: timeStr,
               location: eventInfo.location || 'Montpelier City Hall',
+              level: 'local',
               detailUrl: eventInfo.detailUrl,
               agendaPdfUrl
             });

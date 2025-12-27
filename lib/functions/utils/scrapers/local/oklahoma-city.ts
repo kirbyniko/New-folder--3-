@@ -181,6 +181,7 @@ async function convertToRawEvent(meeting: PrimeGovMeeting): Promise<RawEvent> {
     date: eventDate.toISOString(),
     time: meeting.time,
     location: 'Oklahoma City Hall', // PrimeGov doesn't provide location in API
+    level: 'local',
     committee: meeting.title.trim(),
     type: 'meeting',
     sourceUrl,

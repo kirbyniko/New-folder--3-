@@ -84,7 +84,7 @@ export async function scrapeBostonMeetings(): Promise<RawEvent[]> {
         location: meeting.EventLocation || 'Boston, MA',
         lat: 42.3601,  // Boston City Hall
         lng: -71.0589,
-        level: 'city',
+        level: 'local',
         type: 'meeting',
         state: 'MA',
         description: `${meeting.EventBodyName} meeting`,

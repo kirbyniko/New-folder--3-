@@ -122,6 +122,7 @@ export async function scrapeSaltLakeCityMeetings(): Promise<RawEvent[]> {
                   date: dateText,
                   time: '', // Time not visible in list view, would need to visit detail page
                   location: '', // Location not visible in list view
+                  level: 'local',
                   url,
                   department: '',
                   category: ''
