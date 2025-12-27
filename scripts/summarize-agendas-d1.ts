@@ -50,10 +50,10 @@ async function generateSummary(eventName: string, agendaText: string): Promise<s
   const prompt = `You are summarizing a government meeting agenda. Follow these rules strictly:
 
 1. ONLY summarize information that is explicitly present in the agenda text below
-2. If the agenda lacks specific details (less than 100 characters, generic placeholder text, or just meeting metadata), respond ONLY with: "Detailed agenda not available"
-3. NEVER invent or assume meeting topics, project names, addresses, or other specific details
-4. If you see generic text like "View the full agenda at [URL]" or just meeting dates/names, respond ONLY with: "Detailed agenda not available"
-5. Use 2-6 sentences only if there is actual substantive content to summarize (topics, projects, legislation, etc.)
+2. If the agenda has NO substantive topics (only meeting date/time/location and procedural items like "roll call" or "approve minutes"), respond ONLY with: "Detailed agenda not available"
+3. If the agenda HAS substantive topics (specific legislation, projects, hearings, reports, etc.), provide a 2-6 sentence summary of those topics
+4. NEVER mix a summary with "Detailed agenda not available" - use ONE or the OTHER, never both
+5. NEVER invent or assume meeting topics, project names, addresses, or other details not in the text
 6. Do not include preambles, apologies, or explanations - provide ONLY the summary or the exact phrase "Detailed agenda not available"
 
 Meeting: ${eventName}
