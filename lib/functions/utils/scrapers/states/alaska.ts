@@ -1,6 +1,7 @@
 import { BaseScraper } from '../base-scraper';
 import type { RawEvent, ScraperConfig } from '../base-scraper';
 import { enrichEventMetadata } from '../shared/tagging';
+import { scrapeJuneauMeetings } from '../local/juneau.js';
 import * as cheerio from 'cheerio';
 
 /**
@@ -235,7 +236,15 @@ export class AlaskaScraper extends BaseScraper {
         await new Promise(resolve => setTimeout(resolve, 200));
       }
 
-      console.log(`Found ${allEvents.length} total Alaska meetings`);
+      console.log(`Found ${allEvents.length} Alaska state legislature meetings`);
+      
+      // Add Juneau city/borough meetings
+      console.log('Fetching Juneau (City and Borough) local government meetings...');
+      const juneauEvents = await scrapeJuneauMeetings();
+      console.log(`Found ${juneauEvents.length} Juneau local meetings`);
+      allEvents.push(...juneauEvents);
+
+      console.log(`Found ${allEvents.length} total Alaska events (state + local)`);
       return allEvents;
     } catch (error) {
       console.error('Error scraping Alaska calendar:', error);
