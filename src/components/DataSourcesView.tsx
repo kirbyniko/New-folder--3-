@@ -14,20 +14,6 @@ interface DataSource {
   update_frequency_hours: number | null;
 }
 
-interface CacheInfo {
-  state: string;
-  exists: boolean;
-  age: number | null;
-  ageDisplay: string;
-  ttl: number | null;
-  ttlDisplay: string;
-  expiresIn: number;
-  size: number;
-  sizeDisplay: string;
-  eventCount: number;
-  isExpired: boolean;
-}
-
 interface StateData {
   state_code: string;
   state_name: string;
@@ -36,7 +22,6 @@ interface StateData {
     local: DataSource[];
   };
   expanded: boolean;
-  cacheInfo?: CacheInfo | null;
 }
 
 const STATE_NAMES: Record<string, string> = {
@@ -63,7 +48,6 @@ export default function DataSourcesView() {
   const [error, setError] = useState<string | null>(null);
   const [expandedStates, setExpandedStates] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
-  const [actionInProgress, setActionInProgress] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAllDataSources();
@@ -73,45 +57,27 @@ export default function DataSourcesView() {
     try {
       setLoading(true);
       
-      // Fetch data sources and cache info in parallel
-      const [sourcesResults, cacheInfo] = await Promise.all([
-        // Fetch sources from all states
-        Promise.all(
-          US_STATES.map(async (stateCode) => {
-            try {
-              const response = await fetch(getApiUrl(`/api/state-events?state=${stateCode}&limit=1`));
-              const sourcesHeader = response.headers.get('X-Calendar-Sources');
-              
-              if (sourcesHeader) {
-                const sources: DataSource[] = JSON.parse(sourcesHeader);
-                return {
-                  state_code: stateCode,
-                  sources: sources
-                };
-              }
-              return { state_code: stateCode, sources: [] };
-            } catch (err) {
-              console.error(`Error fetching sources for ${stateCode}:`, err);
-              return { state_code: stateCode, sources: [] };
+      // Fetch data sources from all states
+      const sourcesResults = await Promise.all(
+        US_STATES.map(async (stateCode) => {
+          try {
+            const response = await fetch(getApiUrl(`/api/state-events?state=${stateCode}&limit=1`));
+            const sourcesHeader = response.headers.get('X-Calendar-Sources');
+            
+            if (sourcesHeader) {
+              const sources: DataSource[] = JSON.parse(sourcesHeader);
+              return {
+                state_code: stateCode,
+                sources: sources
+              };
             }
-          })
-        ),
-        // Fetch cache info for all states
-        fetch(getApiUrl('/api/cache-info'))
-          .then(res => res.json())
-          .catch(err => {
-            console.error('Error fetching cache info:', err);
-            return { caches: [] };
-          })
-      ]);
-
-      // Create a map of cache info by state
-      const cacheMap = new Map<string, CacheInfo>();
-      if (cacheInfo && cacheInfo.caches) {
-        cacheInfo.caches.forEach((cache: CacheInfo) => {
-          cacheMap.set(cache.state, cache);
-        });
-      }
+            return { state_code: stateCode, sources: [] };
+          } catch (err) {
+            console.error(`Error fetching sources for ${stateCode}:`, err);
+            return { state_code: stateCode, sources: [] };
+          }
+        })
+      );
 
       // Organize sources by state and level
       const stateData: StateData[] = sourcesResults.map(({ state_code, sources }) => {
@@ -137,8 +103,7 @@ export default function DataSourcesView() {
             state: stateSources,
             local: localSources
           },
-          expanded: false,
-          cacheInfo: cacheMap.get(state_code) || null
+          expanded: false
         };
       });
 
@@ -162,64 +127,6 @@ export default function DataSourcesView() {
       }
       return newSet;
     });
-  };
-
-  const handleInvalidateCache = async (stateCode: string) => {
-    if (!confirm(`Clear cache for ${stateCode}? This will force a fresh scrape on next request.`)) {
-      return;
-    }
-
-    setActionInProgress(`invalidate-${stateCode}`);
-    
-    try {
-      const response = await fetch(getApiUrl(`/api/invalidate-cache?state=${stateCode}`), {
-        method: 'POST'
-      });
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        alert(`✅ Cache cleared for ${stateCode}`);
-        // Refresh data sources to update cache info
-        await fetchAllDataSources();
-      } else {
-        alert(`❌ Failed to clear cache: ${result.error}`);
-      }
-    } catch (error: any) {
-      console.error('Error invalidating cache:', error);
-      alert(`❌ Error: ${error.message}`);
-    } finally {
-      setActionInProgress(null);
-    }
-  };
-
-  const handleRescrape = async (stateCode: string) => {
-    if (!confirm(`Force rescrape ${stateCode}? This may take 10-30 seconds.`)) {
-      return;
-    }
-
-    setActionInProgress(`rescrape-${stateCode}`);
-    
-    try {
-      const response = await fetch(getApiUrl(`/api/rescrape?state=${stateCode}`), {
-        method: 'POST'
-      });
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        alert(`✅ Scraped ${result.eventsFound} events for ${stateCode} in ${Math.round(result.duration / 1000)}s`);
-        // Refresh data sources to update cache info
-        await fetchAllDataSources();
-      } else {
-        alert(`❌ Failed to rescrape: ${result.error}`);
-      }
-    } catch (error: any) {
-      console.error('Error rescraping:', error);
-      alert(`❌ Error: ${error.message}`);
-    } finally {
-      setActionInProgress(null);
-    }
   };
 
   const filteredStates = states.filter(state => {
@@ -315,7 +222,6 @@ export default function DataSourcesView() {
         {filteredStates.map((state) => {
           const isExpanded = expandedStates.has(state.state_code);
           const totalStateSources = state.sources.state.length + state.sources.local.length;
-          const cache = state.cacheInfo;
           
           return (
             <div key={state.state_code} className="state-row">
@@ -339,78 +245,12 @@ export default function DataSourcesView() {
                     <span className="level-badge local-badge">{state.sources.local.length} Local</span>
                   )}
                   
-                  {/* Cache Info Badge */}
-                  {cache && cache.exists ? (
-                    <span className={`cache-badge ${cache.isExpired ? 'cache-expired' : 'cache-valid'}`} 
-                          title={`${cache.eventCount} events, ${cache.sizeDisplay}, expires in ${cache.ttlDisplay}`}>
-                      📦 {cache.ageDisplay} old • {cache.eventCount} events
-                    </span>
-                  ) : (
-                    <span className="cache-badge cache-none" title="No cache">
-                      📦 No cache
-                    </span>
-                  )}
-                  
                   <span className="expand-icon">{isExpanded ? '▼' : '▶'}</span>
                 </div>
               </div>
 
               {isExpanded && (
                 <div className="state-details">
-                  {/* Cache Info and Controls */}
-                  <div className="cache-info-section">
-                    <h4>Cache Status</h4>
-                    {cache && cache.exists ? (
-                      <div className="cache-details">
-                        <div className="cache-stat">
-                          <span className="cache-label">Age:</span>
-                          <span className="cache-value">{cache.ageDisplay}</span>
-                        </div>
-                        <div className="cache-stat">
-                          <span className="cache-label">Expires in:</span>
-                          <span className={`cache-value ${cache.isExpired ? 'expired' : ''}`}>
-                            {cache.ttlDisplay}
-                          </span>
-                        </div>
-                        <div className="cache-stat">
-                          <span className="cache-label">Events:</span>
-                          <span className="cache-value">{cache.eventCount}</span>
-                        </div>
-                        <div className="cache-stat">
-                          <span className="cache-label">Size:</span>
-                          <span className="cache-value">{cache.sizeDisplay}</span>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="no-cache">No cached data for this state.</p>
-                    )}
-                    
-                    <div className="cache-actions">
-                      <button 
-                        className="cache-action-btn invalidate"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleInvalidateCache(state.state_code);
-                        }}
-                        disabled={actionInProgress !== null || !cache?.exists}
-                        title="Clear cache and force refresh on next request"
-                      >
-                        {actionInProgress === `invalidate-${state.state_code}` ? '⏳ Clearing...' : '🗑️ Clear Cache'}
-                      </button>
-                      <button 
-                        className="cache-action-btn rescrape"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRescrape(state.state_code);
-                        }}
-                        disabled={actionInProgress !== null}
-                        title="Immediately scrape fresh data (may take 10-30s)"
-                      >
-                        {actionInProgress === `rescrape-${state.state_code}` ? '⏳ Scraping...' : '🔄 Force Rescrape'}
-                      </button>
-                    </div>
-                  </div>
-
                   {state.sources.state.length > 0 && (
                     <div className="sources-section">
                       <h4>State-Level Sources</h4>
