@@ -9,7 +9,6 @@
     "preview": "vite preview",
     "wrangler:dev": "wrangler pages dev dist --port 8788 --live-reload",
     "cf:local": "npm run build && npm run wrangler:dev",
-    "netlify:dev": "netlify dev",
     "build-mappings:nh": "npx tsx tools/build-nh-mappings-manual.js"
   },
   "dependencies": {
@@ -17,7 +16,6 @@
     "@capacitor/cli": "^6.2.1",
     "@capacitor/core": "^6.2.1",
     "@neondatabase/serverless": "^1.0.2",
-    "@netlify/blobs": "^10.4.3",
     "@sparticuz/chromium": "^143.0.0",
     "@types/pg": "^8.16.0",
     "@types/sanitize-html": "^2.16.0",
@@ -39,9 +37,8 @@
     "xml2js": "^0.6.2"
   },
   "devDependencies": {
-    "@netlify/functions": "^2.4.0",
+  "devDependencies": {
     "@types/cheerio": "^0.22.35",
-    "@types/leaflet": "^1.9.8",
     "@types/node": "^20.10.0",
     "@types/react": "^18.2.43",
     "@types/react-dom": "^18.2.17",
@@ -49,10 +46,9 @@
     "@vitejs/plugin-react": "^4.2.1",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
+    "dotenv": "^17.2.3",
     "express": "^5.2.1",
-    "netlify-cli": "^17.10.1",
     "puppeteer": "^24.33.0",
-    "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
     "typescript": "^5.3.3",
     "vite": "^5.0.8"

@@ -20,6 +20,5 @@
     "types": ["node"]
   },
   "include": ["src"],
-  "exclude": ["netlify"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
