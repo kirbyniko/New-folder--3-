@@ -61,16 +61,26 @@ function setupEventListeners() {
   const autofillUrlBtn = document.getElementById('autofill-url');
   const autofillBaseUrlBtn = document.getElementById('autofill-base-url');
   
+  console.log('Setting up autofill buttons:', { autofillUrlBtn, autofillBaseUrlBtn });
+  
   if (autofillUrlBtn) {
-    autofillUrlBtn.addEventListener('click', autoFillCurrentURL);
+    console.log('✅ Attaching click listener to autofill-url button');
+    autofillUrlBtn.addEventListener('click', (e) => {
+      console.log('🔘 Button clicked!', e);
+      autoFillCurrentURL();
+    });
   } else {
-    console.warn('autofill-url button not found');
+    console.warn('❌ autofill-url button not found');
   }
   
   if (autofillBaseUrlBtn) {
-    autofillBaseUrlBtn.addEventListener('click', autoFillBaseURL);
+    console.log('✅ Attaching click listener to autofill-base-url button');
+    autofillBaseUrlBtn.addEventListener('click', (e) => {
+      console.log('🔘 Button clicked!', e);
+      autoFillBaseURL();
+    });
   } else {
-    console.warn('autofill-base-url button not found');
+    console.warn('❌ autofill-base-url button not found');
   }
   
   // Capture buttons
