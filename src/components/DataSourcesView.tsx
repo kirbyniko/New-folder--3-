@@ -21,6 +21,11 @@ interface StateData {
     state: DataSource[];
     local: DataSource[];
   };
+  eventCounts: {
+    total: number;
+    state: number;
+    local: number;
+  };
   expanded: boolean;
 }
 
@@ -57,43 +62,61 @@ export default function DataSourcesView() {
     try {
       setLoading(true);
       
-      // Fetch data sources from all states
-      const sourcesResults = await Promise.all(
+      // Fetch data sources and event counts from all states in parallel
+      const results = await Promise.all(
         US_STATES.map(async (stateCode) => {
           try {
-            const response = await fetch(getApiUrl(`/api/state-events?state=${stateCode}&limit=1`));
-            const sourcesHeader = response.headers.get('X-Calendar-Sources');
+            // Fetch sources (limit=1 to get headers only)
+            const sourcesResponse = await fetch(getApiUrl(`/api/state-events?state=${stateCode}&limit=1`));
+            const sourcesHeader = sourcesResponse.headers.get('X-Calendar-Sources');
+            const sources: DataSource[] = sourcesHeader ? JSON.parse(sourcesHeader) : [];
             
-            if (sourcesHeader) {
-              const sources: DataSource[] = JSON.parse(sourcesHeader);
-              return {
-                state_code: stateCode,
-                sources: sources
-              };
-            }
-            return { state_code: stateCode, sources: [] };
+            // Fetch all events to count them and categorize by level
+            const eventsResponse = await fetch(getApiUrl(`/api/state-events?state=${stateCode}`));
+            const eventsData = await eventsResponse.json();
+            const events = Array.isArray(eventsData) ? eventsData : [];
+            
+            // Count state-level vs local-level events
+            const stateEvents = events.filter((e: any) => e.level === 'state');
+            const localEvents = events.filter((e: any) => e.level === 'local');
+            
+            return {
+              state_code: stateCode,
+              sources: sources,
+              eventCounts: {
+                total: events.length,
+                state: stateEvents.length,
+                local: localEvents.length
+              }
+            };
           } catch (err) {
-            console.error(`Error fetching sources for ${stateCode}:`, err);
-            return { state_code: stateCode, sources: [] };
+            console.error(`Error fetching data for ${stateCode}:`, err);
+            return { 
+              state_code: stateCode, 
+              sources: [],
+              eventCounts: { total: 0, state: 0, local: 0 }
+            };
           }
         })
       );
 
       // Organize sources by state and level
-      const stateData: StateData[] = sourcesResults.map(({ state_code, sources }) => {
+      const stateData: StateData[] = results.map(({ state_code, sources, eventCounts }) => {
         // Determine if source is state-level or local-level based on name/type
         const stateSources = sources.filter(s => 
           !s.name.toLowerCase().includes('legistar') && 
           !s.name.toLowerCase().includes('local') &&
           !s.name.toLowerCase().includes('city') &&
-          !s.name.toLowerCase().includes('county')
+          !s.name.toLowerCase().includes('county') &&
+          !s.name.toLowerCase().includes('borough')
         );
         
         const localSources = sources.filter(s => 
           s.name.toLowerCase().includes('legistar') || 
           s.name.toLowerCase().includes('local') ||
           s.name.toLowerCase().includes('city') ||
-          s.name.toLowerCase().includes('county')
+          s.name.toLowerCase().includes('county') ||
+          s.name.toLowerCase().includes('borough')
         );
 
         return {
@@ -103,6 +126,7 @@ export default function DataSourcesView() {
             state: stateSources,
             local: localSources
           },
+          eventCounts,
           expanded: false
         };
       });
@@ -198,14 +222,23 @@ export default function DataSourcesView() {
   const totalSources = states.reduce((sum, state) => 
     sum + state.sources.state.length + state.sources.local.length, 0
   );
+  
+  const totalEvents = states.reduce((sum, state) => sum + state.eventCounts.total, 0);
+  const statesWithNoEvents = states.filter(s => s.eventCounts.total === 0);
 
   return (
     <div className="data-sources-view">
       <div className="data-sources-header">
         <h2>Legislative Data Sources</h2>
         <p className="subtitle">
-          Scrapers collecting data from {totalSources} sources across all 50 states
+          {totalSources} sources • {totalEvents} upcoming events • {statesWithNoEvents.length} states with NO events
         </p>
+        
+        {statesWithNoEvents.length > 0 && (
+          <div className="alert-banner">
+            <strong>⚠️ Missing Coverage:</strong> {statesWithNoEvents.map(s => s.state_code).join(', ')}
+          </div>
+        )}
         
         <div className="search-bar">
           <input
@@ -222,9 +255,10 @@ export default function DataSourcesView() {
         {filteredStates.map((state) => {
           const isExpanded = expandedStates.has(state.state_code);
           const totalStateSources = state.sources.state.length + state.sources.local.length;
+          const hasNoEvents = state.eventCounts.total === 0;
           
           return (
-            <div key={state.state_code} className="state-row">
+            <div key={state.state_code} className={`state-row ${hasNoEvents ? 'no-events' : ''}`}>
               <div 
                 className="state-summary"
                 onClick={() => toggleState(state.state_code)}
@@ -232,11 +266,25 @@ export default function DataSourcesView() {
                 <div className="state-info">
                   <span className="state-code">{state.state_code}</span>
                   <span className="state-name">{state.state_name}</span>
+                  {hasNoEvents && <span className="no-events-badge">⚠️ NO EVENTS</span>}
                 </div>
                 
                 <div className="state-stats">
+                  {/* Event counts */}
+                  {state.eventCounts.total > 0 ? (
+                    <span className="event-count">
+                      📅 {state.eventCounts.total} event{state.eventCounts.total !== 1 ? 's' : ''}
+                      {state.eventCounts.state > 0 && <span className="event-level"> ({state.eventCounts.state} state</span>}
+                      {state.eventCounts.local > 0 && <span className="event-level">{state.eventCounts.state > 0 ? ', ' : ' ('}{state.eventCounts.local} local)</span>}
+                      {(state.eventCounts.state > 0 || state.eventCounts.local > 0) && !state.eventCounts.local && <span>)</span>}
+                    </span>
+                  ) : (
+                    <span className="event-count no-events-text">📅 0 events</span>
+                  )}
+                  
+                  {/* Source counts */}
                   <span className="source-count">
-                    {totalStateSources} source{totalStateSources !== 1 ? 's' : ''}
+                    📦 {totalStateSources} source{totalStateSources !== 1 ? 's' : ''}
                   </span>
                   {state.sources.state.length > 0 && (
                     <span className="level-badge state-badge">{state.sources.state.length} State</span>
