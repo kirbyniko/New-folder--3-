@@ -120,38 +120,6 @@ export class MontanaScraper extends BaseScraper {
               }
             });
 
-            
-            // Add Helena local government meetings
-
-            
-            console.log('Fetching Helena local government meetings...');
-
-            
-            try {
-
-            
-              const helenaEvents = await scrapeHelenaMeetings();
-
-            
-              console.log(`Found ${helenaEvents.length} Helena local meetings`);
-
-            
-              allEvents.push(...helenaEvents);
-
-            
-            } catch (error) {
-
-            
-              console.error('Error fetching Helena meetings:', error);
-
-            
-            }
-
-
-            
-            console.log(`Found ${allEvents.length} total Montana events (state + local)`);
-
-            
             return events;
           });
           
@@ -199,7 +167,19 @@ export class MontanaScraper extends BaseScraper {
         }
       }
       
-      console.log(`✅ Returning ${rawEvents.length} upcoming Montana events`);
+      console.log(`✅ Found ${rawEvents.length} Montana state legislature events`);
+      
+      // Add Helena local government meetings
+      console.log('Fetching Helena local government meetings...');
+      try {
+        const helenaEvents = await scrapeHelenaMeetings();
+        console.log(`Found ${helenaEvents.length} Helena local meetings`);
+        rawEvents.push(...helenaEvents);
+      } catch (error) {
+        console.error('Error fetching Helena meetings:', error);
+      }
+      
+      console.log(`✅ Returning ${rawEvents.length} total Montana events (state + local)`);
       return rawEvents;
       
     } catch (error) {
