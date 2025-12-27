@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet';
+import type { LatLngExpression } from 'leaflet';
 import L from 'leaflet';
 import type { LegislativeEvent } from '../types/event';
 import 'leaflet/dist/leaflet.css';
@@ -49,7 +50,7 @@ export default function EventMap({ events, centerLat, centerLng, radius, height 
   return (
     <div style={{ height, width: '100%', borderRadius: '8px', overflow: 'hidden' }}>
       <MapContainer
-        center={[centerLat, centerLng]}
+        center={[centerLat, centerLng] as LatLngExpression}
         zoom={9}
         style={{ height: '100%', width: '100%' }}
       >
@@ -60,7 +61,7 @@ export default function EventMap({ events, centerLat, centerLng, radius, height 
         
         {/* Search radius circle */}
         <Circle
-          center={[centerLat, centerLng]}
+          center={[centerLat, centerLng] as LatLngExpression}
           radius={radius * 1609.34} // Convert miles to meters
           pathOptions={{
             color: '#667eea',
@@ -71,7 +72,7 @@ export default function EventMap({ events, centerLat, centerLng, radius, height 
         />
         
         {/* Center marker */}
-        <Marker position={[centerLat, centerLng]}>
+        <Marker position={[centerLat, centerLng] as LatLngExpression}>
           <Popup>
             <strong>Your Location</strong><br />
             Search Radius: {radius} miles
@@ -82,7 +83,7 @@ export default function EventMap({ events, centerLat, centerLng, radius, height 
         {events.map(event => (
           <Marker
             key={`${event.level}-${event.id}`}
-            position={[event.lat, event.lng]}
+            position={[event.lat, event.lng] as LatLngExpression}
             icon={getMarkerIcon(event.level)}
           >
             <Popup>
