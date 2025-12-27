@@ -69,9 +69,9 @@ export class AlaskaScraper extends BaseScraper {
         description: 'Individual committee meeting schedules and documents'
       },
       {
-        name: 'Local City Meetings (Legistar API)',
-        url: 'https://webapi.legistar.com',
-        description: 'City council meetings from Anchorage and other Alaska municipalities'
+        name: 'Juneau City and Borough Meetings',
+        url: 'https://www.trumba.com/calendars/city-and-borough-of-juneau-events.rss',
+        description: 'Assembly, Planning Commission, and local boards from Juneau'
       }
     ];
   }
