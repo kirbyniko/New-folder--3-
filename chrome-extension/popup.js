@@ -57,9 +57,21 @@ function setupEventListeners() {
   
   document.getElementById('back-to-details')?.addEventListener('click', () => goToStep(4));
   
-  // Auto-fill buttons
-  document.getElementById('autofill-url')?.addEventListener('click', autoFillCurrentURL);
-  document.getElementById('autofill-base-url')?.addEventListener('click', autoFillBaseURL);
+  // Auto-fill buttons - with defensive checks
+  const autofillUrlBtn = document.getElementById('autofill-url');
+  const autofillBaseUrlBtn = document.getElementById('autofill-base-url');
+  
+  if (autofillUrlBtn) {
+    autofillUrlBtn.addEventListener('click', autoFillCurrentURL);
+  } else {
+    console.warn('autofill-url button not found');
+  }
+  
+  if (autofillBaseUrlBtn) {
+    autofillBaseUrlBtn.addEventListener('click', autoFillBaseURL);
+  } else {
+    console.warn('autofill-base-url button not found');
+  }
   
   // Capture buttons
   document.querySelectorAll('.capture-btn').forEach(btn => {
@@ -160,10 +172,25 @@ function goToStep(stepNumber) {
 // Auto-fill current URL
 function autoFillCurrentURL() {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    if (tabs[0]) {
-      document.getElementById('calendar-url').value = tabs[0].url;
-      state.metadata.calendarUrl = tabs[0].url;
-      saveState();
+    if (chrome.runtime.lastError) {
+      console.error('Error querying tabs:', chrome.runtime.lastError);
+      alert('Could not access current tab. Make sure the extension has permission.');
+      return;
+    }
+    
+    if (tabs && tabs[0] && tabs[0].url) {
+      const urlInput = document.getElementById('calendar-url');
+      if (urlInput) {
+        urlInput.value = tabs[0].url;
+        state.metadata.calendarUrl = tabs[0].url;
+        saveState();
+        
+        // Visual feedback
+        urlInput.style.backgroundColor = '#d4edda';
+        setTimeout(() => { urlInput.style.backgroundColor = ''; }, 500);
+      }
+    } else {
+      alert('Could not get current tab URL');
     }
   });
 }
@@ -171,12 +198,33 @@ function autoFillCurrentURL() {
 // Auto-fill base URL
 function autoFillBaseURL() {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    if (tabs[0]) {
-      const url = new URL(tabs[0].url);
-      const baseUrl = `${url.protocol}//${url.host}`;
-      document.getElementById('base-url').value = baseUrl;
-      state.metadata.baseUrl = baseUrl;
-      saveState();
+    if (chrome.runtime.lastError) {
+      console.error('Error querying tabs:', chrome.runtime.lastError);
+      alert('Could not access current tab. Make sure the extension has permission.');
+      return;
+    }
+    
+    if (tabs && tabs[0] && tabs[0].url) {
+      try {
+        const url = new URL(tabs[0].url);
+        const baseUrl = `${url.protocol}//${url.host}`;
+        const baseUrlInput = document.getElementById('base-url');
+        
+        if (baseUrlInput) {
+          baseUrlInput.value = baseUrl;
+          state.metadata.baseUrl = baseUrl;
+          saveState();
+          
+          // Visual feedback
+          baseUrlInput.style.backgroundColor = '#d4edda';
+          setTimeout(() => { baseUrlInput.style.backgroundColor = ''; }, 500);
+        }
+      } catch (error) {
+        console.error('Error parsing URL:', error);
+        alert('Could not parse current URL');
+      }
+    } else {
+      alert('Could not get current tab URL');
     }
   });
 }
