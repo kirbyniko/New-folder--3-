@@ -91,7 +91,7 @@
 
 ### BEFORE
 ```
-netlify/functions/
+lib/functions/
 ├─ state-events.ts          ◀── Scrapes AND serves
 ├─ congress-meetings.ts     ◀── Scrapes AND serves
 ├─ local-meetings.ts        ◀── Scrapes AND serves
@@ -100,7 +100,7 @@ netlify/functions/
 
 ### AFTER
 ```
-netlify/functions/          ◀── API Backend (Cloud)
+lib/functions/          ◀── API Backend (Cloud)
 ├─ state-events.ts             ✅ Reads from DB only
 ├─ congress-meetings.ts        ✅ Reads from DB only  
 ├─ local-meetings.ts           ✅ Reads from DB only
@@ -229,7 +229,7 @@ If you don't need local development:
 
 ## What Stays the Same
 
-✅ All scraper code (reused from netlify/functions/utils/scrapers/)
+✅ All scraper code (reused from lib/functions/utils/scrapers/)
 ✅ Database schema (same tables, same structure)
 ✅ Frontend code (no changes needed)
 ✅ API endpoints (same URLs, same responses)

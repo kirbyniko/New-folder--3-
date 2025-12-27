@@ -6,9 +6,9 @@
 ```
 User clicks state in UI
     ↓
-src/App.tsx calls /.netlify/functions/state-events?state=XX
+src/App.tsx calls /.lib/functions/state-events?state=XX
     ↓
-netlify/functions/state-events.ts
+lib/functions/state-events.ts
     ↓
 Checks ScraperRegistry for state
     ↓
@@ -21,7 +21,7 @@ Returns events JSON to frontend
 ```
 Daily at 3 AM UTC
     ↓
-netlify/functions/scheduled-scraper.ts runs
+lib/functions/scheduled-scraper.ts runs
     ↓
 For each state:
     - Gets scraper from ScraperRegistry
@@ -36,9 +36,9 @@ Database populated with fresh events
 ```
 User enters ZIP or clicks state
     ↓
-src/App.tsx calls /.netlify/functions/local-meetings?lat=X&lng=Y
+src/App.tsx calls /.lib/functions/local-meetings?lat=X&lng=Y
     ↓
-netlify/functions/local-meetings.ts
+lib/functions/local-meetings.ts
     ↓
 Checks nearby Legistar cities + custom scrapers
     ↓
@@ -50,35 +50,35 @@ Returns local government events
 ## ✅ KEEP - Core Production Files
 
 ### Main API Endpoints (PRODUCTION)
-- `netlify/functions/state-events.ts` - **MAIN STATE ENDPOINT** - serves state legislature events from DB
-- `netlify/functions/congress-meetings.ts` - Federal events from Congress.gov API
-- `netlify/functions/local-meetings.ts` - Local government events (Legistar + custom scrapers)
-- `netlify/functions/scheduled-scraper.ts` - **RUNS DAILY** - scrapes all states, writes to DB
-- `netlify/functions/top-events.ts` - Homepage "top 100" events endpoint
-- `netlify/functions/admin-events.ts` - Admin panel for event management
+- `lib/functions/state-events.ts` - **MAIN STATE ENDPOINT** - serves state legislature events from DB
+- `lib/functions/congress-meetings.ts` - Federal events from Congress.gov API
+- `lib/functions/local-meetings.ts` - Local government events (Legistar + custom scrapers)
+- `lib/functions/scheduled-scraper.ts` - **RUNS DAILY** - scrapes all states, writes to DB
+- `lib/functions/top-events.ts` - Homepage "top 100" events endpoint
+- `lib/functions/admin-events.ts` - Admin panel for event management
 
 ### Database Utilities (PRODUCTION)
-- `netlify/functions/utils/db/connection.ts` - PostgreSQL connection pool
-- `netlify/functions/utils/db/events.ts` - Insert/query events, bills, tags
-- `netlify/functions/utils/db/migrations/` - Database schema migrations
+- `lib/functions/utils/db/connection.ts` - PostgreSQL connection pool
+- `lib/functions/utils/db/events.ts` - Insert/query events, bills, tags
+- `lib/functions/utils/db/migrations/` - Database schema migrations
 
 ### Scrapers (PRODUCTION)
-- `netlify/functions/utils/scrapers/index.ts` - **SCRAPER REGISTRY** - registers all state scrapers
-- `netlify/functions/utils/scrapers/base-scraper.ts` - Base class for state scrapers
-- `netlify/functions/utils/scrapers/states/*.ts` - All state scrapers (50 files)
-- `netlify/functions/utils/scrapers/local/*.ts` - City scrapers (Montpelier, NYC, etc.)
-- `netlify/functions/utils/scrapers/puppeteer-helper.ts` - Shared Puppeteer utilities
-- `netlify/functions/utils/scrapers/scraper-registry.ts` - Registry management
+- `lib/functions/utils/scrapers/index.ts` - **SCRAPER REGISTRY** - registers all state scrapers
+- `lib/functions/utils/scrapers/base-scraper.ts` - Base class for state scrapers
+- `lib/functions/utils/scrapers/states/*.ts` - All state scrapers (50 files)
+- `lib/functions/utils/scrapers/local/*.ts` - City scrapers (Montpelier, NYC, etc.)
+- `lib/functions/utils/scrapers/puppeteer-helper.ts` - Shared Puppeteer utilities
+- `lib/functions/utils/scrapers/scraper-registry.ts` - Registry management
 
 ### Supporting Utilities (PRODUCTION)
-- `netlify/functions/utils/congress-api.ts` - Congress.gov API client
-- `netlify/functions/utils/openstates-api.ts` - OpenStates API client
-- `netlify/functions/utils/legistar-cities.ts` - List of Legistar municipalities
-- `netlify/functions/utils/legistar.ts` - Legistar API client
-- `netlify/functions/utils/cache-manager.ts` - File-based caching system
-- `netlify/functions/utils/tagging.ts` - Auto-tag events by keywords
-- `netlify/functions/utils/security.ts` - XSS sanitization
-- `netlify/functions/utils/env-loader.ts` - Environment variable loading
+- `lib/functions/utils/congress-api.ts` - Congress.gov API client
+- `lib/functions/utils/openstates-api.ts` - OpenStates API client
+- `lib/functions/utils/legistar-cities.ts` - List of Legistar municipalities
+- `lib/functions/utils/legistar.ts` - Legistar API client
+- `lib/functions/utils/cache-manager.ts` - File-based caching system
+- `lib/functions/utils/tagging.ts` - Auto-tag events by keywords
+- `lib/functions/utils/security.ts` - XSS sanitization
+- `lib/functions/utils/env-loader.ts` - Environment variable loading
 
 ---
 
@@ -181,7 +181,7 @@ public/data/las-vegas-events.json       ⚠️  KEEP - Used by local meetings en
 ## 📊 SUMMARY
 
 ### Files to DELETE: ~70+ files
-- 30+ test scripts in `netlify/functions/`
+- 30+ test scripts in `lib/functions/`
 - 35+ static JSON files in `public/data/`
 - 5+ deprecated endpoints
 
@@ -235,7 +235,7 @@ Production Flow:
 
 ## ✅ ACTION ITEMS
 
-1. **Delete test scripts** - All `test-*.ts` files in `netlify/functions/`
+1. **Delete test scripts** - All `test-*.ts` files in `lib/functions/`
 2. **Delete static JSONs** - All files in `public/data/` except `las-vegas-events.json`
 3. **Delete deprecated endpoints** - Old cached versions and one-off scripts
 4. **Run scheduled scraper** - Populate database with fresh data

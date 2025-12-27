@@ -1,7 +1,7 @@
 // Populate data_sources table from scraper metadata
-import { loadEnvFile } from '../netlify/functions/utils/env-loader.js';
-import { ScraperRegistry, initializeScrapers } from '../netlify/functions/utils/scrapers/index.js';
-import { getPool } from '../netlify/functions/utils/db/connection.js';
+import { loadEnvFile } from '../lib/functions/utils/env-loader.js';
+import { ScraperRegistry, initializeScrapers } from '../lib/functions/utils/scrapers/index.js';
+import { getPool } from '../lib/functions/utils/db/connection.js';
 import { createHash } from 'crypto';
 
 loadEnvFile();

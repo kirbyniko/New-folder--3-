@@ -3,8 +3,8 @@
  * Verifies your PC can connect to Neon PostgreSQL
  */
 
-import { loadEnvFile } from '../netlify/functions/utils/env-loader.js';
-import { getPool } from '../netlify/functions/utils/db/connection.js';
+import { loadEnvFile } from '../lib/functions/utils/env-loader.js';
+import { getPool } from '../lib/functions/utils/db/connection.js';
 
 // Load environment variables first
 loadEnvFile();

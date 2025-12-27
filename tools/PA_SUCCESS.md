@@ -68,7 +68,7 @@ PA House - Finance: HB 1450
 ## Implementation Details
 
 ### Code Location
-`netlify/functions/utils/scrapers/states/pennsylvania.ts`
+`lib/functions/utils/scrapers/states/pennsylvania.ts`
 
 ### Key Features
 

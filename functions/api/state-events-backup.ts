@@ -1,4 +1,4 @@
-import type { Handler } from '@netlify/functions';
+import type { Handler } from '@lib/functions';
 // import { getStore } from '@netlify/blobs'; // Disabled - using database instead
 import { loadEnvFile } from './utils/env-loader.js';
 import { ScraperRegistry, CacheManager, initializeScrapers } from './utils/scrapers/index.js';

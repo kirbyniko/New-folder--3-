@@ -122,7 +122,7 @@ npm run build
 
 ```
 /functions/              # Cloudflare Functions (API routes)
-/netlify/functions/      # Netlify Functions (legacy, shared utils)
+/lib/functions/      # Netlify Functions (legacy, shared utils)
 /scripts/                # Scraper and utility scripts
 /src/                    # Frontend React code
 /database/               # SQL schema and migrations

@@ -1,5 +1,5 @@
-import { loadEnvFile } from '../netlify/functions/utils/env-loader.js';
-import { AlabamaScraper } from '../netlify/functions/utils/scrapers/states/alabama.js';
+import { loadEnvFile } from '../lib/functions/utils/env-loader.js';
+import { AlabamaScraper } from '../lib/functions/utils/scrapers/states/alabama.js';
 
 loadEnvFile();
 

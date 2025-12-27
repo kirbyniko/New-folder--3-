@@ -7,7 +7,7 @@
  */
 
 import { writeFileSync } from 'fs';
-import { VirginiaScraper } from '../netlify/functions/utils/scrapers/states/virginia';
+import { VirginiaScraper } from '../lib/functions/utils/scrapers/states/virginia';
 
 async function main() {
   console.log('🏛️ Virginia Scraper - Manual Run');

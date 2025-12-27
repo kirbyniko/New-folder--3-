@@ -127,7 +127,7 @@ civicpulse/
 
 Build command: `npm run build`  
 Publish directory: `dist`  
-Functions directory: `netlify/functions`
+Functions directory: `lib/functions`
 
 ## 🧪 Testing
 

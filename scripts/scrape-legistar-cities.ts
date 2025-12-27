@@ -8,7 +8,7 @@
 import { execSync } from 'child_process';
 import crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
-import { LEGISTAR_CITIES, type LegistarCity } from '../netlify/functions/utils/legistar-cities.js';
+import { LEGISTAR_CITIES, type LegistarCity } from '../lib/functions/utils/legistar-cities.js';
 
 // Top cities most likely to have agendas
 const PRIORITY_CITIES = [

@@ -91,7 +91,7 @@
    ```bash
    # Make 31 requests to same endpoint from same IP
    # 31st request should return 429 with rate limit headers
-   for i in {1..31}; do curl http://localhost:8888/.netlify/functions/state-events?state=CA; done
+   for i in {1..31}; do curl http://localhost:8888/.lib/functions/state-events?state=CA; done
    ```
 
 4. **Update Dependencies** (optional but recommended)

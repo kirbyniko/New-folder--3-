@@ -1,4 +1,4 @@
-import { CaliforniaScraper } from '../netlify/functions/utils/scrapers/states/california';
+import { CaliforniaScraper } from '../lib/functions/utils/scrapers/states/california';
 
 async function testScraper() {
   console.log('🔍 Testing California scraper with description extraction...\n');

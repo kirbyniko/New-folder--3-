@@ -5,7 +5,7 @@
  * Imports scraper utilities from main project and runs them
  */
 
-import { initializeScrapers, ScraperRegistry } from '../../netlify/functions/utils/scrapers/index.js';
+import { initializeScrapers, ScraperRegistry } from '../../lib/functions/utils/scrapers/index.js';
 import { insertEvent, insertBills, logScraperHealth } from './db/events.js';
 import { cleanupOldEvents } from './db/maintenance.js';
 

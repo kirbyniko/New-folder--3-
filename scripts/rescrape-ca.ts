@@ -1,6 +1,6 @@
-import { CaliforniaScraper } from '../netlify/functions/utils/scrapers/states/california';
-import { insertEvent, insertBills } from '../netlify/functions/utils/db/events';
-import { getPool } from '../netlify/functions/utils/db/connection';
+import { CaliforniaScraper } from '../lib/functions/utils/scrapers/states/california';
+import { insertEvent, insertBills } from '../lib/functions/utils/db/events';
+import { getPool } from '../lib/functions/utils/db/connection';
 
 async function rescrapeCA() {
   console.log('🔄 Re-scraping California events to populate bill descriptions...\n');

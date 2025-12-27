@@ -3,7 +3,7 @@
  * Tests the new incremental update logic for Iowa and Illinois
  */
 
-import { initializeScrapers, ScraperRegistry } from '../netlify/functions/utils/scrapers/index';
+import { initializeScrapers, ScraperRegistry } from '../lib/functions/utils/scrapers/index';
 import { 
   markStateEventsAsUnseen,
   incrementUnseenEventsCycleCount,
@@ -11,8 +11,8 @@ import {
   insertEvent,
   insertBills,
   getAllStateEventsForExport
-} from '../netlify/functions/utils/db/events';
-import { getPool } from '../netlify/functions/utils/db/connection';
+} from '../lib/functions/utils/db/events';
+import { getPool } from '../lib/functions/utils/db/connection';
 
 async function testSmartScraping() {
   console.log('🧪 Testing Smart Scraping System\n');

@@ -4,7 +4,7 @@
  * Fetches bill details (title, sponsors, status) from OpenStates
  */
 
-import { VirginiaScraper } from '../netlify/functions/utils/scrapers/states/virginia';
+import { VirginiaScraper } from '../lib/functions/utils/scrapers/states/virginia';
 import { writeFileSync } from 'fs';
 
 async function fetchBillDetails(billId: string): Promise<any> {

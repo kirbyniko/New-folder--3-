@@ -64,7 +64,7 @@ npm install pg @types/pg
 ### 5. Test Connection
 
 ```bash
-node -e "require('./netlify/functions/utils/db/connection.js').checkDatabaseConnection()"
+node -e "require('./lib/functions/utils/db/connection.js').checkDatabaseConnection()"
 ```
 
 ## Database Schema

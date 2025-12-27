@@ -42,13 +42,13 @@ This will:
 
 For production deployments:
 
-1. **Scheduled Function**: Virginia scraper is included in `netlify/functions/scheduled-scraper.ts` which runs daily at 3 AM UTC
+1. **Scheduled Function**: Virginia scraper is included in `lib/functions/scheduled-scraper.ts` which runs daily at 3 AM UTC
 2. **Blob Storage**: Results are stored in Netlify Blobs with 24-hour cache
 3. **Static Fallback**: The static JSON file serves as a fallback if blob storage is unavailable
 
 ## How the API Works
 
-When a request comes to `/.netlify/functions/state-events?state=VA`:
+When a request comes to `/.lib/functions/state-events?state=VA`:
 
 1. Check if state is Virginia
 2. Load pre-scraped data from `public/data/virginia-events.json`
@@ -136,7 +136,7 @@ const event: RawEvent = {
 ├── public/
 │   └── data/
 │       └── virginia-events.json  # Pre-scraped static data
-├── netlify/functions/
+├── lib/functions/
 │   ├── state-events.ts           # API endpoint (loads static file for VA)
 │   ├── scheduled-scraper.ts      # Daily automated scraper
 │   └── utils/scrapers/states/

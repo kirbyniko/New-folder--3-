@@ -1,5 +1,5 @@
-import { scrapeMontgomeryMeetings } from '../netlify/functions/utils/scrapers/local/montgomery.js';
-import { scrapeBirminghamMeetings } from '../netlify/functions/utils/scrapers/local/birmingham.js';
+import { scrapeMontgomeryMeetings } from '../lib/functions/utils/scrapers/local/montgomery.js';
+import { scrapeBirminghamMeetings } from '../lib/functions/utils/scrapers/local/birmingham.js';
 
 console.log('🧪 Testing Alabama local scrapers...\n');
 

@@ -11,7 +11,7 @@ Civitron now has **two separate backends** for production:
 - Runs on your local PC
 
 ### 2. API Backend (Netlify Cloud)
-📁 Location: `netlify/functions/`
+📁 Location: `lib/functions/`
 - Serves data to frontend
 - Reads from PostgreSQL
 - Lives in the cloud

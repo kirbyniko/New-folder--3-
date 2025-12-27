@@ -24,17 +24,17 @@
 
 ### Backend 2: Your PC (PRIVATE - Scraping)
 **What it does:** Runs scrapers, populates database  
-**Location:** `netlify/functions/scheduled-scraper.ts`
+**Location:** `lib/functions/scheduled-scraper.ts`
 
 **How to run scrapers locally:**
 
 ```powershell
 # Option 1: Run all state scrapers
-npx tsx netlify/functions/scheduled-scraper.ts
+npx tsx lib/functions/scheduled-scraper.ts
 
 # Option 2: Run specific state scraper
 npx tsx -e "
-  import { ScraperRegistry, initializeScrapers } from './netlify/functions/utils/scrapers/index.js';
+  import { ScraperRegistry, initializeScrapers } from './lib/functions/utils/scrapers/index.js';
   await initializeScrapers();
   const scraper = ScraperRegistry.get('AL');
   const events = await scraper.scrape();
@@ -75,7 +75,7 @@ Run scrapers daily at 3 AM:
 
 ```powershell
 # Create task.xml
-$action = New-ScheduledTaskAction -Execute "npx" -Argument "tsx netlify/functions/scheduled-scraper.ts" -WorkingDirectory "C:\Users\nikow\New folder (3)"
+$action = New-ScheduledTaskAction -Execute "npx" -Argument "tsx lib/functions/scheduled-scraper.ts" -WorkingDirectory "C:\Users\nikow\New folder (3)"
 $trigger = New-ScheduledTaskTrigger -Daily -At 3am
 Register-ScheduledTask -TaskName "CiviTracker Scraper" -Action $action -Trigger $trigger
 ```
@@ -85,7 +85,7 @@ Just run the scraper when you need fresh data:
 
 ```powershell
 cd "C:\Users\nikow\New folder (3)"
-npx tsx netlify/functions/scheduled-scraper.ts
+npx tsx lib/functions/scheduled-scraper.ts
 ```
 
 ### 4. Configure Custom Domain (Optional)

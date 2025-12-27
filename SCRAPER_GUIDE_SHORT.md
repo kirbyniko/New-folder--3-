@@ -466,12 +466,12 @@ const events = await scrapeWithPuppeteer(url, {
 
 ### 1. Create Scraper
 ```bash
-netlify/functions/utils/scrapers/states/[state].ts
+lib/functions/utils/scrapers/states/[state].ts
 ```
 
 ### 2. Register in Scraper Registry
 ```typescript
-// In netlify/functions/utils/scrapers/index.ts
+// In lib/functions/utils/scrapers/index.ts
 import { StateScraper } from './states/state';
 Registry.register('XX', new StateScraper());
 ```
@@ -497,7 +497,7 @@ for (const event of scrapedEvents) {
 
 ### 4. Add Static File Handler (Fallback)
 ```typescript
-// In netlify/functions/state-events.ts
+// In lib/functions/state-events.ts
 if (stateAbbr === 'XX') {
   const stateNames = { 'XX': 'State Name' };
   const fileNames = { 'XX': 'state-events.json' };
@@ -522,7 +522,7 @@ npm run build
 # Check for TypeScript errors
 
 # Test database write (if USE_POSTGRESQL=true)
-npx tsx netlify/functions/test-[state]-scraper.ts
+npx tsx lib/functions/test-[state]-scraper.ts
 ```
 
 ---
@@ -664,7 +664,7 @@ if (city.client === 'birmingham') {
 **Solution:** Add custom city to BOTH prioritization filters:
 
 ```typescript
-// In netlify/functions/local-meetings.ts around line 372
+// In lib/functions/local-meetings.ts around line 372
 
 // 1. Add to customCities filter (gets processed first)
 const customCities = nearbyCities.filter(c => 
@@ -734,7 +734,7 @@ echo $env:DATABASE_URL
 echo $env:USE_POSTGRESQL
 
 # Test connection
-npx tsx -e "import { checkDatabaseConnection } from './netlify/functions/utils/db/connection.js'; checkDatabaseConnection().then(console.log)"
+npx tsx -e "import { checkDatabaseConnection } from './lib/functions/utils/db/connection.js'; checkDatabaseConnection().then(console.log)"
 ```
 
 **Fallback:** If database unavailable, scheduled-scraper stores directly to blobs
@@ -745,7 +745,7 @@ npx tsx -e "import { checkDatabaseConnection } from './netlify/functions/utils/d
 **Verify:**
 - Event has `name`, `description`, or `committee` fields (tagging requires text)
 - Check database: `SELECT * FROM event_tags WHERE event_id = 'xxx'`
-- Run manual tag update: `POST /.netlify/functions/update-tags`
+- Run manual tag update: `POST /.lib/functions/update-tags`
 
 ### Duplicate Event IDs
 **Symptoms:** React warnings "Encountered two children with the same key"  
@@ -783,7 +783,7 @@ npx tsx -e "import { checkDatabaseConnection } from './netlify/functions/utils/d
 ```typescript
 // In src/App.tsx, add timestamp to local-meetings calls:
 const cacheBuster = `&_t=${Date.now()}`;
-fetch(`/.netlify/functions/local-meetings?lat=${lat}&lng=${lng}&radius=${radius}${cacheBuster}`)
+fetch(`/.lib/functions/local-meetings?lat=${lat}&lng=${lng}&radius=${radius}${cacheBuster}`)
 ```
 
 ### Puppeteer Environment Detection
@@ -882,14 +882,14 @@ When you click a state in the sidebar, the frontend:
 
 1. **Test State Events Endpoint:**
    ```powershell
-   curl "http://localhost:8888/.netlify/functions/state-events?state=NM" | ConvertFrom-Json | Select-Object count, calendarSources
+   curl "http://localhost:8888/.lib/functions/state-events?state=NM" | ConvertFrom-Json | Select-Object count, calendarSources
    ```
    - If `count: 0` but `calendarSources` has items → State scraper working but no current events (check API key if using OpenStates)
    - If no `calendarSources` → See "Calendar Sources Not Showing" section below
 
 2. **Test Local Events Endpoint:**
    ```powershell
-   $response = Invoke-RestMethod "http://localhost:8888/.netlify/functions/local-meetings?lat=35.6870&lng=-105.9378&radius=500"
+   $response = Invoke-RestMethod "http://localhost:8888/.lib/functions/local-meetings?lat=35.6870&lng=-105.9378&radius=500"
    "Events: $($response.events.Count)"
    $response.events | Select-Object -First 3 | Format-Table name, city, committee
    ```
@@ -926,7 +926,7 @@ When you click a state in the sidebar, the frontend:
    # { code: 'NM', name: 'New Mexico', status: 'complete', notes: '...' }
    
    # Verify geo-detection
-   # Check netlify/functions/local-meetings.ts for state bounds check
+   # Check lib/functions/local-meetings.ts for state bounds check
    
    # Hard refresh browser
    # Ctrl+Shift+R (Windows) or Cmd+Shift+R (Mac)
@@ -1000,14 +1000,14 @@ When you click a state in the sidebar, the frontend:
 
 4. **Test the scraper directly:**
    ```bash
-   npx tsx netlify/functions/test-your-state-scraper.ts
+   npx tsx lib/functions/test-your-state-scraper.ts
    ```
    - Should show "📁 Calendar Sources (even with 0 events)"
    - Verify sources array is not empty
 
 5. **Check state-events response headers:**
    ```powershell
-   $response = Invoke-WebRequest "http://localhost:8888/.netlify/functions/state-events?state=XX" -Method GET
+   $response = Invoke-WebRequest "http://localhost:8888/.lib/functions/state-events?state=XX" -Method GET
    $response.Headers['X-Calendar-Sources']
    ```
    - Should return JSON array of sources
@@ -1015,7 +1015,7 @@ When you click a state in the sidebar, the frontend:
 
 6. **Verify scraper is registered:**
    ```typescript
-   // In netlify/functions/utils/scrapers/index.ts
+   // In lib/functions/utils/scrapers/index.ts
    Registry.register('XX', new YourStateScraper());
    ```
 
@@ -1185,13 +1185,13 @@ After implementing state + local scrapers:
 ### Testing
 ```bash
 # Test state scraper
-npx tsx netlify/functions/test-[state]-scraper.ts
+npx tsx lib/functions/test-[state]-scraper.ts
 
 # Test database write
-npx tsx -e "import { insertEvent } from './netlify/functions/utils/db/events.js'; /* test code */"
+npx tsx -e "import { insertEvent } from './lib/functions/utils/db/events.js'; /* test code */"
 
 # Test local endpoint directly
-Invoke-RestMethod "http://localhost:8888/.netlify/functions/local-meetings?lat=XX&lng=XX&radius=50"
+Invoke-RestMethod "http://localhost:8888/.lib/functions/local-meetings?lat=XX&lng=XX&radius=50"
 
 # Verify frontend sees events (browser console should show):
 # 📊 Parsed results - Federal: X State: X Local: X

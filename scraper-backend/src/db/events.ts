@@ -6,7 +6,7 @@
 
 import { getPool } from './connection.js';
 import crypto from 'crypto';
-import type { LegislativeEvent, Bill } from '../../../netlify/functions/utils/scrapers/types.js';
+import type { LegislativeEvent, Bill } from '../../../lib/functions/utils/scrapers/types.js';
 
 /**
  * Generate fingerprint for event deduplication

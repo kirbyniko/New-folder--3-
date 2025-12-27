@@ -18,7 +18,7 @@ This security audit identified **8 vulnerabilities** requiring immediate attenti
 ## 🔴 Critical Vulnerabilities
 
 ### 1. Unauthenticated Admin Endpoints
-**Location:** `netlify/functions/admin-events.ts`, `netlify/functions/db-maintenance.ts`  
+**Location:** `lib/functions/admin-events.ts`, `lib/functions/db-maintenance.ts`  
 **CVSS Score:** 9.1 (Critical)  
 **Risk:** Full database access without authentication
 
@@ -44,7 +44,7 @@ if (apiKey !== process.env.DB_MAINTENANCE_KEY) {
   - Protected only by `DB_MAINTENANCE_KEY` env var (not set in `.env`)
 
 #### Attack Scenarios:
-1. Attacker scrapes entire event database via `/.netlify/functions/admin-events`
+1. Attacker scrapes entire event database via `/.lib/functions/admin-events`
 2. Attacker monitors user search patterns by repeatedly querying with different filters
 3. If `DB_MAINTENANCE_KEY` is not set in production, `?key=undefined` bypasses check
 4. Attacker deletes all data with `?action=reset&key=<guessed_key>`
@@ -89,7 +89,7 @@ if (!apiKey || apiKey.length < 32 || apiKey !== process.env.DB_MAINTENANCE_KEY) 
 ## 🟠 High Vulnerabilities
 
 ### 2. Hardcoded API Keys in Source Code
-**Location:** `netlify/functions/utils/scrapers/states/oregon.ts`  
+**Location:** `lib/functions/utils/scrapers/states/oregon.ts`  
 **CVSS Score:** 7.5 (High)  
 **Risk:** API key exposure, rate limit bypass, account takeover
 
@@ -149,7 +149,7 @@ git filter-branch --force --index-filter \
 ---
 
 ### 3. SQL Injection Risk in Dynamic Queries
-**Location:** `netlify/functions/admin-events.ts` (lines 28-75)  
+**Location:** `lib/functions/admin-events.ts` (lines 28-75)  
 **CVSS Score:** 8.2 (High)  
 **Risk:** Database compromise, data exfiltration
 
@@ -226,7 +226,7 @@ const query = `
 ---
 
 ### 4. XSS Protection Disabled
-**Location:** `netlify/functions/utils/security.ts`  
+**Location:** `lib/functions/utils/security.ts`  
 **CVSS Score:** 7.3 (High)  
 **Risk:** Cross-site scripting attacks, session hijacking
 
@@ -336,7 +336,7 @@ const html = await fetchWithBrowser(someUrl); // If someUrl is user-controlled =
 - If URL parameter becomes user-controlled (e.g., custom scraper feature):
   - Attacker can scan internal network: `http://localhost:5432` (PostgreSQL)
   - Read AWS metadata: `http://169.254.169.254/latest/meta-data/iam/security-credentials/`
-  - Access other Netlify functions: `http://localhost:8888/.netlify/functions/admin-events`
+  - Access other Netlify functions: `http://localhost:8888/.lib/functions/admin-events`
 
 #### Current Mitigation:
 ✅ All scraper URLs are hardcoded (not user-controlled)  
@@ -437,10 +437,10 @@ export const handler: Handler = async (event) => {
 #### Recommended Fix:
 ```typescript
 // 1. Install rate limiter
-npm install @netlify/functions-rate-limit
+npm install @lib/functions-rate-limit
 
 // 2. Add to each endpoint
-import { rateLimit } from '@netlify/functions-rate-limit';
+import { rateLimit } from '@lib/functions-rate-limit';
 
 export const handler: Handler = rateLimit({
   windowMs: 60 * 1000, // 1 minute window
@@ -472,7 +472,7 @@ export const handler: Handler = rateLimit({
 // netlify.toml
 [[edge_functions]]
   function = "rate-limiter"
-  path = "/.netlify/functions/*"
+  path = "/.lib/functions/*"
 
 // netlify/edge-functions/rate-limiter.ts
 export default async (request: Request, context: any) => {
@@ -503,7 +503,7 @@ export default async (request: Request, context: any) => {
 ---
 
 ### 7. Cache Poisoning Vulnerability
-**Location:** `netlify/functions/utils/scrapers/cache-manager.ts`  
+**Location:** `lib/functions/utils/scrapers/cache-manager.ts`  
 **CVSS Score:** 4.8 (Medium)  
 **Risk:** Serving malicious data to all users
 

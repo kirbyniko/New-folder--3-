@@ -1,4 +1,4 @@
-import { VermontScraper } from './netlify/functions/utils/scrapers/states/vermont';
+import { VermontScraper } from './lib/functions/utils/scrapers/states/vermont';
 
 async function testVermont() {
   console.log('🧪 Testing Vermont Scraper\n');

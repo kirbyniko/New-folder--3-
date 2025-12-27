@@ -213,7 +213,7 @@ provider:
 
 functions:
   stateEvents:
-    handler: netlify/functions/state-events.handler
+    handler: lib/functions/state-events.handler
     events:
       - httpApi:
           path: /state-events
@@ -222,7 +222,7 @@ functions:
     memorySize: 512
 
   congressMeetings:
-    handler: netlify/functions/congress-meetings.handler
+    handler: lib/functions/congress-meetings.handler
     events:
       - httpApi:
           path: /congress-meetings
@@ -231,7 +231,7 @@ functions:
     memorySize: 512
 
   localMeetings:
-    handler: netlify/functions/local-meetings.handler
+    handler: lib/functions/local-meetings.handler
     events:
       - httpApi:
           path: /local-meetings
@@ -240,7 +240,7 @@ functions:
     memorySize: 512
 
   topEvents:
-    handler: netlify/functions/top-events.handler
+    handler: lib/functions/top-events.handler
     events:
       - httpApi:
           path: /top-events
@@ -249,7 +249,7 @@ functions:
     memorySize: 256
 
   adminEvents:
-    handler: netlify/functions/admin-events.handler
+    handler: lib/functions/admin-events.handler
     events:
       - httpApi:
           path: /admin-events
@@ -500,7 +500,7 @@ export default defineConfig({
   server: {
     port: 5341,
     proxy: {
-      '/.netlify/functions': {
+      '/.lib/functions': {
         target: 'https://api.civitron.com',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/.netlify\/functions/, '')
@@ -642,7 +642,7 @@ If not using Serverless Framework, follow AWS Console:
 
 1. **Create Lambda Functions**
    - Runtime: Node.js 20.x
-   - Handler: `netlify/functions/state-events.handler`
+   - Handler: `lib/functions/state-events.handler`
    - Timeout: 30 seconds
    - Memory: 512 MB
    - Environment variables: POSTGRES_HOST, etc.

@@ -1,4 +1,4 @@
-import { WyomingScraper } from './netlify/functions/utils/scrapers/states/wyoming';
+import { WyomingScraper } from './lib/functions/utils/scrapers/states/wyoming';
 
 async function testWY() {
   console.log('Testing Wyoming scraper...\n');

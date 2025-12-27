@@ -9,7 +9,7 @@ This guide shows how to extract bills, tags, virtual meeting links, and public p
 **What it does:** Extracts raw text from PDF agenda files for bill/keyword analysis
 
 ```typescript
-// Oklahoma: netlify/functions/utils/scrapers/states/oklahoma.ts:113-150
+// Oklahoma: lib/functions/utils/scrapers/states/oklahoma.ts:113-150
 private async extractBillsFromPDF(pdfUrl: string): Promise<string[]> {
   // Lazy load pdfjs-dist (avoids Node.js compatibility issues)
   const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
@@ -51,7 +51,7 @@ private async extractBillsFromPDF(pdfUrl: string): Promise<string[]> {
 **What it does:** Categorizes bills/meetings by topic using keyword matching
 
 ```typescript
-// Texas: netlify/functions/utils/scrapers/states/texas.ts:232-270
+// Texas: lib/functions/utils/scrapers/states/texas.ts:232-270
 private generateTags(text: string): string[] {
   if (!text) return [];
   
@@ -97,7 +97,7 @@ private generateTags(text: string): string[] {
 **What it does:** Finds Zoom/Teams/Webex links from event pages
 
 ```typescript
-// New Hampshire: netlify/functions/utils/scrapers/states/new-hampshire.ts:415-425
+// New Hampshire: lib/functions/utils/scrapers/states/new-hampshire.ts:415-425
 private extractVirtualMeetingUrl(html: string): string | undefined {
   // Try Zoom
   const zoomMatch = html.match(/https:\/\/[^\s<>"]+zoom\.us[^\s<>"]*/i);
@@ -119,7 +119,7 @@ private extractVirtualMeetingUrl(html: string): string | undefined {
 **What it does:** Identifies if meetings allow public comment/testimony
 
 ```typescript
-// Nevada: netlify/functions/utils/scrapers/states/nevada.ts:119-120
+// Nevada: lib/functions/utils/scrapers/states/nevada.ts:119-120
 const nameLower = meetingName.toLowerCase();
 const characteristics: string[] = [];
 

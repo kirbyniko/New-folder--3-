@@ -1,4 +1,4 @@
-import { LEGISTAR_CITIES } from './netlify/functions/utils/legistar-cities.js';
+import { LEGISTAR_CITIES } from './lib/functions/utils/legistar-cities.js';
 
 const azCities = LEGISTAR_CITIES.filter(city => city.state === 'AZ');
 

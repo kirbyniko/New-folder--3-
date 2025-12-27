@@ -13,7 +13,7 @@
 
 import fetch from 'node-fetch';
 import * as cheerio from 'cheerio';
-import { NewHampshireScraper } from '../netlify/functions/utils/scrapers/states/new-hampshire.ts';
+import { NewHampshireScraper } from '../lib/functions/utils/scrapers/states/new-hampshire.ts';
 
 console.log('🔧 NH COMMITTEE MAPPING BUILDER - EVENT-BASED');
 console.log('=' .repeat(70));

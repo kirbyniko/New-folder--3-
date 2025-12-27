@@ -16,7 +16,7 @@
 import { execSync } from 'child_process';
 import crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
-import { initializeScrapers, ScraperRegistry } from '../netlify/functions/utils/scrapers/index.js';
+import { initializeScrapers, ScraperRegistry } from '../lib/functions/utils/scrapers/index.js';
 
 // State coordinates for lat/lng
 const STATE_COORDS: Record<string, {lat: number, lng: number}> = {

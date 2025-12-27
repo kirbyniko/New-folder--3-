@@ -1,4 +1,4 @@
-import { RhodeIslandScraper } from './netlify/functions/utils/scrapers/states/rhode-island';
+import { RhodeIslandScraper } from './lib/functions/utils/scrapers/states/rhode-island';
 
 async function testRhodeIsland() {
   console.log('🧪 Testing Rhode Island Scraper\n');

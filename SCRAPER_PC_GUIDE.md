@@ -7,7 +7,7 @@
 cd "C:\Users\nikow\New folder (3)"
 
 # Run all state scrapers (42 states)
-npx tsx netlify/functions/scheduled-scraper.ts
+npx tsx lib/functions/scheduled-scraper.ts
 ```
 
 This will:
@@ -21,9 +21,9 @@ This will:
 ```powershell
 # Alabama only (with fixed live-stream URLs!)
 npx tsx -e "
-import { loadEnvFile } from './netlify/functions/utils/env-loader.js';
-import { ScraperRegistry, initializeScrapers } from './netlify/functions/utils/scrapers/index.js';
-import { insertEvent, insertBills } from './netlify/functions/utils/db/events.js';
+import { loadEnvFile } from './lib/functions/utils/env-loader.js';
+import { ScraperRegistry, initializeScrapers } from './lib/functions/utils/scrapers/index.js';
+import { insertEvent, insertBills } from './lib/functions/utils/db/events.js';
 
 loadEnvFile();
 await initializeScrapers();
@@ -101,7 +101,7 @@ Run any state by changing the code: `ScraperRegistry.get('XX')`
 # Create scheduled task
 $action = New-ScheduledTaskAction `
   -Execute "npx" `
-  -Argument "tsx netlify/functions/scheduled-scraper.ts" `
+  -Argument "tsx lib/functions/scheduled-scraper.ts" `
   -WorkingDirectory "C:\Users\nikow\New folder (3)"
 
 $trigger = New-ScheduledTaskTrigger -Daily -At 3am
@@ -135,7 +135,7 @@ Just run when you need fresh data:
 ```powershell
 # Quick run
 cd "C:\Users\nikow\New folder (3)"
-npx tsx netlify/functions/scheduled-scraper.ts
+npx tsx lib/functions/scheduled-scraper.ts
 ```
 
 ## Check Database After Scraping

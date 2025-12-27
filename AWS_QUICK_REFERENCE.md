@@ -137,7 +137,7 @@ provider:
   runtime: nodejs20.x
 functions:
   stateEvents:
-    handler: netlify/functions/state-events.handler
+    handler: lib/functions/state-events.handler
     events:
       - httpApi:
           path: /state-events

@@ -72,7 +72,7 @@ Civitron uses a **split backend architecture** for production:
 
 ### 2. API Backend (Netlify)
 
-**Location:** `netlify/functions/` directory
+**Location:** `lib/functions/` directory
 **Runs On:** Netlify's cloud infrastructure
 **Function:** Serves data from PostgreSQL to frontend (read-only)
 
@@ -188,7 +188,7 @@ OPENSTATES_API_KEY=your-key (optional, for fallback)
    - Configure build:
      - Build command: `npm run build`
      - Publish directory: `dist`
-     - Functions directory: `netlify/functions`
+     - Functions directory: `lib/functions`
 
 3. **Set Environment Variables:**
    - Netlify Dashboard → Site settings → Environment variables
@@ -197,7 +197,7 @@ OPENSTATES_API_KEY=your-key (optional, for fallback)
 4. **Deploy:**
    - Netlify will auto-deploy from main branch
    - Wait for build to complete
-   - Test API: `https://your-site.netlify.app/.netlify/functions/state-events?state=CA`
+   - Test API: `https://your-site.netlify.app/.lib/functions/state-events?state=CA`
 
 ### Phase 3: Setup Scraper Backend on Your PC
 
@@ -261,7 +261,7 @@ OPENSTATES_API_KEY=your-key (optional, for fallback)
 
 2. **Test API Backend:**
    ```bash
-   curl https://your-site.netlify.app/.netlify/functions/state-events?state=NY
+   curl https://your-site.netlify.app/.lib/functions/state-events?state=NY
    ```
 
 3. **Test Frontend:**

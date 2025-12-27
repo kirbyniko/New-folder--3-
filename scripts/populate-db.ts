@@ -3,9 +3,9 @@
  * Manually runs scrapers for key states and saves to PostgreSQL
  */
 
-import { getPool } from '../netlify/functions/utils/db/connection.js';
-import { ScraperRegistry, initializeScrapers } from '../netlify/functions/utils/scrapers/index.js';
-import { insertEvent, insertBills, insertTags } from '../netlify/functions/utils/db/events.js';
+import { getPool } from '../lib/functions/utils/db/connection.js';
+import { ScraperRegistry, initializeScrapers } from '../lib/functions/utils/scrapers/index.js';
+import { insertEvent, insertBills, insertTags } from '../lib/functions/utils/db/events.js';
 
 const STATES_TO_SCRAPE = ['NY', 'TX', 'IL', 'PA', 'OH', 'FL', 'CA', 'MA'];
 

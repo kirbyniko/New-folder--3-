@@ -37,7 +37,6 @@
     "xml2js": "^0.6.2"
   },
   "devDependencies": {
-  "devDependencies": {
     "@types/cheerio": "^0.22.35",
     "@types/node": "^20.10.0",
     "@types/react": "^18.2.43",
@@ -45,7 +44,6 @@
     "@types/xml2js": "^0.4.14",
     "@vitejs/plugin-react": "^4.2.1",
     "cors": "^2.8.5",
-    "dotenv": "^17.2.3",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "puppeteer": "^24.33.0",

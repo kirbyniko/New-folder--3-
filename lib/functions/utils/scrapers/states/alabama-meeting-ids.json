@@ -1,0 +1,44 @@
+{
+  "comment": "Mapping of OpenStates event IDs to Alabama Legislature meeting IDs",
+  "lastUpdated": "2025-12-25T00:00:00Z",
+  "note": "Update this file periodically by scraping https://alison.legislature.state.al.us/todays-schedule",
+  "mappings": {
+    "ocd-event/a786fbe5-1c5d-4957-a6e6-f8d7bb493712": {
+      "meetingId": "\"-95\"",
+      "room": "617",
+      "name": "Joint Interim Study Commission on PTSD in First Responders",
+      "date": "2026-01-05"
+    },
+    "ocd-event/249f29df-7373-4a9b-9149-bf71818b00ac": {
+      "meetingId": "\"-96\"",
+      "room": "200",
+      "name": "Contract Review Committee Meeting",
+      "date": "2026-01-08"
+    },
+    "ocd-event/3a780edd-a20f-476e-ad6b-9053d396e27f": {
+      "meetingId": "\"-96\"",
+      "room": "200",
+      "name": "Legislative Budget Overview",
+      "date": "2026-01-14",
+      "note": "Assumed same meeting ID as other Jan events - verify"
+    },
+    "ocd-event/fd0a7b24-4cd2-4074-88c5-8f4af89e6cf4": {
+      "meetingId": "\"-97\"",
+      "room": "200",
+      "name": "Contract Review Committee Meeting",
+      "date": "2026-02-05"
+    },
+    "ocd-event/f319d735-ec12-463a-8e63-5962d1531321": {
+      "meetingId": "\"-98\"",
+      "room": "200",
+      "name": "Contract Review Committee Meeting",
+      "date": "2026-03-05"
+    },
+    "ocd-event/1b6ba44a-0b26-4c9f-b32b-22aa14dab6be": {
+      "meetingId": "\"-99\"",
+      "room": "200",
+      "name": "Contract Review Committee Meeting",
+      "date": "2026-04-02"
+    }
+  }
+}

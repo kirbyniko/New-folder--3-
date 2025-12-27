@@ -29,7 +29,7 @@ WHERE description IS NOT NULL;
 COMMENT ON COLUMN bills.content_hash IS 'Hash of bill_number|title|description|url for change detection';
 ```
 
-### 2. TypeScript Interface (`netlify/functions/utils/scrapers/base-scraper.ts`)
+### 2. TypeScript Interface (`lib/functions/utils/scrapers/base-scraper.ts`)
 ```typescript
 export interface BillInfo {
   id: string;
@@ -42,7 +42,7 @@ export interface BillInfo {
 }
 ```
 
-### 3. Database Insertion (`netlify/functions/utils/db/events.ts`)
+### 3. Database Insertion (`lib/functions/utils/db/events.ts`)
 ```typescript
 const billQuery = `
   INSERT INTO bills (state_code, bill_number, title, description, url, status)
@@ -104,7 +104,7 @@ function generateContentHash(bill: Bill): string {
 
 ## Implementation Pattern for State Scrapers
 
-### California Example (`netlify/functions/utils/scrapers/states/california.ts`)
+### California Example (`lib/functions/utils/scrapers/states/california.ts`)
 
 **Before:**
 ```typescript
@@ -384,7 +384,7 @@ States with most bills that need better context:
 
 ## References
 - Migration: `database/migrations/004_add_bill_description.sql`
-- Base Interface: `netlify/functions/utils/scrapers/base-scraper.ts`
-- California Implementation: `netlify/functions/utils/scrapers/states/california.ts`
+- Base Interface: `lib/functions/utils/scrapers/base-scraper.ts`
+- California Implementation: `lib/functions/utils/scrapers/states/california.ts`
 - Summarization Script: `scripts/summarize-bills.ts`
 - Update Script Example: `scripts/update-ca-descriptions.ts`

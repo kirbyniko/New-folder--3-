@@ -7,27 +7,27 @@ import { readFileSync, writeFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 
 // Import all scrapers directly
-import { AlaskaScraper } from '../netlify/functions/utils/scrapers/states/alaska';
-import { AlabamaScraper } from '../netlify/functions/utils/scrapers/states/alabama';
-import { ArizonaScraper } from '../netlify/functions/utils/scrapers/states/arizona';
-import { ArkansasScraper } from '../netlify/functions/utils/scrapers/states/arkansas';
-import { ColoradoScraper } from '../netlify/functions/utils/scrapers/states/colorado';
-import { ConnecticutScraper } from '../netlify/functions/utils/scrapers/states/connecticut';
-import { IndianaScraper } from '../netlify/functions/utils/scrapers/states/indiana';
-import { IowaScraper } from '../netlify/functions/utils/scrapers/states/iowa';
-import { KentuckyScraper } from '../netlify/functions/utils/scrapers/states/kentucky';
-import { LouisianaScraper } from '../netlify/functions/utils/scrapers/states/louisiana';
-import { MarylandScraper } from '../netlify/functions/utils/scrapers/states/maryland';
-import { MassachusettsScraper } from '../netlify/functions/utils/scrapers/states/massachusetts';
-import { MinnesotaScraper } from '../netlify/functions/utils/scrapers/states/minnesota';
-import { MissouriScraper } from '../netlify/functions/utils/scrapers/states/missouri';
-import { NevadaScraper } from '../netlify/functions/utils/scrapers/states/nevada';
-import { OklahomaScraper } from '../netlify/functions/utils/scrapers/states/oklahoma';
-import { OregonScraper } from '../netlify/functions/utils/scrapers/states/oregon';
-import { SouthCarolinaScraper } from '../netlify/functions/utils/scrapers/states/southcarolina';
-import { TennesseeScraper } from '../netlify/functions/utils/scrapers/states/tennessee';
-import { VirginiaScraper } from '../netlify/functions/utils/scrapers/states/virginia';
-import { WisconsinScraper } from '../netlify/functions/utils/scrapers/states/wisconsin';
+import { AlaskaScraper } from '../lib/functions/utils/scrapers/states/alaska';
+import { AlabamaScraper } from '../lib/functions/utils/scrapers/states/alabama';
+import { ArizonaScraper } from '../lib/functions/utils/scrapers/states/arizona';
+import { ArkansasScraper } from '../lib/functions/utils/scrapers/states/arkansas';
+import { ColoradoScraper } from '../lib/functions/utils/scrapers/states/colorado';
+import { ConnecticutScraper } from '../lib/functions/utils/scrapers/states/connecticut';
+import { IndianaScraper } from '../lib/functions/utils/scrapers/states/indiana';
+import { IowaScraper } from '../lib/functions/utils/scrapers/states/iowa';
+import { KentuckyScraper } from '../lib/functions/utils/scrapers/states/kentucky';
+import { LouisianaScraper } from '../lib/functions/utils/scrapers/states/louisiana';
+import { MarylandScraper } from '../lib/functions/utils/scrapers/states/maryland';
+import { MassachusettsScraper } from '../lib/functions/utils/scrapers/states/massachusetts';
+import { MinnesotaScraper } from '../lib/functions/utils/scrapers/states/minnesota';
+import { MissouriScraper } from '../lib/functions/utils/scrapers/states/missouri';
+import { NevadaScraper } from '../lib/functions/utils/scrapers/states/nevada';
+import { OklahomaScraper } from '../lib/functions/utils/scrapers/states/oklahoma';
+import { OregonScraper } from '../lib/functions/utils/scrapers/states/oregon';
+import { SouthCarolinaScraper } from '../lib/functions/utils/scrapers/states/southcarolina';
+import { TennesseeScraper } from '../lib/functions/utils/scrapers/states/tennessee';
+import { VirginiaScraper } from '../lib/functions/utils/scrapers/states/virginia';
+import { WisconsinScraper } from '../lib/functions/utils/scrapers/states/wisconsin';
 
 const DATA_DIR = join(process.cwd(), 'public', 'data');
 

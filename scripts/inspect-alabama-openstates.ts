@@ -1,4 +1,4 @@
-import { loadEnvFile } from '../netlify/functions/utils/env-loader.js';
+import { loadEnvFile } from '../lib/functions/utils/env-loader.js';
 
 loadEnvFile();
 

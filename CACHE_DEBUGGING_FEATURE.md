@@ -152,7 +152,7 @@ Two buttons available for each state:
 - If error → Check scraper logs
 
 **Step 3:** Check scraper implementation
-- Look at `netlify/functions/utils/scrapers/states/{state}.ts`
+- Look at `lib/functions/utils/scrapers/states/{state}.ts`
 - Iowa: `IowaScraper` - scrapes public hearings table
 - Kentucky: `KentuckyScraper` - scrapes legislative calendar
 - Verify URL is still valid

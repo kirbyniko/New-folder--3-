@@ -28,8 +28,8 @@
      - HTML: HTML version available
 
 ### Files Created/Modified
-1. ✅ `/netlify/functions/utils/scrapers/states/rhode-island.ts` - New scraper implementation
-2. ✅ `/netlify/functions/utils/scrapers/index.ts` - Added RI scraper registration
+1. ✅ `/lib/functions/utils/scrapers/states/rhode-island.ts` - New scraper implementation
+2. ✅ `/lib/functions/utils/scrapers/index.ts` - Added RI scraper registration
 3. ✅ `/src/components/StateSidebar.tsx` - Added Rhode Island to complete states
 4. ✅ `/public/data/rhode-island-events.json` - Static JSON with 2 events
 5. ✅ `/test-rhode-island-scraper.ts` - Test file (successful)

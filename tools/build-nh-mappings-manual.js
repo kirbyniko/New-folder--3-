@@ -14,7 +14,7 @@
  * This only needs to be run ONCE (or when IDs break - rare!)
  */
 
-import { NewHampshireScraper } from '../netlify/functions/utils/scrapers/states/new-hampshire.ts';
+import { NewHampshireScraper } from '../lib/functions/utils/scrapers/states/new-hampshire.ts';
 
 console.log('🔧 NH COMMITTEE MAPPING BUILDER - MANUAL MODE');
 console.log('=' .repeat(70));

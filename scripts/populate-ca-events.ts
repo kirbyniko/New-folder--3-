@@ -1,5 +1,5 @@
-import { CaliforniaScraper } from '../netlify/functions/utils/scrapers/states/california';
-import { getPool } from '../netlify/functions/utils/db/connection';
+import { CaliforniaScraper } from '../lib/functions/utils/scrapers/states/california';
+import { getPool } from '../lib/functions/utils/db/connection';
 import { neon } from '@neondatabase/serverless';
 
 const DATABASE_URL = process.env.DATABASE_URL!;

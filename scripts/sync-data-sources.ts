@@ -1,8 +1,8 @@
 // Auto-sync data_sources on deployment
 // This ensures new scrapers automatically get their sources in the DB
 
-import { loadEnvFile } from '../netlify/functions/utils/env-loader.js';
-import { ScraperRegistry, initializeScrapers } from '../netlify/functions/utils/scrapers/index.js';
+import { loadEnvFile } from '../lib/functions/utils/env-loader.js';
+import { ScraperRegistry, initializeScrapers } from '../lib/functions/utils/scrapers/index.js';
 import { createHash } from 'crypto';
 import { execSync } from 'child_process';
 

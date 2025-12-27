@@ -3,7 +3,7 @@
  * Adds tracking columns and archived_events table
  */
 
-import { getPool } from '../netlify/functions/utils/db/connection';
+import { getPool } from '../lib/functions/utils/db/connection';
 import * as fs from 'fs';
 import * as path from 'path';
 

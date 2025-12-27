@@ -4,8 +4,8 @@
 
 ### 1. Puppeteer SSRF Protection ✅
 **Files Modified:**
-- `netlify/functions/utils/url-security.ts` (NEW)
-- `netlify/functions/utils/scrapers/puppeteer-helper.ts`
+- `lib/functions/utils/url-security.ts` (NEW)
+- `lib/functions/utils/scrapers/puppeteer-helper.ts`
 
 **Changes:**
 - Created URL validation utility with whitelist-based security
@@ -25,7 +25,7 @@
 
 ### 2. Cache Integrity Checks ✅
 **Files Modified:**
-- `netlify/functions/utils/scrapers/cache-manager.ts`
+- `lib/functions/utils/scrapers/cache-manager.ts`
 
 **Changes:**
 - Added crypto import for HMAC signatures
@@ -126,22 +126,22 @@ All remaining issues are in `netlify-cli` dev dependencies:
 ## 📊 What Changed
 
 ### New Files Created (5):
-1. `netlify/functions/utils/rate-limit.ts` - Rate limiting middleware
-2. `netlify/functions/utils/url-security.ts` - SSRF protection
+1. `lib/functions/utils/rate-limit.ts` - Rate limiting middleware
+2. `lib/functions/utils/url-security.ts` - SSRF protection
 3. `SECURITY_AUDIT_REPORT.md` - Full vulnerability details
 4. `SECURITY_FIXES_APPLIED.md` - Implementation guide
 5. This file - Medium priority fixes summary
 
 ### Files Modified (8):
-1. `netlify/functions/admin-events.ts` - Added production check + SQL hardening
-2. `netlify/functions/db-maintenance.ts` - Added production check + key validation
-3. `netlify/functions/utils/scrapers/states/oregon.ts` - Removed hardcoded key
-4. `netlify/functions/utils/security.ts` - Enabled XSS sanitization
-5. `netlify/functions/state-events.ts` - Added rate limiting
-6. `netlify/functions/local-meetings.ts` - Added rate limiting
-7. `netlify/functions/congress-meetings.ts` - Added rate limiting
-8. `netlify/functions/utils/scrapers/puppeteer-helper.ts` - Added SSRF protection
-9. `netlify/functions/utils/scrapers/cache-manager.ts` - Added HMAC signatures
+1. `lib/functions/admin-events.ts` - Added production check + SQL hardening
+2. `lib/functions/db-maintenance.ts` - Added production check + key validation
+3. `lib/functions/utils/scrapers/states/oregon.ts` - Removed hardcoded key
+4. `lib/functions/utils/security.ts` - Enabled XSS sanitization
+5. `lib/functions/state-events.ts` - Added rate limiting
+6. `lib/functions/local-meetings.ts` - Added rate limiting
+7. `lib/functions/congress-meetings.ts` - Added rate limiting
+8. `lib/functions/utils/scrapers/puppeteer-helper.ts` - Added SSRF protection
+9. `lib/functions/utils/scrapers/cache-manager.ts` - Added HMAC signatures
 10. `package.json` - Added sanitize-html dependency
 
 ---

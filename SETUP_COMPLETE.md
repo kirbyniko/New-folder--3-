@@ -11,7 +11,7 @@ You now have a **two-backend architecture** for Civitron:
 - **Cost**: $0 (uses your hardware)
 
 ### 2️⃣ API Backend (Netlify Cloud)
-- **Location**: `netlify/functions/` directory  
+- **Location**: `lib/functions/` directory  
 - **Purpose**: Serves data from database to frontend
 - **Runs On**: Netlify's cloud (serverless functions)
 - **Cost**: $0 (free tier: 125K requests/month)
@@ -104,7 +104,7 @@ git push origin main
 # - Connect GitHub repo
 # - Build command: npm run build
 # - Publish directory: dist
-# - Functions directory: netlify/functions
+# - Functions directory: lib/functions
 
 # 3. Set environment variables in Netlify dashboard:
 POSTGRES_HOST=db.xxxxx.supabase.co
@@ -187,7 +187,7 @@ ORDER BY events DESC;
 ### API Backend Works
 ```bash
 # Test state events endpoint (replace with your Netlify URL)
-curl https://your-site.netlify.app/.netlify/functions/state-events?state=CA
+curl https://your-site.netlify.app/.lib/functions/state-events?state=CA
 
 # Should return JSON array of California events in <100ms
 ```

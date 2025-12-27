@@ -28,7 +28,7 @@ All Netlify Functions converted to Cloudflare Pages Functions format:
 
 **Before (Netlify):**
 ```typescript
-import type { Handler } from '@netlify/functions';
+import type { Handler } from '@lib/functions';
 
 export const handler: Handler = async (event) => {
   const param = event.queryStringParameters?.param;
@@ -64,7 +64,7 @@ export async function onRequest(context: any) {
 
 #### 2. Frontend Updated
 
-Changed all API endpoints from `/.netlify/functions/` to `/api/`:
+Changed all API endpoints from `/.lib/functions/` to `/api/`:
 
 **Files Updated:**
 - `src/config/api.ts` - API configuration documentation

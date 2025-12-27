@@ -3,10 +3,10 @@
  * Populates production database with sample data
  */
 
-import { loadEnvFile } from '../netlify/functions/utils/env-loader.js';
-import { getPool } from '../netlify/functions/utils/db/connection.js';
-import { ScraperRegistry, initializeScrapers } from '../netlify/functions/utils/scrapers/index.js';
-import { insertEvent, insertBills, insertTags } from '../netlify/functions/utils/db/events.js';
+import { loadEnvFile } from '../lib/functions/utils/env-loader.js';
+import { getPool } from '../lib/functions/utils/db/connection.js';
+import { ScraperRegistry, initializeScrapers } from '../lib/functions/utils/scrapers/index.js';
+import { insertEvent, insertBills, insertTags } from '../lib/functions/utils/db/events.js';
 
 // Load environment variables
 loadEnvFile();

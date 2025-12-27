@@ -1,4 +1,4 @@
-import { WestVirginiaScraper } from './netlify/functions/utils/scrapers/states/west-virginia';
+import { WestVirginiaScraper } from './lib/functions/utils/scrapers/states/west-virginia';
 
 async function testWV() {
   console.log('Testing West Virginia scraper...\n');
