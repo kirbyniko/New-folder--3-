@@ -1,5 +1,7 @@
 // Popup script - manages the UI and data collection flow
 
+console.log('📜 Popup.js script parsing started');
+
 // State management
 const state = {
   currentStep: 1,
@@ -10,12 +12,20 @@ const state = {
   capturedData: {}
 };
 
+console.log('📊 State initialized');
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('🔧 Popup script loaded');
+  console.log('🔧 DOMContentLoaded fired');
+  console.log('📋 Step metadata element:', document.getElementById('step-metadata'));
+  console.log('🔘 Autofill URL button:', document.getElementById('autofill-url'));
+  console.log('🔘 Autofill Base URL button:', document.getElementById('autofill-base-url'));
+  
   setupEventListeners();
   loadState();
 });
+
+console.log('✅ Event listener for DOMContentLoaded registered');
 
 // Load state from storage
 function loadState() {
