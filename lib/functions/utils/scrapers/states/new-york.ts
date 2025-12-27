@@ -1,6 +1,6 @@
 import { BaseScraper, ScraperConfig, RawEvent } from '../base-scraper';
 import { parseHTML } from '../html-parser';
-import { scrapeNYCCouncilMeetings } from '../local/nyc-council.js';
+import { scrapeNYCCouncil } from '../local/nyc-council.js';
 
 interface PublicHearing {
   date: string;
@@ -103,7 +103,7 @@ export class NewYorkScraper extends BaseScraper {
 
     try {
 
-      const nycEvents = await scrapeNYCCouncilMeetings();
+      const nycEvents = await scrapeNYCCouncil();
 
       console.log(`Found ${nycEvents.length} NYC local meetings`);
 

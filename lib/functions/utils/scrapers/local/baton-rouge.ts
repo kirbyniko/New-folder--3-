@@ -25,7 +25,7 @@ interface AgendaItem {
 /**
  * Scrape Baton Rouge Metropolitan Council meetings from AgendaCenter
  */
-export async function scrapeBaronRougeMeetings(): Promise<RawEvent[]> {
+export async function scrapeBatonRougeMeetings(): Promise<RawEvent[]> {
   try {
     console.log(`[Baton Rouge] Fetching Metropolitan Council agendas from ${AGENDA_URL}`);
     
