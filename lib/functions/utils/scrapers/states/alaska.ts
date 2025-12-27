@@ -71,7 +71,7 @@ export class AlaskaScraper extends BaseScraper {
       },
       {
         name: 'Juneau City and Borough Meetings',
-        url: 'https://www.trumba.com/calendars/city-and-borough-of-juneau-events.rss',
+        url: 'https://juneau.org/calendar',
         description: 'Assembly, Planning Commission, and local boards from Juneau'
       }
     ];
