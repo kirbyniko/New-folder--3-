@@ -260,7 +260,7 @@ export abstract class BaseScraper {
         location: raw.location || `${this.config.stateName} State Capitol`,
         committee: raw.committee || 'Legislature',
         type: raw.type || 'meeting',
-        level: 'state',
+        level: raw.level || 'state',
         state: this.config.stateCode,
         lat: 0, // Will be set by geocoder
         lng: 0,

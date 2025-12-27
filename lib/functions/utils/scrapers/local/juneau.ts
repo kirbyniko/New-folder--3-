@@ -143,6 +143,7 @@ export async function scrapeJuneauMeetings(): Promise<RawEvent[]> {
           location,
           committee,
           type: 'committee-meeting',
+          level: 'local',
           description: cleanDesc,
           sourceUrl: 'https://juneau.org/calendar',
           docketUrl: weblink || undefined,
