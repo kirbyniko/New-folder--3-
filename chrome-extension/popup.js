@@ -634,7 +634,8 @@ function updateUI() {
     document.getElementById('state-code').value = state.metadata.stateCode;
   }
   if (state.metadata.level) {
-    document.querySelector(`input[name="level"][value="${state.metadata.level}"]`)?.checked = true;
+    const levelRadio = document.querySelector(`input[name="level"][value="${state.metadata.level}"]`);
+    if (levelRadio) levelRadio.checked = true;
   }
   if (state.metadata.calendarUrl) {
     document.getElementById('calendar-url').value = state.metadata.calendarUrl;
@@ -648,7 +649,8 @@ function updateUI() {
   
   // Restore Puppeteer radio
   if (state.metadata.requiresPuppeteer) {
-    document.querySelector(`input[name="puppeteer"][value="${state.metadata.requiresPuppeteer}"]`)?.checked = true;
+    const puppeteerRadio = document.querySelector(`input[name="puppeteer"][value="${state.metadata.requiresPuppeteer}"]`);
+    if (puppeteerRadio) puppeteerRadio.checked = true;
   }
   
   // Restore event list checkbox
