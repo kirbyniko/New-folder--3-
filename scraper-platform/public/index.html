@@ -393,7 +393,8 @@
         const response = await fetch(`${API_BASE}/scrapers`);
         
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          const error = await response.json();
+          throw new Error(error.hint || error.error || `HTTP ${response.status}`);
         }
         
         const scrapers = await response.json();
@@ -407,16 +408,23 @@
       } catch (error) {
         console.error('Error loading scrapers:', error);
         document.getElementById('scrapers').innerHTML = 
-          `<div class="error">Failed to load scrapers: ${error.message}</div>`;
+          `<div class="error">
+            <strong>Failed to load scrapers</strong><br>
+            ${error.message}<br><br>
+            <strong>Setup Instructions:</strong><br>
+            1. Install PostgreSQL<br>
+            2. Run: <code>npm run setup-db</code><br>
+            3. Refresh this page
+          </div>`;
         document.getElementById('stats').innerHTML = 
-          `<div class="error">Unable to load statistics</div>`;
+          `<div class="stat-card"><div class="stat-label">Database</div><div class="stat-value" style="color: #ef4444;">Not Connected</div></div>`;
       }
     }
 
     function renderStats(scrapers) {
       const active = scrapers.filter(s => s.active).length;
       const total = scrapers.length;
-      const totalFields = scrapers.reduce((sum, s) => sum + (s.total_fields || 0), 0);
+      const totalFields = scrapers.reduce((sum, s) => sum + (parseInt(s.fields_count) || 0), 0);
       
       document.getElementById('stats').innerHTML = `
         <div class="stat-card">
@@ -430,6 +438,47 @@
         <div class="stat-card">
           <div class="stat-label">Total Fields</div>
           <div class="stat-value">${totalFields}</div>
+        </div>
+        <div class="stat-card" id="llm-status-card">
+          <div class="stat-label">🤖 LLM</div>
+          <div class="stat-value">Checking...</div>
+        </div>
+      `;
+      
+      // Check LLM status
+      checkOllamaStatus();
+    }
+
+    async function checkOllamaStatus() {
+      try {
+        const response = await fetch('/api/ollama/status');
+        const status = await response.json();
+        
+        const card = document.getElementById('llm-status-card');
+        if (status.available) {
+          card.innerHTML = `
+            <div class="stat-label">🤖 LLM</div>
+            <div class="stat-value" style="color: #22c55e;">Ready</div>
+            <div style="font-size: 11px; color: #6b7280; margin-top: 4px;">
+              ${status.models.length} model(s)
+            </div>
+          `;
+        } else {
+          card.innerHTML = `
+            <div class="stat-label">🤖 LLM</div>
+            <div class="stat-value" style="color: #f59e0b;">Not Available</div>
+            <div style="font-size: 11px; color: #6b7280; margin-top: 4px; cursor: pointer;" 
+                 onclick="alert('Install Ollama:\\n\\n1. Visit https://ollama.ai/\\n2. Install Ollama\\n3. Run: ollama pull deepseek-coder:6.7b\\n4. Start: ollama serve')">
+              Click for setup
+            </div>
+          `;
+        }
+      } catch (error) {
+        console.error('Error checking Ollama status:', error);
+      }
+    }
+
+    function renderScrapers(scrapers) {
         </div>
       `;
     }
@@ -446,7 +495,7 @@
           <div class="scraper-header">
             <div>
               <div class="scraper-name">${s.name}</div>
-              <div class="scraper-jurisdiction">${s.jurisdiction || 'N/A'} (${s.state_code || 'N/A'})</div>
+              <div class="scraper-jurisdiction">${s.jurisdiction || 'N/A'}</div>
             </div>
             <span class="scraper-status ${s.active ? 'status-active' : 'status-inactive'}">
               ${s.active ? 'Active' : 'Inactive'}
@@ -454,13 +503,9 @@
           </div>
           
           <div class="scraper-info">
-            <div>
-              <span class="badge ${s.requires_puppeteer ? 'badge-puppeteer' : 'badge-static'}">
-                ${s.requires_puppeteer ? '🌐 Puppeteer' : '📄 Static'}
-              </span>
-            </div>
-            <div>📊 Fields: ${s.total_fields || 0}</div>
-            <div>🔗 <a href="${s.start_url}" target="_blank" style="color: #4285f4; text-decoration: none;">${truncateUrl(s.start_url)}</a></div>
+            <div>📄 ${s.page_structures_count || 0} page structure(s)</div>
+            <div>📊 ${s.fields_count || 0} field(s)</div>
+            <div>🔄 Runs: ${s.successful_runs || 0} ✅ / ${s.failed_runs || 0} ❌</div>
           </div>
 
           <div class="scraper-actions">

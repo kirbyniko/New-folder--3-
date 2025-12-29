@@ -24,13 +24,41 @@ app.get('/api/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Check Ollama status
+app.get('/api/ollama/status', async (req: Request, res: Response) => {
+  try {
+    const { OllamaClient } = await import('./llm/ollama-client.js');
+    const ollama = new OllamaClient();
+    
+    const isAvailable = await ollama.checkAvailability();
+    const models = await ollama.listModels();
+    
+    res.json({
+      available: isAvailable,
+      models: models,
+      recommended: 'deepseek-coder:6.7b',
+      installCommand: 'ollama pull deepseek-coder:6.7b'
+    });
+  } catch (error: any) {
+    res.json({
+      available: false,
+      error: error.message,
+      help: 'Install Ollama from https://ollama.ai/ and run: ollama serve'
+    });
+  }
+});
+
 // List all scrapers
 app.get('/api/scrapers', async (req: Request, res: Response) => {
   try {
     const scrapers = await db.listScrapers();
     res.json(scrapers);
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    console.error('Error fetching scrapers:', error.message);
+    res.status(500).json({ 
+      error: error.message,
+      hint: 'Make sure PostgreSQL is running and the scraper_platform database exists'
+    });
   }
 });
 
@@ -106,33 +134,57 @@ app.delete('/api/scrapers/:id', async (req: Request, res: Response) => {
   }
 });
 
-// Run scraper
+// Run scraper (hybrid mode: generic engine → LLM fallback)
 app.post('/api/scrapers/:id/run', async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id);
     const options = req.body || {};
+    const useHybrid = options.hybrid !== false; // Default to hybrid mode
     
     // Load config
     const config = await db.exportScraper(id);
     
-    // Create engine
-    const engine = new ScraperEngine(config, {
-      headless: options.headless !== false,
-      maxPages: options.maxPages || 10,
-      saveToDatabase: options.save !== false,
-      verbose: false
-    });
-    
-    // Run in background (don't wait for completion)
-    engine.run().catch(err => {
-      console.error(`Error running scraper ${id}:`, err);
-    });
-    
-    res.json({ 
-      success: true, 
-      message: 'Scraper started',
-      scraperId: id
-    });
+    if (useHybrid) {
+      // Use hybrid executor (generic → LLM fallback)
+      const { HybridScraperExecutor } = await import('./llm/hybrid-executor.js');
+      const executor = new HybridScraperExecutor();
+      
+      // Run in background
+      executor.execute(config, id).then(result => {
+        console.log(`✅ Scraper ${id} completed:`, {
+          mode: result.executionMode,
+          items: result.itemCount,
+          duration: `${Math.round(result.duration / 1000)}s`
+        });
+      }).catch(err => {
+        console.error(`❌ Scraper ${id} failed:`, err.message);
+      });
+      
+      res.json({ 
+        success: true, 
+        message: 'Scraper started (hybrid mode: generic engine → LLM fallback)',
+        scraperId: id
+      });
+    } else {
+      // Use generic engine only
+      const engine = new ScraperEngine(config, {
+        headless: options.headless !== false,
+        maxPages: options.maxPages || 10,
+        saveToDatabase: options.save !== false,
+        verbose: false
+      });
+      
+      // Run in background
+      engine.run().catch(err => {
+        console.error(`Error running scraper ${id}:`, err);
+      });
+      
+      res.json({ 
+        success: true, 
+        message: 'Scraper started (generic mode only)',
+        scraperId: id
+      });
+    }
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -219,11 +271,22 @@ app.use((err: Error, req: Request, res: Response, next: any) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`🚀 Scraper Platform API running on http://localhost:${PORT}`);
   console.log(`   Dashboard: http://localhost:${PORT}`);
   console.log(`   Health check: http://localhost:${PORT}/api/health`);
   console.log(`   Scrapers API: http://localhost:${PORT}/api/scrapers`);
+});
+
+// Prevent premature exit
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, closing server');
+  server.close(() => process.exit(0));
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received, closing server');
+  server.close(() => process.exit(0));
 });
 
 export default app;
