@@ -333,15 +333,32 @@ function autoDetectPuppeteer() {
 
 // Start element capture
 function startCapture(field, button) {
+  console.log('🎯 startCapture called for field:', field);
+  
   // Update button state
   button.classList.add('capturing');
   button.classList.remove('captured');
   
   // Send message to content script
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    console.log('📋 Active tab:', tabs[0]);
+    if (chrome.runtime.lastError) {
+      console.error('❌ Error querying tabs:', chrome.runtime.lastError);
+      return;
+    }
+    
+    console.log('📤 Sending START_CAPTURE message to tab:', tabs[0].id);
     chrome.tabs.sendMessage(tabs[0].id, {
       type: 'START_CAPTURE',
       field: field
+    }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.error('❌ Error sending message:', chrome.runtime.lastError.message);
+        alert('Could not connect to page. Try refreshing the page and reopening the extension.');
+        button.classList.remove('capturing');
+      } else {
+        console.log('✅ Message sent successfully, response:', response);
+      }
     });
   });
 }
