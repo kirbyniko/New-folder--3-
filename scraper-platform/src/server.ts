@@ -149,21 +149,39 @@ app.post('/api/scrapers/:id/run', async (req: Request, res: Response) => {
       const { HybridScraperExecutor } = await import('./llm/hybrid-executor.js');
       const executor = new HybridScraperExecutor();
       
-      // Run in background
+      // Run in background with detailed logging
       executor.execute(config, id).then(result => {
-        console.log(`✅ Scraper ${id} completed:`, {
+        console.log(`✅ [Scraper ${id}] Execution completed:`, {
+          scraper: config.name,
           mode: result.executionMode,
           items: result.itemCount,
-          duration: `${Math.round(result.duration / 1000)}s`
+          duration: `${Math.round(result.duration / 1000)}s`,
+          success: result.success
         });
+        
+        if (result.executionMode === 'llm-generated') {
+          console.log(`🤖 [Scraper ${id}] LLM generated custom script`);
+        } else if (result.executionMode === 'cached-script') {
+          console.log(`⚡ [Scraper ${id}] Used cached script (instant execution)`);
+        }
       }).catch(err => {
-        console.error(`❌ Scraper ${id} failed:`, err.message);
+        console.error(`❌ [Scraper ${id}] Execution failed:`, {
+          scraper: config.name,
+          error: err.message
+        });
       });
       
       res.json({ 
         success: true, 
-        message: 'Scraper started (hybrid mode: generic engine → LLM fallback)',
-        scraperId: id
+        message: `Scraper "${config.name}" started in hybrid mode`,
+        scraperId: id,
+        mode: 'hybrid',
+        details: {
+          scraper: config.name,
+          jurisdiction: config.jurisdiction,
+          pageStructures: config.pageStructures.length,
+          fields: config.fieldDefinitions.length
+        }
       });
     } else {
       // Use generic engine only

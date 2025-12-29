@@ -563,6 +563,162 @@
       background: var(--secondary);
     }
 
+    /* Execution Panel */
+    .execution-panel {
+      position: fixed;
+      bottom: 0;
+      right: 0;
+      width: 600px;
+      max-width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px 12px 0 0;
+      box-shadow: 0 -4px 24px var(--shadow);
+      transform: translateY(calc(100% - 48px));
+      transition: transform 0.3s ease;
+      z-index: 1001;
+    }
+
+    .execution-panel.expanded {
+      transform: translateY(0);
+      max-height: 80vh;
+    }
+
+    .execution-header {
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(135deg, var(--primary), var(--success));
+    }
+
+    .execution-header:hover {
+      opacity: 0.9;
+    }
+
+    .execution-title {
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: white;
+    }
+
+    .execution-toggle {
+      background: transparent;
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    .execution-body {
+      max-height: calc(80vh - 48px);
+      overflow-y: auto;
+      padding: 16px;
+    }
+
+    .execution-info {
+      background: rgba(59, 130, 246, 0.1);
+      border-left: 3px solid var(--primary);
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+    }
+
+    .execution-info-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+
+    .execution-info-details {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.8;
+    }
+
+    .log-container {
+      background: var(--bg-main);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      max-height: 400px;
+      overflow-y: auto;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 12px;
+    }
+
+    .log-entry {
+      padding: 4px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .log-entry:last-child {
+      border-bottom: none;
+    }
+
+    .log-timestamp {
+      color: var(--text-secondary);
+      margin-right: 8px;
+    }
+
+    .log-level {
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: 600;
+      margin-right: 8px;
+    }
+
+    .log-level-info {
+      background: rgba(59, 130, 246, 0.2);
+      color: var(--primary);
+    }
+
+    .log-level-success {
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--success);
+    }
+
+    .log-level-warning {
+      background: rgba(245, 158, 11, 0.2);
+      color: var(--warning);
+    }
+
+    .log-level-error {
+      background: rgba(239, 68, 68, 0.2);
+      color: var(--danger);
+    }
+
+    .log-message {
+      color: var(--text-primary);
+    }
+
+    .execution-actions {
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    /* Notification Badge */
+    .notification-badge {
+      background: var(--danger);
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 10px;
+      margin-left: 8px;
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
       .scrapers-grid {
@@ -581,6 +737,10 @@
 
       .action-bar h2 {
         text-align: center;
+      }
+
+      .execution-panel {
+        width: 100%;
       }
     }
   </style>
@@ -617,6 +777,33 @@
     <div id="scrapers" class="scrapers-grid"></div>
   </div>
 
+  <!-- Execution Panel -->
+  <div id="executionPanel" class="execution-panel">
+    <div class="execution-header" onclick="toggleExecutionPanel()">
+      <div class="execution-title">
+        <span id="execIcon">⚙️</span>
+        <span id="execTitle">Execution Monitor</span>
+        <span id="execBadge" class="notification-badge" style="display: none;">0</span>
+      </div>
+      <button class="execution-toggle">▼</button>
+    </div>
+    <div class="execution-body">
+      <div id="executionInfo" style="display: none;" class="execution-info">
+        <div class="execution-info-title">Current Execution</div>
+        <div id="executionDetails" class="execution-info-details"></div>
+      </div>
+      <div class="log-container" id="logContainer">
+        <div style="text-align: center; color: var(--text-secondary); padding: 20px;">
+          No active executions
+        </div>
+      </div>
+    </div>
+    <div class="execution-actions">
+      <button class="btn btn-secondary btn-sm" onclick="clearLogs()">Clear Logs</button>
+      <button class="btn btn-primary btn-sm" onclick="exportLogs()">Export Logs</button>
+    </div>
+  </div>
+
   <!-- Import Modal -->
   <div id="importModal" class="modal">
     <div class="modal-content">
@@ -642,11 +829,83 @@
       llmStatus: 'Checking...'
     };
 
+    let executionLogs = [];
+    let currentExecution = null;
+    let logUpdateInterval = null;
+
     // Load scrapers on page load
     document.addEventListener('DOMContentLoaded', () => {
       loadScrapers();
       checkOllamaStatus();
     });
+
+    function toggleExecutionPanel() {
+      const panel = document.getElementById('executionPanel');
+      panel.classList.toggle('expanded');
+    }
+
+    function addLog(level, message) {
+      const timestamp = new Date().toLocaleTimeString();
+      const log = { timestamp, level, message };
+      executionLogs.push(log);
+      
+      const logContainer = document.getElementById('logContainer');
+      const logEntry = document.createElement('div');
+      logEntry.className = 'log-entry';
+      logEntry.innerHTML = `
+        <span class="log-timestamp">${timestamp}</span>
+        <span class="log-level log-level-${level}">${level.toUpperCase()}</span>
+        <span class="log-message">${message}</span>
+      `;
+      logContainer.appendChild(logEntry);
+      logContainer.scrollTop = logContainer.scrollHeight;
+
+      // Show notification badge if panel is collapsed
+      const panel = document.getElementById('executionPanel');
+      if (!panel.classList.contains('expanded')) {
+        const badge = document.getElementById('execBadge');
+        badge.style.display = 'inline';
+        badge.textContent = parseInt(badge.textContent || 0) + 1;
+      }
+    }
+
+    function clearLogs() {
+      executionLogs = [];
+      const logContainer = document.getElementById('logContainer');
+      logContainer.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 20px;">Logs cleared</div>';
+      document.getElementById('execBadge').style.display = 'none';
+    }
+
+    function exportLogs() {
+      const logText = executionLogs.map(log => 
+        `[${log.timestamp}] ${log.level.toUpperCase()}: ${log.message}`
+      ).join('\n');
+      
+      const blob = new Blob([logText], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `scraper-logs-${new Date().toISOString()}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function updateExecutionInfo(scraper, mode) {
+      const info = document.getElementById('executionInfo');
+      const details = document.getElementById('executionDetails');
+      info.style.display = 'block';
+      
+      details.innerHTML = `
+        <strong>Scraper:</strong> ${scraper.name}<br>
+        <strong>Mode:</strong> ${mode}<br>
+        <strong>Status:</strong> <span id="execStatus">Running...</span>
+      `;
+    }
+
+    function clearExecutionInfo() {
+      document.getElementById('executionInfo').style.display = 'none';
+      document.getElementById('execStatus').textContent = 'Completed';
+    }
 
     function showImportModal() {
       document.getElementById('importModal').classList.add('active');
@@ -849,23 +1108,120 @@
     }
 
     async function runScraper(id) {
-      if (!confirm('Start scraper execution?')) return;
+      // Find scraper details
+      const response = await fetch('/api/scrapers');
+      const scrapers = await response.json();
+      const scraper = scrapers.find(s => s.id === id);
+      
+      if (!scraper) {
+        addLog('error', 'Scraper not found');
+        return;
+      }
+
+      // Clear previous logs and expand panel
+      const logContainer = document.getElementById('logContainer');
+      logContainer.innerHTML = '';
+      document.getElementById('executionPanel').classList.add('expanded');
+      document.getElementById('execBadge').style.display = 'none';
+      document.getElementById('execBadge').textContent = '0';
+      
+      addLog('info', `Starting scraper: ${scraper.name}`);
+      addLog('info', `Jurisdiction: ${scraper.jurisdiction}`);
+      addLog('info', `Mode: Hybrid (Generic Engine → LLM Fallback)`);
+      
+      updateExecutionInfo(scraper, 'Hybrid Mode');
+      currentExecution = { scraperId: id, scraperName: scraper.name };
 
       try {
-        const response = await fetch(`/api/scrapers/${id}/run`, {
+        addLog('info', 'Sending execution request...');
+        
+        const execResponse = await fetch(`/api/scrapers/${id}/run`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ hybrid: true })
         });
 
-        if (!response.ok) throw new Error('Failed to start scraper');
+        if (!execResponse.ok) {
+          const error = await execResponse.json();
+          throw new Error(error.error || 'Failed to start scraper');
+        }
         
-        const result = await response.json();
-        alert(`🚀 Scraper started!\n\n${result.message}`);
+        const result = await execResponse.json();
+        addLog('success', result.message);
         
-        setTimeout(() => loadScrapers(), 3000);
+        // Start polling for status updates
+        addLog('info', 'Monitoring execution...');
+        startStatusPolling(id);
+        
       } catch (error) {
-        alert(`❌ Error: ${error.message}`);
+        addLog('error', `Execution failed: ${error.message}`);
+        clearExecutionInfo();
+      }
+    }
+
+    let statusPollInterval = null;
+    let lastRunCount = 0;
+
+    async function startStatusPolling(scraperId) {
+      if (statusPollInterval) clearInterval(statusPollInterval);
+      
+      const checkStatus = async () => {
+        try {
+          const response = await fetch('/api/scrapers');
+          const scrapers = await response.json();
+          const scraper = scrapers.find(s => s.id === scraperId);
+          
+          if (!scraper) return;
+          
+          const totalRuns = scraper.successful_runs + scraper.failed_runs;
+          
+          // Check if run count increased
+          if (totalRuns > lastRunCount) {
+            const newRuns = totalRuns - lastRunCount;
+            
+            if (scraper.successful_runs > lastRunCount) {
+              addLog('success', `✓ Execution completed successfully! Total items: ${newRuns}`);
+              addLog('info', `Success rate: ${Math.round((scraper.successful_runs / totalRuns) * 100)}%`);
+            } else {
+              addLog('error', `✗ Execution failed`);
+            }
+            
+            clearExecutionInfo();
+            stopStatusPolling();
+            loadScrapers(); // Refresh the UI
+          } else {
+            // Still running, add progress indicator
+            const elapsed = Math.floor((Date.now() - (window.execStartTime || Date.now())) / 1000);
+            addLog('info', `Still executing... (${elapsed}s elapsed)`);
+          }
+          
+          lastRunCount = totalRuns;
+        } catch (error) {
+          addLog('warning', `Status check failed: ${error.message}`);
+        }
+      };
+      
+      // Store start time
+      window.execStartTime = Date.now();
+      lastRunCount = 0;
+      
+      // Poll every 3 seconds
+      statusPollInterval = setInterval(checkStatus, 3000);
+      
+      // Stop after 2 minutes
+      setTimeout(() => {
+        if (statusPollInterval) {
+          stopStatusPolling();
+          addLog('warning', 'Execution monitoring stopped (timeout)');
+          clearExecutionInfo();
+        }
+      }, 120000);
+    }
+
+    function stopStatusPolling() {
+      if (statusPollInterval) {
+        clearInterval(statusPollInterval);
+        statusPollInterval = null;
       }
     }
 

@@ -41,14 +41,17 @@ export class HybridScraperExecutor {
    */
   async execute(config: ScraperConfig, scraperId: number): Promise<ExecutionResult> {
     const startTime = Date.now();
+    console.log(`\n🕷️  [Scraper ${scraperId}] Starting execution: ${config.name}`);
+    console.log(`📍 Jurisdiction: ${config.jurisdiction}`);
 
     // 1. Try cached LLM-generated script first (if exists and has good track record)
     const cached = this.scriptCache.get(scraperId);
     if (cached && this.shouldUseCachedScript(cached)) {
-      console.log('🎯 Using cached LLM-generated script');
+      console.log(`⚡ [Scraper ${scraperId}] Using cached LLM-generated script (${cached.successCount}/${cached.runCount} success rate)`);
       try {
         const result = await this.executeCachedScript(config, cached);
         this.updateCacheStats(scraperId, true, Date.now() - startTime);
+        console.log(`✅ [Scraper ${scraperId}] Cached script succeeded: ${result.length} items in ${Math.round((Date.now() - startTime) / 1000)}s`);
         return {
           success: true,
           data: result,
@@ -57,14 +60,14 @@ export class HybridScraperExecutor {
           itemCount: result.length
         };
       } catch (error: any) {
-        console.log('❌ Cached script failed:', error.message);
+        console.log(`❌ [Scraper ${scraperId}] Cached script failed: ${error.message}`);
         this.updateCacheStats(scraperId, false, Date.now() - startTime);
         // Fall through to try other methods
       }
     }
 
     // 2. Try generic engine
-    console.log('🔧 Trying generic scraper engine');
+    console.log(`🔧 [Scraper ${scraperId}] Attempting generic scraper engine...`);
     try {
       const engine = new ScraperEngine(config, { 
         verbose: true, 
@@ -73,7 +76,7 @@ export class HybridScraperExecutor {
       const genericResult = await engine.scrape();
       
       if (genericResult && genericResult.length > 0) {
-        console.log(`✅ Generic engine succeeded: ${genericResult.length} items`);
+        console.log(`✅ [Scraper ${scraperId}] Generic engine succeeded: ${genericResult.length} items in ${Math.round((Date.now() - startTime) / 1000)}s`);
         return {
           success: true,
           data: genericResult,
@@ -85,7 +88,7 @@ export class HybridScraperExecutor {
         throw new Error('Generic engine returned no data');
       }
     } catch (error: any) {
-      console.log(`⚠️ Generic engine failed: ${error.message}`);
+      console.log(`⚠️  [Scraper ${scraperId}] Generic engine failed: ${error.message}`);
       
       // 3. Fall back to LLM script generation
       return await this.generateAndExecute(config, scraperId, error.message, startTime);
@@ -101,22 +104,26 @@ export class HybridScraperExecutor {
     // Check if Ollama is available
     const isAvailable = await this.ollama.checkAvailability();
     if (!isAvailable) {
+      console.log(`❌ [Scraper ${scraperId}] Ollama not available`);
       return {
         success: false,
-        error: 'Ollama not available. Install Ollama and run: ollama pull deepseek-coder:6.7b',
+        error: 'Ollama not available. Install Ollama and run: ollama pull gemma3:4b',
         executionMode: 'llm-generated',
         duration: Date.now() - startTime,
         itemCount: 0
       };
     }
 
-    console.log('🤖 Generating custom script with LLM...');
+    console.log(`🤖 [Scraper ${scraperId}] Generating custom script with LLM (${this.ollama['model']})...`);
     
     try {
       // Fetch HTML snapshot
+      console.log(`📡 [Scraper ${scraperId}] Fetching HTML snapshot from ${config.startUrl}...`);
       const htmlSnapshot = await this.fetchHtmlSnapshot(config.startUrl);
+      console.log(`✓ [Scraper ${scraperId}] HTML snapshot fetched (${Math.round(htmlSnapshot.length / 1024)}KB)`);
 
       // Generate script
+      console.log(`🧠 [Scraper ${scraperId}] Prompting LLM to generate custom Puppeteer script...`);
       const generated = await this.scriptGenerator.generateScript({
         config,
         htmlSnapshot,
@@ -124,11 +131,14 @@ export class HybridScraperExecutor {
         existingAttempts: 1
       });
 
-      console.log(`📝 Generated script (confidence: ${generated.confidence})`);
+      console.log(`📝 [Scraper ${scraperId}] Script generated!`);
+      console.log(`   Confidence: ${generated.confidence}`);
       console.log(`   Reasoning: ${generated.reasoning}`);
 
       // Execute generated script
+      console.log(`▶️  [Scraper ${scraperId}] Executing LLM-generated script...`);
       const result = await this.executeGeneratedScript(config, generated.code);
+      console.log(`✅ [Scraper ${scraperId}] LLM script succeeded: ${result.length} items in ${Math.round((Date.now() - startTime) / 1000)}s`);
 
       // Cache successful script
       this.scriptCache.set(scraperId, {
@@ -136,9 +146,11 @@ export class HybridScraperExecutor {
         code: generated.code,
         successCount: 1,
         failureCount: 0,
+        runCount: 1,
         lastUsed: new Date(),
         averageDuration: Date.now() - startTime
       });
+      console.log(`💾 [Scraper ${scraperId}] Script cached for future use`);
 
       return {
         success: true,
@@ -148,6 +160,7 @@ export class HybridScraperExecutor {
         itemCount: result.length
       };
     } catch (error: any) {
+      console.log(`❌ [Scraper ${scraperId}] LLM generation failed: ${error.message}`);
       return {
         success: false,
         error: `LLM generation failed: ${error.message}`,
