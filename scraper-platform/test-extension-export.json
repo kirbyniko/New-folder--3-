@@ -1,0 +1,137 @@
+﻿≡ƒº¬ Testing JSON export conversion...
+
+{
+  "name": "Honolulu local Calendar",
+  "description": "Legislative calendar scraper for Honolulu",
+  "jurisdiction": "Honolulu",
+  "stateCode": "HI",
+  "level": "local",
+  "baseUrl": "https://www.honolulu.gov",
+  "startUrl": "https://www.honolulu.gov/clerk/clk-council-calendar/",
+  "requiresPuppeteer": false,
+  "active": true,
+  "metadata": {
+    "notes": "Test scraper",
+    "createdWith": "Chrome Extension Scraper Builder"
+  },
+  "pageStructures": [
+    {
+      "pageType": "calendar",
+      "pageName": "Calendar View",
+      "hasPagination": true,
+      "fields": [
+        {
+          "fieldName": "name",
+          "fieldType": "text",
+          "fieldOrder": 1,
+          "isRequired": true,
+          "transformation": "trim",
+          "comment": "name field",
+          "selectorSteps": [
+            {
+              "stepOrder": 1,
+              "actionType": "click",
+              "selector": ".event-card",
+              "waitAfter": 500,
+              "comment": "Click event card to open modal"
+            },
+            {
+              "stepOrder": 2,
+              "actionType": "extract",
+              "selector": ".modal-title h2",
+              "comment": "Extract title from modal"
+            }
+          ]
+        },
+        {
+          "fieldName": "date",
+          "fieldType": "date",
+          "fieldOrder": 2,
+          "isRequired": true,
+          "transformation": "parse_date",
+          "comment": "date field",
+          "selectorSteps": [
+            {
+              "stepOrder": 1,
+              "actionType": "extract",
+              "selector": ".event-date",
+              "comment": "Extract date from event card"
+            }
+          ]
+        },
+        {
+          "fieldName": "time",
+          "fieldType": "text",
+          "fieldOrder": 3,
+          "isRequired": false,
+          "comment": "time field",
+          "selectorSteps": [
+            {
+              "stepOrder": 1,
+              "actionType": "extract",
+              "selector": ".event-time"
+            }
+          ]
+        },
+        {
+          "fieldName": "url",
+          "fieldType": "url",
+          "fieldOrder": 4,
+          "isRequired": false,
+          "comment": "url field",
+          "selectorSteps": [
+            {
+              "stepOrder": 1,
+              "actionType": "extract",
+              "selector": ".event-card a",
+              "attributeName": "href",
+              "comment": "Link to event details"
+            }
+          ]
+        }
+      ],
+      "containerSelector": ".calendar-events",
+      "itemSelector": ".event-item",
+      "nextButtonSelector": ".next-month-btn",
+      "prevButtonSelector": ".prev-month-btn"
+    },
+    {
+      "pageType": "detail",
+      "pageName": "Event Detail Page",
+      "fields": [
+        {
+          "fieldName": "description",
+          "fieldType": "html",
+          "fieldOrder": 1,
+          "isRequired": false,
+          "comment": "description from detail page",
+          "selectorSteps": [
+            {
+              "stepOrder": 1,
+              "actionType": "extract",
+              "selector": ".event-description",
+              "comment": "Full description"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "navigationSteps": [
+    {
+      "stepOrder": 1,
+      "stepType": "click",
+      "selector": ".next-month-btn",
+      "comment": "Navigate to next month"
+    }
+  ]
+}
+
+Γ£à Export test complete!
+
+≡ƒôè Summary:
+- Name: Honolulu local Calendar
+- Jurisdiction: Honolulu
+- Page Structures: 2
+- Navigation Steps: 1
+- Total Fields: 5

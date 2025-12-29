@@ -178,17 +178,30 @@ export class ScraperDatabase {
   /**
    * Export a scraper configuration to JSON
    */
-  async exportScraper(scraperId: number): Promise<ScraperConfig> {
+  async exportScraper(scraperIdOrName: number | string): Promise<ScraperConfig> {
     const client = await pool.connect();
     
     try {
-      // Get main scraper
-      const scraperResult = await client.query('SELECT * FROM scrapers WHERE id = $1', [scraperId]);
+      // Get main scraper - handle both ID and name
+      let scraperResult;
+      if (typeof scraperIdOrName === 'number') {
+        scraperResult = await client.query('SELECT * FROM scrapers WHERE id = $1', [scraperIdOrName]);
+      } else {
+        // Try parsing as number first, then treat as name
+        const numId = parseInt(scraperIdOrName);
+        if (!isNaN(numId)) {
+          scraperResult = await client.query('SELECT * FROM scrapers WHERE id = $1', [numId]);
+        } else {
+          scraperResult = await client.query('SELECT * FROM scrapers WHERE name = $1', [scraperIdOrName]);
+        }
+      }
+      
       if (scraperResult.rows.length === 0) {
-        throw new Error(`Scraper with ID ${scraperId} not found`);
+        throw new Error(`Scraper not found: ${scraperIdOrName}`);
       }
       
       const scraper = scraperResult.rows[0];
+      const scraperId = scraper.id;
       
       // Get navigation steps
       const navStepsResult = await client.query(
