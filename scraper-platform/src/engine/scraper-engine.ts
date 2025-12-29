@@ -270,7 +270,8 @@ export class ScraperEngine {
         case 'extract':
           // Extract value from element
           if (step.selector) {
-            const element = $item.find(step.selector).first();
+            // Check if current element matches selector
+            let element = $item.is(step.selector) ? $item : $item.find(step.selector).first();
             
             if (element.length > 0) {
               if (step.attributeName) {
