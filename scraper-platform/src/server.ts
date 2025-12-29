@@ -240,8 +240,8 @@ app.post('/api/scrapers/:id/run', async (req: Request, res: Response) => {
         details: {
           scraper: config.name,
           jurisdiction: config.jurisdiction,
-          pageStructures: config.pageStructures.length,
-          fields: config.fieldDefinitions.length
+          pageStructures: config.pageStructures?.length || 0,
+          fields: config.pageStructures?.reduce((sum, ps) => sum + (ps.fields?.length || 0), 0) || 0
         }
       });
     } else {

@@ -164,7 +164,8 @@ export class HybridScraperExecutor {
       // Execute generated script
       log(scraperId, 'info', 'Executing LLM-generated script...');
       const result = await this.executeGeneratedScript(config, generated.code);
-      log(scraperId, 'success', `LLM script succeeded: ${result.length} items in ${Math.round((Date.now() - startTime) / 1000)}s`);
+      const resultCount = result?.length || 0;
+      log(scraperId, 'success', `LLM script succeeded: ${resultCount} items in ${Math.round((Date.now() - startTime) / 1000)}s`);
 
       // Cache successful script
       this.scriptCache.set(scraperId, {
@@ -183,7 +184,7 @@ export class HybridScraperExecutor {
         data: result,
         executionMode: 'llm-generated',
         duration: Date.now() - startTime,
-        itemCount: result.length
+        itemCount: resultCount
       };
     } catch (error: any) {
       log(scraperId, 'error', `LLM generation failed: ${error.message}`);
@@ -202,7 +203,7 @@ export class HybridScraperExecutor {
     try {
       const page = await browser.newPage();
       await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
-      await page.waitForTimeout(2000); // Let JS execute
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Let JS execute
       const html = await page.content();
       return html;
     } finally {
@@ -223,7 +224,17 @@ export class HybridScraperExecutor {
       `);
 
       const result = await scrapeDataFunction(page, config);
+      
+      // Ensure we always return an array
+      if (!result) {
+        console.error('Generated script returned undefined/null');
+        return [];
+      }
+      
       return Array.isArray(result) ? result : [];
+    } catch (error: any) {
+      console.error('Error executing generated script:', error.message);
+      throw error;
     } finally {
       await browser.close();
     }
