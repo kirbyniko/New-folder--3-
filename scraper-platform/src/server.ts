@@ -12,6 +12,36 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Log streaming for execution monitoring
+const executionClients = new Map<number, Response[]>();
+const executionLogs = new Map<number, Array<{ timestamp: string; level: string; message: string }>>();
+
+export function broadcastLog(scraperId: number, level: string, message: string) {
+  const timestamp = new Date().toISOString();
+  const log = { timestamp, level, message };
+  
+  // Store log
+  if (!executionLogs.has(scraperId)) {
+    executionLogs.set(scraperId, []);
+  }
+  executionLogs.get(scraperId)!.push(log);
+  
+  // Broadcast to connected clients
+  const clients = executionClients.get(scraperId) || [];
+  const data = `data: ${JSON.stringify(log)}\n\n`;
+  clients.forEach(client => {
+    try {
+      client.write(data);
+    } catch (err) {
+      // Client disconnected
+    }
+  });
+  
+  // Also log to console
+  const emoji = { info: 'ℹ️', success: '✅', warning: '⚠️', error: '❌' }[level] || '📝';
+  console.log(`${emoji} [Scraper ${scraperId}] ${message}`);
+}
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -22,6 +52,37 @@ app.use(express.static(path.join(__dirname, '../public')));
 // Health check
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// SSE endpoint for real-time execution logs
+app.get('/api/scrapers/:id/logs', (req: Request, res: Response) => {
+  const scraperId = parseInt(req.params.id);
+  
+  // Set SSE headers
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  
+  // Register client
+  if (!executionClients.has(scraperId)) {
+    executionClients.set(scraperId, []);
+  }
+  executionClients.get(scraperId)!.push(res);
+  
+  // Send existing logs
+  const logs = executionLogs.get(scraperId) || [];
+  logs.forEach(log => {
+    res.write(`data: ${JSON.stringify(log)}\n\n`);
+  });
+  
+  // Handle client disconnect
+  req.on('close', () => {
+    const clients = executionClients.get(scraperId) || [];
+    const index = clients.indexOf(res);
+    if (index !== -1) {
+      clients.splice(index, 1);
+    }
+  });
 });
 
 // Check Ollama status

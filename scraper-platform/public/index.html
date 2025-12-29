@@ -1132,6 +1132,30 @@
       updateExecutionInfo(scraper, 'Hybrid Mode');
       currentExecution = { scraperId: id, scraperName: scraper.name };
 
+      // Connect to SSE endpoint for real-time logs
+      const eventSource = new EventSource(`/api/scrapers/${id}/logs`);
+      
+      eventSource.onmessage = (event) => {
+        const log = JSON.parse(event.data);
+        const timestamp = new Date(log.timestamp).toLocaleTimeString();
+        
+        const logContainer = document.getElementById('logContainer');
+        const logEntry = document.createElement('div');
+        logEntry.className = 'log-entry';
+        logEntry.innerHTML = `
+          <span class="log-timestamp">${timestamp}</span>
+          <span class="log-level log-level-${log.level}">${log.level.toUpperCase()}</span>
+          <span class="log-message">${log.message}</span>
+        `;
+        logContainer.appendChild(logEntry);
+        logContainer.scrollTop = logContainer.scrollHeight;
+      };
+
+      eventSource.onerror = () => {
+        addLog('warning', 'Lost connection to server logs');
+        eventSource.close();
+      };
+
       try {
         addLog('info', 'Sending execution request...');
         
@@ -1149,12 +1173,29 @@
         const result = await execResponse.json();
         addLog('success', result.message);
         
-        // Start polling for status updates
-        addLog('info', 'Monitoring execution...');
-        startStatusPolling(id);
+        // Monitor completion
+        const checkCompletion = setInterval(async () => {
+          const resp = await fetch('/api/scrapers');
+          const allScrapers = await resp.json();
+          const updated = allScrapers.find(s => s.id === id);
+          
+          if (updated && (updated.successful_runs + updated.failed_runs) > (scraper.successful_runs + scraper.failed_runs)) {
+            clearInterval(checkCompletion);
+            eventSource.close();
+            clearExecutionInfo();
+            loadScrapers();
+          }
+        }, 2000);
+        
+        // Timeout after 3 minutes
+        setTimeout(() => {
+          clearInterval(checkCompletion);
+          eventSource.close();
+        }, 180000);
         
       } catch (error) {
         addLog('error', `Execution failed: ${error.message}`);
+        eventSource.close();
         clearExecutionInfo();
       }
     }
