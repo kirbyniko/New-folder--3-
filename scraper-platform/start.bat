@@ -34,10 +34,7 @@ if not exist "node_modules" (
 
 :: Kill any existing server on port 3001
 echo [CLEANUP] Checking for existing server on port 3001...
-for /f "tokens=5" %%a in ('netstat -aon ^| findstr :3001 ^| findstr LISTENING') do (
-    echo [CLEANUP] Killing process %%a
-    taskkill /F /PID %%a >nul 2>&1
-)
+powershell -Command "Get-NetTCPConnection -LocalPort 3001 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess | Where-Object {$_ -ne 0} | Get-Unique | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }" >nul 2>&1
 
 echo.
 echo [SERVER] Starting on http://localhost:3001

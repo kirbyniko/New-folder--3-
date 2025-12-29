@@ -325,16 +325,6 @@ export class HybridScraperExecutor {
       };
     }
   }
-      log(scraperId, 'error', `LLM generation failed: ${error.message}`);
-      return {
-        success: false,
-        error: `LLM generation failed: ${error.message}`,
-        executionMode: 'llm-generated',
-        duration: Date.now() - startTime,
-        itemCount: 0
-      };
-    }
-  }
 
   private async fetchHtmlSnapshot(url: string): Promise<string> {
     const browser = await puppeteer.launch({ headless: true });
