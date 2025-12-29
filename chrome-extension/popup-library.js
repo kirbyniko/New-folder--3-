@@ -84,8 +84,8 @@ function displayTemplates() {
         <h4>${template.name || 'Unnamed Template'}</h4>
         <p>${template.jurisdiction || 'Unknown'} • ${template.level || 'local'}</p>
         <div class="scraper-actions">
-          <button class="btn-success" onclick="useTemplate(${index})" style="flex: 2;">✨ Use Template</button>
-          <button class="btn-secondary" onclick="viewTemplate(${index})">👁️ View</button>
+          <button class="btn-success use-template-btn" data-template-index="${index}" style="flex: 2;">✨ Use Template</button>
+          <button class="btn-secondary view-template-btn" data-template-index="${index}">👁️ View</button>
         </div>
       </div>
     `).join('');
@@ -100,10 +100,10 @@ function displayTemplates() {
         <h4>${scraper.name || 'Unnamed Scraper'}</h4>
         <p>${scraper.jurisdiction || 'Unknown'} • ${scraper.level || 'local'} • ${scraper.stateCode || 'N/A'}</p>
         <div class="scraper-actions">
-          <button class="btn-secondary" onclick="viewScraperDetails(${index})">👁️ View</button>
-          <button class="btn-primary" onclick="testScraper(${index})">🧪 Test</button>
-          <button class="btn-secondary" onclick="exportScraperJson(${index})">💾 Export</button>
-          <button class="btn-danger" onclick="deleteScraper(${index})">🗑️</button>
+          <button class="btn-secondary view-scraper-btn" data-scraper-index="${index}">👁️ View</button>
+          <button class="btn-primary test-scraper-btn" data-scraper-index="${index}">🧪 Test</button>
+          <button class="btn-secondary export-scraper-btn" data-scraper-index="${index}">💾 Export</button>
+          <button class="btn-danger delete-scraper-btn" data-scraper-index="${index}">🗑️</button>
         </div>
       </div>
     `).join('');
@@ -115,6 +115,31 @@ function displayTemplates() {
   }
   
   list.innerHTML = html;
+  
+  // Add event listeners using event delegation
+  list.querySelectorAll('.use-template-btn').forEach(btn => {
+    btn.addEventListener('click', () => useTemplate(parseInt(btn.dataset.templateIndex)));
+  });
+  
+  list.querySelectorAll('.view-template-btn').forEach(btn => {
+    btn.addEventListener('click', () => viewTemplate(parseInt(btn.dataset.templateIndex)));
+  });
+  
+  list.querySelectorAll('.view-scraper-btn').forEach(btn => {
+    btn.addEventListener('click', () => viewScraperDetails(parseInt(btn.dataset.scraperIndex)));
+  });
+  
+  list.querySelectorAll('.test-scraper-btn').forEach(btn => {
+    btn.addEventListener('click', () => testScraper(parseInt(btn.dataset.scraperIndex)));
+  });
+  
+  list.querySelectorAll('.export-scraper-btn').forEach(btn => {
+    btn.addEventListener('click', () => exportScraperJson(parseInt(btn.dataset.scraperIndex)));
+  });
+  
+  list.querySelectorAll('.delete-scraper-btn').forEach(btn => {
+    btn.addEventListener('click', () => deleteScraper(parseInt(btn.dataset.scraperIndex)));
+  });
 }
 
 function saveScrapers() {
