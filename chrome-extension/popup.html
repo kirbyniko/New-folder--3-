@@ -171,9 +171,95 @@
 <body>
   <!-- Tab Navigation -->
   <div class="tab-nav">
+    <button class="tab-button" data-tab="template">🏭 Template</button>
     <button class="tab-button" data-tab="build">🛠️ Build</button>
     <button class="tab-button active" data-tab="library">📚 Library</button>
     <button class="tab-button" data-tab="test">🧪 Test</button>
+  </div>
+
+  <!-- Template Creator Tab (ROOT TIER) -->
+  <div id="tab-template" class="tab-content">
+    <h3 style="margin-top: 0;">🏭 Create Builder Template</h3>
+    <p style="font-size: 12px; color: #666; margin-bottom: 16px;">Define a new scraper builder template for different data structures (e.g., court records, business licenses, permits).</p>
+    
+    <div id="template-form" style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="form-group">
+        <label>Template Name *</label>
+        <input type="text" id="template-name" class="form-control" placeholder="e.g., Court Calendar Scraper, Business License Registry">
+      </div>
+      
+      <div class="form-group">
+        <label>Template Description</label>
+        <textarea id="template-description" class="form-control" rows="2" placeholder="What kind of data does this scraper collect?"></textarea>
+      </div>
+      
+      <div class="form-group">
+        <label>Category *</label>
+        <select id="template-category" class="form-control">
+          <option value="">Select category...</option>
+          <option value="legislative">Legislative/Government</option>
+          <option value="judicial">Judicial/Court</option>
+          <option value="permits">Permits & Licenses</option>
+          <option value="meetings">Public Meetings</option>
+          <option value="records">Public Records</option>
+          <option value="custom">Custom</option>
+        </select>
+      </div>
+      
+      <div style="border-top: 1px solid #ddd; padding-top: 12px; margin-top: 8px;">
+        <h4 style="margin: 0 0 8px 0; font-size: 13px; color: #666;">Required Fields</h4>
+        <p style="margin: 0 0 12px 0; font-size: 11px; color: #999;">What fields must this scraper capture?</p>
+        
+        <div id="required-fields-list" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px;">
+          <!-- Dynamic field list -->
+        </div>
+        
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="new-required-field" class="form-control" placeholder="Field name (e.g., case_number, permit_id)" style="flex: 1;">
+          <button class="btn-secondary" id="add-required-field" style="white-space: nowrap;">➕ Add Field</button>
+        </div>
+      </div>
+      
+      <div style="border-top: 1px solid #ddd; padding-top: 12px; margin-top: 8px;">
+        <h4 style="margin: 0 0 8px 0; font-size: 13px; color: #666;">Optional Fields</h4>
+        <div id="optional-fields-list" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px;">
+          <!-- Dynamic field list -->
+        </div>
+        
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="new-optional-field" class="form-control" placeholder="Field name (e.g., notes, attachments)" style="flex: 1;">
+          <button class="btn-secondary" id="add-optional-field" style="white-space: nowrap;">➕ Add Field</button>
+        </div>
+      </div>
+      
+      <div style="border-top: 1px solid #ddd; padding-top: 12px; margin-top: 8px;">
+        <h4 style="margin: 0 0 8px 0; font-size: 13px; color: #666;">Target Storage</h4>
+        <div class="form-group">
+          <label>Database Table Name</label>
+          <input type="text" id="template-table" class="form-control" placeholder="e.g., court_calendars, business_permits">
+        </div>
+        
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="template-auto-create-table">
+            Auto-create database table if it doesn't exist
+          </label>
+        </div>
+      </div>
+      
+      <button class="btn-primary" id="save-template" style="margin-top: 8px;">
+        💾 Save Template
+      </button>
+      
+      <button class="btn-secondary" id="export-template-json" style="margin-top: 4px;">
+        📎 Export as JSON
+      </button>
+    </div>
+    
+    <div id="template-preview" style="margin-top: 20px; padding: 12px; background: #f9f9f9; border-radius: 6px; display: none;">
+      <h4 style="margin: 0 0 8px 0; font-size: 13px; color: #666;">Template Preview</h4>
+      <pre id="template-preview-json" style="margin: 0; font-size: 11px; color: #333; max-height: 200px; overflow-y: auto;"></pre>
+    </div>
   </div>
 
   <!-- Build Tab (Original Builder) -->

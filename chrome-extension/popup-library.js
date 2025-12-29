@@ -244,6 +244,225 @@ function showStatus(message, type) {
 }
 
 // ========================================
+// TEMPLATE CREATOR TAB
+// ========================================
+
+let templateRequiredFields = [];
+let templateOptionalFields = [];
+
+function renderFieldList(fields, containerId, isRequired) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  
+  if (fields.length === 0) {
+    container.innerHTML = '<p style="color: #999; font-size: 11px; margin: 0;">No fields added yet</p>';
+    return;
+  }
+  
+  container.innerHTML = fields.map((field, index) => `
+    <div style="display: flex; align-items: center; gap: 8px; padding: 6px; background: white; border: 1px solid #ddd; border-radius: 4px;">
+      <span style="flex: 1; font-size: 12px;">${field}</span>
+      <button class="btn-danger remove-field-btn" data-field-type="${isRequired ? 'required' : 'optional'}" data-field-index="${index}" style="padding: 4px 8px; font-size: 11px;">🗑️</button>
+    </div>
+  `).join('');
+  
+  // Add event listeners to remove buttons
+  container.querySelectorAll('.remove-field-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const fieldType = btn.dataset.fieldType;
+      const fieldIndex = parseInt(btn.dataset.fieldIndex);
+      
+      if (fieldType === 'required') {
+        templateRequiredFields.splice(fieldIndex, 1);
+        renderFieldList(templateRequiredFields, 'required-fields-list', true);
+      } else {
+        templateOptionalFields.splice(fieldIndex, 1);
+        renderFieldList(templateOptionalFields, 'optional-fields-list', false);
+      }
+      
+      updateTemplatePreview();
+    });
+  });
+}
+
+document.getElementById('add-required-field')?.addEventListener('click', () => {
+  const input = document.getElementById('new-required-field');
+  const fieldName = input.value.trim();
+  
+  if (!fieldName) return;
+  
+  if (templateRequiredFields.includes(fieldName)) {
+    alert('Field already exists!');
+    return;
+  }
+  
+  templateRequiredFields.push(fieldName);
+  renderFieldList(templateRequiredFields, 'required-fields-list', true);
+  input.value = '';
+  updateTemplatePreview();
+});
+
+document.getElementById('add-optional-field')?.addEventListener('click', () => {
+  const input = document.getElementById('new-optional-field');
+  const fieldName = input.value.trim();
+  
+  if (!fieldName) return;
+  
+  if (templateOptionalFields.includes(fieldName)) {
+    alert('Field already exists!');
+    return;
+  }
+  
+  templateOptionalFields.push(fieldName);
+  renderFieldList(templateOptionalFields, 'optional-fields-list', false);
+  input.value = '';
+  updateTemplatePreview();
+});
+
+// Allow Enter key to add fields
+document.getElementById('new-required-field')?.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    document.getElementById('add-required-field').click();
+  }
+});
+
+document.getElementById('new-optional-field')?.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    document.getElementById('add-optional-field').click();
+  }
+});
+
+function updateTemplatePreview() {
+  const name = document.getElementById('template-name')?.value.trim();
+  const description = document.getElementById('template-description')?.value.trim();
+  const category = document.getElementById('template-category')?.value;
+  const tableName = document.getElementById('template-table')?.value.trim();
+  const autoCreateTable = document.getElementById('template-auto-create-table')?.checked;
+  
+  if (!name && templateRequiredFields.length === 0 && templateOptionalFields.length === 0) {
+    document.getElementById('template-preview').style.display = 'none';
+    return;
+  }
+  
+  const template = {
+    name: name || 'Untitled Template',
+    description: description || '',
+    category: category || 'custom',
+    requiredFields: templateRequiredFields,
+    optionalFields: templateOptionalFields,
+    storage: {
+      tableName: tableName || name.toLowerCase().replace(/\s+/g, '_'),
+      autoCreate: autoCreateTable
+    },
+    createdAt: new Date().toISOString(),
+    version: '1.0.0'
+  };
+  
+  document.getElementById('template-preview-json').textContent = JSON.stringify(template, null, 2);
+  document.getElementById('template-preview').style.display = 'block';
+}
+
+// Update preview on input changes
+['template-name', 'template-description', 'template-category', 'template-table'].forEach(id => {
+  document.getElementById(id)?.addEventListener('input', updateTemplatePreview);
+});
+
+document.getElementById('template-auto-create-table')?.addEventListener('change', updateTemplatePreview);
+
+document.getElementById('save-template')?.addEventListener('click', async () => {
+  const name = document.getElementById('template-name').value.trim();
+  const description = document.getElementById('template-description').value.trim();
+  const category = document.getElementById('template-category').value;
+  const tableName = document.getElementById('template-table').value.trim();
+  const autoCreateTable = document.getElementById('template-auto-create-table').checked;
+  
+  if (!name) {
+    alert('❌ Please enter a template name');
+    return;
+  }
+  
+  if (templateRequiredFields.length === 0) {
+    alert('❌ Please add at least one required field');
+    return;
+  }
+  
+  const template = {
+    name,
+    description,
+    category: category || 'custom',
+    requiredFields: templateRequiredFields,
+    optionalFields: templateOptionalFields,
+    storage: {
+      tableName: tableName || name.toLowerCase().replace(/\s+/g, '_'),
+      autoCreate: autoCreateTable
+    },
+    createdAt: new Date().toISOString(),
+    version: '1.0.0'
+  };
+  
+  // Save to localStorage for now (later can sync to DB)
+  const existingTemplates = JSON.parse(localStorage.getItem('builderTemplates') || '[]');
+  existingTemplates.push(template);
+  localStorage.setItem('builderTemplates', JSON.stringify(existingTemplates));
+  
+  // Also save to examples directory format
+  const filename = `${name.toLowerCase().replace(/\s+/g, '-')}-template.json`;
+  
+  alert(`✅ Template "${name}" saved!\n\nFields: ${templateRequiredFields.length} required, ${templateOptionalFields.length} optional\n\nTemplate can now be used to create custom scrapers.`);
+  
+  // Clear form
+  document.getElementById('template-name').value = '';
+  document.getElementById('template-description').value = '';
+  document.getElementById('template-category').value = '';
+  document.getElementById('template-table').value = '';
+  document.getElementById('template-auto-create-table').checked = false;
+  templateRequiredFields = [];
+  templateOptionalFields = [];
+  renderFieldList(templateRequiredFields, 'required-fields-list', true);
+  renderFieldList(templateOptionalFields, 'optional-fields-list', false);
+  updateTemplatePreview();
+});
+
+document.getElementById('export-template-json')?.addEventListener('click', () => {
+  const name = document.getElementById('template-name').value.trim();
+  
+  if (!name || templateRequiredFields.length === 0) {
+    alert('❌ Please fill in template name and add at least one required field');
+    return;
+  }
+  
+  const template = {
+    name,
+    description: document.getElementById('template-description').value.trim(),
+    category: document.getElementById('template-category').value || 'custom',
+    requiredFields: templateRequiredFields,
+    optionalFields: templateOptionalFields,
+    storage: {
+      tableName: document.getElementById('template-table').value.trim() || name.toLowerCase().replace(/\s+/g, '_'),
+      autoCreate: document.getElementById('template-auto-create-table').checked
+    },
+    createdAt: new Date().toISOString(),
+    version: '1.0.0'
+  };
+  
+  const json = JSON.stringify(template, null, 2);
+  
+  // Copy to clipboard
+  navigator.clipboard.writeText(json).then(() => {
+    alert('✅ Template JSON copied to clipboard!');
+  }).catch(() => {
+    // Fallback: show in dialog
+    prompt('Copy this template JSON:', json);
+  });
+});
+
+// Initialize field lists on load
+if (document.getElementById('required-fields-list')) {
+  renderFieldList(templateRequiredFields, 'required-fields-list', true);
+  renderFieldList(templateOptionalFields, 'optional-fields-list', false);
+}
+
+// ========================================
 // TEST SCRAPER
 // ========================================
 
