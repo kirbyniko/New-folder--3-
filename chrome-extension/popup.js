@@ -268,25 +268,32 @@ let ghostModeActive = false;
 function toggleGhostMode() {
   ghostModeActive = !ghostModeActive;
   const app = document.getElementById('app');
+  const html = document.documentElement;
   const body = document.body;
   const statusSpan = document.getElementById('ghost-mode-status');
   const btn = document.getElementById('toggle-ghost-mode');
+  const controls = document.getElementById('ghost-mode-controls');
   
   if (ghostModeActive) {
-    // Enable ghost mode - make everything transparent and click-through except controls
+    // Enable ghost mode - make ENTIRE popup transparent and click-through
+    html.style.backgroundColor = 'transparent';
+    body.style.backgroundColor = 'transparent';
     app.style.opacity = '0.15';
     app.style.pointerEvents = 'none';
-    body.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+    controls.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
+    controls.style.pointerEvents = 'auto';
     statusSpan.textContent = 'ACTIVE - Click through popup';
     statusSpan.style.color = '#10b981';
     statusSpan.style.fontWeight = 'bold';
     btn.textContent = '👻 Exit Ghost Mode';
-    console.log('Ghost mode ENABLED - opacity:', app.style.opacity);
+    console.log('Ghost mode ENABLED - entire popup transparent');
   } else {
     // Disable ghost mode
+    html.style.backgroundColor = '';
+    body.style.backgroundColor = '';
     app.style.opacity = '1';
     app.style.pointerEvents = 'auto';
-    body.style.backgroundColor = '';
+    controls.style.backgroundColor = 'white';
     statusSpan.textContent = '';
     statusSpan.style.fontWeight = 'normal';
     btn.textContent = '👻 Ghost Mode (Click Through)';
