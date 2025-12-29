@@ -268,26 +268,29 @@ let ghostModeActive = false;
 function toggleGhostMode() {
   ghostModeActive = !ghostModeActive;
   const app = document.getElementById('app');
+  const body = document.body;
   const statusSpan = document.getElementById('ghost-mode-status');
   const btn = document.getElementById('toggle-ghost-mode');
-  const controls = document.getElementById('ghost-mode-controls');
   
   if (ghostModeActive) {
     // Enable ghost mode - make everything transparent and click-through except controls
-    app.style.opacity = '0.3';
+    app.style.opacity = '0.15';
     app.style.pointerEvents = 'none';
-    controls.style.opacity = '1';
-    controls.style.pointerEvents = 'auto';
+    body.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
     statusSpan.textContent = 'ACTIVE - Click through popup';
     statusSpan.style.color = '#10b981';
+    statusSpan.style.fontWeight = 'bold';
     btn.textContent = '👻 Exit Ghost Mode';
+    console.log('Ghost mode ENABLED - opacity:', app.style.opacity);
   } else {
     // Disable ghost mode
     app.style.opacity = '1';
     app.style.pointerEvents = 'auto';
-    controls.style.opacity = '1';
+    body.style.backgroundColor = '';
     statusSpan.textContent = '';
+    statusSpan.style.fontWeight = 'normal';
     btn.textContent = '👻 Ghost Mode (Click Through)';
+    console.log('Ghost mode DISABLED');
   }
 }
 
