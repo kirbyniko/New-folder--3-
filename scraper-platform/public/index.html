@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scraper Platform - Dashboard</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: #f5f7fa;
+      color: #333;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    header {
+      background: white;
+      padding: 20px;
+      margin-bottom: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    h1 {
+      color: #2c3e50;
+      font-size: 28px;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 500;
+    }
+
+    .btn-primary {
+      background: #4285f4;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #357ae8;
+    }
+
+    .btn-success {
+      background: #22c55e;
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: #16a34a;
+    }
+
+    .btn-danger {
+      background: #ef4444;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+
+    .btn-secondary {
+      background: #6b7280;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: #4b5563;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: bold;
+      color: #4285f4;
+      margin: 10px 0;
+    }
+
+    .stat-label {
+      color: #6b7280;
+      font-size: 14px;
+    }
+
+    .scrapers-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 20px;
+    }
+
+    .scraper-card {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .scraper-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
+    .scraper-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 15px;
+    }
+
+    .scraper-name {
+      font-size: 18px;
+      font-weight: 600;
+      color: #2c3e50;
+      margin-bottom: 5px;
+    }
+
+    .scraper-jurisdiction {
+      color: #6b7280;
+      font-size: 14px;
+    }
+
+    .scraper-status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .status-active {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .status-inactive {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .scraper-info {
+      margin: 15px 0;
+      font-size: 14px;
+      color: #6b7280;
+    }
+
+    .scraper-info div {
+      margin: 5px 0;
+    }
+
+    .scraper-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 15px;
+    }
+
+    .scraper-actions button {
+      flex: 1;
+      padding: 8px;
+      font-size: 13px;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      max-width: 800px;
+      max-height: 80vh;
+      overflow-y: auto;
+      width: 90%;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .modal-title {
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #6b7280;
+    }
+
+    .data-table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+    }
+
+    .data-table th,
+    .data-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .data-table th {
+      background: #f9fafb;
+      font-weight: 600;
+      color: #374151;
+    }
+
+    .data-table tr:hover {
+      background: #f9fafb;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #6b7280;
+    }
+
+    .error {
+      background: #fee2e2;
+      color: #991b1b;
+      padding: 12px 16px;
+      border-radius: 6px;
+      margin: 10px 0;
+    }
+
+    .success {
+      background: #d1fae5;
+      color: #065f46;
+      padding: 12px 16px;
+      border-radius: 6px;
+      margin: 10px 0;
+    }
+
+    pre {
+      background: #f9fafb;
+      padding: 15px;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-size: 13px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .badge-puppeteer {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .badge-static {
+      background: #e5e7eb;
+      color: #374151;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🕷️ Scraper Platform</h1>
+      <div class="btn-group">
+        <button class="btn-primary" onclick="showImportModal()">📥 Import JSON</button>
+        <button class="btn-success" onclick="refreshScrapers()">🔄 Refresh</button>
+      </div>
+    </header>
+
+    <div class="stats" id="stats">
+      <!-- Stats will be loaded here -->
+    </div>
+
+    <div class="scrapers-grid" id="scrapers">
+      <div class="loading">Loading scrapers...</div>
+    </div>
+  </div>
+
+  <!-- Import Modal -->
+  <div class="modal" id="importModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">Import Scraper</h2>
+        <button class="close-btn" onclick="closeModal('importModal')">&times;</button>
+      </div>
+      <div>
+        <textarea 
+          id="importJSON" 
+          rows="20" 
+          style="width: 100%; padding: 10px; border: 1px solid #e5e7eb; border-radius: 6px; font-family: monospace;"
+          placeholder="Paste scraper JSON here..."></textarea>
+        <div style="margin-top: 15px; display: flex; gap: 10px;">
+          <button class="btn-primary" onclick="importScraper()" style="flex: 1;">Import</button>
+          <button class="btn-secondary" onclick="closeModal('importModal')" style="flex: 1;">Cancel</button>
+        </div>
+        <div id="importResult"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Data Modal -->
+  <div class="modal" id="dataModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="dataModalTitle">Scraped Data</h2>
+        <button class="close-btn" onclick="closeModal('dataModal')">&times;</button>
+      </div>
+      <div id="dataContent">
+        <div class="loading">Loading data...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Runs Modal -->
+  <div class="modal" id="runsModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="runsModalTitle">Scraper Runs</h2>
+        <button class="close-btn" onclick="closeModal('runsModal')">&times;</button>
+      </div>
+      <div id="runsContent">
+        <div class="loading">Loading runs...</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:3001/api';
+
+    // Load scrapers on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      refreshScrapers();
+    });
+
+    async function refreshScrapers() {
+      try {
+        const response = await fetch(`${API_BASE}/scrapers`);
+        const scrapers = await response.json();
+        
+        renderStats(scrapers);
+        renderScrapers(scrapers);
+      } catch (error) {
+        console.error('Error loading scrapers:', error);
+        document.getElementById('scrapers').innerHTML = 
+          '<div class="error">Failed to load scrapers</div>';
+      }
+    }
+
+    function renderStats(scrapers) {
+      const active = scrapers.filter(s => s.active).length;
+      const total = scrapers.length;
+      const totalFields = scrapers.reduce((sum, s) => sum + (s.total_fields || 0), 0);
+      
+      document.getElementById('stats').innerHTML = `
+        <div class="stat-card">
+          <div class="stat-label">Total Scrapers</div>
+          <div class="stat-value">${total}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Active</div>
+          <div class="stat-value">${active}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Fields</div>
+          <div class="stat-value">${totalFields}</div>
+        </div>
+      `;
+    }
+
+    function renderScrapers(scrapers) {
+      if (scrapers.length === 0) {
+        document.getElementById('scrapers').innerHTML = 
+          '<div class="loading">No scrapers found. Import one to get started!</div>';
+        return;
+      }
+
+      document.getElementById('scrapers').innerHTML = scrapers.map(s => `
+        <div class="scraper-card">
+          <div class="scraper-header">
+            <div>
+              <div class="scraper-name">${s.name}</div>
+              <div class="scraper-jurisdiction">${s.jurisdiction || 'N/A'} (${s.state_code || 'N/A'})</div>
+            </div>
+            <span class="scraper-status ${s.active ? 'status-active' : 'status-inactive'}">
+              ${s.active ? 'Active' : 'Inactive'}
+            </span>
+          </div>
+          
+          <div class="scraper-info">
+            <div>
+              <span class="badge ${s.requires_puppeteer ? 'badge-puppeteer' : 'badge-static'}">
+                ${s.requires_puppeteer ? '🌐 Puppeteer' : '📄 Static'}
+              </span>
+            </div>
+            <div>📊 Fields: ${s.total_fields || 0}</div>
+            <div>🔗 <a href="${s.start_url}" target="_blank" style="color: #4285f4; text-decoration: none;">${truncateUrl(s.start_url)}</a></div>
+          </div>
+
+          <div class="scraper-actions">
+            <button class="btn-success" onclick="runScraper(${s.id}, '${s.name}')">▶️ Run</button>
+            <button class="btn-secondary" onclick="viewRuns(${s.id}, '${s.name}')">📜 Runs</button>
+            <button class="btn-primary" onclick="viewData(${s.id}, '${s.name}')">📊 Data</button>
+            <button class="btn-primary" onclick="exportScraper(${s.id}, '${s.name}')">💾 Export</button>
+            <button class="btn-danger" onclick="deleteScraper(${s.id}, '${s.name}')">🗑️</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function truncateUrl(url) {
+      if (url.length > 40) return url.substring(0, 37) + '...';
+      return url;
+    }
+
+    async function runScraper(id, name) {
+      if (!confirm(`Run scraper: ${name}?`)) return;
+      
+      try {
+        const response = await fetch(`${API_BASE}/scrapers/${id}/run`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ headless: true, maxPages: 10 })
+        });
+        
+        const result = await response.json();
+        alert(result.message || 'Scraper started!');
+      } catch (error) {
+        alert('Error running scraper: ' + error.message);
+      }
+    }
+
+    async function viewRuns(id, name) {
+      document.getElementById('runsModalTitle').textContent = `Runs: ${name}`;
+      document.getElementById('runsContent').innerHTML = '<div class="loading">Loading...</div>';
+      document.getElementById('runsModal').classList.add('active');
+      
+      try {
+        const response = await fetch(`${API_BASE}/scrapers/${id}/runs`);
+        const runs = await response.json();
+        
+        if (runs.length === 0) {
+          document.getElementById('runsContent').innerHTML = '<p>No runs yet</p>';
+          return;
+        }
+
+        document.getElementById('runsContent').innerHTML = `
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Started</th>
+                <th>Status</th>
+                <th>Items Found</th>
+                <th>Duration</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${runs.map(r => `
+                <tr>
+                  <td>${new Date(r.started_at).toLocaleString()}</td>
+                  <td><span class="badge">${r.status}</span></td>
+                  <td>${r.items_found || 0}</td>
+                  <td>${r.completed_at ? Math.round((new Date(r.completed_at) - new Date(r.started_at)) / 1000) + 's' : 'Running...'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+      } catch (error) {
+        document.getElementById('runsContent').innerHTML = 
+          `<div class="error">Error: ${error.message}</div>`;
+      }
+    }
+
+    async function viewData(id, name) {
+      document.getElementById('dataModalTitle').textContent = `Data: ${name}`;
+      document.getElementById('dataContent').innerHTML = '<div class="loading">Loading...</div>';
+      document.getElementById('dataModal').classList.add('active');
+      
+      try {
+        const response = await fetch(`${API_BASE}/scrapers/${id}/data?limit=50`);
+        const data = await response.json();
+        
+        if (data.length === 0) {
+          document.getElementById('dataContent').innerHTML = '<p>No data yet. Run the scraper first!</p>';
+          return;
+        }
+
+        document.getElementById('dataContent').innerHTML = `
+          <p style="margin-bottom: 15px;color: #6b7280;">Showing ${data.length} most recent items</p>
+          <pre>${JSON.stringify(data.map(d => d.data), null, 2)}</pre>
+        `;
+      } catch (error) {
+        document.getElementById('dataContent').innerHTML = 
+          `<div class="error">Error: ${error.message}</div>`;
+      }
+    }
+
+    async function exportScraper(id, name) {
+      try {
+        const response = await fetch(`${API_BASE}/scrapers/${id}/export`);
+        const config = await response.json();
+        
+        const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        alert('Error exporting: ' + error.message);
+      }
+    }
+
+    async function deleteScraper(id, name) {
+      if (!confirm(`Delete scraper: ${name}?\n\nThis will also delete all scraped data!`)) return;
+      
+      try {
+        await fetch(`${API_BASE}/scrapers/${id}`, { method: 'DELETE' });
+        alert('Scraper deleted');
+        refreshScrapers();
+      } catch (error) {
+        alert('Error deleting: ' + error.message);
+      }
+    }
+
+    function showImportModal() {
+      document.getElementById('importModal').classList.add('active');
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('active');
+    }
+
+    async function importScraper() {
+      const json = document.getElementById('importJSON').value;
+      const resultDiv = document.getElementById('importResult');
+      
+      try {
+        const config = JSON.parse(json);
+        
+        const response = await fetch(`${API_BASE}/scrapers/import`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(config)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          resultDiv.innerHTML = `<div class="success">${result.message}</div>`;
+          setTimeout(() => {
+            closeModal('importModal');
+            refreshScrapers();
+          }, 1500);
+        } else {
+          resultDiv.innerHTML = `<div class="error">${result.error}</div>`;
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+      }
+    }
+  </script>
+</body>
+</html>

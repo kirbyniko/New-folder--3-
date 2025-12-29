@@ -10,6 +10,8 @@ const pool = new Pool({
 });
 
 export class ScraperDatabase {
+  public pool = pool;
+
   /**
    * Import a scraper configuration from JSON
    */
