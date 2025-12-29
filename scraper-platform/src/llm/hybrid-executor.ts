@@ -8,12 +8,19 @@ import { OllamaClient } from './ollama-client.js';
 import type { ScraperConfig } from '../types.js';
 import puppeteer, { Browser, Page } from 'puppeteer';
 
-// Dynamic import for broadcast function
+// Lazy-loaded broadcast function
 let broadcastLog: ((scraperId: number, level: string, message: string) => void) | null = null;
-try {
-  const serverModule = await import('../server.js');
-  broadcastLog = serverModule.broadcastLog;
-} catch {}
+let broadcastInitialized = false;
+
+async function initBroadcast() {
+  if (!broadcastInitialized) {
+    broadcastInitialized = true;
+    try {
+      const serverModule = await import('../server.js');
+      broadcastLog = serverModule.broadcastLog;
+    } catch {}
+  }
+}
 
 function log(scraperId: number, level: string, message: string) {
   if (broadcastLog) {
@@ -57,6 +64,10 @@ export class HybridScraperExecutor {
    */
   async execute(config: ScraperConfig, scraperId: number): Promise<ExecutionResult> {
     const startTime = Date.now();
+    
+    // Initialize broadcast on first execution
+    await initBroadcast();
+    
     log(scraperId, 'info', `Starting execution: ${config.name}`);
     log(scraperId, 'info', `Jurisdiction: ${config.jurisdiction}`);
 
