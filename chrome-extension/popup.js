@@ -93,6 +93,12 @@ function setupEventListeners() {
     console.warn('❌ autofill-base-url button not found');
   }
   
+  // Ghost Mode toggle
+  const ghostModeBtn = document.getElementById('toggle-ghost-mode');
+  if (ghostModeBtn) {
+    ghostModeBtn.addEventListener('click', toggleGhostMode);
+  }
+  
   // Capture buttons
   document.querySelectorAll('.capture-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -255,6 +261,34 @@ function autoFillBaseURL() {
       alert('Could not get current tab URL');
     }
   });
+}
+
+// Toggle Ghost Mode - make popup transparent and click-through
+let ghostModeActive = false;
+function toggleGhostMode() {
+  ghostModeActive = !ghostModeActive;
+  const app = document.getElementById('app');
+  const statusSpan = document.getElementById('ghost-mode-status');
+  const btn = document.getElementById('toggle-ghost-mode');
+  const controls = document.getElementById('ghost-mode-controls');
+  
+  if (ghostModeActive) {
+    // Enable ghost mode - make everything transparent and click-through except controls
+    app.style.opacity = '0.3';
+    app.style.pointerEvents = 'none';
+    controls.style.opacity = '1';
+    controls.style.pointerEvents = 'auto';
+    statusSpan.textContent = 'ACTIVE - Click through popup';
+    statusSpan.style.color = '#10b981';
+    btn.textContent = '👻 Exit Ghost Mode';
+  } else {
+    // Disable ghost mode
+    app.style.opacity = '1';
+    app.style.pointerEvents = 'auto';
+    controls.style.opacity = '1';
+    statusSpan.textContent = '';
+    btn.textContent = '👻 Ghost Mode (Click Through)';
+  }
 }
 
 // Auto-detect if Puppeteer is needed
