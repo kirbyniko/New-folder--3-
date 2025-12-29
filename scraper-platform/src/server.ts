@@ -370,6 +370,22 @@ app.get('/api/scripts', async (req: Request, res: Response) => {
   }
 });
 
+// Get execution details for a scraper
+app.get('/api/scrapers/:id/execution-details', async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id);
+    const details = hybridExecutor.getExecutionDetails(id);
+    
+    if (!details) {
+      return res.status(404).json({ error: 'No execution data available. Run the scraper first!' });
+    }
+    
+    res.json(details);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get specific script
 app.get('/api/scripts/:id', async (req: Request, res: Response) => {
   try {

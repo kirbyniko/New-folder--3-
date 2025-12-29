@@ -50,14 +50,45 @@ export interface CachedScript {
   averageDuration: number;
 }
 
+export interface ExecutionDetails {
+  scraperId: number;
+  scraperName: string;
+  executionMode?: string;
+  itemCount?: number;
+  duration?: number;
+  generatedScript?: {
+    code: string;
+    confidence: string;
+    reasoning: string;
+  };
+  htmlSnapshot?: string;
+  logs: Array<{ timestamp: string; level: string; message: string }>;
+  scrapedData?: any[];
+}
+
 export class HybridScraperExecutor {
   private scriptGenerator: ScraperScriptGenerator;
   private ollama: OllamaClient;
   private scriptCache: Map<number, CachedScript> = new Map();
+  private executionHistory: Map<number, ExecutionDetails> = new Map();
 
   constructor() {
     this.ollama = new OllamaClient();
     this.scriptGenerator = new ScraperScriptGenerator(this.ollama);
+  }
+
+  /**
+   * Get execution details for a scraper
+   */
+  getExecutionDetails(scraperId: number): ExecutionDetails | undefined {
+    return this.executionHistory.get(scraperId);
+  }
+
+  /**
+   * Store execution details
+   */
+  private storeExecutionDetails(details: ExecutionDetails) {
+    this.executionHistory.set(details.scraperId, details);
   }
 
   /**
@@ -129,6 +160,8 @@ export class HybridScraperExecutor {
     failureReason: string,
     startTime: number
   ): Promise<ExecutionResult> {
+    const logs: Array<{ timestamp: string; level: string; message: string }> = [];
+    
     // Check if Ollama is available
     const isAvailable = await this.ollama.checkAvailability();
     if (!isAvailable) {
@@ -179,6 +212,23 @@ export class HybridScraperExecutor {
         averageDuration: Date.now() - startTime
       });
       log(scraperId, 'info', 'Script cached for future use');
+
+      // Store execution details
+      this.storeExecutionDetails({
+        scraperId,
+        scraperName: config.name,
+        executionMode: 'llm-generated',
+        itemCount: resultCount,
+        duration: Date.now() - startTime,
+        generatedScript: {
+          code: generated.code,
+          confidence: generated.confidence,
+          reasoning: generated.reasoning
+        },
+        htmlSnapshot,
+        logs,
+        scrapedData: result
+      });
 
       return {
         success: true,
