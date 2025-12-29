@@ -1480,6 +1480,7 @@
 
     // Execution Details Viewer
     let currentExecutionData = {};
+    let execDetailsRefreshInterval = null;
 
     async function viewExecutionDetails(scraperId) {
       try {
@@ -1487,21 +1488,31 @@
         const response = await fetch(`/api/scrapers/${scraperId}/execution-details`);
         
         if (!response.ok) {
-          alert('No execution data available for this scraper. Run it first!');
+          // Check if scraper is currently running
+          const scraperResp = await fetch('/api/scrapers');
+          const scrapers = await scraperResp.json();
+          const scraper = scrapers.find(s => s.id === scraperId);
+          
+          if (scraper) {
+            alert(`⏳ No execution data yet for "${scraper.name}".\\n\\nThis could mean:\\n• Scraper hasn't been run yet\\n• Scraper is currently running (check logs below)\\n• Last execution was before server restart\\n\\nTry running it first!`);
+          } else {
+            alert('Scraper not found!');
+          }
           return;
         }
         
         const data = await response.json();
         currentExecutionData = data;
         
-        // Update modal title
-        document.getElementById('executionDetailsTitle').textContent = `🔍 ${data.scraperName} - Execution Details`;
+        // Update modal title with status indicator
+        const statusEmoji = data.itemCount > 0 ? '✅' : data.duration ? '⚠️' : '⏳';
+        document.getElementById('executionDetailsTitle').textContent = `${statusEmoji} ${data.scraperName} - Execution Details`;
         
         // Update summary cards
         document.getElementById('execDetailName').textContent = data.scraperName;
         document.getElementById('execDetailMode').textContent = data.executionMode || 'N/A';
-        document.getElementById('execDetailItems').textContent = data.itemCount || '0';
-        document.getElementById('execDetailDuration').textContent = data.duration ? `${(data.duration / 1000).toFixed(1)}s` : 'N/A';
+        document.getElementById('execDetailItems').textContent = data.itemCount !== undefined ? data.itemCount : '?';
+        document.getElementById('execDetailDuration').textContent = data.duration ? `${(data.duration / 1000).toFixed(1)}s` : 'In Progress...';
         
         // Show/hide generated script section
         if (data.generatedScript) {
@@ -1537,8 +1548,11 @@
               <span>${log.message}</span>
             </div>
           `).join('');
+          
+          // Scroll to bottom
+          logContainer.scrollTop = logContainer.scrollHeight;
         } else {
-          logContainer.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 20px;">No logs available</div>';
+          logContainer.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 20px;">⏳ No logs yet - execution may still be starting...</div>';
         }
         
         // Show/hide scraped data section
@@ -1547,11 +1561,18 @@
           document.getElementById('execDataContent').textContent = JSON.stringify(data.scrapedData, null, 2);
         } else {
           document.getElementById('execDataSection').style.display = 'block';
-          document.getElementById('execDataContent').textContent = '[\n  // No items found in last execution\n  // This could mean:\n  // - Selectors don\'t match page structure\n  // - Page requires authentication\n  // - Content is dynamically loaded\n]';
+          document.getElementById('execDataContent').textContent = '[\n  // No items found\\n  // Possible reasons:\\n  // - Selectors don\\'t match page structure\\n  // - Page requires authentication\\n  // - Content loaded dynamically\\n  // - Still executing (check logs above)\\n]';
         }
         
         // Show modal
         document.getElementById('executionDetailsModal').style.display = 'flex';
+        
+        // Auto-refresh if execution seems incomplete
+        const isIncomplete = !data.duration || data.logs.length === 0 || data.logs[data.logs.length - 1].message.includes('Prompting LLM');
+        if (isIncomplete) {
+          // Refresh every 3 seconds
+          execDetailsRefreshInterval = setInterval(() => viewExecutionDetails(scraperId), 3000);
+        }
       } catch (error) {
         alert(`❌ Failed to load execution details: ${error.message}`);
       }
@@ -1560,6 +1581,12 @@
     function hideExecutionDetails() {
       document.getElementById('executionDetailsModal').style.display = 'none';
       currentExecutionData = {};
+      
+      // Stop auto-refresh
+      if (execDetailsRefreshInterval) {
+        clearInterval(execDetailsRefreshInterval);
+        execDetailsRefreshInterval = null;
+      }
     }
 
     function copyExecutionScript() {

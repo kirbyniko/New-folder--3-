@@ -24,12 +24,32 @@ async function initBroadcast() {
 }
 
 function log(scraperId: number, level: string, message: string) {
+  const timestamp = new Date().toLocaleTimeString();
+  
+  // Store in execution history for this scraper
+  if (!executionLogs.has(scraperId)) {
+    executionLogs.set(scraperId, []);
+  }
+  executionLogs.get(scraperId)!.push({ timestamp, level, message });
+  
+  // Broadcast to SSE clients
   if (broadcastLog) {
     broadcastLog(scraperId, level, message);
   } else {
     const emoji = { info: 'ℹ️', success: '✅', warning: '⚠️', error: '❌' }[level] || '📝';
     console.log(`${emoji} [Scraper ${scraperId}] ${message}`);
   }
+}
+
+// Global execution logs storage
+const executionLogs = new Map<number, Array<{ timestamp: string; level: string; message: string }>>();
+
+export function getExecutionLogs(scraperId: number): Array<{ timestamp: string; level: string; message: string }> {
+  return executionLogs.get(scraperId) || [];
+}
+
+export function clearExecutionLogs(scraperId: number): void {
+  executionLogs.delete(scraperId);
 }
 
 export interface ExecutionResult {
@@ -100,6 +120,9 @@ export class HybridScraperExecutor {
     // Initialize broadcast on first execution
     await initBroadcast();
     
+    // Clear old logs for this scraper
+    clearExecutionLogs(scraperId);
+    
     log(scraperId, 'info', `Starting execution: ${config.name}`);
     log(scraperId, 'info', `Jurisdiction: ${config.jurisdiction}`);
 
@@ -111,6 +134,23 @@ export class HybridScraperExecutor {
         const result = await this.executeCachedScript(config, cached);
         this.updateCacheStats(scraperId, true, Date.now() - startTime);
         log(scraperId, 'success', `Cached script succeeded: ${result.length} items in ${Math.round((Date.now() - startTime) / 1000)}s`);
+        
+        // Store execution details for cached script
+        this.storeExecutionDetails({
+          scraperId,
+          scraperName: config.name,
+          executionMode: 'cached-script',
+          itemCount: result.length,
+          duration: Date.now() - startTime,
+          generatedScript: {
+            code: cached.code,
+            confidence: 'cached',
+            reasoning: `Cached script - ${cached.successCount}/${cached.runCount} success rate`
+          },
+          logs: getExecutionLogs(scraperId),
+          scrapedData: result
+        });
+        
         return {
           success: true,
           data: result,
@@ -136,6 +176,18 @@ export class HybridScraperExecutor {
       
       if (genericResult && genericResult.length > 0) {
         log(scraperId, 'success', `Generic engine succeeded: ${genericResult.length} items in ${Math.round((Date.now() - startTime) / 1000)}s`);
+        
+        // Store execution details for generic engine
+        this.storeExecutionDetails({
+          scraperId,
+          scraperName: config.name,
+          executionMode: 'generic',
+          itemCount: genericResult.length,
+          duration: Date.now() - startTime,
+          logs: getExecutionLogs(scraperId),
+          scrapedData: genericResult
+        });
+        
         return {
           success: true,
           data: genericResult,
@@ -160,8 +212,6 @@ export class HybridScraperExecutor {
     failureReason: string,
     startTime: number
   ): Promise<ExecutionResult> {
-    const logs: Array<{ timestamp: string; level: string; message: string }> = [];
-    
     // Check if Ollama is available
     const isAvailable = await this.ollama.checkAvailability();
     if (!isAvailable) {
@@ -177,10 +227,15 @@ export class HybridScraperExecutor {
 
     log(scraperId, 'info', `Generating custom script with LLM (${this.ollama['model']})...`);
     
+    let htmlSnapshot = '';
+    let generatedCode = '';
+    let generatedConfidence = '';
+    let generatedReasoning = '';
+    
     try {
       // Fetch HTML snapshot
       log(scraperId, 'info', `Fetching HTML snapshot from ${config.startUrl}...`);
-      const htmlSnapshot = await this.fetchHtmlSnapshot(config.startUrl);
+      htmlSnapshot = await this.fetchHtmlSnapshot(config.startUrl);
       log(scraperId, 'info', `HTML snapshot fetched (${Math.round(htmlSnapshot.length / 1024)}KB)`);
 
       // Generate script
@@ -191,6 +246,10 @@ export class HybridScraperExecutor {
         failureReason,
         existingAttempts: 1
       });
+
+      generatedCode = generated.code;
+      generatedConfidence = generated.confidence;
+      generatedReasoning = generated.reasoning;
 
       log(scraperId, 'success', `Script generated! Confidence: ${generated.confidence}`);
       log(scraperId, 'info', `Reasoning: ${generated.reasoning}`);
@@ -213,7 +272,7 @@ export class HybridScraperExecutor {
       });
       log(scraperId, 'info', 'Script cached for future use');
 
-      // Store execution details
+      // Store execution details with captured logs
       this.storeExecutionDetails({
         scraperId,
         scraperName: config.name,
@@ -226,7 +285,7 @@ export class HybridScraperExecutor {
           reasoning: generated.reasoning
         },
         htmlSnapshot,
-        logs,
+        logs: getExecutionLogs(scraperId),
         scrapedData: result
       });
 
@@ -238,6 +297,34 @@ export class HybridScraperExecutor {
         itemCount: resultCount
       };
     } catch (error: any) {
+      log(scraperId, 'error', `LLM generation failed: ${error.message}`);
+      
+      // Store failure details too
+      this.storeExecutionDetails({
+        scraperId,
+        scraperName: config.name,
+        executionMode: 'llm-generated',
+        itemCount: 0,
+        duration: Date.now() - startTime,
+        generatedScript: generatedCode ? {
+          code: generatedCode,
+          confidence: generatedConfidence,
+          reasoning: generatedReasoning
+        } : undefined,
+        htmlSnapshot: htmlSnapshot || undefined,
+        logs: getExecutionLogs(scraperId),
+        scrapedData: []
+      });
+      
+      return {
+        success: false,
+        error: `LLM generation failed: ${error.message}`,
+        executionMode: 'llm-generated',
+        duration: Date.now() - startTime,
+        itemCount: 0
+      };
+    }
+  }
       log(scraperId, 'error', `LLM generation failed: ${error.message}`);
       return {
         success: false,
