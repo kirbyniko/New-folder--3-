@@ -388,7 +388,6 @@ function validateMetadata() {
     level: levelRadio ? levelRadio.value : '',
     calendarUrl: document.getElementById('calendar-url').value,
     baseUrl: document.getElementById('base-url').value,
-    requiresJavaScript: document.getElementById('requires-js').checked,
     requiresPuppeteer: puppeteerRadio ? puppeteerRadio.value : 'no',
     notes: document.getElementById('notes').value
   };
