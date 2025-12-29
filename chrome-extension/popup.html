@@ -178,79 +178,319 @@
 
   <!-- Build Tab (Original Builder) -->
   <div id="tab-build" class="tab-content">
-    <h3 style="margin-top: 0;">🛠️ Build Custom Scraper</h3>
+    <!-- Ghost Mode Toggle -->
+    <div id="ghost-mode-controls" style="position: sticky; top: 0; background: white; padding: 8px; border-bottom: 1px solid #ddd; z-index: 1000; display: flex; align-items: center; justify-content: space-between; margin: -16px -16px 16px;">
+      <button type="button" id="toggle-ghost-mode" class="btn-secondary" style="font-size: 12px;">
+        👻 Ghost Mode (Click Through)
+      </button>
+      <span id="ghost-mode-status" style="font-size: 11px; color: #666;"></span>
+    </div>
     
-    <div id="build-form" style="display: flex; flex-direction: column; gap: 12px;">
-      <div class="form-group">
-        <label>Scraper Name *</label>
-        <input type="text" id="build-name" class="form-control" placeholder="e.g., Virginia House Calendar">
-      </div>
-      
-      <div class="form-group">
-        <label>Jurisdiction *</label>
-        <input type="text" id="build-jurisdiction" class="form-control" placeholder="e.g., Virginia">
-      </div>
-      
-      <div class="form-group">
-        <label>Level</label>
-        <select id="build-level" class="form-control">
-          <option value="local">Local</option>
-          <option value="state" selected>State</option>
-          <option value="federal">Federal</option>
-        </select>
-      </div>
-      
-      <div class="form-group">
-        <label>State Code</label>
-        <input type="text" id="build-state-code" class="form-control" placeholder="e.g., VA" maxlength="2" style="text-transform: uppercase;">
-      </div>
-      
-      <div class="form-group">
-        <label>Start URL *</label>
-        <input type="url" id="build-start-url" class="form-control" placeholder="https://example.gov/calendar">
-      </div>
-      
-      <div class="form-group">
-        <label>Scraper Type</label>
-        <select id="build-type" class="form-control">
-          <option value="static">Static (Single Page)</option>
-          <option value="dynamic">Dynamic (JavaScript)</option>
-          <option value="paginated">Paginated</option>
-        </select>
-      </div>
-      
-      <div style="border-top: 1px solid #ddd; padding-top: 12px; margin-top: 8px;">
-        <h4 style="margin: 0 0 8px 0; font-size: 13px; color: #666;">Selectors</h4>
-        <p style="margin: 0 0 12px 0; font-size: 11px; color: #999;">CSS selectors to extract data from the page</p>
-        
+    <div id="app">
+      <!-- Step 1: Metadata -->
+      <div id="step-metadata" class="step active">
+        <h2>📋 Step 1: Metadata</h2>
         <div class="form-group">
-          <label>Container Selector</label>
-          <input type="text" id="build-container" class="form-control" placeholder=".event-item, .calendar-entry">
+          <label>Jurisdiction Name *</label>
+          <input type="text" id="jurisdiction" placeholder="e.g., City of Boston / State of California">
+        </div>
+        <div class="form-group">
+          <label>State Code *</label>
+          <select id="state-code">
+            <option value="">Select state...</option>
+            <option value="AL">AL - Alabama</option>
+            <option value="AK">AK - Alaska</option>
+            <option value="AZ">AZ - Arizona</option>
+            <option value="AR">AR - Arkansas</option>
+            <option value="CA">CA - California</option>
+            <option value="CO">CO - Colorado</option>
+            <option value="CT">CT - Connecticut</option>
+            <option value="DE">DE - Delaware</option>
+            <option value="FL">FL - Florida</option>
+            <option value="GA">GA - Georgia</option>
+            <option value="HI">HI - Hawaii</option>
+            <option value="ID">ID - Idaho</option>
+            <option value="IL">IL - Illinois</option>
+            <option value="IN">IN - Indiana</option>
+            <option value="IA">IA - Iowa</option>
+            <option value="KS">KS - Kansas</option>
+            <option value="KY">KY - Kentucky</option>
+            <option value="LA">LA - Louisiana</option>
+            <option value="ME">ME - Maine</option>
+            <option value="MD">MD - Maryland</option>
+            <option value="MA">MA - Massachusetts</option>
+            <option value="MI">MI - Michigan</option>
+            <option value="MN">MN - Minnesota</option>
+            <option value="MS">MS - Mississippi</option>
+            <option value="MO">MO - Missouri</option>
+            <option value="MT">MT - Montana</option>
+            <option value="NE">NE - Nebraska</option>
+            <option value="NV">NV - Nevada</option>
+            <option value="NH">NH - New Hampshire</option>
+            <option value="NJ">NJ - New Jersey</option>
+            <option value="NM">NM - New Mexico</option>
+            <option value="NY">NY - New York</option>
+            <option value="NC">NC - North Carolina</option>
+            <option value="ND">ND - North Dakota</option>
+            <option value="OH">OH - Ohio</option>
+            <option value="OK">OK - Oklahoma</option>
+            <option value="OR">OR - Oregon</option>
+            <option value="PA">PA - Pennsylvania</option>
+            <option value="RI">RI - Rhode Island</option>
+            <option value="SC">SC - South Carolina</option>
+            <option value="SD">SD - South Dakota</option>
+            <option value="TN">TN - Tennessee</option>
+            <option value="TX">TX - Texas</option>
+            <option value="UT">UT - Utah</option>
+            <option value="VT">VT - Vermont</option>
+            <option value="VA">VA - Virginia</option>
+            <option value="WA">WA - Washington</option>
+            <option value="WV">WV - West Virginia</option>
+            <option value="WI">WI - Wisconsin</option>
+            <option value="WY">WY - Wyoming</option>
+            <option value="DC">DC - District of Columbia</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Level *</label>
+          <div class="radio-group">
+            <label><input type="radio" name="level" value="state"> State</label>
+            <label><input type="radio" name="level" value="local"> Local</label>
+            <label><input type="radio" name="level" value="federal"> Federal</label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Calendar URL *</label>
+          <div class="input-with-button">
+            <input type="text" id="calendar-url" placeholder="https://example.gov/calendar">
+            <button type="button" id="autofill-url" class="btn-secondary">🔗 Current URL</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Base URL *</label>
+          <div class="input-with-button">
+            <input type="text" id="base-url" placeholder="https://example.gov">
+            <button type="button" id="autofill-base-url" class="btn-secondary">🔍 Auto-detect</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Requires Puppeteer (Browser Automation)?</label>
+          <div class="radio-group">
+            <label><input type="radio" name="puppeteer" value="yes"> Yes - Calendar is JavaScript-rendered</label>
+            <label><input type="radio" name="puppeteer" value="no" checked> No - Static HTML works</label>
+            <label><input type="radio" name="puppeteer" value="unknown"> I don't know</label>
+          </div>
+          <button type="button" id="auto-detect-puppeteer" class="btn-secondary" style="margin-top: 8px;">🔍 Auto-Detect</button>
+          <div id="puppeteer-result" class="info-text" style="margin-top: 8px;"></div>
+        </div>
+        <div class="form-group">
+          <label>Notes (optional)</label>
+          <textarea id="notes" rows="3" placeholder="Any special considerations..."></textarea>
+        </div>
+        <button class="btn-primary" id="next-to-calendar">Next: Calendar Structure →</button>
+      </div>
+
+      <!-- Step 2: Calendar Structure -->
+      <div id="step-calendar" class="step">
+        <h2>📅 Step 2: Calendar Structure</h2>
+        
+        <div class="capture-helper" style="display: none;" id="capture-helper">
+          <strong>🎯 Multi-Step Capture Active!</strong>
+          <ul>
+            <li>Click an element on the page to capture it</li>
+            <li>Click the same button again to add more steps</li>
+            <li>Great for: modals, nested content, multi-click interactions</li>
+            <li>Press <kbd>ESC</kbd> to finish capturing</li>
+          </ul>
         </div>
         
-        <div class="form-group">
-          <label>Title Selector</label>
-          <input type="text" id="build-title" class="form-control" placeholder=".title, h3">
-        </div>
+        <p class="instruction">Click buttons below, then click elements on the page. You can capture multiple steps per field (e.g., click popup → click element inside).</p>
         
-        <div class="form-group">
-          <label>Date Selector</label>
-          <input type="text" id="build-date" class="form-control" placeholder=".date, time">
+        <div class="field-capture">
+          <h3>Navigation (Optional)</h3>
+          <button class="capture-btn" data-field="month-view-button">
+            <span class="status">⭕</span> Month View Button
+          </button>
+          <button class="capture-btn" data-field="next-button">
+            <span class="status">⭕</span> Next Month Button
+          </button>
+          <button class="capture-btn" data-field="prev-button">
+            <span class="status">⭕</span> Previous Month Button
+          </button>
         </div>
-        
-        <div class="form-group">
-          <label>Link Selector (optional)</label>
-          <input type="text" id="build-link" class="form-control" placeholder="a[href]">
+
+        <div class="field-capture">
+          <h3>Event List (Optional)</h3>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="has-event-list" checked>
+              Page has a visible event list (uncheck if calendar only shows via Puppeteer)
+            </label>
+          </div>
+          <div id="event-list-fields" style="margin-top: 12px;">
+            <button class="capture-btn" data-field="event-container">
+              <span class="status">⭕</span> Event List Container
+            </button>
+            <button class="capture-btn" data-field="event-item">
+              <span class="status">⭕</span> Single Event Item
+            </button>
+            <div id="events-count" class="info-text"></div>
+          </div>
+        </div>
+
+        <div class="btn-group">
+          <button class="btn-secondary" id="back-to-metadata">← Back</button>
+          <button class="btn-primary" id="next-to-fields">Next: Event Fields →</button>
         </div>
       </div>
-      
-      <button class="btn-primary" id="save-custom-scraper" style="margin-top: 8px;">
-        💾 Save to Library
-      </button>
-      
-      <button class="btn-secondary" id="clear-build-form" style="margin-top: 4px;">
-        🔄 Clear Form
-      </button>
+
+      <!-- Step 3: Event Fields -->
+      <div id="step-fields" class="step">
+        <h2>📝 Step 3: Event Fields</h2>
+        
+        <div class="capture-helper" style="display: none;" id="capture-helper-fields">
+          <strong>🎯 Multi-Step Capture Active!</strong>
+          <ul>
+            <li>Click an element on the page to capture it</li>
+            <li>Click the same button again to add more steps</li>
+            <li>Great for: modals, nested content, multi-click interactions</li>
+            <li>Press <kbd>ESC</kbd> to finish capturing</li>
+          </ul>
+        </div>
+        
+        <p class="instruction">Click buttons below, then click elements on the page. Click buttons multiple times for multi-step captures (e.g., click to open details → click field).</p>
+        
+        <div class="field-capture">
+          <h3>Required Fields</h3>
+          <button class="capture-btn required" data-field="name">
+            <span class="status">⭕</span> Event Name
+          </button>
+          <button class="capture-btn required" data-field="date">
+            <span class="status">⭕</span> Date
+          </button>
+        </div>
+
+        <div class="field-capture">
+          <h3>Recommended Fields</h3>
+          <button class="capture-btn" data-field="time">
+            <span class="status">⭕</span> Time
+          </button>
+          <button class="capture-btn" data-field="location">
+            <span class="status">⭕</span> Location
+          </button>
+          <button class="capture-btn" data-field="committee">
+            <span class="status">⭕</span> Committee
+          </button>
+          <button class="capture-btn" data-field="details-link">
+            <span class="status">⭕</span> Details Link
+          </button>
+        </div>
+
+        <div class="field-capture">
+          <h3>Optional Fields</h3>
+          <button class="capture-btn" data-field="description">
+            <span class="status">⭕</span> Description
+          </button>
+          <button class="capture-btn" data-field="type">
+            <span class="status">⭕</span> Event Type
+          </button>
+          <button class="capture-btn" data-field="virtual-link">
+            <span class="status">⭕</span> Virtual Meeting Link
+          </button>
+        </div>
+
+        <div class="btn-group">
+          <button class="btn-secondary" id="back-to-calendar">← Back</button>
+          <button class="btn-primary" id="next-to-details">Next: Details Page →</button>
+          <button class="btn-secondary" id="skip-details">Skip Details Page</button>
+        </div>
+      </div>
+
+      <!-- Step 4: Details Page -->
+      <div id="step-details" class="step">
+        <h2>🔍 Step 4: Details Page (Optional)</h2>
+        <p class="instruction">Navigate to a details page and capture additional fields.</p>
+        
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="has-details-page">
+            This site has separate detail pages
+          </label>
+        </div>
+
+        <div id="details-fields" style="display: none;">
+          <div class="field-capture">
+            <h3>Details Page Fields</h3>
+            <button class="capture-btn" data-field="agenda-url">
+              <span class="status">⭕</span> Agenda/PDF Link
+            </button>
+            <button class="capture-btn" data-field="docket-url">
+              <span class="status">⭕</span> Docket Link
+            </button>
+            <button class="capture-btn" data-field="details-virtual-link">
+              <span class="status">⭕</span> Virtual Meeting Link
+            </button>
+            <button class="capture-btn" data-field="details-description">
+              <span class="status">⭕</span> Full Description
+            </button>
+          </div>
+
+          <div class="field-capture">
+            <h3>Bills/Agenda Items</h3>
+            <button class="capture-btn" data-field="bills-container">
+              <span class="status">⭕</span> Bill List Container
+            </button>
+            <button class="capture-btn" data-field="bill-item">
+              <span class="status">⭕</span> Single Bill Item
+            </button>
+            <div id="bills-count" class="info-text"></div>
+          </div>
+
+          <div class="field-capture">
+            <h3>Bill Fields (within a bill item)</h3>
+            <button class="capture-btn" data-field="bill-number">
+              <span class="status">⭕</span> Bill Number
+            </button>
+            <button class="capture-btn" data-field="bill-title">
+              <span class="status">⭕</span> Bill Title
+            </button>
+            <button class="capture-btn" data-field="bill-url">
+              <span class="status">⭕</span> Bill Link
+            </button>
+          </div>
+        </div>
+
+        <div class="btn-group">
+          <button class="btn-secondary" id="back-to-fields">← Back</button>
+          <button class="btn-primary" id="next-to-review">Next: Review →</button>
+        </div>
+      </div>
+
+      <!-- Step 5: Review & Export -->
+      <div id="step-review" class="step">
+        <h2>✅ Step 5: Review & Export</h2>
+        
+        <div id="review-summary" class="review-section">
+          <h3>Summary</h3>
+          <div id="summary-content"></div>
+        </div>
+
+        <div class="review-section">
+          <h3>Validation</h3>
+          <div id="validation-results"></div>
+        </div>
+
+        <div class="review-section">
+          <h3>Captured Data Preview</h3>
+          <pre id="json-preview"></pre>
+        </div>
+
+        <div class="btn-group">
+          <button class="btn-secondary" id="back-to-details">← Back</button>
+          <button class="btn-primary" id="export-json">💾 Export JSON</button>
+          <button class="btn-secondary" id="copy-json">📋 Copy to Clipboard</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -311,6 +551,7 @@
     </div>
   </div>
 
+  <script src="popup.js"></script>
   <script src="popup-library.js"></script>
 </body>
 </html>
