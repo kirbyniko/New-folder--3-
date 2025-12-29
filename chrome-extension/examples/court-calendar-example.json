@@ -1,0 +1,164 @@
+{
+  "name": "Court Calendar Scraper - Example",
+  "description": "Example template for scraping court calendars with case numbers, judges, and hearing types. This demonstrates the unified events table architecture with metadata storage.",
+  "steps": [
+    {
+      "stepNumber": 1,
+      "stepName": "Basic Information",
+      "stepIcon": "📋",
+      "captureMode": false,
+      "fields": [
+        {
+          "name": "jurisdiction",
+          "type": "text",
+          "required": true,
+          "label": "Court Jurisdiction",
+          "placeholder": "e.g., Superior Court of Honolulu"
+        },
+        {
+          "name": "state_code",
+          "type": "select",
+          "required": true,
+          "label": "State Code",
+          "options": ["HI", "CA", "NY", "TX", "FL"]
+        },
+        {
+          "name": "court_url",
+          "type": "url",
+          "required": true,
+          "label": "Court Calendar URL",
+          "placeholder": "https://..."
+        }
+      ]
+    },
+    {
+      "stepNumber": 2,
+      "stepName": "Page Structure",
+      "stepIcon": "🏗️",
+      "captureMode": true,
+      "fields": [
+        {
+          "name": "calendar_container",
+          "type": "selector",
+          "required": true,
+          "label": "Calendar Container",
+          "placeholder": "Click the main calendar section"
+        },
+        {
+          "name": "hearing_item",
+          "type": "selector",
+          "required": true,
+          "label": "Single Hearing Row",
+          "placeholder": "Click one hearing/case row"
+        }
+      ]
+    },
+    {
+      "stepNumber": 3,
+      "stepName": "Core Event Fields",
+      "stepIcon": "📅",
+      "captureMode": true,
+      "fields": [
+        {
+          "name": "hearing_title",
+          "type": "selector",
+          "required": true,
+          "label": "Hearing Title/Name"
+        },
+        {
+          "name": "hearing_date",
+          "type": "selector",
+          "required": true,
+          "label": "Hearing Date"
+        },
+        {
+          "name": "hearing_time",
+          "type": "selector",
+          "required": true,
+          "label": "Hearing Time"
+        },
+        {
+          "name": "courtroom",
+          "type": "selector",
+          "required": true,
+          "label": "Courtroom/Department"
+        }
+      ]
+    },
+    {
+      "stepNumber": 4,
+      "stepName": "Court-Specific Details",
+      "stepIcon": "⚖️",
+      "captureMode": true,
+      "fields": [
+        {
+          "name": "case_number",
+          "type": "selector",
+          "required": true,
+          "label": "Case Number",
+          "placeholder": "e.g., CV-2025-12345"
+        },
+        {
+          "name": "judge_name",
+          "type": "selector",
+          "required": false,
+          "label": "Judge Name"
+        },
+        {
+          "name": "hearing_type",
+          "type": "selector",
+          "required": false,
+          "label": "Hearing Type",
+          "placeholder": "e.g., Motion Hearing, Trial"
+        },
+        {
+          "name": "case_type",
+          "type": "selector",
+          "required": false,
+          "label": "Case Type",
+          "placeholder": "e.g., Civil, Criminal, Family"
+        },
+        {
+          "name": "party_names",
+          "type": "selector",
+          "required": false,
+          "label": "Party Names",
+          "placeholder": "e.g., Smith v. Jones"
+        }
+      ]
+    },
+    {
+      "stepNumber": 5,
+      "stepName": "Review & Test",
+      "stepIcon": "✅",
+      "captureMode": false,
+      "showSummary": true,
+      "showValidation": true,
+      "showPreview": true
+    }
+  ],
+  "storage": {
+    "table": "events",
+    "eventType": "court_calendar",
+    "scraperSource": "example_court_calendar",
+    "useMetadata": true,
+    "fieldMapping": {
+      "core": {
+        "name": "hearing_title → events.name",
+        "date": "hearing_date → events.date",
+        "time": "hearing_time → events.time",
+        "location_name": "courtroom → events.location_name",
+        "description": "party_names → events.description"
+      },
+      "metadata": {
+        "case_number": "text",
+        "judge_name": "text",
+        "hearing_type": "text",
+        "case_type": "text",
+        "department": "text"
+      }
+    }
+  },
+  "createdAt": "2025-12-29T00:00:00.000Z",
+  "version": "1.0.0"
+}
