@@ -5,12 +5,16 @@ import { fileURLToPath } from 'url';
 import { db } from './db/client.js';
 import { ScraperEngine } from './engine/scraper-engine.js';
 import { ScraperConfig } from './types.js';
+import { HybridScraperExecutor } from './llm/hybrid-executor.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Singleton executor instance for script caching
+const hybridExecutor = new HybridScraperExecutor();
 
 // Log streaming for execution monitoring
 const executionClients = new Map<number, Response[]>();
@@ -206,12 +210,10 @@ app.post('/api/scrapers/:id/run', async (req: Request, res: Response) => {
     const config = await db.exportScraper(id);
     
     if (useHybrid) {
-      // Use hybrid executor (generic → LLM fallback)
-      const { HybridScraperExecutor } = await import('./llm/hybrid-executor.js');
-      const executor = new HybridScraperExecutor();
+      // Use singleton hybrid executor (generic → LLM fallback with caching)
       
       // Run in background with detailed logging
-      executor.execute(config, id).then(result => {
+      hybridExecutor.execute(config, id).then(result => {
         console.log(`✅ [Scraper ${id}] Execution completed:`, {
           scraper: config.name,
           mode: result.executionMode,
@@ -338,33 +340,28 @@ app.get('/api/data', async (req: Request, res: Response) => {
   }
 });
 
-// Serve index.html for all non-API routes
-app.get('*', (req: Request, res: Response) => {
-  res.sendFile(path.join(__dirname, '../public/index.html'));
-});
-
-// Error handling
-app.use((err: Error, req: Request, res: Response, next: any) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Internal server error' });
-});
-
-// ===== NEW: Scripts Management API =====
+// ===== Scripts Management API =====
 // List all cached scripts
 app.get('/api/scripts', async (req: Request, res: Response) => {
   try {
-    const { HybridScraperExecutor } = await import('./llm/hybrid-executor.js');
-    const executor = new HybridScraperExecutor();
-    const scripts = executor.getAllCachedScripts();
+    const scripts = hybridExecutor.getAllCachedScripts();
     
     // Enrich with scraper names
     const enriched = await Promise.all(scripts.map(async (script) => {
-      const config = await db.exportScraper(script.scraperId);
-      return {
-        ...script,
-        scraperName: config.name,
-        jurisdiction: config.jurisdiction
-      };
+      try {
+        const config = await db.exportScraper(script.scraperId);
+        return {
+          ...script,
+          scraperName: config.name,
+          jurisdiction: config.jurisdiction
+        };
+      } catch (err) {
+        return {
+          ...script,
+          scraperName: `Scraper ${script.scraperId}`,
+          jurisdiction: 'Unknown'
+        };
+      }
     }));
     
     res.json(enriched);
@@ -377,9 +374,7 @@ app.get('/api/scripts', async (req: Request, res: Response) => {
 app.get('/api/scripts/:id', async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id);
-    const { HybridScraperExecutor } = await import('./llm/hybrid-executor.js');
-    const executor = new HybridScraperExecutor();
-    const script = executor.getCachedScript(id);
+    const script = hybridExecutor.getCachedScript(id);
     
     if (!script) {
       return res.status(404).json({ error: 'Script not found' });
@@ -400,9 +395,7 @@ app.get('/api/scripts/:id', async (req: Request, res: Response) => {
 app.delete('/api/scripts/:id', async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id);
-    const { HybridScraperExecutor } = await import('./llm/hybrid-executor.js');
-    const executor = new HybridScraperExecutor();
-    executor.deleteCachedScript(id);
+    hybridExecutor.deleteCachedScript(id);
     
     res.json({ success: true, message: 'Script deleted' });
   } catch (error: any) {
@@ -410,26 +403,15 @@ app.delete('/api/scripts/:id', async (req: Request, res: Response) => {
   }
 });
 
-// ===== NEW: Data Viewing API =====
-// Get scraped data (paginated)
-app.get('/api/data', async (req: Request, res: Response) => {
-  try {
-    const limit = parseInt(req.query.limit as string) || 50;
-    const offset = parseInt(req.query.offset as string) || 0;
-    const scraperId = req.query.scraperId ? parseInt(req.query.scraperId as string) : null;
-    
-    // TODO: Add actual data retrieval from database
-    // For now, return placeholder
-    res.json({
-      total: 0,
-      limit,
-      offset,
-      data: [],
-      message: 'Data viewing endpoint - implementation pending'
-    });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
+// Serve index.html for all non-API routes
+app.get('*', (req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'));
+});
+
+// Error handling
+app.use((err: Error, req: Request, res: Response, next: any) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Internal server error' });
 });
 
 // Start server
