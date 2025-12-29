@@ -53,6 +53,26 @@ style.textContent = `
     0%, 100% { opacity: 1; }
     50% { opacity: 0.6; }
   }
+  @keyframes slideInRight {
+    from {
+      transform: translateX(400px);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+  @keyframes slideOutRight {
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateX(400px);
+      opacity: 0;
+    }
+  }
   .scraper-builder-hover-highlight {
     outline: 2px dashed #0066cc !important;
     outline-offset: 2px !important;
@@ -292,8 +312,41 @@ function handleClick(e) {
     data: capturedData
   });
   
-  // Stop capturing
-  stopCapturing();
+  // DON'T stop capturing - keep it active so user can add more steps
+  // Just show a success message
+  showNotification(`✓ Step captured! Click another element to add more steps, or press ESC to finish.`, 3000);
+}
+
+// Show notification to user
+function showNotification(message, duration = 3000) {
+  // Remove existing notification
+  const existing = document.getElementById('scraper-builder-notification');
+  if (existing) existing.remove();
+  
+  const notification = document.createElement('div');
+  notification.id = 'scraper-builder-notification';
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #22c55e;
+    color: white;
+    padding: 16px 24px;
+    border-radius: 8px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 9999999;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    animation: slideInRight 0.3s ease-out;
+  `;
+  notification.textContent = message;
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.style.animation = 'slideOutRight 0.3s ease-in';
+    setTimeout(() => notification.remove(), 300);
+  }, duration);
 }
 
 // Start capturing mode

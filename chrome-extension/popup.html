@@ -122,7 +122,18 @@
     <!-- Step 2: Calendar Structure -->
     <div id="step-calendar" class="step">
       <h2>📅 Step 2: Calendar Structure</h2>
-      <p class="instruction">Click elements on the page to capture their selectors. You can click a button multiple times to add sequential steps (e.g., click popup → click element inside).</p>
+      
+      <div class="capture-helper" style="display: none;" id="capture-helper">
+        <strong>🎯 Multi-Step Capture Active!</strong>
+        <ul>
+          <li>Click an element on the page to capture it</li>
+          <li>Click the same button again to add more steps</li>
+          <li>Great for: modals, nested content, multi-click interactions</li>
+          <li>Press <kbd>ESC</kbd> to finish capturing</li>
+        </ul>
+      </div>
+      
+      <p class="instruction">Click buttons below, then click elements on the page. You can capture multiple steps per field (e.g., click popup → click element inside).</p>
       
       <div class="field-capture">
         <h3>Navigation (Optional)</h3>
@@ -165,7 +176,18 @@
     <!-- Step 3: Event Fields -->
     <div id="step-fields" class="step">
       <h2>📝 Step 3: Event Fields</h2>
-      <p class="instruction">Click on each field within an event to capture it. Click buttons multiple times to add multi-step captures (e.g., click to open details → click field).</p>
+      
+      <div class="capture-helper" style="display: none;" id="capture-helper-fields">
+        <strong>🎯 Multi-Step Capture Active!</strong>
+        <ul>
+          <li>Click an element on the page to capture it</li>
+          <li>Click the same button again to add more steps</li>
+          <li>Great for: modals, nested content, multi-click interactions</li>
+          <li>Press <kbd>ESC</kbd> to finish capturing</li>
+        </ul>
+      </div>
+      
+      <p class="instruction">Click buttons below, then click elements on the page. Click buttons multiple times for multi-step captures (e.g., click to open details → click field).</p>
       
       <div class="field-capture">
         <h3>Required Fields</h3>

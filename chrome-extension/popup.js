@@ -335,6 +335,12 @@ function autoDetectPuppeteer() {
 function startCapture(field, button) {
   console.log('🎯 startCapture called for field:', field);
   
+  // Show helper box
+  const helperBox = document.getElementById('capture-helper') || document.getElementById('capture-helper-fields');
+  if (helperBox) {
+    helperBox.style.display = 'block';
+  }
+  
   // Update button state
   button.classList.add('capturing');
   button.classList.remove('captured');
@@ -433,6 +439,24 @@ function handleCapturedElement(data) {
   if (button) {
     button.classList.remove('capturing');
     button.classList.add('captured');
+    
+    // Get step count
+    let stepCount = 0;
+    if (field.startsWith('event-') && !field.startsWith('event-container')) {
+      stepCount = state.eventFields[field]?.length || 0;
+    } else if (field.startsWith('bill-')) {
+      stepCount = state.detailsPage.billFields?.[field]?.length || 0;
+    } else if (['month-view-button', 'next-button', 'prev-button', 'event-container', 'event-item'].includes(field)) {
+      stepCount = state.calendarStructure[field]?.length || 0;
+    } else {
+      stepCount = state.detailsPage[field]?.length || 0;
+    }
+    
+    // Update button to show step count
+    const statusSpan = button.querySelector('.status');
+    if (statusSpan) {
+      statusSpan.textContent = `✓ ${stepCount}`;
+    }
   }
   
   // Show counts for containers
