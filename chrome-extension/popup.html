@@ -178,18 +178,79 @@
 
   <!-- Build Tab (Original Builder) -->
   <div id="tab-build" class="tab-content">
-    <div id="ghost-mode-controls" style="background: white; padding: 8px; border-bottom: 1px solid #ddd; display: flex; align-items: center; justify-content: space-between; margin: -16px -16px 16px;">
-      <button type="button" id="toggle-ghost-mode" class="btn-secondary" style="font-size: 12px;">
-        👻 Ghost Mode
-      </button>
-      <span id="ghost-mode-status" style="font-size: 11px; color: #666;"></span>
-    </div>
+    <h3 style="margin-top: 0;">🛠️ Build Custom Scraper</h3>
     
-    <div id="app">
-      <!-- All the original builder steps go here -->
-      <p style="text-align: center; color: #666; padding: 20px;">
-        Original scraper builder interface
-      </p>
+    <div id="build-form" style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="form-group">
+        <label>Scraper Name *</label>
+        <input type="text" id="build-name" class="form-control" placeholder="e.g., Virginia House Calendar">
+      </div>
+      
+      <div class="form-group">
+        <label>Jurisdiction *</label>
+        <input type="text" id="build-jurisdiction" class="form-control" placeholder="e.g., Virginia">
+      </div>
+      
+      <div class="form-group">
+        <label>Level</label>
+        <select id="build-level" class="form-control">
+          <option value="local">Local</option>
+          <option value="state" selected>State</option>
+          <option value="federal">Federal</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label>State Code</label>
+        <input type="text" id="build-state-code" class="form-control" placeholder="e.g., VA" maxlength="2" style="text-transform: uppercase;">
+      </div>
+      
+      <div class="form-group">
+        <label>Start URL *</label>
+        <input type="url" id="build-start-url" class="form-control" placeholder="https://example.gov/calendar">
+      </div>
+      
+      <div class="form-group">
+        <label>Scraper Type</label>
+        <select id="build-type" class="form-control">
+          <option value="static">Static (Single Page)</option>
+          <option value="dynamic">Dynamic (JavaScript)</option>
+          <option value="paginated">Paginated</option>
+        </select>
+      </div>
+      
+      <div style="border-top: 1px solid #ddd; padding-top: 12px; margin-top: 8px;">
+        <h4 style="margin: 0 0 8px 0; font-size: 13px; color: #666;">Selectors</h4>
+        <p style="margin: 0 0 12px 0; font-size: 11px; color: #999;">CSS selectors to extract data from the page</p>
+        
+        <div class="form-group">
+          <label>Container Selector</label>
+          <input type="text" id="build-container" class="form-control" placeholder=".event-item, .calendar-entry">
+        </div>
+        
+        <div class="form-group">
+          <label>Title Selector</label>
+          <input type="text" id="build-title" class="form-control" placeholder=".title, h3">
+        </div>
+        
+        <div class="form-group">
+          <label>Date Selector</label>
+          <input type="text" id="build-date" class="form-control" placeholder=".date, time">
+        </div>
+        
+        <div class="form-group">
+          <label>Link Selector (optional)</label>
+          <input type="text" id="build-link" class="form-control" placeholder="a[href]">
+        </div>
+      </div>
+      
+      <button class="btn-primary" id="save-custom-scraper" style="margin-top: 8px;">
+        💾 Save to Library
+      </button>
+      
+      <button class="btn-secondary" id="clear-build-form" style="margin-top: 4px;">
+        🔄 Clear Form
+      </button>
     </div>
   </div>
 
