@@ -247,99 +247,154 @@ function showStatus(message, type) {
 // TEMPLATE CREATOR TAB
 // ========================================
 
-let templateRequiredFields = [];
-let templateOptionalFields = [];
+let templateSteps = [];
 
-function renderFieldList(fields, containerId, isRequired) {
-  const container = document.getElementById(containerId);
+function renderStepsList() {
+  const container = document.getElementById('steps-list');
   if (!container) return;
   
-  if (fields.length === 0) {
-    container.innerHTML = '<p style="color: #999; font-size: 11px; margin: 0;">No fields added yet</p>';
+  if (templateSteps.length === 0) {
+    container.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No steps added yet. Click "Add Step" to begin.</p>';
     return;
   }
   
-  container.innerHTML = fields.map((field, index) => `
-    <div style="display: flex; align-items: center; gap: 8px; padding: 6px; background: white; border: 1px solid #ddd; border-radius: 4px;">
-      <span style="flex: 1; font-size: 12px;">${field}</span>
-      <button class="btn-danger remove-field-btn" data-field-type="${isRequired ? 'required' : 'optional'}" data-field-index="${index}" style="padding: 4px 8px; font-size: 11px;">🗑️</button>
+  container.innerHTML = templateSteps.map((step, index) => `
+    <div style="border: 1px solid #ddd; border-radius: 6px; padding: 12px; background: white;">
+      <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+        <div style="flex: 1;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+            <strong style="font-size: 13px;">Step ${index + 1}: ${step.stepName || 'Unnamed Step'}</strong>
+            ${step.stepIcon ? `<span>${step.stepIcon}</span>` : ''}
+          </div>
+          <div style="font-size: 11px; color: #666;">
+            ${step.fields.length} field(s) • ${step.captureMode ? '🎯 Capture Mode' : '📝 Form Mode'}
+          </div>
+        </div>
+        <div style="display: flex; gap: 4px;">
+          ${index > 0 ? `<button class="btn-secondary move-step-up-btn" data-step-index="${index}" style="padding: 4px 8px; font-size: 11px;">↑</button>` : ''}
+          ${index < templateSteps.length - 1 ? `<button class="btn-secondary move-step-down-btn" data-step-index="${index}" style="padding: 4px 8px; font-size: 11px;">↓</button>` : ''}
+          <button class="btn-secondary edit-step-btn" data-step-index="${index}" style="padding: 4px 8px; font-size: 11px;">✏️</button>
+          <button class="btn-danger delete-step-btn" data-step-index="${index}" style="padding: 4px 8px; font-size: 11px;">🗑️</button>
+        </div>
+      </div>
+      <div style="font-size: 11px; color: #888; margin-top: 8px;">
+        Fields: ${step.fields.map(f => f.label).join(', ') || 'None'}
+      </div>
     </div>
   `).join('');
   
-  // Add event listeners to remove buttons
-  container.querySelectorAll('.remove-field-btn').forEach(btn => {
+  // Add event listeners
+  container.querySelectorAll('.move-step-up-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      const fieldType = btn.dataset.fieldType;
-      const fieldIndex = parseInt(btn.dataset.fieldIndex);
-      
-      if (fieldType === 'required') {
-        templateRequiredFields.splice(fieldIndex, 1);
-        renderFieldList(templateRequiredFields, 'required-fields-list', true);
-      } else {
-        templateOptionalFields.splice(fieldIndex, 1);
-        renderFieldList(templateOptionalFields, 'optional-fields-list', false);
+      const index = parseInt(btn.dataset.stepIndex);
+      if (index > 0) {
+        [templateSteps[index], templateSteps[index - 1]] = [templateSteps[index - 1], templateSteps[index]];
+        renderStepsList();
+        updateTemplatePreview();
       }
-      
-      updateTemplatePreview();
+    });
+  });
+  
+  container.querySelectorAll('.move-step-down-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const index = parseInt(btn.dataset.stepIndex);
+      if (index < templateSteps.length - 1) {
+        [templateSteps[index], templateSteps[index + 1]] = [templateSteps[index + 1], templateSteps[index]];
+        renderStepsList();
+        updateTemplatePreview();
+      }
+    });
+  });
+  
+  container.querySelectorAll('.edit-step-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const index = parseInt(btn.dataset.stepIndex);
+      editStep(index);
+    });
+  });
+  
+  container.querySelectorAll('.delete-step-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const index = parseInt(btn.dataset.stepIndex);
+      if (confirm(`Delete step "${templateSteps[index].stepName}"?`)) {
+        templateSteps.splice(index, 1);
+        renderStepsList();
+        updateTemplatePreview();
+      }
     });
   });
 }
 
-document.getElementById('add-required-field')?.addEventListener('click', () => {
-  const input = document.getElementById('new-required-field');
-  const fieldName = input.value.trim();
+function editStep(index) {
+  const step = templateSteps[index];
+  const stepName = prompt('Step Name:', step.stepName) || step.stepName;
+  const stepIcon = prompt('Step Icon (emoji):', step.stepIcon) || step.stepIcon;
+  const captureMode = confirm('Enable Capture Mode? (Click elements on page)');
   
-  if (!fieldName) return;
+  templateSteps[index] = {
+    ...step,
+    stepName,
+    stepIcon,
+    captureMode
+  };
   
-  if (templateRequiredFields.includes(fieldName)) {
-    alert('Field already exists!');
-    return;
+  // Now edit fields
+  const fieldsJson = JSON.stringify(step.fields, null, 2);
+  const newFieldsJson = prompt('Edit fields JSON:', fieldsJson);
+  
+  if (newFieldsJson) {
+    try {
+      templateSteps[index].fields = JSON.parse(newFieldsJson);
+    } catch (e) {
+      alert('Invalid JSON: ' + e.message);
+    }
   }
   
-  templateRequiredFields.push(fieldName);
-  renderFieldList(templateRequiredFields, 'required-fields-list', true);
-  input.value = '';
+  renderStepsList();
   updateTemplatePreview();
-});
+}
 
-document.getElementById('add-optional-field')?.addEventListener('click', () => {
-  const input = document.getElementById('new-optional-field');
-  const fieldName = input.value.trim();
+document.getElementById('add-step-btn')?.addEventListener('click', () => {
+  const stepName = prompt('Step Name:', `Step ${templateSteps.length + 1}`);
+  if (!stepName) return;
   
-  if (!fieldName) return;
+  const stepIcon = prompt('Step Icon (emoji, optional):', '📋');
+  const captureMode = confirm('Enable Capture Mode? (Users click elements to capture selectors)');
   
-  if (templateOptionalFields.includes(fieldName)) {
-    alert('Field already exists!');
-    return;
+  const newStep = {
+    stepNumber: templateSteps.length + 1,
+    stepName: stepName,
+    stepIcon: stepIcon || '📋',
+    captureMode: captureMode,
+    fields: []
+  };
+  
+  // Add some example fields
+  const addExampleFields = confirm('Add example fields to this step?');
+  if (addExampleFields) {
+    if (captureMode) {
+      newStep.fields = [
+        { name: 'selector_example', type: 'selector', required: true, label: 'Example Selector Field' }
+      ];
+    } else {
+      newStep.fields = [
+        { name: 'text_example', type: 'text', required: true, label: 'Example Text Field', placeholder: 'Enter value...' }
+      ];
+    }
   }
   
-  templateOptionalFields.push(fieldName);
-  renderFieldList(templateOptionalFields, 'optional-fields-list', false);
-  input.value = '';
+  templateSteps.push(newStep);
+  renderStepsList();
   updateTemplatePreview();
-});
-
-// Allow Enter key to add fields
-document.getElementById('new-required-field')?.addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') {
-    document.getElementById('add-required-field').click();
-  }
-});
-
-document.getElementById('new-optional-field')?.addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') {
-    document.getElementById('add-optional-field').click();
-  }
 });
 
 function updateTemplatePreview() {
   const name = document.getElementById('template-name')?.value.trim();
   const description = document.getElementById('template-description')?.value.trim();
-  const category = document.getElementById('template-category')?.value;
   const tableName = document.getElementById('template-table')?.value.trim();
   const autoCreateTable = document.getElementById('template-auto-create-table')?.checked;
   
-  if (!name && templateRequiredFields.length === 0 && templateOptionalFields.length === 0) {
+  if (!name && templateSteps.length === 0) {
     document.getElementById('template-preview').style.display = 'none';
     return;
   }
@@ -347,9 +402,7 @@ function updateTemplatePreview() {
   const template = {
     name: name || 'Untitled Template',
     description: description || '',
-    category: category || 'custom',
-    requiredFields: templateRequiredFields,
-    optionalFields: templateOptionalFields,
+    steps: templateSteps,
     storage: {
       tableName: tableName || name.toLowerCase().replace(/\s+/g, '_'),
       autoCreate: autoCreateTable
@@ -363,7 +416,7 @@ function updateTemplatePreview() {
 }
 
 // Update preview on input changes
-['template-name', 'template-description', 'template-category', 'template-table'].forEach(id => {
+['template-name', 'template-description', 'template-table'].forEach(id => {
   document.getElementById(id)?.addEventListener('input', updateTemplatePreview);
 });
 
@@ -372,7 +425,6 @@ document.getElementById('template-auto-create-table')?.addEventListener('change'
 document.getElementById('save-template')?.addEventListener('click', async () => {
   const name = document.getElementById('template-name').value.trim();
   const description = document.getElementById('template-description').value.trim();
-  const category = document.getElementById('template-category').value;
   const tableName = document.getElementById('template-table').value.trim();
   const autoCreateTable = document.getElementById('template-auto-create-table').checked;
   
@@ -381,62 +433,68 @@ document.getElementById('save-template')?.addEventListener('click', async () => 
     return;
   }
   
-  if (templateRequiredFields.length === 0) {
-    alert('❌ Please add at least one required field');
+  if (templateSteps.length === 0) {
+    alert('❌ Please add at least one step');
     return;
   }
   
   const template = {
     name,
     description,
-    category: category || 'custom',
-    requiredFields: templateRequiredFields,
-    optionalFields: templateOptionalFields,
+    steps: templateSteps,
     storage: {
       tableName: tableName || name.toLowerCase().replace(/\s+/g, '_'),
       autoCreate: autoCreateTable
-    },
-    createdAt: new Date().toISOString(),
-    version: '1.0.0'
+    }
   };
   
-  // Save to localStorage for now (later can sync to DB)
-  const existingTemplates = JSON.parse(localStorage.getItem('builderTemplates') || '[]');
-  existingTemplates.push(template);
-  localStorage.setItem('builderTemplates', JSON.stringify(existingTemplates));
-  
-  // Also save to examples directory format
-  const filename = `${name.toLowerCase().replace(/\s+/g, '-')}-template.json`;
-  
-  alert(`✅ Template "${name}" saved!\n\nFields: ${templateRequiredFields.length} required, ${templateOptionalFields.length} optional\n\nTemplate can now be used to create custom scrapers.`);
-  
-  // Clear form
-  document.getElementById('template-name').value = '';
-  document.getElementById('template-description').value = '';
-  document.getElementById('template-category').value = '';
-  document.getElementById('template-table').value = '';
-  document.getElementById('template-auto-create-table').checked = false;
-  templateRequiredFields = [];
-  templateOptionalFields = [];
-  renderFieldList(templateRequiredFields, 'required-fields-list', true);
-  renderFieldList(templateOptionalFields, 'optional-fields-list', false);
-  updateTemplatePreview();
+  // Save to backend API
+  try {
+    const response = await fetch('http://localhost:3001/api/templates', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(template)
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+    }
+    
+    const result = await response.json();
+    
+    const statusEl = document.getElementById('template-save-status');
+    statusEl.textContent = `✅ Template "${name}" saved to database! ID: ${result.template.id}`;
+    statusEl.style.background = '#d1fae5';
+    statusEl.style.border = '1px solid #10b981';
+    statusEl.style.color = '#065f46';
+    statusEl.style.display = 'block';
+    
+    setTimeout(() => {
+      statusEl.style.display = 'none';
+    }, 5000);
+    
+  } catch (error) {
+    const statusEl = document.getElementById('template-save-status');
+    statusEl.textContent = `❌ Error saving template: ${error.message}`;
+    statusEl.style.background = '#fee2e2';
+    statusEl.style.border = '1px solid #ef4444';
+    statusEl.style.color = '#991b1b';
+    statusEl.style.display = 'block';
+  }
 });
 
 document.getElementById('export-template-json')?.addEventListener('click', () => {
   const name = document.getElementById('template-name').value.trim();
   
-  if (!name || templateRequiredFields.length === 0) {
-    alert('❌ Please fill in template name and add at least one required field');
+  if (!name || templateSteps.length === 0) {
+    alert('❌ Please fill in template name and add at least one step');
     return;
   }
   
   const template = {
     name,
     description: document.getElementById('template-description').value.trim(),
-    category: document.getElementById('template-category').value || 'custom',
-    requiredFields: templateRequiredFields,
-    optionalFields: templateOptionalFields,
+    steps: templateSteps,
     storage: {
       tableName: document.getElementById('template-table').value.trim() || name.toLowerCase().replace(/\s+/g, '_'),
       autoCreate: document.getElementById('template-auto-create-table').checked
@@ -451,15 +509,55 @@ document.getElementById('export-template-json')?.addEventListener('click', () =>
   navigator.clipboard.writeText(json).then(() => {
     alert('✅ Template JSON copied to clipboard!');
   }).catch(() => {
-    // Fallback: show in dialog
     prompt('Copy this template JSON:', json);
   });
 });
 
-// Initialize field lists on load
-if (document.getElementById('required-fields-list')) {
-  renderFieldList(templateRequiredFields, 'required-fields-list', true);
-  renderFieldList(templateOptionalFields, 'optional-fields-list', false);
+document.getElementById('load-legislative-template')?.addEventListener('click', () => {
+  // Load the default legislative calendar template structure
+  templateSteps = [
+    {
+      stepNumber: 1,
+      stepName: 'Metadata',
+      stepIcon: '📋',
+      captureMode: false,
+      fields: [
+        { name: 'jurisdiction', type: 'text', required: true, label: 'Jurisdiction Name' },
+        { name: 'state_code', type: 'select', required: true, label: 'State Code' },
+        { name: 'level', type: 'radio', required: true, label: 'Level' }
+      ]
+    },
+    {
+      stepNumber: 2,
+      stepName: 'Calendar Structure',
+      stepIcon: '📅',
+      captureMode: true,
+      fields: [
+        { name: 'event_container', type: 'selector', required: true, label: 'Event List Container' },
+        { name: 'event_item', type: 'selector', required: true, label: 'Single Event Item' }
+      ]
+    },
+    {
+      stepNumber: 3,
+      stepName: 'Event Fields',
+      stepIcon: '📝',
+      captureMode: true,
+      fields: [
+        { name: 'name', type: 'selector', required: true, label: 'Event Name' },
+        { name: 'date', type: 'selector', required: true, label: 'Date' },
+        { name: 'time', type: 'selector', required: false, label: 'Time' }
+      ]
+    }
+  ];
+  
+  renderStepsList();
+  updateTemplatePreview();
+  alert('✅ Loaded legislative calendar template example with 3 steps');
+});
+
+// Initialize
+if (document.getElementById('steps-list')) {
+  renderStepsList();
 }
 
 // ========================================
