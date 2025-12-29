@@ -339,7 +339,7 @@ function startCapture(field, button) {
   button.classList.add('capturing');
   button.classList.remove('captured');
   
-  // Send message to content script
+  // First, inject the content script, then send message
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     console.log('📋 Active tab:', tabs[0]);
     if (chrome.runtime.lastError) {
@@ -347,18 +347,36 @@ function startCapture(field, button) {
       return;
     }
     
-    console.log('📤 Sending START_CAPTURE message to tab:', tabs[0].id);
-    chrome.tabs.sendMessage(tabs[0].id, {
-      type: 'START_CAPTURE',
-      field: field
-    }, (response) => {
+    const tabId = tabs[0].id;
+    
+    // Inject content script first
+    console.log('💉 Injecting content script into tab:', tabId);
+    chrome.scripting.executeScript({
+      target: { tabId: tabId },
+      files: ['content.js']
+    }, () => {
       if (chrome.runtime.lastError) {
-        console.error('❌ Error sending message:', chrome.runtime.lastError.message);
-        alert('Could not connect to page. Try refreshing the page and reopening the extension.');
+        console.error('❌ Error injecting script:', chrome.runtime.lastError.message);
+        alert('Could not inject script. Make sure you\'re not on a chrome:// page.');
         button.classList.remove('capturing');
-      } else {
-        console.log('✅ Message sent successfully, response:', response);
+        return;
       }
+      
+      console.log('✅ Content script injected, now sending START_CAPTURE message');
+      
+      // Now send the message
+      chrome.tabs.sendMessage(tabId, {
+        type: 'START_CAPTURE',
+        field: field
+      }, (response) => {
+        if (chrome.runtime.lastError) {
+          console.error('❌ Error sending message:', chrome.runtime.lastError.message);
+          alert('Could not connect to page. Try refreshing the page and reopening the extension.');
+          button.classList.remove('capturing');
+        } else {
+          console.log('✅ Message sent successfully, response:', response);
+        }
+      });
     });
   });
 }
