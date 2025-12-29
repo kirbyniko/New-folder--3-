@@ -7,6 +7,7 @@ import { ScraperScriptGenerator } from './script-generator.js';
 import { OllamaClient } from './ollama-client.js';
 import type { ScraperConfig } from '../types.js';
 import puppeteer, { Browser, Page } from 'puppeteer';
+import * as cheerio from 'cheerio';
 
 // Lazy-loaded broadcast function
 let broadcastLog: ((scraperId: number, level: string, message: string) => void) | null = null;
@@ -217,13 +218,13 @@ export class HybridScraperExecutor {
       const page = await browser.newPage();
       await page.goto(config.startUrl, { waitUntil: 'networkidle2', timeout: 30000 });
 
-      // Create a safe execution environment
-      const scrapeDataFunction = new Function('page', 'config', `
+      // Create a safe execution environment with necessary imports available
+      const scrapeDataFunction = new Function('page', 'config', 'cheerio', 'puppeteer', `
         ${code}
         return scrapeData(page, config);
       `);
 
-      const result = await scrapeDataFunction(page, config);
+      const result = await scrapeDataFunction(page, config, cheerio, puppeteer);
       
       // Ensure we always return an array
       if (!result) {

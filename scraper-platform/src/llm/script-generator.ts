@@ -66,8 +66,16 @@ Your task is to generate production-ready, robust scraper code that:
 5. Returns clean, structured JSON data
 6. Works on real-world websites with ads, popups, and dynamic loading
 
+CRITICAL RULES:
+- DO NOT use require() or import statements
+- DO NOT write: const puppeteer = require("puppeteer")
+- DO NOT write: const cheerio = require("cheerio")
+- The libraries puppeteer and cheerio are ALREADY AVAILABLE in your function scope
+- You can use them directly: cheerio.load(), puppeteer features, etc.
+
 Generate ONLY the scraper function code. No explanations, no markdown formatting.
-The function should be named 'scrapeData' and accept (page, config) as parameters.`;
+The function signature MUST be: async function scrapeData(page, config)
+Return an array of objects with the extracted data.`;
   }
 
   private buildPrompt(
