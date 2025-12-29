@@ -719,6 +719,112 @@
       margin-left: 8px;
     }
 
+    /* Execution Details Dropdown */
+    .execution-details-dropdown {
+      display: none;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 2px solid var(--border);
+      animation: slideDown 0.3s ease;
+    }
+
+    .execution-details-dropdown.active {
+      display: block;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        max-height: 0;
+      }
+      to {
+        opacity: 1;
+        max-height: 5000px;
+      }
+    }
+
+    .exec-section {
+      margin-bottom: 20px;
+    }
+
+    .exec-section h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-primary);
+    }
+
+    .exec-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .exec-summary-card {
+      background: rgba(255, 255, 255, 0.03);
+      padding: 12px;
+      border-radius: 8px;
+      border-left: 3px solid var(--primary);
+    }
+
+    .exec-summary-label {
+      font-size: 10px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .exec-summary-value {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text-primary);
+    }
+
+    .exec-code-block {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 12px;
+      border-radius: 6px;
+      overflow-x: auto;
+      max-height: 250px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 11px;
+      line-height: 1.4;
+      margin: 0;
+    }
+
+    .exec-log-entry {
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 11px;
+    }
+
+    .exec-log-timestamp {
+      color: var(--text-secondary);
+      margin-right: 8px;
+    }
+
+    .exec-log-level {
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 9px;
+      font-weight: 600;
+      margin-right: 8px;
+    }
+
+    .exec-actions-bar {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
       .scrapers-grid {
@@ -817,85 +923,6 @@
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="hideImportModal()">Cancel</button>
         <button class="btn btn-primary" onclick="importScraper()">Import</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Execution Details Modal -->
-  <div id="executionDetailsModal" class="modal">
-    <div class="modal-content" style="max-width: 1200px;">
-      <div class="modal-header">
-        <h3 id="executionDetailsTitle">🔍 Execution Details</h3>
-        <button class="modal-close" onclick="hideExecutionDetails()">✕</button>
-      </div>
-      <div class="modal-body" style="max-height: 80vh; overflow-y: auto;">
-        <!-- Execution Summary -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 24px;">
-          <div style="background: var(--bg-main); padding: 12px; border-radius: 8px; border-left: 3px solid var(--primary);">
-            <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">SCRAPER</div>
-            <div id="execDetailName" style="font-weight: 600; font-size: 14px;">-</div>
-          </div>
-          <div style="background: var(--bg-main); padding: 12px; border-radius: 8px; border-left: 3px solid var(--success);">
-            <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">EXECUTION MODE</div>
-            <div id="execDetailMode" style="font-weight: 600; font-size: 14px;">-</div>
-          </div>
-          <div style="background: var(--bg-main); padding: 12px; border-radius: 8px; border-left: 3px solid var(--warning);">
-            <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">ITEMS FOUND</div>
-            <div id="execDetailItems" style="font-weight: 600; font-size: 20px;">-</div>
-          </div>
-          <div style="background: var(--bg-main); padding: 12px; border-radius: 8px; border-left: 3px solid var(--secondary);">
-            <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">DURATION</div>
-            <div id="execDetailDuration" style="font-weight: 600; font-size: 14px;">-</div>
-          </div>
-        </div>
-
-        <!-- Generated Script Section -->
-        <div id="execScriptSection" style="display: none; margin-bottom: 24px;">
-          <h4 style="margin-bottom: 12px; font-size: 16px; display: flex; align-items: center; gap: 8px;">
-            <span>🤖 Generated Script</span>
-            <button class="btn btn-sm btn-secondary" onclick="copyExecutionScript()" style="margin-left: auto;">📋 Copy</button>
-          </h4>
-          <div style="background: var(--bg-main); padding: 12px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 12px;">
-            <div style="display: flex; gap: 16px; font-size: 12px;">
-              <div><strong>Confidence:</strong> <span id="execScriptConfidence">-</span></div>
-              <div><strong>Reasoning:</strong> <span id="execScriptReasoning" style="color: var(--text-secondary);">-</span></div>
-            </div>
-          </div>
-          <pre id="execScriptCode" style="background: #1e1e1e; color: #d4d4d4; padding: 16px; border-radius: 8px; overflow-x: auto; max-height: 300px; font-family: 'Consolas', 'Monaco', monospace; font-size: 12px; line-height: 1.5; margin: 0;">No script available</pre>
-        </div>
-
-        <!-- HTML Snapshot Section -->
-        <div id="execHtmlSection" style="display: none; margin-bottom: 24px;">
-          <h4 style="margin-bottom: 12px; font-size: 16px; display: flex; align-items: center; gap: 8px;">
-            <span>📄 HTML Snapshot</span>
-            <span id="execHtmlSize" style="font-size: 12px; color: var(--text-secondary); font-weight: normal;">-</span>
-            <button class="btn btn-sm btn-secondary" onclick="copyHtmlSnapshot()" style="margin-left: auto;">📋 Copy</button>
-          </h4>
-          <pre id="execHtmlContent" style="background: #1e1e1e; color: #d4d4d4; padding: 16px; border-radius: 8px; overflow-x: auto; max-height: 300px; font-family: 'Consolas', 'Monaco', monospace; font-size: 11px; line-height: 1.4; margin: 0;">No HTML snapshot available</pre>
-        </div>
-
-        <!-- Execution Logs -->
-        <div>
-          <h4 style="margin-bottom: 12px; font-size: 16px; display: flex; align-items: center; gap: 8px;">
-            <span>📋 Execution Logs</span>
-            <button class="btn btn-sm btn-secondary" onclick="exportExecutionLogs()" style="margin-left: auto;">💾 Export</button>
-          </h4>
-          <div id="execLogContainer" style="background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; padding: 12px; max-height: 400px; overflow-y: auto; font-family: 'Monaco', 'Courier New', monospace; font-size: 12px;">
-            <div style="text-align: center; color: var(--text-secondary); padding: 20px;">No logs available</div>
-          </div>
-        </div>
-
-        <!-- Scraped Data Preview -->
-        <div id="execDataSection" style="display: none; margin-top: 24px;">
-          <h4 style="margin-bottom: 12px; font-size: 16px; display: flex; align-items: center; gap: 8px;">
-            <span>📊 Scraped Data</span>
-            <button class="btn btn-sm btn-secondary" onclick="exportScrapedData()" style="margin-left: auto;">💾 Export JSON</button>
-          </h4>
-          <pre id="execDataContent" style="background: #1e1e1e; color: #d4d4d4; padding: 16px; border-radius: 8px; overflow-x: auto; max-height: 300px; font-family: 'Consolas', 'Monaco', monospace; font-size: 12px; line-height: 1.5; margin: 0;">No data available</pre>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-primary" onclick="hideExecutionDetails()">Close</button>
       </div>
     </div>
   </div>
@@ -1178,7 +1205,7 @@
               <button class="btn btn-success btn-sm" onclick="runScraper(${scraper.id})">
                 ▶️ Run
               </button>
-              <button class="btn btn-primary btn-sm" onclick="viewExecutionDetails(${scraper.id})">
+              <button class="btn btn-primary btn-sm" onclick="toggleExecutionDetails(${scraper.id})">
                 🔍 Details
               </button>
               <button class="btn btn-primary btn-sm" onclick="viewScript(${scraper.id})">
@@ -1196,6 +1223,68 @@
               <button class="btn btn-danger btn-sm" onclick="deleteScraper(${scraper.id})">
                 🗑️
               </button>
+            </div>
+
+            <!-- Execution Details Dropdown -->
+            <div id="exec-details-${scraper.id}" class="execution-details-dropdown">
+              <div class="exec-section">
+                <div class="exec-summary-grid">
+                  <div class="exec-summary-card" style="border-left-color: var(--primary);">
+                    <div class="exec-summary-label">Scraper</div>
+                    <div class="exec-summary-value" id="exec-name-${scraper.id}">-</div>
+                  </div>
+                  <div class="exec-summary-card" style="border-left-color: var(--success);">
+                    <div class="exec-summary-label">Mode</div>
+                    <div class="exec-summary-value" id="exec-mode-${scraper.id}">-</div>
+                  </div>
+                  <div class="exec-summary-card" style="border-left-color: var(--warning);">
+                    <div class="exec-summary-label">Items Found</div>
+                    <div class="exec-summary-value" id="exec-items-${scraper.id}" style="font-size: 18px;">-</div>
+                  </div>
+                  <div class="exec-summary-card" style="border-left-color: var(--secondary);">
+                    <div class="exec-summary-label">Duration</div>
+                    <div class="exec-summary-value" id="exec-duration-${scraper.id}">-</div>
+                  </div>
+                </div>
+              </div>
+
+              <div id="exec-script-section-${scraper.id}" class="exec-section" style="display: none;">
+                <h4>🤖 Generated Script</h4>
+                <div style="background: rgba(255, 255, 255, 0.03); padding: 8px 12px; border-radius: 6px; margin-bottom: 8px; font-size: 11px;">
+                  <strong>Confidence:</strong> <span id="exec-confidence-${scraper.id}">-</span> &nbsp;|&nbsp;
+                  <strong>Reasoning:</strong> <span id="exec-reasoning-${scraper.id}" style="color: var(--text-secondary);">-</span>
+                </div>
+                <pre id="exec-code-${scraper.id}" class="exec-code-block">No script available</pre>
+                <div class="exec-actions-bar">
+                  <button class="btn btn-sm btn-secondary" onclick="copyExecutionScript(${scraper.id})">📋 Copy</button>
+                </div>
+              </div>
+
+              <div id="exec-html-section-${scraper.id}" class="exec-section" style="display: none;">
+                <h4>📄 HTML Snapshot <span id="exec-html-size-${scraper.id}" style="font-size: 11px; color: var(--text-secondary); font-weight: normal;">-</span></h4>
+                <pre id="exec-html-${scraper.id}" class="exec-code-block">No HTML snapshot available</pre>
+                <div class="exec-actions-bar">
+                  <button class="btn btn-sm btn-secondary" onclick="copyHtmlSnapshot(${scraper.id})">📋 Copy</button>
+                </div>
+              </div>
+
+              <div class="exec-section">
+                <h4>📋 Execution Logs</h4>
+                <div id="exec-logs-${scraper.id}" style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: 6px; padding: 12px; max-height: 300px; overflow-y: auto;">
+                  <div style="text-align: center; color: var(--text-secondary); padding: 20px;">⏳ No logs yet</div>
+                </div>
+                <div class="exec-actions-bar">
+                  <button class="btn btn-sm btn-secondary" onclick="exportExecutionLogs(${scraper.id})">💾 Export</button>
+                </div>
+              </div>
+
+              <div id="exec-data-section-${scraper.id}" class="exec-section" style="display: none;">
+                <h4>📊 Scraped Data</h4>
+                <pre id="exec-data-${scraper.id}" class="exec-code-block">No data available</pre>
+                <div class="exec-actions-bar">
+                  <button class="btn btn-sm btn-secondary" onclick="exportScrapedData(${scraper.id})">💾 Export JSON</button>
+                </div>
+              </div>
             </div>
           </div>
         `;
@@ -1480,9 +1569,28 @@
 
     // Execution Details Viewer
     let currentExecutionData = {};
-    let execDetailsRefreshInterval = null;
+    let execDetailsRefreshIntervals = {};
 
-    async function viewExecutionDetails(scraperId) {
+    async function toggleExecutionDetails(scraperId) {
+      const dropdown = document.getElementById(`exec-details-${scraperId}`);
+      
+      // Toggle visibility
+      if (dropdown.classList.contains('active')) {
+        dropdown.classList.remove('active');
+        // Stop auto-refresh
+        if (execDetailsRefreshIntervals[scraperId]) {
+          clearInterval(execDetailsRefreshIntervals[scraperId]);
+          execDetailsRefreshIntervals[scraperId] = null;
+        }
+        return;
+      }
+      
+      // Show and load data
+      dropdown.classList.add('active');
+      await loadExecutionDetails(scraperId);
+    }
+
+    async function loadExecutionDetails(scraperId) {
       try {
         // Fetch execution details from API
         const response = await fetch(`/api/scrapers/${scraperId}/execution-details`);
@@ -1494,7 +1602,7 @@
           const scraper = scrapers.find(s => s.id === scraperId);
           
           if (scraper) {
-            alert(`⏳ No execution data yet for "${scraper.name}".\\n\\nThis could mean:\\n• Scraper hasn't been run yet\\n• Scraper is currently running (check logs below)\\n• Last execution was before server restart\\n\\nTry running it first!`);
+            alert(`⏳ No execution data yet for "${scraper.name}".\n\nThis could mean:\n• Scraper hasn't been run yet\n• Scraper is currently running (check logs below)\n• Last execution was before server restart\n\nTry running it first!`);
           } else {
             alert('Scraper not found!');
           }
@@ -1502,44 +1610,40 @@
         }
         
         const data = await response.json();
-        currentExecutionData = data;
-        
-        // Update modal title with status indicator
-        const statusEmoji = data.itemCount > 0 ? '✅' : data.duration ? '⚠️' : '⏳';
-        document.getElementById('executionDetailsTitle').textContent = `${statusEmoji} ${data.scraperName} - Execution Details`;
+        currentExecutionData[scraperId] = data;
         
         // Update summary cards
-        document.getElementById('execDetailName').textContent = data.scraperName;
-        document.getElementById('execDetailMode').textContent = data.executionMode || 'N/A';
-        document.getElementById('execDetailItems').textContent = data.itemCount !== undefined ? data.itemCount : '?';
-        document.getElementById('execDetailDuration').textContent = data.duration ? `${(data.duration / 1000).toFixed(1)}s` : 'In Progress...';
+        document.getElementById(`exec-name-${scraperId}`).textContent = data.scraperName;
+        document.getElementById(`exec-mode-${scraperId}`).textContent = data.executionMode || 'N/A';
+        document.getElementById(`exec-items-${scraperId}`).textContent = data.itemCount !== undefined ? data.itemCount : '?';
+        document.getElementById(`exec-duration-${scraperId}`).textContent = data.duration ? `${(data.duration / 1000).toFixed(1)}s` : 'In Progress...';
         
         // Show/hide generated script section
         if (data.generatedScript) {
-          document.getElementById('execScriptSection').style.display = 'block';
-          document.getElementById('execScriptCode').textContent = data.generatedScript.code || 'No code available';
-          document.getElementById('execScriptConfidence').textContent = data.generatedScript.confidence || 'N/A';
-          document.getElementById('execScriptReasoning').textContent = data.generatedScript.reasoning || 'N/A';
+          document.getElementById(`exec-script-section-${scraperId}`).style.display = 'block';
+          document.getElementById(`exec-code-${scraperId}`).textContent = data.generatedScript.code || 'No code available';
+          document.getElementById(`exec-confidence-${scraperId}`).textContent = data.generatedScript.confidence || 'N/A';
+          document.getElementById(`exec-reasoning-${scraperId}`).textContent = data.generatedScript.reasoning || 'N/A';
         } else {
-          document.getElementById('execScriptSection').style.display = 'none';
+          document.getElementById(`exec-script-section-${scraperId}`).style.display = 'none';
         }
         
         // Show/hide HTML snapshot section
         if (data.htmlSnapshot) {
-          document.getElementById('execHtmlSection').style.display = 'block';
-          document.getElementById('execHtmlContent').textContent = data.htmlSnapshot;
-          document.getElementById('execHtmlSize').textContent = `(${(data.htmlSnapshot.length / 1024).toFixed(1)} KB)`;
+          document.getElementById(`exec-html-section-${scraperId}`).style.display = 'block';
+          document.getElementById(`exec-html-${scraperId}`).textContent = data.htmlSnapshot;
+          document.getElementById(`exec-html-size-${scraperId}`).textContent = `(${(data.htmlSnapshot.length / 1024).toFixed(1)} KB)`;
         } else {
-          document.getElementById('execHtmlSection').style.display = 'none';
+          document.getElementById(`exec-html-section-${scraperId}`).style.display = 'none';
         }
         
         // Populate execution logs
-        const logContainer = document.getElementById('execLogContainer');
+        const logContainer = document.getElementById(`exec-logs-${scraperId}`);
         if (data.logs && data.logs.length > 0) {
           logContainer.innerHTML = data.logs.map(log => `
-            <div style="padding: 4px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
-              <span style="color: var(--text-secondary);">${log.timestamp}</span>
-              <span style="padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; margin: 0 8px; background: ${
+            <div class="exec-log-entry">
+              <span class="exec-log-timestamp">${log.timestamp}</span>
+              <span class="exec-log-level" style="background: ${
                 log.level === 'error' ? 'rgba(239, 68, 68, 0.2); color: var(--danger)' :
                 log.level === 'warning' ? 'rgba(245, 158, 11, 0.2); color: var(--warning)' :
                 log.level === 'success' ? 'rgba(16, 185, 129, 0.2); color: var(--success)' :
@@ -1557,59 +1661,57 @@
         
         // Show/hide scraped data section
         if (data.scrapedData && data.scrapedData.length > 0) {
-          document.getElementById('execDataSection').style.display = 'block';
-          document.getElementById('execDataContent').textContent = JSON.stringify(data.scrapedData, null, 2);
+          document.getElementById(`exec-data-section-${scraperId}`).style.display = 'block';
+          document.getElementById(`exec-data-${scraperId}`).textContent = JSON.stringify(data.scrapedData, null, 2);
         } else {
-          document.getElementById('execDataSection').style.display = 'block';
-          document.getElementById('execDataContent').textContent = '[\n  // No items found\\n  // Possible reasons:\\n  // - Selectors don\\'t match page structure\\n  // - Page requires authentication\\n  // - Content loaded dynamically\\n  // - Still executing (check logs above)\\n]';
+          document.getElementById(`exec-data-section-${scraperId}`).style.display = 'block';
+          document.getElementById(`exec-data-${scraperId}`).textContent = `[
+  // No items found
+  // Possible reasons:
+  // - Selectors don't match page structure
+  // - Page requires authentication
+  // - Content loaded dynamically
+  // - Still executing (check logs above)
+]`;
         }
-        
-        // Show modal
-        document.getElementById('executionDetailsModal').style.display = 'flex';
         
         // Auto-refresh if execution seems incomplete
         const isIncomplete = !data.duration || data.logs.length === 0 || data.logs[data.logs.length - 1].message.includes('Prompting LLM');
-        if (isIncomplete) {
+        if (isIncomplete && !execDetailsRefreshIntervals[scraperId]) {
           // Refresh every 3 seconds
-          execDetailsRefreshInterval = setInterval(() => viewExecutionDetails(scraperId), 3000);
+          execDetailsRefreshIntervals[scraperId] = setInterval(() => loadExecutionDetails(scraperId), 3000);
+        } else if (!isIncomplete && execDetailsRefreshIntervals[scraperId]) {
+          // Stop refreshing once complete
+          clearInterval(execDetailsRefreshIntervals[scraperId]);
+          execDetailsRefreshIntervals[scraperId] = null;
         }
       } catch (error) {
         alert(`❌ Failed to load execution details: ${error.message}`);
       }
     }
 
-    function hideExecutionDetails() {
-      document.getElementById('executionDetailsModal').style.display = 'none';
-      currentExecutionData = {};
-      
-      // Stop auto-refresh
-      if (execDetailsRefreshInterval) {
-        clearInterval(execDetailsRefreshInterval);
-        execDetailsRefreshInterval = null;
-      }
-    }
-
-    function copyExecutionScript() {
-      const code = document.getElementById('execScriptCode').textContent;
+    function copyExecutionScript(scraperId) {
+      const code = document.getElementById(`exec-code-${scraperId}`).textContent;
       navigator.clipboard.writeText(code).then(() => {
         alert('✅ Script copied to clipboard!');
       });
     }
 
-    function copyHtmlSnapshot() {
-      const html = document.getElementById('execHtmlContent').textContent;
+    function copyHtmlSnapshot(scraperId) {
+      const html = document.getElementById(`exec-html-${scraperId}`).textContent;
       navigator.clipboard.writeText(html).then(() => {
         alert('✅ HTML snapshot copied to clipboard!');
       });
     }
 
-    function exportExecutionLogs() {
-      if (!currentExecutionData.logs || currentExecutionData.logs.length === 0) {
+    function exportExecutionLogs(scraperId) {
+      if (!currentExecutionData[scraperId] || !currentExecutionData[scraperId].logs || currentExecutionData[scraperId].logs.length === 0) {
         alert('No logs to export');
         return;
       }
       
-      const logText = currentExecutionData.logs.map(log =>
+      const data = currentExecutionData[scraperId];
+      const logText = data.logs.map(log =>
         `[${log.timestamp}] ${log.level.toUpperCase()}: ${log.message}`
       ).join('\n');
       
@@ -1617,22 +1719,23 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `execution-logs-${currentExecutionData.scraperId}-${new Date().toISOString()}.txt`;
+      a.download = `execution-logs-${data.scraperName || 'scraper'}-${new Date().toISOString()}.txt`;
       a.click();
       URL.revokeObjectURL(url);
     }
 
-    function exportScrapedData() {
-      if (!currentExecutionData.scrapedData || currentExecutionData.scrapedData.length === 0) {
+    function exportScrapedData(scraperId) {
+      if (!currentExecutionData[scraperId] || !currentExecutionData[scraperId].scrapedData || currentExecutionData[scraperId].scrapedData.length === 0) {
         alert('No data to export');
         return;
       }
       
-      const blob = new Blob([JSON.stringify(currentExecutionData.scrapedData, null, 2)], { type: 'application/json' });
+      const data = currentExecutionData[scraperId];
+      const blob = new Blob([JSON.stringify(data.scrapedData, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `scraped-data-${currentExecutionData.scraperId}-${new Date().toISOString()}.json`;
+      a.download = `scraped-data-${data.scraperName || 'scraper'}-${new Date().toISOString()}.json`;
       a.click();
       URL.revokeObjectURL(url);
     }
@@ -1651,29 +1754,36 @@
           return;
         }
         
-        // Show in execution details modal
-        currentExecutionData = {
+        // Prepare data for dropdown display
+        currentExecutionData[scraperId] = {
           scraperId: scraperId,
           scraperName: data[0].scraper_name || 'Unknown',
+          executionMode: 'Historical Data',
+          itemCount: data.length,
           scrapedData: data,
           logs: []
         };
         
-        document.getElementById('executionDetailsTitle').textContent = `📊 ${data[0].scraper_name || 'Scraper'} - Data View`;
-        document.getElementById('execDetailName').textContent = data[0].scraper_name || 'Unknown';
-        document.getElementById('execDetailMode').textContent = 'Historical Data';
-        document.getElementById('execDetailItems').textContent = data.length.toString();
-        document.getElementById('execDetailDuration').textContent = 'N/A';
+        // Open dropdown and populate with historical data
+        const dropdown = document.getElementById(`exec-details-${scraperId}`);
+        dropdown.classList.add('active');
         
-        document.getElementById('execScriptSection').style.display = 'none';
-        document.getElementById('execHtmlSection').style.display = 'none';
+        // Update summary
+        document.getElementById(`exec-name-${scraperId}`).textContent = data[0].scraper_name || 'Unknown';
+        document.getElementById(`exec-mode-${scraperId}`).textContent = 'Historical Data';
+        document.getElementById(`exec-items-${scraperId}`).textContent = data.length.toString();
+        document.getElementById(`exec-duration-${scraperId}`).textContent = 'N/A';
         
-        document.getElementById('execLogContainer').innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 20px;">Viewing historical data</div>';
+        // Hide script/HTML sections
+        document.getElementById(`exec-script-section-${scraperId}`).style.display = 'none';
+        document.getElementById(`exec-html-section-${scraperId}`).style.display = 'none';
         
-        document.getElementById('execDataSection').style.display = 'block';
-        document.getElementById('execDataContent').textContent = JSON.stringify(data, null, 2);
+        // Update logs
+        document.getElementById(`exec-logs-${scraperId}`).innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 20px;">Viewing historical data</div>';
         
-        document.getElementById('executionDetailsModal').style.display = 'flex';
+        // Show data
+        document.getElementById(`exec-data-section-${scraperId}`).style.display = 'block';
+        document.getElementById(`exec-data-${scraperId}`).textContent = JSON.stringify(data, null, 2);
       } catch (error) {
         alert(`❌ Failed to load data: ${error.message}`);
       }
