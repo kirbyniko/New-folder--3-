@@ -391,8 +391,8 @@ document.getElementById('add-step-btn')?.addEventListener('click', () => {
 function updateTemplatePreview() {
   const name = document.getElementById('template-name')?.value.trim();
   const description = document.getElementById('template-description')?.value.trim();
-  const tableName = document.getElementById('template-table')?.value.trim();
-  const autoCreateTable = document.getElementById('template-auto-create-table')?.checked;
+  const eventType = document.getElementById('template-event-type')?.value.trim();
+  const scraperSource = document.getElementById('template-scraper-source')?.value.trim();
   
   if (!name && templateSteps.length === 0) {
     document.getElementById('template-preview').style.display = 'none';
@@ -404,8 +404,10 @@ function updateTemplatePreview() {
     description: description || '',
     steps: templateSteps,
     storage: {
-      tableName: tableName || name.toLowerCase().replace(/\s+/g, '_'),
-      autoCreate: autoCreateTable
+      table: 'events',  // Always use unified events table
+      eventType: eventType || 'other',
+      scraperSource: scraperSource || name.toLowerCase().replace(/\s+/g, '_'),
+      useMetadata: true  // Store scraper-specific fields in JSONB metadata column
     },
     createdAt: new Date().toISOString(),
     version: '1.0.0'
@@ -416,20 +418,30 @@ function updateTemplatePreview() {
 }
 
 // Update preview on input changes
-['template-name', 'template-description', 'template-table'].forEach(id => {
+['template-name', 'template-description', 'template-scraper-source'].forEach(id => {
   document.getElementById(id)?.addEventListener('input', updateTemplatePreview);
 });
 
-document.getElementById('template-auto-create-table')?.addEventListener('change', updateTemplatePreview);
+document.getElementById('template-event-type')?.addEventListener('change', updateTemplatePreview);
 
 document.getElementById('save-template')?.addEventListener('click', async () => {
   const name = document.getElementById('template-name').value.trim();
   const description = document.getElementById('template-description').value.trim();
-  const tableName = document.getElementById('template-table').value.trim();
-  const autoCreateTable = document.getElementById('template-auto-create-table').checked;
+  const eventType = document.getElementById('template-event-type').value.trim();
+  const scraperSource = document.getElementById('template-scraper-source').value.trim();
   
   if (!name) {
     alert('❌ Please enter a template name');
+    return;
+  }
+  
+  if (!eventType) {
+    alert('❌ Please select an event type');
+    return;
+  }
+  
+  if (!scraperSource) {
+    alert('❌ Please enter a scraper source ID');
     return;
   }
   
@@ -443,8 +455,10 @@ document.getElementById('save-template')?.addEventListener('click', async () => 
     description,
     steps: templateSteps,
     storage: {
-      tableName: tableName || name.toLowerCase().replace(/\s+/g, '_'),
-      autoCreate: autoCreateTable
+      table: 'events',
+      eventType,
+      scraperSource,
+      useMetadata: true
     }
   };
   
@@ -496,8 +510,10 @@ document.getElementById('export-template-json')?.addEventListener('click', () =>
     description: document.getElementById('template-description').value.trim(),
     steps: templateSteps,
     storage: {
-      tableName: document.getElementById('template-table').value.trim() || name.toLowerCase().replace(/\s+/g, '_'),
-      autoCreate: document.getElementById('template-auto-create-table').checked
+      table: 'events',
+      eventType: document.getElementById('template-event-type').value.trim() || 'other',
+      scraperSource: document.getElementById('template-scraper-source').value.trim() || name.toLowerCase().replace(/\s+/g, '_'),
+      useMetadata: true
     },
     createdAt: new Date().toISOString(),
     version: '1.0.0'
@@ -570,8 +586,17 @@ function importTemplateFromJSON(jsonString) {
     document.getElementById('template-description').value = template.description || '';
     
     if (template.storage) {
-      document.getElementById('template-table').value = template.storage.tableName || '';
-      document.getElementById('template-auto-create-table').checked = template.storage.autoCreate || false;
+      // Handle new format (eventType + scraperSource)
+      if (template.storage.eventType) {
+        document.getElementById('template-event-type').value = template.storage.eventType;
+        document.getElementById('template-scraper-source').value = template.storage.scraperSource || '';
+      }
+      // Handle legacy format (tableName) - convert to new format
+      else if (template.storage.tableName) {
+        document.getElementById('template-event-type').value = 'other';
+        document.getElementById('template-scraper-source').value = template.storage.tableName;
+        console.warn('⚠️ Imported legacy template format - converted tableName to scraperSource');
+      }
     }
     
     // Load steps

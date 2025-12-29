@@ -17,8 +17,31 @@ The **Template Creator** tab allows you to create custom scraper builder templat
 
 - **Template Name** (required): Descriptive name like "Court Calendar Scraper"
 - **Description** (optional): What kind of data this scraper collects
-- **Database Table Name**: Where scraped data will be stored (e.g., `court_calendars`)
-- **Auto-create table**: Check if you want the table created automatically
+- **Event Type** (required): Classification for the unified events table
+  - `legislative_calendar` - Legislative/government meetings
+  - `court_calendar` - Court hearings and proceedings
+  - `public_hearing` - Public hearings and comment periods
+  - `permit_review` - Building permits, licenses, etc.
+  - `zoning_meeting` - Zoning board meetings
+  - `commission_meeting` - Commission meetings
+  - `board_meeting` - Board meetings
+  - `town_hall` - Town hall meetings
+  - `other` - Other event types
+- **Scraper Source ID** (required): Unique identifier (e.g., `honolulu_courts`, `ca_legislative`)
+
+### Unified Events Table Architecture
+
+**All scrapers save to the same `events` table** - no separate tables per scraper! This enables:
+- ✅ Cross-scraper queries ("Show all California events this week")
+- ✅ Unified deduplication via fingerprint matching
+- ✅ Consistent schema across all scrapers
+- ✅ Easy maintenance (one schema to update)
+
+**Data Storage Strategy:**
+- **Common fields** → Events table columns: `name`, `date`, `time`, `location_name`, `description`, etc.
+- **Scraper-specific fields** → JSONB `metadata` column: `{"case_number": "CV-123", "judge": "Smith"}`
+
+**Event Type** classifies the event, while **Scraper Source** identifies which scraper created it.
 
 ### 2. Adding Steps (Pages)
 
@@ -122,6 +145,8 @@ Once saved:
 
 ## Database Schema
 
+### Builder Templates Table
+
 Templates are stored in the `builder_templates` table:
 
 ```sql
@@ -134,6 +159,71 @@ CREATE TABLE builder_templates (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+```
+
+### Unified Events Table
+
+**All scrapers write to this single table:**
+
+```sql
+CREATE TABLE events (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  
+  -- Classification
+  level VARCHAR(20) NOT NULL,  -- 'federal', 'state', 'local'
+  type VARCHAR(50),  -- 'legislative_calendar', 'court_calendar', etc.
+  state_code VARCHAR(2),
+  
+  -- Core fields (common to all scrapers)
+  name TEXT NOT NULL,
+  date DATE NOT NULL,
+  time TIME,
+  location_name TEXT,
+  location_address TEXT,
+  lat DECIMAL(10, 7),
+  lng DECIMAL(10, 7),
+  description TEXT,
+  details_url TEXT,
+  source_url TEXT,
+  
+  -- Scraper metadata
+  scraper_source VARCHAR(50),  -- Which scraper created this
+  scraped_at TIMESTAMP DEFAULT NOW(),
+  
+  -- Flexible storage for scraper-specific fields
+  metadata JSONB DEFAULT '{}',
+  
+  -- Deduplication
+  fingerprint VARCHAR(64)  -- Hash of name+date+location
+);
+```
+
+**Metadata Examples:**
+
+```json
+// Legislative calendar event
+{
+  "committee_name": "House Judiciary",
+  "bill_numbers": ["HB 123", "SB 456"],
+  "chair": "Rep. Smith",
+  "agenda_url": "https://..."
+}
+
+// Court calendar event
+{
+  "case_number": "CV-2025-12345",
+  "judge_name": "Hon. Jane Doe",
+  "hearing_type": "Preliminary Hearing",
+  "case_type": "Civil"
+}
+
+// Permit review event
+{
+  "permit_number": "BLD-2025-001",
+  "applicant": "ABC Development Corp",
+  "project_type": "Commercial Construction",
+  "parcel_id": "12-34-567-890"
+}
 ```
 
 ## API Endpoints

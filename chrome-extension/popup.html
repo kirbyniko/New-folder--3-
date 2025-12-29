@@ -207,16 +207,28 @@
       
       <div style="border-top: 1px solid #ddd; padding-top: 12px; margin-top: 8px;">
         <h4 style="margin: 0 0 8px 0; font-size: 13px; color: #666;">Storage Configuration</h4>
+        <p style="font-size: 11px; color: #666; margin: 0 0 12px 0;">All scrapers save to the unified <code>events</code> table. Configure event classification below.</p>
+        
         <div class="form-group">
-          <label>Database Table Name</label>
-          <input type="text" id="template-table" class="form-control" placeholder="e.g., court_calendars, business_permits">
+          <label>Event Type *</label>
+          <select id="template-event-type" class="form-control">
+            <option value="">Select type...</option>
+            <option value="legislative_calendar">Legislative Calendar</option>
+            <option value="court_calendar">Court Calendar</option>
+            <option value="public_hearing">Public Hearing</option>
+            <option value="permit_review">Permit Review</option>
+            <option value="zoning_meeting">Zoning Meeting</option>
+            <option value="commission_meeting">Commission Meeting</option>
+            <option value="board_meeting">Board Meeting</option>
+            <option value="town_hall">Town Hall</option>
+            <option value="other">Other</option>
+          </select>
         </div>
         
         <div class="form-group">
-          <label>
-            <input type="checkbox" id="template-auto-create-table">
-            Auto-create database table if it doesn't exist
-          </label>
+          <label>Scraper Source ID *</label>
+          <input type="text" id="template-scraper-source" class="form-control" placeholder="e.g., honolulu_courts, ca_legislative">
+          <small style="font-size: 10px; color: #999;">Unique identifier for this scraper (lowercase, underscores)</small>
         </div>
       </div>
       

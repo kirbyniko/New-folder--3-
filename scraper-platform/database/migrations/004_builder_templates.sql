@@ -47,12 +47,21 @@ CREATE TABLE IF NOT EXISTS builder_templates (
   storage_config JSONB DEFAULT '{}',
   -- Example:
   -- {
-  --   "tableName": "court_calendars",
-  --   "autoCreate": true,
-  --   "schema": {
-  --     "case_number": "VARCHAR(100)",
-  --     "hearing_date": "DATE",
-  --     "judge_name": "VARCHAR(255)"
+  --   "table": "events",  // Always use unified events table
+  --   "eventType": "court_calendar",  // Event classification
+  --   "scraperSource": "honolulu_courts",  // Unique scraper identifier
+  --   "useMetadata": true,  // Store scraper-specific fields in metadata JSONB
+  --   "fieldMapping": {
+  --     "core": {  // Maps to events table columns
+  --       "name": "events.name",
+  --       "date": "events.date",
+  --       "location": "events.location_name"
+  --     },
+  --     "metadata": {  // Maps to events.metadata JSONB
+  --       "case_number": "text",
+  --       "judge_name": "text",
+  --       "hearing_type": "text"
+  --     }
   --   }
   -- }
   
@@ -190,12 +199,33 @@ VALUES (
     }
   ]'::jsonb,
   '{
-    "tableName": "calendar_events",
-    "autoCreate": false
+    "table": "events",
+    "eventType": "legislative_calendar",
+    "scraperSource": "custom_legislative",
+    "useMetadata": true,
+    "fieldMapping": {
+      "core": {
+        "name": "events.name",
+        "date": "events.date",
+        "time": "events.time",
+        "location_name": "events.location_name",
+        "description": "events.description",
+        "details_url": "events.details_url",
+        "source_url": "events.source_url"
+      },
+      "metadata": {
+        "committee_name": "text",
+        "bill_numbers": "array",
+        "chair": "text",
+        "meeting_type": "text",
+        "agenda_url": "text",
+        "virtual_meeting_url": "text"
+      }
+    }
   }'::jsonb
 )
 ON CONFLICT (name) DO NOTHING;
 
 COMMENT ON TABLE builder_templates IS 'Templates that define the structure of scraper builders - essentially "meta-templates" that generate builder interfaces';
 COMMENT ON COLUMN builder_templates.steps IS 'Array of step definitions with fields, field types, validation rules, and capture modes';
-COMMENT ON COLUMN builder_templates.storage_config IS 'Database storage configuration including table name and schema';
+COMMENT ON COLUMN builder_templates.storage_config IS 'Database storage configuration - always uses unified events table with JSONB metadata';
