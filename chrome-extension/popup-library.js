@@ -513,6 +513,87 @@ document.getElementById('export-template-json')?.addEventListener('click', () =>
   });
 });
 
+document.getElementById('import-template-json')?.addEventListener('click', () => {
+  const choice = confirm('Import from file? (OK)\nOr paste JSON from clipboard? (Cancel)');
+  
+  if (choice) {
+    // Import from file
+    const fileInput = document.getElementById('import-template-file');
+    fileInput.click();
+  } else {
+    // Import from clipboard/paste
+    navigator.clipboard.readText().then(text => {
+      importTemplateFromJSON(text);
+    }).catch(() => {
+      const json = prompt('Paste template JSON:');
+      if (json) {
+        importTemplateFromJSON(json);
+      }
+    });
+  }
+});
+
+document.getElementById('import-template-file')?.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    importTemplateFromJSON(event.target.result);
+  };
+  reader.onerror = () => {
+    alert('❌ Error reading file');
+  };
+  reader.readAsText(file);
+  
+  // Reset file input
+  e.target.value = '';
+});
+
+function importTemplateFromJSON(jsonString) {
+  try {
+    const template = JSON.parse(jsonString);
+    
+    // Validate template structure
+    if (!template.name) {
+      alert('❌ Invalid template: missing "name" field');
+      return;
+    }
+    
+    if (!template.steps || !Array.isArray(template.steps)) {
+      alert('❌ Invalid template: missing or invalid "steps" array');
+      return;
+    }
+    
+    // Load template data into form
+    document.getElementById('template-name').value = template.name;
+    document.getElementById('template-description').value = template.description || '';
+    
+    if (template.storage) {
+      document.getElementById('template-table').value = template.storage.tableName || '';
+      document.getElementById('template-auto-create-table').checked = template.storage.autoCreate || false;
+    }
+    
+    // Load steps
+    templateSteps = template.steps.map((step, index) => ({
+      stepNumber: step.stepNumber || index + 1,
+      stepName: step.stepName || `Step ${index + 1}`,
+      stepIcon: step.stepIcon || '📋',
+      captureMode: step.captureMode || false,
+      fields: step.fields || [],
+      fieldGroups: step.fieldGroups || []
+    }));
+    
+    renderStepsList();
+    updateTemplatePreview();
+    
+    alert(`✅ Imported template "${template.name}" with ${templateSteps.length} step(s)`);
+    
+  } catch (error) {
+    alert(`❌ Error parsing JSON: ${error.message}\n\nPlease ensure the JSON is valid.`);
+  }
+}
+
 document.getElementById('load-legislative-template')?.addEventListener('click', () => {
   // Load the default legislative calendar template structure
   templateSteps = [
