@@ -63,7 +63,6 @@ async function loadTemplates() {
 function loadScraperLibrary() {
   const stored = localStorage.getItem('scrapers');
   scrapers = stored ? JSON.parse(stored) : [];
-  displayScraperList();
   displayTemplates();
 }
 
