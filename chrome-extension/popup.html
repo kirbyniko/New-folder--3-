@@ -135,18 +135,49 @@
       border: 1px solid #ddd;
       border-radius: 4px;
     }
+    
+    .status-message {
+      font-weight: 500;
+    }
+    
+    .status-message.success {
+      background: #d1fae5;
+      border: 1px solid #10b981;
+      color: #065f46;
+    }
+    
+    .status-message.error {
+      background: #fee2e2;
+      border: 1px solid #ef4444;
+      color: #991b1b;
+    }
+    
+    .btn-success {
+      background: #10b981;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background 0.2s;
+    }
+    
+    .btn-success:hover {
+      background: #059669;
+    }
   </style>
 </head>
 <body>
   <!-- Tab Navigation -->
   <div class="tab-nav">
-    <button class="tab-button active" data-tab="build">🛠️ Build</button>
-    <button class="tab-button" data-tab="library">📚 Library</button>
+    <button class="tab-button" data-tab="build">🛠️ Build</button>
+    <button class="tab-button active" data-tab="library">📚 Library</button>
     <button class="tab-button" data-tab="test">🧪 Test</button>
   </div>
 
   <!-- Build Tab (Original Builder) -->
-  <div id="tab-build" class="tab-content active">
+  <div id="tab-build" class="tab-content">
     <div id="ghost-mode-controls" style="background: white; padding: 8px; border-bottom: 1px solid #ddd; display: flex; align-items: center; justify-content: space-between; margin: -16px -16px 16px;">
       <button type="button" id="toggle-ghost-mode" class="btn-secondary" style="font-size: 12px;">
         👻 Ghost Mode
@@ -163,8 +194,10 @@
   </div>
 
   <!-- Library Tab -->
-  <div id="tab-library" class="tab-content">
+  <div id="tab-library" class="tab-content active">
     <h3 style="margin-top: 0;">📚 Scraper Library</h3>
+    
+    <div id="status-message" style="display: none; padding: 10px; margin-bottom: 12px; border-radius: 4px; font-size: 13px; text-align: center;"></div>
     
     <div class="import-section">
       <h4 style="margin-top: 0;">Import Scraper JSON</h4>
@@ -175,9 +208,8 @@
     </div>
     
     <div style="margin-top: 20px;">
-      <h4 style="margin-bottom: 12px;">Your Scrapers</h4>
       <div id="scraper-list" class="scraper-list">
-        <p style="text-align: center; color: #999; padding: 20px;">No scrapers imported yet</p>
+        <p style="text-align: center; color: #999; padding: 20px;">Loading templates...</p>
       </div>
     </div>
   </div>

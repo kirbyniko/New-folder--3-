@@ -1,0 +1,40 @@
+{
+  "name": "Test Static Scraper",
+  "description": "Simple test scraper for validation",
+  "jurisdiction": "Test",
+  "stateCode": "TS",
+  "level": "local",
+  "baseUrl": "https://example.com",
+  "startUrl": "https://example.com",
+  "requiresPuppeteer": false,
+  "active": true,
+  "metadata": {
+    "notes": "Test scraper for engine validation"
+  },
+  "pageStructures": [
+    {
+      "pageType": "list",
+      "pageName": "Main Page",
+      "containerSelector": "body",
+      "itemSelector": "p",
+      "hasPagination": false,
+      "fields": [
+        {
+          "fieldName": "text",
+          "fieldType": "text",
+          "fieldOrder": 1,
+          "isRequired": true,
+          "transformation": "trim",
+          "selectorSteps": [
+            {
+              "stepOrder": 1,
+              "actionType": "extract",
+              "selector": "p"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "navigationSteps": []
+}

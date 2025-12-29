@@ -1,0 +1,209 @@
+{
+  "name": "Honolulu City Council Calendar",
+  "description": "Scrapes meeting events from Honolulu City Council calendar",
+  "jurisdiction": "Honolulu",
+  "stateCode": "HI",
+  "level": "local",
+  "baseUrl": "https://www.honolulu.gov",
+  "startUrl": "https://www.honolulu.gov/clerk/clk-council-calendar/",
+  "requiresPuppeteer": false,
+  "active": true,
+  "metadata": {
+    "timezone": "Pacific/Honolulu",
+    "calendarType": "monthly",
+    "contactEmail": "clerk@honolulu.gov"
+  },
+  "navigationSteps": [
+    {
+      "stepOrder": 1,
+      "stepType": "wait",
+      "waitForSelector": ".calendar-container",
+      "waitTime": 2000,
+      "comment": "Wait for calendar to load"
+    }
+  ],
+  "pageStructures": [
+    {
+      "pageType": "calendar",
+      "pageName": "Monthly Calendar View",
+      "containerSelector": ".calendar-events",
+      "itemSelector": ".event-item",
+      "hasPagination": true,
+      "nextButtonSelector": ".next-month-btn",
+      "prevButtonSelector": ".prev-month-btn",
+      "comment": "Main calendar page with monthly view",
+      "fields": [
+        {
+          "fieldName": "eventName",
+          "fieldType": "text",
+          "fieldOrder": 1,
+          "isRequired": true,
+          "transformation": "trim",
+          "comment": "Meeting title",
+          "selectorSteps": [
+            {
+              "stepOrder": 1,
+              "actionType": "click",
+              "selector": ".event-card",
+              "waitAfter": 500,
+              "comment": "Click event card to open modal"
+            },
+            {
+              "stepOrder": 2,
+              "actionType": "extract",
+              "selector": ".modal-title h2",
+              "comment": "Extract title from modal"
+            }
+          ]
+        },
+        {
+          "fieldName": "eventDate",
+          "fieldType": "date",
+          "fieldOrder": 2,
+          "isRequired": true,
+          "transformation": "parse_date",
+          "comment": "Meeting date",
+          "selectorSteps": [
+            {
+              "stepOrder": 1,
+              "actionType": "extract",
+              "selector": ".event-date",
+              "comment": "Extract date directly from event card"
+            }
+          ]
+        },
+        {
+          "fieldName": "eventTime",
+          "fieldType": "text",
+          "fieldOrder": 3,
+          "isRequired": false,
+          "comment": "Meeting time",
+          "selectorSteps": [
+            {
+              "stepOrder": 1,
+              "actionType": "extract",
+              "selector": ".event-time",
+              "comment": "Extract time from event card"
+            }
+          ]
+        },
+        {
+          "fieldName": "eventLocation",
+          "fieldType": "text",
+          "fieldOrder": 4,
+          "isRequired": false,
+          "comment": "Meeting location",
+          "selectorSteps": [
+            {
+              "stepOrder": 1,
+              "actionType": "click",
+              "selector": ".event-card",
+              "waitAfter": 500
+            },
+            {
+              "stepOrder": 2,
+              "actionType": "extract",
+              "selector": ".modal-location"
+            }
+          ]
+        },
+        {
+          "fieldName": "eventUrl",
+          "fieldType": "url",
+          "fieldOrder": 5,
+          "isRequired": false,
+          "comment": "Link to event details",
+          "selectorSteps": [
+            {
+              "stepOrder": 1,
+              "actionType": "extract",
+              "selector": ".event-card a",
+              "attributeName": "href",
+              "comment": "Extract href attribute"
+            }
+          ]
+        },
+        {
+          "fieldName": "docketUrl",
+          "fieldType": "url",
+          "fieldOrder": 6,
+          "isRequired": false,
+          "comment": "Link to PDF agenda",
+          "selectorSteps": [
+            {
+              "stepOrder": 1,
+              "actionType": "click",
+              "selector": ".event-card",
+              "waitAfter": 500
+            },
+            {
+              "stepOrder": 2,
+              "actionType": "extract",
+              "selector": ".modal-documents a.pdf-link",
+              "attributeName": "href"
+            }
+          ]
+        },
+        {
+          "fieldName": "committee",
+          "fieldType": "text",
+          "fieldOrder": 7,
+          "isRequired": false,
+          "transformation": "trim",
+          "comment": "Committee name",
+          "selectorSteps": [
+            {
+              "stepOrder": 1,
+              "actionType": "extract",
+              "selector": ".event-committee"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "pageType": "detail",
+      "pageName": "Event Detail Page",
+      "comment": "Individual event page with full details (if navigating from list)",
+      "fields": [
+        {
+          "fieldName": "fullDescription",
+          "fieldType": "html",
+          "isRequired": false,
+          "comment": "Full HTML description",
+          "selectorSteps": [
+            {
+              "stepOrder": 1,
+              "actionType": "extract",
+              "selector": ".event-description"
+            }
+          ]
+        },
+        {
+          "fieldName": "attendees",
+          "fieldType": "text",
+          "isRequired": false,
+          "comment": "List of attendees",
+          "selectorSteps": [
+            {
+              "stepOrder": 1,
+              "actionType": "extract",
+              "selector": ".attendee-list"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "conditions": [
+    {
+      "conditionName": "Check for modal",
+      "conditionType": "element_exists",
+      "selector": ".modal-dialog",
+      "actionOnTrue": "use_alternative",
+      "actionOnFalse": "skip",
+      "alternativeSelector": ".event-inline-details",
+      "comment": "Use alternative selector if modal doesn't exist"
+    }
+  ]
+}

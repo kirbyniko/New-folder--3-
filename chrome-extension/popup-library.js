@@ -26,41 +26,115 @@ document.querySelectorAll('.tab-button').forEach(button => {
   });
 });
 
+// Initialize on load
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadTemplates();
+  loadScraperLibrary();
+});
+
 // ========================================
 // SCRAPER LIBRARY (localStorage)
 // ========================================
 
 let scrapers = [];
+let templates = [];
+
+// Load example templates
+async function loadTemplates() {
+  const exampleFiles = [
+    'honolulu-calendar.json',
+    'extension-test-export.json',
+    'test-static.json'
+  ];
+  
+  for (const file of exampleFiles) {
+    try {
+      const response = await fetch(chrome.runtime.getURL(`examples/${file}`));
+      if (response.ok) {
+        const template = await response.json();
+        templates.push(template);
+      }
+    } catch (error) {
+      console.error(`Failed to load template ${file}:`, error);
+    }
+  }
+}
 
 function loadScraperLibrary() {
   const stored = localStorage.getItem('scrapers');
   scrapers = stored ? JSON.parse(stored) : [];
   displayScraperList();
+  displayTemplates();
+}
+
+function displayTemplates() {
+  const list = document.getElementById('scraper-list');
+  
+  if (templates.length === 0 && scrapers.length === 0) {
+    list.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">Loading templates...</p>';
+    return;
+  }
+  
+  let html = '';
+  
+  // Show templates first
+  if (templates.length > 0) {
+    html += '<div style="margin-bottom: 20px;"><h4 style="font-size: 13px; color: #666; margin-bottom: 8px;">📝 Templates (Click to Use)</h4>';
+    html += templates.map((template, index) => `
+      <div class="scraper-item" style="border-color: #10b981; background: rgba(16, 185, 129, 0.05);">
+        <h4>${template.name || 'Unnamed Template'}</h4>
+        <p>${template.jurisdiction || 'Unknown'} • ${template.level || 'local'}</p>
+        <div class="scraper-actions">
+          <button class="btn-success" onclick="useTemplate(${index})" style="flex: 2;">✨ Use Template</button>
+          <button class="btn-secondary" onclick="viewTemplate(${index})">👁️ View</button>
+        </div>
+      </div>
+    `).join('');
+    html += '</div>';
+  }
+  
+  // Show saved scrapers
+  if (scrapers.length > 0) {
+    html += '<div><h4 style="font-size: 13px; color: #666; margin-bottom: 8px;">💾 Your Scrapers</h4>';
+    html += scrapers.map((scraper, index) => `
+      <div class="scraper-item" data-index="${index}">
+        <h4>${scraper.name || 'Unnamed Scraper'}</h4>
+        <p>${scraper.jurisdiction || 'Unknown'} • ${scraper.level || 'local'} • ${scraper.stateCode || 'N/A'}</p>
+        <div class="scraper-actions">
+          <button class="btn-secondary" onclick="viewScraperDetails(${index})">👁️ View</button>
+          <button class="btn-primary" onclick="testScraper(${index})">🧪 Test</button>
+          <button class="btn-secondary" onclick="exportScraperJson(${index})">💾 Export</button>
+          <button class="btn-danger" onclick="deleteScraper(${index})">🗑️</button>
+        </div>
+      </div>
+    `).join('');
+    html += '</div>';
+  }
+  
+  if (html === '') {
+    html = '<p style="text-align: center; color: #999; padding: 20px;">No templates or scrapers available</p>';
+  }
+  
+  list.innerHTML = html;
 }
 
 function saveScrapers() {
   localStorage.setItem('scrapers', JSON.stringify(scrapers));
+  displayTemplates();
 }
 
-function displayScraperList() {
-  const list = document.getElementById('scraper-list');
-  
-  if (scrapers.length === 0) {
-    list.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No scrapers imported yet</p>';
-    return;
-  }
-  
-  list.innerHTML = scrapers.map((scraper, index) => `
-    <div class="scraper-item" data-index="${index}">
-      <h4>${scraper.name || 'Unnamed Scraper'}</h4>
-      <p>${scraper.jurisdiction || 'Unknown'} • ${scraper.level || 'local'} • ${scraper.stateCode || 'N/A'}</p>
-      <div class="scraper-actions">
-        <button class="btn-secondary" onclick="viewScraperDetails(${index})">👁️ View</button>
-        <button class="btn-primary" onclick="testScraper(${index})">🧪 Test</button>
-        <button class="btn-danger" onclick="deleteScraper(${index})">🗑️</button>
-      </div>
-    </div>
-  `).join('');
+function useTemplate(index) {
+  const template = templates[index];
+  const newScraper = JSON.parse(JSON.stringify(template)); // Deep clone
+  scrapers.push(newScraper);
+  saveScrapers();
+  showStatus(`✅ Added "${newScraper.name}" to your scrapers!`, 'success');
+}
+
+function viewTemplate(index) {
+  const template = templates[index];
+  const formatted = JSON.stringify(template, null, 2);
+  alert(`Template: ${template.name}\n\n${formatted.substring(0, 500)}...\n\nClick "Use Template" to add to your library.`);
 }
 
 // Import JSON
@@ -84,20 +158,32 @@ document.getElementById('import-json-btn').addEventListener('click', () => {
     // Add to library
     scrapers.push(scraper);
     saveScrapers();
-    displayScraperList();
     
     // Clear input
     document.getElementById('import-json').value = '';
     
-    alert(`✅ Scraper "${scraper.name}" imported successfully!`);
+    showStatus(`✅ Scraper "${scraper.name}" imported successfully!`, 'success');
   } catch (error) {
-    alert(`❌ Invalid JSON: ${error.message}`);
+    showStatus(`❌ Invalid JSON: ${error.message}`, 'error');
   }
 });
 
 function viewScraperDetails(index) {
   const scraper = scrapers[index];
   alert(`Scraper Details:\n\n${JSON.stringify(scraper, null, 2)}`);
+}
+
+function exportScraperJson(index) {
+  const scraper = scrapers[index];
+  const json = JSON.stringify(scraper, null, 2);
+  
+  // Copy to clipboard
+  navigator.clipboard.writeText(json).then(() => {
+    showStatus(`✅ "${scraper.name}" copied to clipboard!`, 'success');
+  }).catch(() => {
+    // Fallback: show in dialog
+    prompt('Copy this JSON:', json);
+  });
 }
 
 function testScraper(index) {
@@ -115,7 +201,22 @@ function deleteScraper(index) {
   
   scrapers.splice(index, 1);
   saveScrapers();
-  displayScraperList();
+}
+
+function showStatus(message, type) {
+  const statusEl = document.getElementById('status-message');
+  if (!statusEl) {
+    alert(message);
+    return;
+  }
+  
+  statusEl.textContent = message;
+  statusEl.className = `status-message ${type}`;
+  statusEl.style.display = 'block';
+  
+  setTimeout(() => {
+    statusEl.style.display = 'none';
+  }, 3000);
 }
 
 // ========================================
