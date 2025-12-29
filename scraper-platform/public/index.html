@@ -391,14 +391,25 @@
     async function refreshScrapers() {
       try {
         const response = await fetch(`${API_BASE}/scrapers`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
         const scrapers = await response.json();
+        
+        if (!Array.isArray(scrapers)) {
+          throw new Error('Invalid response format');
+        }
         
         renderStats(scrapers);
         renderScrapers(scrapers);
       } catch (error) {
         console.error('Error loading scrapers:', error);
         document.getElementById('scrapers').innerHTML = 
-          '<div class="error">Failed to load scrapers</div>';
+          `<div class="error">Failed to load scrapers: ${error.message}</div>`;
+        document.getElementById('stats').innerHTML = 
+          `<div class="error">Unable to load statistics</div>`;
       }
     }
 
