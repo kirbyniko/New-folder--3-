@@ -367,19 +367,29 @@ function validateMetadata() {
     missing.push('level');
   }
   
+  // Check Puppeteer radio
+  const puppeteerChecked = document.querySelector('input[name="puppeteer"]:checked');
+  if (!puppeteerChecked) {
+    missing.push('puppeteer');
+  }
+  
   if (missing.length > 0) {
     alert('Please fill in all required fields');
     return false;
   }
   
   // Save metadata
+  const levelRadio = document.querySelector('input[name="level"]:checked');
+  const puppeteerRadio = document.querySelector('input[name="puppeteer"]:checked');
+  
   state.metadata = {
     jurisdiction: document.getElementById('jurisdiction').value,
     stateCode: document.getElementById('state-code').value,
-    level: document.querySelector('input[name="level"]:checked').value,
+    level: levelRadio ? levelRadio.value : '',
     calendarUrl: document.getElementById('calendar-url').value,
     baseUrl: document.getElementById('base-url').value,
     requiresJavaScript: document.getElementById('requires-js').checked,
+    requiresPuppeteer: puppeteerRadio ? puppeteerRadio.value : 'no',
     notes: document.getElementById('notes').value
   };
   
