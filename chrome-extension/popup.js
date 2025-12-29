@@ -397,19 +397,38 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 function handleCapturedElement(data) {
   const { field } = data;
   
-  // Store in appropriate section
+  // Create a step object with selector and comment
+  const step = {
+    selector: data.selector,
+    xpath: data.xpath,
+    comment: '' // User can add this later
+  };
+  
+  // Store in appropriate section (as an array of steps)
   if (field.startsWith('event-') && !field.startsWith('event-container')) {
-    state.eventFields[field] = data;
+    if (!Array.isArray(state.eventFields[field])) {
+      state.eventFields[field] = [];
+    }
+    state.eventFields[field].push(step);
   } else if (field.startsWith('bill-')) {
     if (!state.detailsPage.billFields) state.detailsPage.billFields = {};
-    state.detailsPage.billFields[field] = data;
+    if (!Array.isArray(state.detailsPage.billFields[field])) {
+      state.detailsPage.billFields[field] = [];
+    }
+    state.detailsPage.billFields[field].push(step);
   } else if (['month-view-button', 'next-button', 'prev-button', 'event-container', 'event-item'].includes(field)) {
-    state.calendarStructure[field] = data;
+    if (!Array.isArray(state.calendarStructure[field])) {
+      state.calendarStructure[field] = [];
+    }
+    state.calendarStructure[field].push(step);
   } else {
-    state.detailsPage[field] = data;
+    if (!Array.isArray(state.detailsPage[field])) {
+      state.detailsPage[field] = [];
+    }
+    state.detailsPage[field].push(step);
   }
   
-  // Update button state
+  // Update button state (show captured, but keep it clickable for more steps)
   const button = document.querySelector(`.capture-btn[data-field="${field}"]`);
   if (button) {
     button.classList.remove('capturing');
@@ -423,6 +442,106 @@ function handleCapturedElement(data) {
   } else if (field === 'bills-container' && data.childCount) {
     document.getElementById('bills-count').textContent = 
       `✓ Found ${data.childCount} bills/items`;
+  }
+  
+  // Update the step display
+  updateStepDisplay(field);
+  
+  saveState();
+}
+
+// Update the visual display of captured steps
+function updateStepDisplay(field) {
+  const button = document.querySelector(`.capture-btn[data-field="${field}"]`);
+  if (!button) return;
+  
+  // Find or create steps container
+  let stepsContainer = button.parentElement.querySelector('.steps-container');
+  if (!stepsContainer) {
+    stepsContainer = document.createElement('div');
+    stepsContainer.className = 'steps-container';
+    button.insertAdjacentElement('afterend', stepsContainer);
+  }
+  
+  // Get the steps for this field
+  let steps = [];
+  if (field.startsWith('event-') && !field.startsWith('event-container')) {
+    steps = state.eventFields[field] || [];
+  } else if (field.startsWith('bill-')) {
+    steps = state.detailsPage.billFields?.[field] || [];
+  } else if (['month-view-button', 'next-button', 'prev-button', 'event-container', 'event-item'].includes(field)) {
+    steps = state.calendarStructure[field] || [];
+  } else {
+    steps = state.detailsPage[field] || [];
+  }
+  
+  // Rebuild the display
+  stepsContainer.innerHTML = '';
+  
+  steps.forEach((step, index) => {
+    const stepDiv = document.createElement('div');
+    stepDiv.className = 'capture-step';
+    stepDiv.innerHTML = `
+      <div class="step-header">
+        <span class="step-number">Step ${index + 1}</span>
+        <button type="button" class="remove-step-btn" data-field="${field}" data-index="${index}">✕</button>
+      </div>
+      <div class="step-selector">${step.selector}</div>
+      <input type="text" class="step-comment" placeholder="Add comment (optional)..." value="${step.comment || ''}" 
+             data-field="${field}" data-index="${index}">
+    `;
+    stepsContainer.appendChild(stepDiv);
+  });
+  
+  // Add event listeners for remove buttons
+  stepsContainer.querySelectorAll('.remove-step-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const field = e.target.dataset.field;
+      const index = parseInt(e.target.dataset.index);
+      removeStep(field, index);
+    });
+  });
+  
+  // Add event listeners for comment inputs
+  stepsContainer.querySelectorAll('.step-comment').forEach(input => {
+    input.addEventListener('input', (e) => {
+      const field = e.target.dataset.field;
+      const index = parseInt(e.target.dataset.index);
+      updateStepComment(field, index, e.target.value);
+    });
+  });
+}
+
+// Remove a step
+function removeStep(field, index) {
+  console.log('🗑️ Removing step', index, 'from field', field);
+  
+  if (field.startsWith('event-') && !field.startsWith('event-container')) {
+    state.eventFields[field].splice(index, 1);
+  } else if (field.startsWith('bill-')) {
+    state.detailsPage.billFields[field].splice(index, 1);
+  } else if (['month-view-button', 'next-button', 'prev-button', 'event-container', 'event-item'].includes(field)) {
+    state.calendarStructure[field].splice(index, 1);
+  } else {
+    state.detailsPage[field].splice(index, 1);
+  }
+  
+  saveState();
+  updateStepDisplay(field);
+}
+
+// Update a step's comment
+function updateStepComment(field, index, comment) {
+  if (field.startsWith('event-') && !field.startsWith('event-container')) {
+    state.eventFields[field][index].comment = comment;
+  } else if (field.startsWith('bill-')) {
+    state.detailsPage.billFields[field][index].comment = comment;
+  } else if (['month-view-button', 'next-button', 'prev-button', 'event-container', 'event-item'].includes(field)) {
+    state.calendarStructure[field][index].comment = comment;
+  } else {
+    state.detailsPage[field][index].comment = comment;
   }
   
   saveState();
@@ -752,20 +871,32 @@ function updateUI() {
       state.metadata.hasEventList !== false ? 'block' : 'none';
   }
   
-  // Update captured button states
+  // Update captured button states and restore step displays
   Object.keys(state.calendarStructure).forEach(field => {
     const btn = document.querySelector(`.capture-btn[data-field="${field}"]`);
-    if (btn) btn.classList.add('captured');
+    if (btn && Array.isArray(state.calendarStructure[field]) && state.calendarStructure[field].length > 0) {
+      btn.classList.add('captured');
+      updateStepDisplay(field);
+    }
   });
   
   Object.keys(state.eventFields).forEach(field => {
     const btn = document.querySelector(`.capture-btn[data-field="${field}"]`);
-    if (btn) btn.classList.add('captured');
+    if (btn && Array.isArray(state.eventFields[field]) && state.eventFields[field].length > 0) {
+      btn.classList.add('captured');
+      updateStepDisplay(field);
+    }
   });
   
   Object.keys(state.detailsPage).forEach(field => {
     const btn = document.querySelector(`.capture-btn[data-field="${field}"]`);
-    if (btn) btn.classList.add('captured');
+    if (btn) {
+      const data = state.detailsPage[field];
+      if (Array.isArray(data) && data.length > 0) {
+        btn.classList.add('captured');
+        updateStepDisplay(field);
+      }
+    }
   });
   
   // Go to saved step
