@@ -52,6 +52,7 @@ app.use(express.json());
 
 // Serve static files
 app.use(express.static(path.join(__dirname, '../public')));
+app.use('/examples', express.static(path.join(__dirname, '../examples')));
 
 // Health check
 app.get('/api/health', (req: Request, res: Response) => {

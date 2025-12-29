@@ -825,6 +825,169 @@
       flex-wrap: wrap;
     }
 
+    /* Tab Navigation */
+    .tab-navigation {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 32px;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 0;
+    }
+
+    .tab-button {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      padding: 12px 24px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+      position: relative;
+      bottom: -2px;
+    }
+
+    .tab-button:hover {
+      color: var(--text-primary);
+      background: rgba(59, 130, 246, 0.1);
+    }
+
+    .tab-button.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Builder specific styles */
+    .builder-layout {
+      display: grid;
+      grid-template-columns: 350px 1fr;
+      gap: 24px;
+      height: calc(100vh - 300px);
+    }
+
+    .builder-sidebar {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .builder-main {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      overflow-y: auto;
+    }
+
+    .scraper-list-item {
+      background: rgba(255, 255, 255, 0.03);
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border-left: 3px solid transparent;
+    }
+
+    .scraper-list-item:hover {
+      background: rgba(59, 130, 246, 0.1);
+      border-left-color: var(--primary);
+    }
+
+    .scraper-list-item.selected {
+      background: rgba(59, 130, 246, 0.2);
+      border-left-color: var(--primary);
+    }
+
+    .scraper-list-item h4 {
+      font-size: 14px;
+      margin-bottom: 4px;
+      color: var(--text-primary);
+    }
+
+    .scraper-list-item p {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+
+    .json-editor {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 16px;
+      border-radius: 8px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      min-height: 400px;
+      overflow: auto;
+      border: 1px solid var(--border);
+    }
+
+    .field-group {
+      margin-bottom: 20px;
+    }
+
+    .field-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .field-group input,
+    .field-group select,
+    .field-group textarea {
+      width: 100%;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 13px;
+    }
+
+    .field-group textarea {
+      min-height: 100px;
+      font-family: 'Consolas', 'Monaco', monospace;
+    }
+
+    .test-output {
+      background: #1e1e1e;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 20px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .test-output pre {
+      margin: 0;
+      color: #d4d4d4;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
       .scrapers-grid {
@@ -848,6 +1011,15 @@
       .execution-panel {
         width: 100%;
       }
+
+      .builder-layout {
+        grid-template-columns: 1fr;
+        height: auto;
+      }
+
+      .tab-navigation {
+        overflow-x: auto;
+      }
     }
   </style>
 </head>
@@ -868,19 +1040,83 @@
   </header>
 
   <div class="container">
-    <!-- Stats Section -->
-    <div id="stats" class="stats-grid"></div>
-
-    <!-- Action Bar -->
-    <div class="action-bar">
-      <h2>📊 Your Scrapers</h2>
-      <button class="btn btn-success" onclick="loadScrapers()">
-        🔄 Refresh
-      </button>
+    <!-- Tab Navigation -->
+    <div class="tab-navigation">
+      <button class="tab-button active" onclick="switchTab('dashboard')">📊 Dashboard</button>
+      <button class="tab-button" onclick="switchTab('builder')">🛠️ Scraper Builder</button>
+      <button class="tab-button" onclick="switchTab('data')">📈 Data Viewer</button>
     </div>
 
-    <!-- Scrapers Grid -->
-    <div id="scrapers" class="scrapers-grid"></div>
+    <!-- Dashboard Tab -->
+    <div id="tab-dashboard" class="tab-content active">
+      <!-- Stats Section -->
+      <div id="stats" class="stats-grid"></div>
+
+      <!-- Action Bar -->
+      <div class="action-bar">
+        <h2>📊 Your Scrapers</h2>
+        <button class="btn btn-success" onclick="loadScrapers()">
+          🔄 Refresh
+        </button>
+      </div>
+
+      <!-- Scrapers Grid -->
+      <div id="scrapers" class="scrapers-grid"></div>
+    </div>
+
+    <!-- Scraper Builder Tab -->
+    <div id="tab-builder" class="tab-content">
+      <div class="builder-layout">
+        <div class="builder-sidebar">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="font-size: 16px; margin: 0;">📚 Scraper Library</h3>
+            <button class="btn btn-sm btn-primary" onclick="loadScraperExamples()">🔄</button>
+          </div>
+          <div id="scraperLibrary"></div>
+        </div>
+        <div class="builder-main">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="font-size: 18px; margin: 0;">⚙️ Scraper Configuration</h3>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-sm btn-success" onclick="testCurrentScraper()" id="testScraperBtn">▶️ Test Run</button>
+              <button class="btn btn-sm btn-primary" onclick="importCurrentScraper()" id="importScraperBtn">💾 Import to Platform</button>
+            </div>
+          </div>
+          <div id="scraperDetails">
+            <div style="text-align: center; color: var(--text-secondary); padding: 60px 20px;">
+              <div style="font-size: 48px; margin-bottom: 16px;">🛠️</div>
+              <h3>Select a scraper from the library</h3>
+              <p>Choose an example scraper or paste your own JSON configuration</p>
+            </div>
+          </div>
+          <div id="testOutput" class="test-output" style="display: none;">
+            <h4 style="margin-bottom: 12px; color: var(--text-primary);">📊 Test Results</h4>
+            <pre id="testResultsContent"></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Viewer Tab -->
+    <div id="tab-data" class="tab-content">
+      <div style="margin-bottom: 24px;">
+        <h3 style="font-size: 20px; margin-bottom: 16px;">📈 Scraped Data Viewer</h3>
+        <div style="display: flex; gap: 12px; margin-bottom: 20px;">
+          <select id="dataViewerScraper" style="flex: 1; padding: 10px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary);">
+            <option value="">Select a scraper...</option>
+          </select>
+          <button class="btn btn-primary" onclick="loadScraperData()">📊 Load Data</button>
+          <button class="btn btn-secondary" onclick="exportCurrentData()">💾 Export JSON</button>
+        </div>
+      </div>
+      <div id="dataViewerContent" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; min-height: 400px;">
+        <div style="text-align: center; color: var(--text-secondary); padding: 60px 20px;">
+          <div style="font-size: 48px; margin-bottom: 16px;">📊</div>
+          <h3>Select a scraper to view data</h3>
+          <p>Choose a scraper from the dropdown to see its scraped data</p>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Execution Panel -->
@@ -1718,6 +1954,329 @@
         hideImportModal();
       }
     });
+
+    // ========================================
+    // TAB NAVIGATION
+    // ========================================
+    function switchTab(tabName) {
+      // Hide all tabs
+      document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      
+      // Remove active class from all buttons
+      document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      
+      // Show selected tab
+      document.getElementById(`tab-${tabName}`).classList.add('active');
+      event.target.classList.add('active');
+      
+      // Load data for specific tabs
+      if (tabName === 'builder') {
+        loadScraperExamples();
+      } else if (tabName === 'data') {
+        populateDataViewerScrapers();
+      }
+    }
+
+    // ========================================
+    // SCRAPER BUILDER
+    // ========================================
+    let currentScraperConfig = null;
+    let scraperExamples = [];
+
+    async function loadScraperExamples() {
+      try {
+        // Load example scrapers from the examples directory
+        const examples = [
+          { name: 'Honolulu City Council Calendar', file: 'honolulu-calendar.json' },
+          { name: 'Extension Test Export', file: 'extension-test-export.json' },
+          { name: 'Test Static', file: 'test-static.json' }
+        ];
+        
+        const libraryDiv = document.getElementById('scraperLibrary');
+        libraryDiv.innerHTML = '';
+        
+        for (const example of examples) {
+          try {
+            const response = await fetch(`/examples/${example.file}`);
+            if (response.ok) {
+              const config = await response.json();
+              scraperExamples.push(config);
+              
+              const item = document.createElement('div');
+              item.className = 'scraper-list-item';
+              item.onclick = () => selectScraperConfig(config);
+              item.innerHTML = `
+                <h4>${config.name || example.name}</h4>
+                <p>${config.jurisdiction || 'Unknown'} • ${config.level || 'local'}</p>
+              `;
+              libraryDiv.appendChild(item);
+            }
+          } catch (err) {
+            console.error(`Failed to load ${example.file}:`, err);
+          }
+        }
+        
+        if (scraperExamples.length === 0) {
+          libraryDiv.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 20px;">No examples found</p>';
+        }
+      } catch (error) {
+        console.error('Failed to load scraper examples:', error);
+      }
+    }
+
+    function selectScraperConfig(config) {
+      currentScraperConfig = config;
+      
+      // Highlight selected item
+      document.querySelectorAll('.scraper-list-item').forEach(item => {
+        item.classList.remove('selected');
+      });
+      event.target.closest('.scraper-list-item').classList.add('selected');
+      
+      // Display configuration
+      displayScraperConfig(config);
+    }
+
+    function displayScraperConfig(config) {
+      const detailsDiv = document.getElementById('scraperDetails');
+      
+      detailsDiv.innerHTML = `
+        <div class="field-group">
+          <label>Scraper Name</label>
+          <input type="text" id="scraperName" value="${config.name || ''}" readonly />
+        </div>
+        
+        <div class="field-group">
+          <label>Description</label>
+          <textarea id="scraperDescription" readonly>${config.description || ''}</textarea>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="field-group">
+            <label>Jurisdiction</label>
+            <input type="text" value="${config.jurisdiction || ''}" readonly />
+          </div>
+          
+          <div class="field-group">
+            <label>Level</label>
+            <input type="text" value="${config.level || ''}" readonly />
+          </div>
+        </div>
+        
+        <div class="field-group">
+          <label>Start URL</label>
+          <input type="url" value="${config.startUrl || ''}" readonly />
+        </div>
+        
+        <div class="field-group">
+          <label>Requires Puppeteer</label>
+          <input type="text" value="${config.requiresPuppeteer ? 'Yes' : 'No'}" readonly />
+        </div>
+        
+        <div class="field-group">
+          <label>Full Configuration (JSON)</label>
+          <div class="json-editor">${JSON.stringify(config, null, 2)}</div>
+        </div>
+      `;
+    }
+
+    async function testCurrentScraper() {
+      if (!currentScraperConfig) {
+        alert('Please select a scraper first');
+        return;
+      }
+      
+      const testBtn = document.getElementById('testScraperBtn');
+      const originalText = testBtn.innerHTML;
+      testBtn.disabled = true;
+      testBtn.innerHTML = '⏳ Testing...';
+      
+      const outputDiv = document.getElementById('testOutput');
+      const resultsContent = document.getElementById('testResultsContent');
+      outputDiv.style.display = 'block';
+      resultsContent.textContent = 'Starting test execution...\n';
+      
+      try {
+        // First, import the scraper temporarily
+        const importResp = await fetch('/api/scrapers/import', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(currentScraperConfig)
+        });
+        
+        if (!importResp.ok) throw new Error('Failed to import scraper');
+        const scraper = await importResp.json();
+        
+        resultsContent.textContent += `✅ Scraper imported with ID: ${scraper.id}\n`;
+        resultsContent.textContent += `⏳ Executing scraper...\n\n`;
+        
+        // Execute the scraper
+        const execResp = await fetch('/api/scrapers/execute', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            scraperId: scraper.id,
+            mode: 'hybrid'
+          })
+        });
+        
+        if (!execResp.ok) throw new Error('Failed to execute scraper');
+        
+        // Wait a bit and then fetch results
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        
+        const detailsResp = await fetch(`/api/scrapers/${scraper.id}/execution-details`);
+        if (detailsResp.ok) {
+          const details = await detailsResp.json();
+          resultsContent.textContent += `✅ Execution complete!\n`;
+          resultsContent.textContent += `📊 Items found: ${details.itemCount || 0}\n`;
+          resultsContent.textContent += `⏱️  Duration: ${details.duration ? (details.duration / 1000).toFixed(1) + 's' : 'N/A'}\n\n`;
+          
+          if (details.scrapedData && details.scrapedData.length > 0) {
+            resultsContent.textContent += `Sample data:\n`;
+            resultsContent.textContent += JSON.stringify(details.scrapedData.slice(0, 2), null, 2);
+          }
+        }
+        
+      } catch (error) {
+        resultsContent.textContent += `\n❌ Test failed: ${error.message}\n`;
+        resultsContent.textContent += error.stack;
+      } finally {
+        testBtn.disabled = false;
+        testBtn.innerHTML = originalText;
+      }
+    }
+
+    async function importCurrentScraper() {
+      if (!currentScraperConfig) {
+        alert('Please select a scraper first');
+        return;
+      }
+      
+      if (!confirm(`Import "${currentScraperConfig.name}" to your platform?`)) {
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/scrapers/import', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(currentScraperConfig)
+        });
+        
+        if (!response.ok) throw new Error('Failed to import scraper');
+        
+        const result = await response.json();
+        alert(`✅ Scraper "${result.name}" imported successfully!`);
+        
+        // Switch back to dashboard and refresh
+        switchTab('dashboard');
+        loadScrapers();
+      } catch (error) {
+        alert(`❌ Import failed: ${error.message}`);
+      }
+    }
+
+    // ========================================
+    // DATA VIEWER
+    // ========================================
+    let currentViewerData = null;
+
+    async function populateDataViewerScrapers() {
+      try {
+        const response = await fetch('/api/scrapers');
+        const scrapers = await response.json();
+        
+        const select = document.getElementById('dataViewerScraper');
+        select.innerHTML = '<option value="">Select a scraper...</option>';
+        
+        scrapers.forEach(scraper => {
+          const option = document.createElement('option');
+          option.value = scraper.id;
+          option.textContent = `${scraper.name} (${scraper.jurisdiction})`;
+          select.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Failed to load scrapers:', error);
+      }
+    }
+
+    async function loadScraperData() {
+      const scraperId = document.getElementById('dataViewerScraper').value;
+      
+      if (!scraperId) {
+        alert('Please select a scraper');
+        return;
+      }
+      
+      const contentDiv = document.getElementById('dataViewerContent');
+      contentDiv.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 40px;">⏳ Loading data...</div>';
+      
+      try {
+        const response = await fetch(`/api/scrapers/${scraperId}/data?limit=1000`);
+        
+        if (!response.ok) throw new Error('Failed to load data');
+        
+        const data = await response.json();
+        currentViewerData = data;
+        
+        if (data.length === 0) {
+          contentDiv.innerHTML = `
+            <div style="text-align: center; color: var(--text-secondary); padding: 60px 20px;">
+              <div style="font-size: 48px; margin-bottom: 16px;">📭</div>
+              <h3>No data available</h3>
+              <p>This scraper hasn't collected any data yet. Try running it first!</p>
+            </div>
+          `;
+          return;
+        }
+        
+        // Display data in a nice format
+        contentDiv.innerHTML = `
+          <div style="margin-bottom: 20px; padding: 16px; background: rgba(59, 130, 246, 0.1); border-radius: 8px; border-left: 3px solid var(--primary);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <strong style="font-size: 16px;">📊 ${data.length} items found</strong>
+                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                  Last updated: ${data[0].scraped_at ? new Date(data[0].scraped_at).toLocaleString() : 'N/A'}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div style="background: #1e1e1e; border: 1px solid var(--border); border-radius: 8px; padding: 20px; overflow-x: auto; max-height: 600px;">
+            <pre style="margin: 0; color: #d4d4d4; font-family: 'Consolas', 'Monaco', monospace; font-size: 12px; line-height: 1.6;">${JSON.stringify(data, null, 2)}</pre>
+          </div>
+        `;
+      } catch (error) {
+        contentDiv.innerHTML = `
+          <div style="text-align: center; color: var(--danger); padding: 60px 20px;">
+            <div style="font-size: 48px; margin-bottom: 16px;">❌</div>
+            <h3>Failed to load data</h3>
+            <p>${error.message}</p>
+          </div>
+        `;
+      }
+    }
+
+    function exportCurrentData() {
+      if (!currentViewerData || currentViewerData.length === 0) {
+        alert('No data to export');
+        return;
+      }
+      
+      const blob = new Blob([JSON.stringify(currentViewerData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `scraper-data-${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
   </script>
 </body>
 </html>
