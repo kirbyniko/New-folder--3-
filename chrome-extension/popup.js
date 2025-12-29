@@ -275,29 +275,32 @@ function toggleGhostMode() {
   const controls = document.getElementById('ghost-mode-controls');
   
   if (ghostModeActive) {
-    // Enable ghost mode - make ENTIRE popup transparent and click-through
-    html.style.backgroundColor = 'transparent';
-    body.style.backgroundColor = 'transparent';
-    app.style.opacity = '0.15';
-    app.style.pointerEvents = 'none';
-    controls.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
-    controls.style.pointerEvents = 'auto';
-    statusSpan.textContent = 'ACTIVE - Click through popup';
-    statusSpan.style.color = '#10b981';
+    // Enable ghost mode - hide content, shrink popup
+    app.style.display = 'none';
+    body.style.width = '250px';
+    body.style.height = 'auto';
+    controls.style.backgroundColor = 'rgba(16, 185, 129, 0.95)';
+    controls.style.color = 'white';
+    statusSpan.textContent = '✓ Ghost Mode Active';
+    statusSpan.style.color = 'white';
     statusSpan.style.fontWeight = 'bold';
     btn.textContent = '👻 Exit Ghost Mode';
-    console.log('Ghost mode ENABLED - entire popup transparent');
+    btn.style.backgroundColor = 'white';
+    btn.style.color = '#10b981';
+    console.log('Ghost mode ENABLED - popup minimized');
   } else {
-    // Disable ghost mode
-    html.style.backgroundColor = '';
-    body.style.backgroundColor = '';
-    app.style.opacity = '1';
-    app.style.pointerEvents = 'auto';
+    // Disable ghost mode - restore everything
+    app.style.display = 'block';
+    body.style.width = '';
+    body.style.height = '';
     controls.style.backgroundColor = 'white';
+    controls.style.color = '';
     statusSpan.textContent = '';
     statusSpan.style.fontWeight = 'normal';
     btn.textContent = '👻 Ghost Mode (Click Through)';
-    console.log('Ghost mode DISABLED');
+    btn.style.backgroundColor = '';
+    btn.style.color = '';
+    console.log('Ghost mode DISABLED - popup restored');
   }
 }
 
