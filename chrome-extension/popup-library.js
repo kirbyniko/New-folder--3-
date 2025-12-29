@@ -39,12 +39,34 @@ document.addEventListener('DOMContentLoaded', async () => {
 let scrapers = [];
 let templates = [];
 
-// Load example templates
+// Load templates from database API and examples
 async function loadTemplates() {
+  templates = [];
+  
+  // Load from database API
+  try {
+    const apiResponse = await fetch('http://localhost:3001/api/templates');
+    if (apiResponse.ok) {
+      const apiData = await apiResponse.json();
+      if (apiData.templates && Array.isArray(apiData.templates)) {
+        templates.push(...apiData.templates.map(t => ({
+          ...t,
+          source: 'database',
+          id: t.id
+        })));
+        console.log(`✅ Loaded ${apiData.templates.length} templates from database`);
+      }
+    }
+  } catch (error) {
+    console.warn('⚠️ Could not load templates from database:', error.message);
+  }
+  
+  // Load example templates from files
   const exampleFiles = [
     'honolulu-calendar.json',
     'extension-test-export.json',
-    'test-static.json'
+    'test-static.json',
+    'court-calendar-example.json'
   ];
   
   for (const file of exampleFiles) {
@@ -52,12 +74,18 @@ async function loadTemplates() {
       const response = await fetch(chrome.runtime.getURL(`examples/${file}`));
       if (response.ok) {
         const template = await response.json();
-        templates.push(template);
+        templates.push({
+          ...template,
+          source: 'example',
+          filename: file
+        });
       }
     } catch (error) {
-      console.error(`Failed to load template ${file}:`, error);
+      console.error(`Failed to load example ${file}:`, error);
     }
   }
+  
+  console.log(`📚 Total templates loaded: ${templates.length}`);
 }
 
 function loadScraperLibrary() {
@@ -79,16 +107,24 @@ function displayTemplates() {
   // Show templates first
   if (templates.length > 0) {
     html += '<div style="margin-bottom: 20px;"><h4 style="font-size: 13px; color: #666; margin-bottom: 8px;">📝 Templates (Click to Use)</h4>';
-    html += templates.map((template, index) => `
-      <div class="scraper-item" style="border-color: #10b981; background: rgba(16, 185, 129, 0.05);">
-        <h4>${template.name || 'Unnamed Template'}</h4>
-        <p>${template.jurisdiction || 'Unknown'} • ${template.level || 'local'}</p>
-        <div class="scraper-actions">
-          <button class="btn-success use-template-btn" data-template-index="${index}" style="flex: 2;">✨ Use Template</button>
-          <button class="btn-secondary view-template-btn" data-template-index="${index}">👁️ View</button>
+    html += templates.map((template, index) => {
+      const isDatabase = template.source === 'database';
+      const badge = isDatabase ? '<span style="background: #3b82f6; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 8px;">💾 DATABASE</span>' : '<span style="background: #10b981; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 8px;">📁 EXAMPLE</span>';
+      const eventType = template.storage?.eventType || template.type || 'Unknown';
+      const description = template.description || 'No description';
+      
+      return `
+        <div class="scraper-item" style="border-color: ${isDatabase ? '#3b82f6' : '#10b981'}; background: ${isDatabase ? 'rgba(59, 130, 246, 0.05)' : 'rgba(16, 185, 129, 0.05)'};">
+          <h4>${template.name || 'Unnamed Template'}${badge}</h4>
+          <p style="font-size: 11px; color: #666; margin: 4px 0;">${description}</p>
+          <p style="font-size: 11px; color: #888;">Type: ${eventType} • Steps: ${template.steps?.length || 0}</p>
+          <div class="scraper-actions">
+            <button class="btn-success use-template-btn" data-template-index="${index}" style="flex: 2;">✨ Use Template</button>
+            <button class="btn-secondary view-template-btn" data-template-index="${index}">👁️ View</button>
+          </div>
         </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
     html += '</div>';
   }
   
@@ -477,15 +513,31 @@ document.getElementById('save-template')?.addEventListener('click', async () => 
     const result = await response.json();
     
     const statusEl = document.getElementById('template-save-status');
-    statusEl.textContent = `✅ Template "${name}" saved to database! ID: ${result.template.id}`;
+    statusEl.innerHTML = `✅ Template "${name}" saved to database! <a href="#" id="view-in-library-link" style="color: #059669; text-decoration: underline;">View in Library</a>`;
     statusEl.style.background = '#d1fae5';
     statusEl.style.border = '1px solid #10b981';
     statusEl.style.color = '#065f46';
     statusEl.style.display = 'block';
     
+    // Add click handler for library link
+    setTimeout(() => {
+      document.getElementById('view-in-library-link')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        // Switch to Library tab
+        document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        document.querySelector('[data-tab="library"]').classList.add('active');
+        document.getElementById('tab-library').classList.add('active');
+        // Refresh library
+        loadTemplates().then(() => {
+          loadScraperLibrary();
+        });
+      });
+    }, 100);
+    
     setTimeout(() => {
       statusEl.style.display = 'none';
-    }, 5000);
+    }, 10000);
     
   } catch (error) {
     const statusEl = document.getElementById('template-save-status');
@@ -612,7 +664,31 @@ function importTemplateFromJSON(jsonString) {
     renderStepsList();
     updateTemplatePreview();
     
-    alert(`✅ Imported template "${template.name}" with ${templateSteps.length} step(s)`);
+    const message = `✅ Imported template "${template.name}" with ${templateSteps.length} step(s)! <a href="#" id="view-imported-link" style="color: #059669; text-decoration: underline;">View in Library</a>`;
+    
+    const confirmDiv = document.createElement('div');
+    confirmDiv.style.cssText = 'padding: 12px; background: #d1fae5; border: 1px solid #10b981; border-radius: 4px; margin-top: 12px; font-size: 12px; color: #065f46;';
+    confirmDiv.innerHTML = message;
+    
+    const form = document.getElementById('template-form');
+    form.insertBefore(confirmDiv, form.firstChild);
+    
+    // Add click handler
+    setTimeout(() => {
+      document.getElementById('view-imported-link')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        confirmDiv.remove();
+        // Switch to Library tab
+        document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        document.querySelector('[data-tab="library"]').classList.add('active');
+        document.getElementById('tab-library').classList.add('active');
+      });
+    }, 100);
+    
+    setTimeout(() => {
+      confirmDiv.remove();
+    }, 10000);
     
   } catch (error) {
     alert(`❌ Error parsing JSON: ${error.message}\n\nPlease ensure the JSON is valid.`);
@@ -858,5 +934,24 @@ document.getElementById('copy-results-btn').addEventListener('click', () => {
   });
 });
 
+// Refresh library button
+document.getElementById('refresh-library-btn')?.addEventListener('click', async () => {
+  const btn = document.getElementById('refresh-library-btn');
+  const originalText = btn.textContent;
+  btn.textContent = '🔄 Loading...';
+  btn.disabled = true;
+  
+  await loadTemplates();
+  loadScraperLibrary();
+  
+  btn.textContent = '✅ Refreshed!';
+  setTimeout(() => {
+    btn.textContent = originalText;
+    btn.disabled = false;
+  }, 2000);
+});
+
 // Load library on startup
-loadScraperLibrary();
+loadTemplates().then(() => {
+  loadScraperLibrary();
+});
