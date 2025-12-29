@@ -349,6 +349,89 @@ app.use((err: Error, req: Request, res: Response, next: any) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
+// ===== NEW: Scripts Management API =====
+// List all cached scripts
+app.get('/api/scripts', async (req: Request, res: Response) => {
+  try {
+    const { HybridScraperExecutor } = await import('./llm/hybrid-executor.js');
+    const executor = new HybridScraperExecutor();
+    const scripts = executor.getAllCachedScripts();
+    
+    // Enrich with scraper names
+    const enriched = await Promise.all(scripts.map(async (script) => {
+      const config = await db.exportScraper(script.scraperId);
+      return {
+        ...script,
+        scraperName: config.name,
+        jurisdiction: config.jurisdiction
+      };
+    }));
+    
+    res.json(enriched);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get specific script
+app.get('/api/scripts/:id', async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { HybridScraperExecutor } = await import('./llm/hybrid-executor.js');
+    const executor = new HybridScraperExecutor();
+    const script = executor.getCachedScript(id);
+    
+    if (!script) {
+      return res.status(404).json({ error: 'Script not found' });
+    }
+    
+    const config = await db.exportScraper(id);
+    res.json({
+      ...script,
+      scraperName: config.name,
+      jurisdiction: config.jurisdiction
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete cached script
+app.delete('/api/scripts/:id', async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { HybridScraperExecutor } = await import('./llm/hybrid-executor.js');
+    const executor = new HybridScraperExecutor();
+    executor.deleteCachedScript(id);
+    
+    res.json({ success: true, message: 'Script deleted' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ===== NEW: Data Viewing API =====
+// Get scraped data (paginated)
+app.get('/api/data', async (req: Request, res: Response) => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 50;
+    const offset = parseInt(req.query.offset as string) || 0;
+    const scraperId = req.query.scraperId ? parseInt(req.query.scraperId as string) : null;
+    
+    // TODO: Add actual data retrieval from database
+    // For now, return placeholder
+    res.json({
+      total: 0,
+      limit,
+      offset,
+      data: [],
+      message: 'Data viewing endpoint - implementation pending'
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Start server
 const server = app.listen(PORT, () => {
   console.log(`🚀 Scraper Platform API running on http://localhost:${PORT}`);

@@ -288,4 +288,30 @@ export class HybridScraperExecutor {
       }))
     };
   }
+
+  /**
+   * Get all cached scripts (for API)
+   */
+  getAllCachedScripts(): CachedScript[] {
+    return Array.from(this.scriptCache.entries()).map(([scraperId, script]) => ({
+      ...script,
+      scraperId,
+      runCount: script.successCount + script.failureCount,
+      successRate: script.successCount / (script.successCount + script.failureCount)
+    }));
+  }
+
+  /**
+   * Get specific cached script
+   */
+  getCachedScript(scraperId: number): CachedScript | undefined {
+    return this.scriptCache.get(scraperId);
+  }
+
+  /**
+   * Delete cached script
+   */
+  deleteCachedScript(scraperId: number): boolean {
+    return this.scriptCache.delete(scraperId);
+  }
 }
