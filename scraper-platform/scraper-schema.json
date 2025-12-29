@@ -1,0 +1,243 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Scraper Configuration",
+  "description": "JSON schema for importing scraper configurations",
+  "type": "object",
+  "required": ["name", "baseUrl", "startUrl"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Unique name for the scraper"
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description"
+    },
+    "jurisdiction": {
+      "type": "string",
+      "description": "e.g., 'Honolulu', 'California'"
+    },
+    "stateCode": {
+      "type": "string",
+      "pattern": "^[A-Z]{2}$",
+      "description": "Two-letter state code"
+    },
+    "level": {
+      "type": "string",
+      "enum": ["state", "local", "federal"]
+    },
+    "baseUrl": {
+      "type": "string",
+      "format": "uri"
+    },
+    "startUrl": {
+      "type": "string",
+      "format": "uri"
+    },
+    "requiresPuppeteer": {
+      "type": "boolean",
+      "default": false
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional flexible metadata"
+    },
+    "navigationSteps": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/navigationStep"
+      }
+    },
+    "pageStructures": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/pageStructure"
+      }
+    },
+    "conditions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/condition"
+      }
+    }
+  },
+  "definitions": {
+    "navigationStep": {
+      "type": "object",
+      "required": ["stepOrder", "stepType"],
+      "properties": {
+        "stepOrder": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "stepType": {
+          "type": "string",
+          "enum": ["click", "input", "select", "wait", "scroll"]
+        },
+        "selector": {
+          "type": "string"
+        },
+        "xpath": {
+          "type": "string"
+        },
+        "actionValue": {
+          "type": "string"
+        },
+        "waitForSelector": {
+          "type": "string"
+        },
+        "waitTime": {
+          "type": "integer"
+        },
+        "comment": {
+          "type": "string"
+        },
+        "isRequired": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "pageStructure": {
+      "type": "object",
+      "required": ["pageType", "pageName"],
+      "properties": {
+        "pageType": {
+          "type": "string",
+          "enum": ["list", "detail", "calendar", "custom"]
+        },
+        "pageName": {
+          "type": "string"
+        },
+        "containerSelector": {
+          "type": "string"
+        },
+        "itemSelector": {
+          "type": "string"
+        },
+        "hasPagination": {
+          "type": "boolean"
+        },
+        "nextButtonSelector": {
+          "type": "string"
+        },
+        "prevButtonSelector": {
+          "type": "string"
+        },
+        "comment": {
+          "type": "string"
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/field"
+          }
+        }
+      }
+    },
+    "field": {
+      "type": "object",
+      "required": ["fieldName", "fieldType"],
+      "properties": {
+        "fieldName": {
+          "type": "string"
+        },
+        "fieldType": {
+          "type": "string",
+          "enum": ["text", "date", "url", "html", "attribute", "number"]
+        },
+        "fieldOrder": {
+          "type": "integer"
+        },
+        "isRequired": {
+          "type": "boolean"
+        },
+        "defaultValue": {
+          "type": "string"
+        },
+        "validationRegex": {
+          "type": "string"
+        },
+        "transformation": {
+          "type": "string",
+          "enum": ["trim", "lowercase", "uppercase", "parse_date", "extract_number"]
+        },
+        "comment": {
+          "type": "string"
+        },
+        "selectorSteps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/selectorStep"
+          }
+        }
+      }
+    },
+    "selectorStep": {
+      "type": "object",
+      "required": ["stepOrder", "actionType"],
+      "properties": {
+        "stepOrder": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "actionType": {
+          "type": "string",
+          "enum": ["click", "hover", "wait", "extract"]
+        },
+        "selector": {
+          "type": "string"
+        },
+        "xpath": {
+          "type": "string"
+        },
+        "attributeName": {
+          "type": "string"
+        },
+        "waitAfter": {
+          "type": "integer"
+        },
+        "comment": {
+          "type": "string"
+        }
+      }
+    },
+    "condition": {
+      "type": "object",
+      "required": ["conditionName", "conditionType"],
+      "properties": {
+        "conditionName": {
+          "type": "string"
+        },
+        "conditionType": {
+          "type": "string",
+          "enum": ["element_exists", "url_contains", "text_contains"]
+        },
+        "selector": {
+          "type": "string"
+        },
+        "expectedValue": {
+          "type": "string"
+        },
+        "actionOnTrue": {
+          "type": "string",
+          "enum": ["skip", "use_alternative", "stop"]
+        },
+        "actionOnFalse": {
+          "type": "string",
+          "enum": ["skip", "use_alternative", "stop"]
+        },
+        "alternativeSelector": {
+          "type": "string"
+        },
+        "comment": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
