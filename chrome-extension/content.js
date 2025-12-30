@@ -306,15 +306,29 @@ function handleClick(e) {
   const highlight = createHighlight(element, '#22c55e');
   setTimeout(() => highlight.remove(), 2000);
   
-  // Send to popup
+  // Send to background worker (always works, even if popup is closed)
+  chrome.runtime.sendMessage({
+    action: 'selectorCaptured',
+    fieldId: currentField,
+    selector: selector,
+    data: capturedData
+  }).then(() => {
+    console.log('✅ Sent to background worker');
+    // Show success notification
+    showNotification('✅ Captured! Selector saved. Reopen extension to continue.', 4000);
+  }).catch((error) => {
+    console.log('Background worker received message:', error);
+    showNotification('✅ Captured! Selector saved. Reopen extension to continue.', 4000);
+  });
+  
+  // Also try to send to popup directly (for when popup is still open)
   chrome.runtime.sendMessage({
     type: 'ELEMENT_CAPTURED',
     data: capturedData
-  });
+  }).catch(() => console.log('Popup closed'));
   
-  // DON'T stop capturing - keep it active so user can add more steps
-  // Just show a success message
-  showNotification(`✓ Step captured! Click another element to add more steps, or press ESC to finish.`, 3000);
+  // Stop capturing after first click for dynamic builder
+  stopCapturing();
 }
 
 // Show notification to user
@@ -424,12 +438,17 @@ document.addEventListener('keydown', (e) => {
 
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === 'START_CAPTURE') {
-    startCapturing(message.field);
+  // Handle both old format (type: 'START_CAPTURE') and new format (action: 'startCapture')
+  const messageType = message.type || message.action;
+  
+  if (messageType === 'START_CAPTURE' || messageType === 'startCapture') {
+    startCapturing(message.field || message.fieldId);
     sendResponse({ success: true });
-  } else if (message.type === 'STOP_CAPTURE') {
+    return true; // Keep channel open
+  } else if (messageType === 'STOP_CAPTURE' || messageType === 'stopCapture') {
     stopCapturing();
     sendResponse({ success: true });
+    return true; // Keep channel open
   } else if (message.type === 'GET_PAGE_INFO') {
     sendResponse({
       url: window.location.href,

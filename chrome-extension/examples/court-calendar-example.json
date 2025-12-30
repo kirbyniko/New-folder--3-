@@ -27,7 +27,16 @@
           "type": "url",
           "required": true,
           "label": "Court Calendar URL",
-          "placeholder": "https://..."
+          "placeholder": "https://...",
+          "autofill": "currentUrl"
+        },
+        {
+          "name": "base_url",
+          "type": "url",
+          "required": false,
+          "label": "Base URL (Optional)",
+          "placeholder": "https://...",
+          "autofill": "baseUrl"
         }
       ]
     },

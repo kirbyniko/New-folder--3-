@@ -26,13 +26,73 @@ document.querySelectorAll('.tab-button').forEach(button => {
   });
 });
 
+// Open detached window function
+function openDetachedWindow() {
+  chrome.windows.create({
+    url: chrome.runtime.getURL('popup.html'),
+    type: 'popup',
+    width: 450,
+    height: 700,
+    left: 100,
+    top: 100
+  }).then((window) => {
+    console.log('✅ Detached window opened:', window.id);
+  }).catch((error) => {
+    console.error('Error opening detached window:', error);
+    alert('Could not open detached window.');
+  });
+}
+
 // Initialize on load
 document.addEventListener('DOMContentLoaded', async () => {
+  // Hide "Open Window" button if we're already in a detached window
+  chrome.windows.getCurrent((window) => {
+    if (window.type === 'popup') {
+      // We're in a detached window, hide the button
+      const btnContainer = document.getElementById('detached-window-btn-container');
+      if (btnContainer) {
+        btnContainer.style.display = 'none';
+      }
+    } else {
+      // We're in the extension popup, set up the button
+      const detachedWindowBtn = document.getElementById('open-detached-window');
+      if (detachedWindowBtn) {
+        detachedWindowBtn.addEventListener('click', openDetachedWindow);
+      }
+    }
+  });
+  
+  // Check if we should go straight to Build tab (template loaded or was capturing)
+  chrome.storage.local.get(['templateLoaded', 'capturingField', 'activeBuilderTemplate'], (result) => {
+    if (result.templateLoaded || result.capturingField || result.activeBuilderTemplate) {
+      console.log('📍 Active template/capture detected, switching to Build tab');
+      const buildButton = document.querySelector('[data-tab="build"]');
+      if (buildButton) {
+        buildButton.click();
+      }
+    }
+  });
+  
+  // Set up change tab button
+  const changeTabBtn = document.getElementById('change-tab-btn');
+  if (changeTabBtn) {
+    changeTabBtn.addEventListener('click', () => {
+      clearSelectedTab();
+      alert('✅ Tab cleared. Click any Capture button to select a new tab.');
+    });
+  }
+  
+  // Restore selected tab display
+  chrome.storage.local.get(['selectedScrapingTab'], (result) => {
+    if (result.selectedScrapingTab) {
+      updateSelectedTabDisplay(result.selectedScrapingTab);
+    }
+  });
+  
   await loadTemplates();
   loadScraperLibrary();
+  restoreActiveTemplate();
 });
-
-// ========================================
 // SCRAPER LIBRARY (localStorage)
 // ========================================
 
@@ -70,6 +130,7 @@ async function loadTemplates() {
   
   // Load example templates from files
   const exampleFiles = [
+    'legislative-calendar-template.json',
     'court-calendar-example.json'
   ];
   
@@ -97,6 +158,44 @@ async function loadTemplates() {
   }
   
   console.log(`📚 Total templates loaded: ${templates.length}`);
+  populateTemplateSelector();
+  populateBuildTemplateSelector();
+}
+
+function populateTemplateSelector() {
+  const selector = document.getElementById('template-selector');
+  if (!selector) return;
+  
+  // Clear existing options except the first one
+  selector.innerHTML = '<option value="">Start from scratch...</option>';
+  
+  // Add templates as options
+  templates.forEach((template, index) => {
+    const option = document.createElement('option');
+    option.value = index;
+    const badge = template.source === 'database' ? '💾' : '📁';
+    const type = template.storage?.eventType || 'other';
+    option.textContent = `${badge} ${template.name} (${type})`;
+    selector.appendChild(option);
+  });
+}
+
+function populateBuildTemplateSelector() {
+  const selector = document.getElementById('build-template-selector');
+  if (!selector) return;
+  
+  // Clear existing options except the first one
+  selector.innerHTML = '<option value="">Select a template...</option>';
+  
+  // Add templates as options
+  templates.forEach((template, index) => {
+    const option = document.createElement('option');
+    option.value = index;
+    const badge = template.source === 'database' ? '💾' : '📁';
+    const type = template.storage?.eventType || 'other';
+    option.textContent = `${badge} ${template.name} (${type})`;
+    selector.appendChild(option);
+  });
 }
 
 function loadScraperLibrary() {
@@ -142,18 +241,24 @@ function displayTemplates() {
   // Show saved scrapers
   if (scrapers.length > 0) {
     html += '<div><h4 style="font-size: 13px; color: #666; margin-bottom: 8px;">💾 Your Scrapers</h4>';
-    html += scrapers.map((scraper, index) => `
-      <div class="scraper-item" data-index="${index}">
-        <h4>${scraper.name || 'Unnamed Scraper'}</h4>
-        <p>${scraper.jurisdiction || 'Unknown'} • ${scraper.level || 'local'} • ${scraper.stateCode || 'N/A'}</p>
-        <div class="scraper-actions">
-          <button class="btn-secondary view-scraper-btn" data-scraper-index="${index}">👁️ View</button>
-          <button class="btn-primary test-scraper-btn" data-scraper-index="${index}">🧪 Test</button>
-          <button class="btn-secondary export-scraper-btn" data-scraper-index="${index}">💾 Export</button>
-          <button class="btn-danger delete-scraper-btn" data-scraper-index="${index}">🗑️</button>
+    html += scrapers.map((scraper, index) => {
+      const createdDate = scraper.createdAt ? new Date(scraper.createdAt).toLocaleDateString() : 'Unknown';
+      const fieldCount = Object.keys(scraper.fields || {}).length;
+      const stepCount = Object.keys(scraper.steps || {}).length;
+      
+      return `
+        <div class="scraper-item" data-index="${index}" style="border-color: #8b5cf6; background: rgba(139, 92, 246, 0.05);">
+          <h4>${scraper.name || 'Unnamed Scraper'} <span style="background: #8b5cf6; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 8px;">✅ SAVED</span></h4>
+          <p style="font-size: 11px; color: #666; margin: 4px 0;">Created: ${createdDate} • Fields: ${fieldCount} • Steps: ${stepCount}</p>
+          <div class="scraper-actions">
+            <button class="btn-secondary view-scraper-btn" data-scraper-index="${index}">👁️ View</button>
+            <button class="btn-primary test-scraper-btn" data-scraper-index="${index}">🧪 Test</button>
+            <button class="btn-secondary export-scraper-btn" data-scraper-index="${index}">💾 Export</button>
+            <button class="btn-danger delete-scraper-btn" data-scraper-index="${index}">🗑️</button>
+          </div>
         </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
     html += '</div>';
   }
   
@@ -196,10 +301,42 @@ function saveScrapers() {
 
 function useTemplate(index) {
   const template = templates[index];
-  const newScraper = JSON.parse(JSON.stringify(template)); // Deep clone
-  scrapers.push(newScraper);
-  saveScrapers();
-  showStatus(`✅ Added "${newScraper.name}" to your scrapers!`, 'success');
+  
+  // Load template into Template Creator
+  document.getElementById('template-name').value = template.name || '';
+  document.getElementById('template-description').value = template.description || '';
+  
+  if (template.storage) {
+    document.getElementById('template-event-type').value = template.storage.eventType || '';
+    document.getElementById('template-scraper-source').value = template.storage.scraperSource || '';
+  }
+  
+  // Load steps
+  if (template.steps && Array.isArray(template.steps)) {
+    templateSteps = template.steps.map((step, index) => ({
+      stepNumber: step.stepNumber || index + 1,
+      stepName: step.stepName || `Step ${index + 1}`,
+      stepIcon: step.stepIcon || '📋',
+      captureMode: step.captureMode || false,
+      fields: step.fields || [],
+      fieldGroups: step.fieldGroups || []
+    }));
+    
+    renderStepsList();
+    updateTemplatePreview();
+  }
+  
+  // Switch to Template Creator tab
+  document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+  document.querySelector('[data-tab="template"]').classList.add('active');
+  document.getElementById('tab-template').classList.add('active');
+  
+  // Show success message
+  setTimeout(() => {
+    const badge = template.source === 'database' ? '💾 DATABASE' : '📁 EXAMPLE';
+    alert(`✅ Loaded template: "${template.name}"\nSource: ${badge}\n\nYou can now customize this template in the Builder tab.`);
+  }, 200);
 }
 
 function viewTemplate(index) {
@@ -592,24 +729,106 @@ document.getElementById('export-template-json')?.addEventListener('click', () =>
   });
 });
 
-document.getElementById('import-template-json')?.addEventListener('click', () => {
-  const choice = confirm('Import from file? (OK)\nOr paste JSON from clipboard? (Cancel)');
+document.getElementById('load-selected-template-btn')?.addEventListener('click', () => {
+  const selector = document.getElementById('template-selector');
+  const selectedIndex = selector.value;
   
-  if (choice) {
-    // Import from file
-    const fileInput = document.getElementById('import-template-file');
-    fileInput.click();
-  } else {
-    // Import from clipboard/paste
-    navigator.clipboard.readText().then(text => {
-      importTemplateFromJSON(text);
-    }).catch(() => {
-      const json = prompt('Paste template JSON:');
-      if (json) {
-        importTemplateFromJSON(json);
-      }
-    });
+  if (selectedIndex === '') {
+    alert('ℹ️ Please select a template from the dropdown first');
+    return;
   }
+  
+  const template = templates[parseInt(selectedIndex)];
+  if (!template) {
+    alert('❌ Template not found');
+    return;
+  }
+  
+  // Load template into form
+  document.getElementById('template-name').value = template.name || '';
+  document.getElementById('template-description').value = template.description || '';
+  
+  if (template.storage) {
+    document.getElementById('template-event-type').value = template.storage.eventType || '';
+    document.getElementById('template-scraper-source').value = template.storage.scraperSource || '';
+  }
+  
+  // Load steps
+  if (template.steps && Array.isArray(template.steps)) {
+    templateSteps = template.steps.map((step, index) => ({
+      stepNumber: step.stepNumber || index + 1,
+      stepName: step.stepName || `Step ${index + 1}`,
+      stepIcon: step.stepIcon || '📋',
+      captureMode: step.captureMode || false,
+      fields: step.fields || [],
+      fieldGroups: step.fieldGroups || []
+    }));
+    
+    renderStepsList();
+    updateTemplatePreview();
+  }
+  
+  // Show success message
+  const badge = template.source === 'database' ? '💾 DATABASE' : '📁 EXAMPLE';
+  alert(`✅ Loaded template: "${template.name}"\nSource: ${badge}\n\nYou can now customize this template or use it as-is.`);
+  
+  // Reset selector
+  selector.value = '';
+});
+
+document.getElementById('import-template-json')?.addEventListener('click', () => {
+  // Show the import modal
+  document.getElementById('import-modal').style.display = 'flex';
+  document.getElementById('paste-area').style.display = 'none';
+  document.getElementById('import-json-paste').value = '';
+});
+
+document.getElementById('close-import-modal')?.addEventListener('click', () => {
+  document.getElementById('import-modal').style.display = 'none';
+});
+
+// Close modal when clicking outside
+document.getElementById('import-modal')?.addEventListener('click', (e) => {
+  if (e.target.id === 'import-modal') {
+    document.getElementById('import-modal').style.display = 'none';
+  }
+});
+
+document.getElementById('import-from-file-btn')?.addEventListener('click', () => {
+  document.getElementById('import-modal').style.display = 'none';
+  document.getElementById('import-template-file').click();
+});
+
+document.getElementById('import-from-clipboard-btn')?.addEventListener('click', async () => {
+  document.getElementById('paste-area').style.display = 'block';
+  document.getElementById('import-from-file-btn').style.display = 'none';
+  document.getElementById('import-from-clipboard-btn').style.display = 'none';
+  
+  // Try to read clipboard
+  try {
+    const text = await navigator.clipboard.readText();
+    if (text && text.trim().startsWith('{')) {
+      document.getElementById('import-json-paste').value = text;
+    }
+  } catch (e) {
+    // Permission denied or no clipboard access - user will paste manually
+  }
+  
+  document.getElementById('import-json-paste').focus();
+});
+
+document.getElementById('confirm-paste-btn')?.addEventListener('click', () => {
+  const json = document.getElementById('import-json-paste').value.trim();
+  if (!json) {
+    alert('❌ Please paste template JSON');
+    return;
+  }
+  importTemplateFromJSON(json);
+  document.getElementById('import-modal').style.display = 'none';
+});
+
+document.getElementById('cancel-paste-btn')?.addEventListener('click', () => {
+  document.getElementById('import-modal').style.display = 'none';
 });
 
 document.getElementById('import-template-file')?.addEventListener('change', (e) => {
@@ -675,10 +894,19 @@ function importTemplateFromJSON(jsonString) {
     renderStepsList();
     updateTemplatePreview();
     
-    const message = `✅ Imported template "${template.name}" with ${templateSteps.length} step(s)! <a href="#" id="view-imported-link" style="color: #059669; text-decoration: underline;">View in Library</a>`;
+    const message = `
+      <div style="display: flex; align-items: start; gap: 12px;">
+        <span style="font-size: 32px;">✅</span>
+        <div style="flex: 1;">
+          <div style="font-weight: 600; margin-bottom: 4px;">Template Imported Successfully!</div>
+          <div style="font-size: 11px; opacity: 0.9;">"${template.name}" loaded with ${templateSteps.length} step(s)</div>
+          <a href="#" id="view-imported-link" style="display: inline-block; margin-top: 8px; color: #059669; text-decoration: none; font-weight: 500; font-size: 12px;">→ View in Library</a>
+        </div>
+      </div>
+    `;
     
     const confirmDiv = document.createElement('div');
-    confirmDiv.style.cssText = 'padding: 12px; background: #d1fae5; border: 1px solid #10b981; border-radius: 4px; margin-top: 12px; font-size: 12px; color: #065f46;';
+    confirmDiv.style.cssText = 'padding: 16px; background: #d1fae5; border: 1px solid #10b981; border-radius: 8px; margin-top: 12px; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);';
     confirmDiv.innerHTML = message;
     
     const form = document.getElementById('template-form');
@@ -747,6 +975,1719 @@ document.getElementById('load-legislative-template')?.addEventListener('click', 
   updateTemplatePreview();
   alert('✅ Loaded legislative calendar template example with 3 steps');
 });
+
+// Build tab template loader
+document.getElementById('load-build-template-btn')?.addEventListener('click', () => {
+  const selector = document.getElementById('build-template-selector');
+  const selectedIndex = selector.value;
+  
+  if (selectedIndex === '') {
+    alert('ℹ️ Please select a template from the dropdown first');
+    return;
+  }
+  
+  const template = templates[parseInt(selectedIndex)];
+  if (!template) {
+    alert('❌ Template not found');
+    return;
+  }
+  
+  // Render the dynamic builder based on template structure
+  renderDynamicBuilder(template);
+  
+  // Show success message with template info
+  const badge = template.source === 'database' ? '💾 DATABASE' : '📁 EXAMPLE';
+  const stepCount = template.steps?.length || 0;
+  const eventType = template.storage?.eventType || 'other';
+  
+  // Store the template in state for the builder to use
+  chrome.storage.local.set({ 
+    activeBuilderTemplate: template,
+    templateLoaded: true
+  }, () => {
+    console.log('✅ Template loaded into Build tab:', template.name);
+    
+    // Show success after rendering
+    setTimeout(() => {
+      alert(`✅ Loaded Template: "${template.name}"\n\nSource: ${badge}\nType: ${eventType}\nSteps: ${stepCount}\n\nThe builder is now ready. Follow the steps to capture your scraper configuration.`);
+    }, 100);
+  });
+  
+  // Reset selector
+  selector.value = '';
+});
+
+// Clear template button
+document.getElementById('clear-build-template-btn')?.addEventListener('click', () => {
+  if (confirm('⚠️ Clear the current template and all saved field values?\n\nThis will reset the Build tab to its default state.')) {
+    // Clear storage
+    chrome.storage.local.remove(['activeBuilderTemplate', 'templateLoaded', 'builderFieldValues'], () => {
+      console.log('🗑️ Cleared template and field values');
+      
+      // Reset UI
+      const container = document.getElementById('dynamic-builder-container');
+      if (container) {
+        container.innerHTML = `
+          <p style="text-align: center; color: #999; padding: 40px 20px;">
+            ⬆️ Select a template above to start building your scraper.<br>
+            <small style="font-size: 11px;">The builder will dynamically load based on your chosen template's structure.</small>
+          </p>
+        `;
+      }
+      
+      alert('✅ Template cleared! Select a new template to continue.');
+    });
+  }
+});
+
+// Dynamic builder renderer
+function renderDynamicBuilder(template) {
+  const container = document.getElementById('dynamic-builder-container');
+  if (!container) return;
+  
+  const steps = template.steps || [];
+  
+  // Create step navigation
+  let html = '<div id="step-navigation" style="display: flex; gap: 8px; margin-bottom: 16px; padding: 12px; background: #f9fafb; border-radius: 8px; overflow-x: auto;">';
+  steps.forEach((step, index) => {
+    const stepNum = step.stepNumber || index + 1;
+    html += `
+      <button class="step-nav-btn" data-step="${stepNum}" style="padding: 8px 16px; background: white; border: 2px solid #e5e7eb; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; white-space: nowrap; transition: all 0.2s;">
+        ${step.stepIcon || '📋'} ${stepNum}
+      </button>
+    `;
+  });
+  html += '</div>';
+  
+  // Create step containers (only show one at a time)
+  html += '<div id="dynamic-app" style="min-height: 400px;">';
+  
+  steps.forEach((step, index) => {
+    const stepNum = step.stepNumber || index + 1;
+    const isFirst = index === 0;
+    
+    // Hide all steps except first
+    html += `
+      <div id="dynamic-step-${stepNum}" class="step-content" data-step="${stepNum}" style="display: ${isFirst ? 'block' : 'none'}; animation: fadeIn 0.3s;">
+        <h3 style="margin: 0 0 12px 0; color: #1f2937; font-size: 16px; border-bottom: 2px solid #6366f1; padding-bottom: 8px;">${step.stepIcon || '📋'} ${step.stepName || 'Untitled'}</h3>
+    `;
+    
+    // Add instruction if present
+    if (step.instruction) {
+      html += `<p class="instruction" style="margin-bottom: 16px; padding: 12px; background: #eff6ff; border-left: 3px solid #3b82f6; border-radius: 4px; font-size: 12px;">${step.instruction}</p>`;
+    }
+    
+    // Render fields or field groups
+    if (step.fields && step.fields.length > 0) {
+      html += renderFields(step.fields, stepNum);
+    }
+    
+    if (step.fieldGroups && step.fieldGroups.length > 0) {
+      step.fieldGroups.forEach(group => {
+        html += `<div style="margin-bottom: 16px;">`;
+        html += `<h4 style="margin: 0 0 8px 0; font-size: 13px; color: #374151; font-weight: 600;">${group.groupName || 'Fields'}</h4>`;
+        html += renderFields(group.fields || [], stepNum, group.groupName);
+        html += `</div>`;
+      });
+    }
+    
+    // Navigation buttons for each step
+    html += `<div style="display: flex; gap: 8px; margin-top: 20px; padding-top: 16px; border-top: 1px solid #e5e7eb;">`;
+    if (index > 0) {
+      html += `<button class="step-nav-btn" data-step="${stepNum - 1}" style="flex: 1; padding: 10px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">← Previous</button>`;
+    }
+    if (index < steps.length - 1) {
+      html += `<button class="step-nav-btn" data-step="${stepNum + 1}" style="flex: 1; padding: 10px; background: #6366f1; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">Next →</button>`;
+    } else {
+      html += `<button class="finalize-btn" style="flex: 1; padding: 10px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">✅ Finish & Export</button>`;
+    }
+    html += `</div>`;
+    
+    html += '</div>';
+  });
+  
+  html += '</div>';
+  container.innerHTML = html;
+  
+  // Restore saved field values
+  restoreFieldValues();
+  
+  // Auto-save field values when they change
+  setupAutoSave();
+}
+
+function renderFields(fields, stepNum, groupName = '') {
+  let html = '';
+  
+  fields.forEach(field => {
+    const fieldId = `step${stepNum}-${groupName ? groupName.toLowerCase().replace(/\s+/g, '-') + '-' : ''}${field.name}`;
+    const required = field.required ? '*' : '';
+    
+    html += `<div class="form-group">`;
+    html += `<label>${field.label || field.name}${required}</label>`;
+    
+    switch (field.type) {
+      case 'text':
+      case 'url':
+        if (field.autofill) {
+          html += `<div class="input-with-button">`;
+          html += `<input type="${field.type}" id="${fieldId}" placeholder="${field.placeholder || ''}" ${field.required ? 'required' : ''}>`;
+          
+          // Add autofill button based on type with data attributes instead of onclick
+          if (field.autofill === 'currentUrl') {
+            html += `<button type="button" class="btn-secondary autofill-btn" data-action="currentUrl" data-field-id="${fieldId}">🔗 Current URL</button>`;
+          } else if (field.autofill === 'baseUrl') {
+            html += `<button type="button" class="btn-secondary autofill-btn" data-action="baseUrl" data-field-id="${fieldId}">🔍 Base URL</button>`;
+          }
+          
+          html += `</div>`;
+        } else {
+          html += `<input type="${field.type}" id="${fieldId}" placeholder="${field.placeholder || ''}" ${field.required ? 'required' : ''}>`;
+        }
+        break;
+      
+      case 'textarea':
+        html += `<textarea id="${fieldId}" rows="3" placeholder="${field.placeholder || ''}" ${field.required ? 'required' : ''}></textarea>`;
+        break;
+      
+      case 'select':
+        html += `<select id="${fieldId}" ${field.required ? 'required' : ''}>`;
+        html += `<option value="">Select ${field.label || field.name}...</option>`;
+        
+        // Special handling for state_code field
+        if (field.name === 'state_code') {
+          const states = [
+            'AL - Alabama', 'AK - Alaska', 'AZ - Arizona', 'AR - Arkansas', 'CA - California',
+            'CO - Colorado', 'CT - Connecticut', 'DE - Delaware', 'FL - Florida', 'GA - Georgia',
+            'HI - Hawaii', 'ID - Idaho', 'IL - Illinois', 'IN - Indiana', 'IA - Iowa',
+            'KS - Kansas', 'KY - Kentucky', 'LA - Louisiana', 'ME - Maine', 'MD - Maryland',
+            'MA - Massachusetts', 'MI - Michigan', 'MN - Minnesota', 'MS - Mississippi', 'MO - Missouri',
+            'MT - Montana', 'NE - Nebraska', 'NV - Nevada', 'NH - New Hampshire', 'NJ - New Jersey',
+            'NM - New Mexico', 'NY - New York', 'NC - North Carolina', 'ND - North Dakota', 'OH - Ohio',
+            'OK - Oklahoma', 'OR - Oregon', 'PA - Pennsylvania', 'RI - Rhode Island', 'SC - South Carolina',
+            'SD - South Dakota', 'TN - Tennessee', 'TX - Texas', 'UT - Utah', 'VT - Vermont',
+            'VA - Virginia', 'WA - Washington', 'WV - West Virginia', 'WI - Wisconsin', 'WY - Wyoming',
+            'DC - District of Columbia'
+          ];
+          states.forEach(state => {
+            const code = state.split(' - ')[0];
+            html += `<option value="${code}">${state}</option>`;
+          });
+        } else if (field.options) {
+          field.options.forEach(opt => {
+            html += `<option value="${opt}">${opt}</option>`;
+          });
+        }
+        html += `</select>`;
+        break;
+      
+      case 'radio':
+        html += `<div class="radio-group">`;
+        if (field.options) {
+          field.options.forEach(opt => {
+            const checked = field.default === opt ? 'checked' : '';
+            html += `<label><input type="radio" name="${fieldId}" value="${opt}" ${checked}> ${opt}</label>`;
+          });
+        }
+        html += `</div>`;
+        break;
+      
+      case 'checkbox':
+        const checked = field.default ? 'checked' : '';
+        html += `<label><input type="checkbox" id="${fieldId}" ${checked}> ${field.label || field.name}</label>`;
+        break;
+      
+      case 'selector':
+        html += `
+          <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; background: #fafafa; margin-bottom: 12px;">
+            <label style="font-weight: 600; margin-bottom: 8px; display: block;">${field.label || field.name}${field.required ? ' *' : ''}</label>
+            ${field.hint ? `<small style="color: #666; font-size: 11px; display: block; margin-bottom: 8px;">${field.hint}</small>` : ''}
+            
+            <!-- Simple Capture -->
+            <input type="text" id="${fieldId}" placeholder="CSS selector" readonly ${field.required ? 'required' : ''} style="width: 100%; padding: 8px; margin-bottom: 8px; background: white; border: 1px solid #d1d5db; border-radius: 4px;">
+            <button type="button" class="capture-btn" data-field-id="${fieldId}" style="width: 100%; padding: 8px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; margin-bottom: 8px;">
+              🎯 Capture Element
+            </button>
+            
+            <!-- Main field note -->
+            <textarea id="${fieldId}-note" placeholder="Add a note about this field..." style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 11px; resize: vertical; min-height: 50px; font-family: inherit; margin-bottom: 12px;"></textarea>
+            
+            <!-- AI Analysis Toggle -->
+            <div style="margin-bottom: 12px; padding: 10px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 6px;">
+              <label style="display: flex; align-items: center; cursor: pointer; color: white; font-size: 12px; font-weight: 500;">
+                <input type="checkbox" id="${fieldId}-ai-enabled" class="ai-analysis-toggle" style="margin-right: 8px; width: 16px; height: 16px; cursor: pointer;">
+                <span>🤖 Uses AI Analysis</span>
+              </label>
+              <div id="${fieldId}-ai-config" style="display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.3);">
+                <label style="display: block; color: white; font-size: 11px; margin-bottom: 4px;">AI Prompt Template:</label>
+                <textarea id="${fieldId}-ai-prompt" placeholder="e.g., Extract all dates from this PDF content in YYYY-MM-DD format" style="width: 100%; padding: 6px; border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; font-size: 11px; resize: vertical; min-height: 60px; font-family: inherit; background: rgba(255,255,255,0.95);"></textarea>
+                <small style="color: rgba(255,255,255,0.9); font-size: 10px; display: block; margin-top: 4px;">💡 Tip: This prompt will be sent to AI with the scraped content at runtime</small>
+              </div>
+            </div>
+            
+            <!-- Expandable Steps Section -->
+            <details style="border-top: 1px solid #e5e7eb; padding-top: 12px;">
+              <summary style="cursor: pointer; font-weight: 500; color: #6366f1; font-size: 12px; margin-bottom: 8px; user-select: none;">
+                ⚙️ Advanced: Multi-Step Capture
+              </summary>
+              <div style="margin-top: 12px; padding: 12px; background: white; border-radius: 4px; border: 1px solid #e5e7eb;">
+                <p style="font-size: 11px; color: #666; margin-bottom: 12px;">
+                  Add steps to perform actions before capturing (e.g., click button to open modal, then capture element inside)
+                </p>
+                <div id="${fieldId}-steps" class="capture-steps">
+                  <!-- Steps will be added here dynamically -->
+                </div>
+                <button type="button" class="add-step-btn" data-field-id="${fieldId}" style="width: 100%; padding: 6px; background: #6366f1; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;">
+                  ➕ Add Step
+                </button>
+              </div>
+            </details>
+          </div>
+        `;
+        break;
+      
+      default:
+        html += `<input type="text" id="${fieldId}" placeholder="${field.placeholder || ''}">`;
+    }
+    
+    if (field.help) {
+      html += `<small style="display: block; margin-top: 4px; color: #666; font-size: 11px;">${field.help}</small>`;
+    }
+    
+    html += `</div>`;
+  });
+  
+  return html;
+}
+
+// Restore active template when extension reopens
+function restoreActiveTemplate() {
+  chrome.storage.local.get(['activeBuilderTemplate', 'templateLoaded'], (result) => {
+    if (result.templateLoaded && result.activeBuilderTemplate) {
+      const template = result.activeBuilderTemplate;
+      console.log('🔄 Restoring active template:', template.name);
+      
+      // Check for pending capture state
+      chrome.storage.local.get(['capturingStep', 'capturingField'], (captureResult) => {
+        if (captureResult.capturingStep) {
+          console.log('🎯 Restoring capture state - step:', captureResult.capturingStep, 'field:', captureResult.capturingField);
+          chrome.storage.local.set({ currentBuilderStep: captureResult.capturingStep });
+        }
+      
+        // Check if we're on the Build tab
+        const buildTab = document.getElementById('tab-build');
+        
+        // Always render immediately since we switched to Build tab in DOMContentLoaded
+        renderDynamicBuilder(template);
+        console.log('✅ Template restored on Build tab');
+      });
+    }
+  });
+}
+
+// Restore saved field values
+function restoreFieldValues() {
+  chrome.storage.local.get(['builderFieldValues', 'builderStepValues', 'builderFieldNotes'], (result) => {
+    if (result.builderFieldValues) {
+      const values = result.builderFieldValues;
+      console.log('🔄 Restoring field values:', Object.keys(values).length, 'fields');
+      
+      Object.entries(values).forEach(([fieldId, value]) => {
+        const element = document.getElementById(fieldId);
+        if (element) {
+          if (element.type === 'checkbox') {
+            element.checked = value;
+          } else if (element.type === 'radio') {
+            if (element.value === value) {
+              element.checked = true;
+            }
+          } else {
+            element.value = value;
+          }
+        }
+      });
+    }
+    
+    // Restore field notes
+    if (result.builderFieldNotes) {
+      const notes = result.builderFieldNotes;
+      console.log('🔄 Restoring field notes:', Object.keys(notes).length, 'notes');
+      
+      Object.entries(notes).forEach(([fieldId, note]) => {
+        const noteElement = document.getElementById(`${fieldId}-note`);
+        if (noteElement) {
+          noteElement.value = note;
+        }
+      });
+    }
+    
+    // Restore step values
+    if (result.builderStepValues) {
+      const stepValues = result.builderStepValues;
+      console.log('🔄 Restoring step values:', Object.keys(stepValues).length, 'steps');
+      
+      Object.entries(stepValues).forEach(([stepId, stepData]) => {
+        // Recreate the step first
+        const fieldId = stepId.split('-step-')[0];
+        addCaptureStep(fieldId);
+        
+        // Then populate its values
+        setTimeout(() => {
+          const selectorInput = document.querySelector(`.step-selector[data-step-id="${stepId}"]`);
+          const noteInput = document.querySelector(`.step-note[data-step-id="${stepId}"]`);
+          const actionSelect = document.querySelector(`.step-action-type[data-step-id="${stepId}"]`);
+          
+          if (selectorInput && stepData.selector) selectorInput.value = stepData.selector;
+          if (noteInput && stepData.note) noteInput.value = stepData.note;
+          if (actionSelect && stepData.action) actionSelect.value = stepData.action;
+        }, 100);
+      });
+    }
+  });
+}
+
+function saveStepField(element) {
+  const stepId = element.getAttribute('data-step-id');
+  if (!stepId) return;
+  
+  chrome.storage.local.get(['builderStepValues'], (result) => {
+    const stepValues = result.builderStepValues || {};
+    
+    if (!stepValues[stepId]) {
+      stepValues[stepId] = {};
+    }
+    
+    if (element.classList.contains('step-selector')) {
+      stepValues[stepId].selector = element.value;
+    } else if (element.classList.contains('step-note')) {
+      stepValues[stepId].note = element.value;
+    } else if (element.classList.contains('step-action-type')) {
+      stepValues[stepId].action = element.value;
+    }
+    
+    chrome.storage.local.set({ builderStepValues: stepValues });
+    console.log('💾 Saved step field:', stepId, stepValues[stepId]);
+  });
+}
+
+function saveFieldNote(element) {
+  const fieldId = element.id.replace('-note', '');
+  
+  chrome.storage.local.get(['builderFieldNotes'], (result) => {
+    const notes = result.builderFieldNotes || {};
+    notes[fieldId] = element.value;
+    
+    chrome.storage.local.set({ builderFieldNotes: notes });
+    console.log('💾 Saved field note:', fieldId);
+  });
+}
+
+function saveAIPrompt(element) {
+  const fieldId = element.id.replace('-ai-prompt', '');
+  
+  chrome.storage.local.get(['builderAISettings'], (result) => {
+    const aiSettings = result.builderAISettings || {};
+    if (!aiSettings[fieldId]) aiSettings[fieldId] = {};
+    aiSettings[fieldId].prompt = element.value;
+    
+    chrome.storage.local.set({ builderAISettings: aiSettings });
+    console.log('💾 Saved AI prompt:', fieldId);
+  });
+}
+
+function handleAIToggle(element) {
+  const fieldId = element.id.replace('-ai-enabled', '');
+  const configDiv = document.getElementById(`${fieldId}-ai-config`);
+  
+  if (configDiv) {
+    configDiv.style.display = element.checked ? 'block' : 'none';
+    
+    chrome.storage.local.get(['builderAISettings'], (result) => {
+      const aiSettings = result.builderAISettings || {};
+      if (!aiSettings[fieldId]) aiSettings[fieldId] = {};
+      aiSettings[fieldId].enabled = element.checked;
+      
+      chrome.storage.local.set({ builderAISettings: aiSettings });
+      console.log('💾 Saved AI toggle:', fieldId, element.checked);
+    });
+  }
+}
+
+// Restore current step position
+function restoreCurrentStep() {
+  chrome.storage.local.get(['currentBuilderStep'], (result) => {
+    if (result.currentBuilderStep) {
+      const stepNum = result.currentBuilderStep;
+      console.log('🔄 Restoring current step:', stepNum);
+      
+      // Navigate immediately - DOM is ready
+      navigateToDynamicStep(stepNum);
+    }
+  });
+}
+
+// Auto-save field values as user types
+function setupAutoSave() {
+  const container = document.getElementById('dynamic-builder-container');
+  if (!container) return;
+  
+  // Listen for changes on all inputs
+  container.addEventListener('input', (e) => {
+    const element = e.target;
+    if (element.id && (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA' || element.tagName === 'SELECT')) {
+      saveFieldValue(element);
+    }
+  });
+  
+  // Also listen for change events (for radios, checkboxes, selects)
+  container.addEventListener('change', (e) => {
+    const element = e.target;
+    if (element.id && (element.tagName === 'INPUT' || element.tagName === 'SELECT')) {
+      saveFieldValue(element);
+    }
+  });
+  
+  // Auto-save step fields (selector, note, action type)
+  container.addEventListener('input', (e) => {
+    const element = e.target;
+    if (element.classList.contains('step-selector') || element.classList.contains('step-note')) {
+      saveStepField(element);
+    }
+    // Save main field notes
+    if (element.id && element.id.endsWith('-note')) {
+      saveFieldNote(element);
+    }
+    // Save AI prompts
+    if (element.id && element.id.endsWith('-ai-prompt')) {
+      saveAIPrompt(element);
+    }
+  });
+  
+  container.addEventListener('change', (e) => {
+    const element = e.target;
+    if (element.classList.contains('step-action-type')) {
+      saveStepField(element);
+    }
+    // Handle AI analysis toggle
+    if (element.classList.contains('ai-analysis-toggle')) {
+      handleAIToggle(element);
+    }
+  });
+  
+  // Handle all button clicks via event delegation
+  container.addEventListener('click', (e) => {
+    const button = e.target.closest('button');
+    if (!button) return;
+    
+    e.preventDefault();
+    
+    console.log('🖱️ Button clicked:', button.className, button.getAttribute('data-step'));
+    
+    // Step navigation buttons
+    if (button.classList.contains('step-nav-btn')) {
+      const targetStep = parseInt(button.getAttribute('data-step'));
+      console.log('📍 Step nav button clicked, target:', targetStep);
+      navigateToDynamicStep(targetStep);
+      return;
+    }
+    
+    // Finalize button
+    if (button.classList.contains('finalize-btn')) {
+      finalizeDynamicBuilder();
+      return;
+    }
+    
+    // Autofill buttons
+    if (button.classList.contains('autofill-btn')) {
+      const action = button.getAttribute('data-action');
+      const fieldId = button.getAttribute('data-field-id');
+      
+      if (action === 'currentUrl') {
+        autofillCurrentUrl(fieldId);
+      } else if (action === 'baseUrl') {
+        autofillBaseUrl(fieldId);
+      }
+      return;
+    }
+    
+    // Capture buttons
+    if (button.classList.contains('capture-btn')) {
+      const fieldId = button.getAttribute('data-field-id');
+      captureElement(fieldId);
+      return;
+    }
+    
+    // Add step button
+    if (button.classList.contains('add-step-btn')) {
+      const fieldId = button.getAttribute('data-field-id');
+      addCaptureStep(fieldId);
+      return;
+    }
+    
+    // Remove step button
+    if (button.classList.contains('remove-step-btn')) {
+      const stepId = button.getAttribute('data-step-id');
+      
+      // Remove from storage
+      chrome.storage.local.get(['builderStepValues'], (result) => {
+        const stepValues = result.builderStepValues || {};
+        delete stepValues[stepId];
+        chrome.storage.local.set({ builderStepValues: stepValues });
+      });
+      
+      // Remove from DOM
+      button.closest('.capture-step-item').remove();
+      showToast('🗑️ Step removed');
+      return;
+    }
+    
+    // Capture step action button
+    if (button.classList.contains('capture-step-action-btn')) {
+      const stepId = button.getAttribute('data-step-id');
+      captureStepAction(stepId);
+      return;
+    }
+  });
+}
+
+function navigateToDynamicStep(stepNum) {
+  console.log('🔄 Navigating to step:', stepNum);
+  
+  // Get current step
+  const currentStepEl = document.querySelector('.step-content[style*="display: block"]');
+  if (currentStepEl) {
+    const currentStep = parseInt(currentStepEl.getAttribute('data-step'));
+    
+    // Only validate if moving forward
+    if (stepNum > currentStep) {
+      // Check required fields in current step
+      const requiredFields = currentStepEl.querySelectorAll('[required]');
+      const emptyFields = [];
+      
+      requiredFields.forEach(field => {
+        if (!field.value || field.value.trim() === '') {
+          emptyFields.push(field.id);
+          field.style.border = '2px solid #ef4444';
+        } else {
+          field.style.border = '';
+        }
+      });
+      
+      if (emptyFields.length > 0) {
+        alert(`❌ Please fill in all required fields before proceeding`);
+        // Scroll to first empty field
+        const firstEmpty = document.getElementById(emptyFields[0]);
+        if (firstEmpty) {
+          firstEmpty.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return; // Don't navigate
+      }
+    }
+  }
+  
+  // Hide all steps
+  const allSteps = document.querySelectorAll('.step-content');
+  console.log('📊 Found step contents:', allSteps.length);
+  allSteps.forEach(step => {
+    step.style.display = 'none';
+  });
+  
+  // Show target step
+  const targetStep = document.querySelector(`.step-content[data-step="${stepNum}"]`);
+  console.log('🎯 Target step element:', targetStep);
+  
+  if (targetStep) {
+    targetStep.style.display = 'block';
+    
+    // Update navigation buttons active state
+    const navButtons = document.querySelectorAll('.step-nav-btn');
+    navButtons.forEach(btn => {
+      const btnStep = btn.getAttribute('data-step');
+      if (btnStep == stepNum) {
+        btn.style.background = '#6366f1';
+        btn.style.color = 'white';
+        btn.style.borderColor = '#6366f1';
+      } else {
+        btn.style.background = 'white';
+        btn.style.color = '#374151';
+        btn.style.borderColor = '#e5e7eb';
+      }
+    });
+    
+    // Save current step
+    chrome.storage.local.set({ currentBuilderStep: stepNum });
+    
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    console.log('✅ Navigation complete to step', stepNum);
+  } else {
+    console.error('❌ Could not find step content for step', stepNum);
+  }
+}
+
+function autofillCurrentUrl(fieldId) {
+  // Query all windows to find the active tab (needed for detached window)
+  chrome.tabs.query({ active: true, lastFocusedWindow: true }, (tabs) => {
+    if (chrome.runtime.lastError) {
+      console.error('Error querying tabs:', chrome.runtime.lastError);
+      alert('Could not access current tab. Make sure you have a regular webpage open.');
+      return;
+    }
+    
+    // If no active tab in last focused window, get all active tabs
+    if (!tabs || tabs.length === 0) {
+      chrome.tabs.query({ active: true }, (allTabs) => {
+        // Find the first non-extension tab
+        const webTab = allTabs.find(tab => 
+          tab.url && 
+          !tab.url.startsWith('chrome://') && 
+          !tab.url.startsWith('chrome-extension://')
+        );
+        
+        if (webTab) {
+          const input = document.getElementById(fieldId);
+          if (input) {
+            input.value = webTab.url;
+            input.style.backgroundColor = '#d4edda';
+            setTimeout(() => { input.style.backgroundColor = ''; }, 500);
+            console.log('✅ URL filled:', webTab.url);
+            saveFieldValue(input);
+          }
+        } else {
+          alert('No web page found. Please open a webpage in another tab.');
+        }
+      });
+      return;
+    }
+    
+    if (tabs && tabs[0] && tabs[0].url) {
+      const input = document.getElementById(fieldId);
+      if (input) {
+        input.value = tabs[0].url;
+        
+        // Visual feedback
+        input.style.backgroundColor = '#d4edda';
+        setTimeout(() => { input.style.backgroundColor = ''; }, 500);
+        console.log('✅ URL filled:', tabs[0].url);
+        
+        // Save the value
+        saveFieldValue(input);
+      }
+    } else {
+      alert('Could not get current tab URL');
+    }
+  });
+}
+
+function autofillBaseUrl(fieldId) {
+  // Query all windows to find the active tab (needed for detached window)
+  chrome.tabs.query({ active: true, lastFocusedWindow: true }, (tabs) => {
+    if (chrome.runtime.lastError) {
+      console.error('Error querying tabs:', chrome.runtime.lastError);
+      alert('Could not access current tab. Make sure you have a regular webpage open.');
+      return;
+    }
+    
+    // If no active tab in last focused window, get all active tabs
+    if (!tabs || tabs.length === 0) {
+      chrome.tabs.query({ active: true }, (allTabs) => {
+        // Find the first non-extension tab
+        const webTab = allTabs.find(tab => 
+          tab.url && 
+          !tab.url.startsWith('chrome://') && 
+          !tab.url.startsWith('chrome-extension://')
+        );
+        
+        if (webTab) {
+          fillBaseUrlField(fieldId, webTab.url);
+        } else {
+          alert('No web page found. Please open a webpage in another tab.');
+        }
+      });
+      return;
+    }
+    
+    if (tabs[0] && tabs[0].url) {
+      fillBaseUrlField(fieldId, tabs[0].url);
+    } else {
+      alert('Could not get current tab URL');
+    }
+  });
+}
+
+function fillBaseUrlField(fieldId, url) {
+  try {
+    const urlObj = new URL(url);
+    const baseUrl = `${urlObj.protocol}//${urlObj.host}`;
+    const input = document.getElementById(fieldId);
+    
+    if (input) {
+      input.value = baseUrl;
+      
+      // Visual feedback
+      input.style.backgroundColor = '#d4edda';
+      setTimeout(() => { input.style.backgroundColor = ''; }, 500);
+      console.log('✅ Base URL filled:', baseUrl);
+      
+      // Save the value
+      saveFieldValue(input);
+    }
+  } catch (error) {
+    console.error('Error parsing URL:', error);
+    alert('Could not parse current URL');
+  }
+}
+
+// Show tab selector modal
+function showTabSelector(callback) {
+  // Get all tabs
+  chrome.tabs.query({}, (allTabs) => {
+    // Filter out extension and chrome pages
+    const webTabs = allTabs.filter(tab => 
+      tab.url && 
+      !tab.url.startsWith('chrome://') && 
+      !tab.url.startsWith('chrome-extension://')
+    );
+    
+    if (webTabs.length === 0) {
+      alert('No web pages found. Please open a webpage in another tab.');
+      return;
+    }
+    
+    // Create modal
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    `;
+    
+    const content = document.createElement('div');
+    content.style.cssText = `
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 500px;
+      max-height: 400px;
+      overflow-y: auto;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    `;
+    
+    const title = document.createElement('h3');
+    title.textContent = '🔗 Select Tab to Get URL From';
+    title.style.cssText = 'margin: 0 0 16px 0; font-size: 14px;';
+    content.appendChild(title);
+    
+    // Create list of tabs
+    webTabs.forEach(tab => {
+      const tabItem = document.createElement('div');
+      tabItem.style.cssText = `
+        padding: 10px;
+        margin: 4px 0;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background 0.2s;
+      `;
+      tabItem.onmouseover = () => tabItem.style.background = '#f0f9ff';
+      tabItem.onmouseout = () => tabItem.style.background = '';
+      
+      const tabTitle = document.createElement('div');
+      tabTitle.textContent = tab.title || 'Untitled';
+      tabTitle.style.cssText = 'font-weight: 500; font-size: 12px; margin-bottom: 4px;';
+      
+      const tabUrl = document.createElement('div');
+      tabUrl.textContent = tab.url;
+      tabUrl.style.cssText = 'font-size: 10px; color: #666; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
+      
+      tabItem.appendChild(tabTitle);
+      tabItem.appendChild(tabUrl);
+      
+      tabItem.onclick = () => {
+        modal.remove();
+        callback(tab);
+      };
+      
+      content.appendChild(tabItem);
+    });
+    
+    // Cancel button
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.className = 'btn-secondary';
+    cancelBtn.style.cssText = 'margin-top: 12px; width: 100%;';
+    cancelBtn.onclick = () => modal.remove();
+    content.appendChild(cancelBtn);
+    
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+    
+    // Close on background click
+    modal.onclick = (e) => {
+      if (e.target === modal) modal.remove();
+    };
+  });
+}
+
+function autofillCurrentUrl(fieldId) {
+  showTabSelector((selectedTab) => {
+    if (selectedTab && selectedTab.url) {
+      const input = document.getElementById(fieldId);
+      if (input) {
+        input.value = selectedTab.url;
+        input.style.backgroundColor = '#d4edda';
+        setTimeout(() => { input.style.backgroundColor = ''; }, 500);
+        console.log('✅ URL filled from:', selectedTab.title);
+        saveFieldValue(input);
+      }
+    }
+  });
+}
+
+function autofillBaseUrl(fieldId) {
+  showTabSelector((selectedTab) => {
+    if (selectedTab && selectedTab.url) {
+      try {
+        const urlObj = new URL(selectedTab.url);
+        const baseUrl = `${urlObj.protocol}//${urlObj.host}`;
+        const input = document.getElementById(fieldId);
+        
+        if (input) {
+          input.value = baseUrl;
+          input.style.backgroundColor = '#d4edda';
+          setTimeout(() => { input.style.backgroundColor = ''; }, 500);
+          console.log('✅ Base URL filled from:', selectedTab.title);
+          saveFieldValue(input);
+        }
+      } catch (e) {
+        console.error('Error parsing URL:', e);
+        alert('Could not parse URL from selected tab');
+      }
+    }
+  });
+}
+
+function saveFieldValue(element) {
+  chrome.storage.local.get(['builderFieldValues'], (result) => {
+    const values = result.builderFieldValues || {};
+    
+    if (element.type === 'checkbox') {
+      values[element.id] = element.checked;
+    } else if (element.type === 'radio') {
+      values[element.name] = element.value;
+    } else {
+      values[element.id] = element.value;
+    }
+    
+    chrome.storage.local.set({ builderFieldValues: values }, () => {
+      console.log('💾 Saved field:', element.id);
+    });
+  });
+}
+
+function finalizeDynamicBuilder() {
+  // Validate required fields
+  const requiredFields = document.querySelectorAll('[required]');
+  const emptyFields = [];
+  
+  requiredFields.forEach(field => {
+    if (!field.value || field.value.trim() === '') {
+      emptyFields.push(field.id);
+      field.style.border = '2px solid #ef4444';
+    } else {
+      field.style.border = '';
+    }
+  });
+  
+  if (emptyFields.length > 0) {
+    alert(`❌ Please fill in all required fields:\n\n${emptyFields.join('\n')}`);
+    // Scroll to first empty field
+    const firstEmpty = document.getElementById(emptyFields[0]);
+    if (firstEmpty) {
+      firstEmpty.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    return;
+  }
+  
+  // Collect all field values
+  chrome.storage.local.get(['builderFieldValues', 'builderStepValues', 'builderFieldNotes', 'builderAISettings', 'activeBuilderTemplate'], (result) => {
+    const fieldValues = result.builderFieldValues || {};
+    const stepValues = result.builderStepValues || {};
+    const fieldNotes = result.builderFieldNotes || {};
+    const aiSettings = result.builderAISettings || {};
+    const template = result.activeBuilderTemplate;
+    
+    if (!template) {
+      alert('❌ No template found');
+      return;
+    }
+    
+    // Build the scraper configuration
+    const scraperConfig = {
+      name: template.name,
+      templateId: template.id,
+      createdAt: new Date().toISOString(),
+      fields: {},
+      steps: {},
+      notes: fieldNotes,
+      aiFields: aiSettings
+    };
+    
+    // Add all field values
+    Object.entries(fieldValues).forEach(([fieldId, value]) => {
+      scraperConfig.fields[fieldId] = value;
+    });
+    
+    // Add all step values
+    Object.entries(stepValues).forEach(([stepId, stepData]) => {
+      scraperConfig.steps[stepId] = stepData;
+    });
+    
+    // Save to library
+    saveScraperToLibrary(scraperConfig);
+    
+    // Show success and export options
+    showExportModal(scraperConfig);
+  });
+}
+
+function saveScraperToLibrary(config) {
+  const scrapers = JSON.parse(localStorage.getItem('scrapers') || '[]');
+  
+  // Check if scraper with this name already exists
+  const existingIndex = scrapers.findIndex(s => s.name === config.name);
+  
+  if (existingIndex >= 0) {
+    // Update existing
+    scrapers[existingIndex] = config;
+    showToast('♻️ Scraper updated in library');
+  } else {
+    // Add new
+    scrapers.push(config);
+    showToast('✅ Scraper saved to library');
+  }
+  
+  localStorage.setItem('scrapers', JSON.stringify(scrapers));
+  loadScraperLibrary(); // Refresh library view
+}
+
+function showExportModal(config) {
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+  `;
+  
+  const content = document.createElement('div');
+  content.style.cssText = `
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+  `;
+  
+  content.innerHTML = `
+    <h2 style="margin: 0 0 16px 0; color: #10b981;">✅ Scraper Complete!</h2>
+    <p style="margin-bottom: 16px; color: #666;">Your scraper configuration has been saved.</p>
+    
+    <div id="ai-status" style="margin-bottom: 16px; padding: 12px; background: #f3f4f6; border-radius: 6px; font-size: 12px;">
+      <div id="ollama-check">⏳ Checking for local AI...</div>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+      <button id="generate-ai-script-btn" class="btn-primary" style="padding: 12px; font-size: 13px; font-weight: 600; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 8px; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 8px;" disabled>
+        <span>🤖</span>
+        <div style="text-align: left; line-height: 1.3;">
+          <div>Generate AI Script</div>
+          <div style="font-size: 10px; opacity: 0.9;">Local LLM Analysis</div>
+        </div>
+      </button>
+      
+      <button id="view-config-btn" style="padding: 12px; font-size: 13px; font-weight: 600; background: #6366f1; border: none; border-radius: 8px; cursor: pointer; color: white;">
+        <div>📋 View Config</div>
+        <div style="font-size: 10px; opacity: 0.9;">JSON Configuration</div>
+      </button>
+    </div>
+    
+    <div id="config-preview" style="display: none; margin-bottom: 16px;">
+      <strong style="display: block; margin-bottom: 8px;">Configuration:</strong>
+      <pre style="background: #f3f4f6; padding: 12px; border-radius: 6px; font-size: 11px; overflow-x: auto; max-height: 300px;">${JSON.stringify(config, null, 2)}</pre>
+    </div>
+    
+    <div id="ai-output" style="display: none; margin-bottom: 16px;">
+      <strong style="display: block; margin-bottom: 8px;">Generated Script:</strong>
+      <pre id="generated-code" style="background: #1e1e1e; color: #d4d4d4; padding: 12px; border-radius: 6px; font-size: 11px; overflow-x: auto; max-height: 400px; font-family: 'Consolas', 'Monaco', monospace;"></pre>
+      
+      <div id="ai-analysis" style="margin-top: 12px; padding: 12px; background: #eff6ff; border-left: 3px solid #3b82f6; border-radius: 4px; font-size: 11px;">
+        <strong>AI Analysis Summary:</strong>
+        <div id="analysis-content" style="margin-top: 8px;"></div>
+      </div>
+    </div>
+    
+    <div style="display: flex; gap: 8px;">
+      <button id="copy-json-btn" style="flex: 1; padding: 10px; background: #6366f1; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">
+        📋 Copy JSON
+      </button>
+      <button id="download-json-btn" style="flex: 1; padding: 10px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">
+        💾 Download
+      </button>
+      <button id="close-modal-btn" style="flex: 1; padding: 10px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">
+        Close
+      </button>
+    </div>
+  `;
+  
+  modal.appendChild(content);
+  document.body.appendChild(modal);
+  
+  // Check Ollama status
+  checkOllamaAndEnableAI();
+  
+  // View config button
+  document.getElementById('view-config-btn').addEventListener('click', () => {
+    const preview = document.getElementById('config-preview');
+    preview.style.display = preview.style.display === 'none' ? 'block' : 'none';
+  });
+  
+  // Generate AI script button
+  document.getElementById('generate-ai-script-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('generate-ai-script-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span style="animation: spin 1s linear infinite;">⏳</span> Generating...';
+    
+    try {
+      await generateAIScript(config);
+      btn.innerHTML = '✅ Generated!';
+    } catch (error) {
+      alert(`❌ AI generation failed: ${error.message}`);
+      btn.disabled = false;
+      btn.innerHTML = '🤖 Generate AI Script';
+    }
+  });
+  
+  // Copy JSON button
+  document.getElementById('copy-json-btn').addEventListener('click', () => {
+    const aiOutput = document.getElementById('ai-output');
+    const codeElement = document.getElementById('generated-code');
+    
+    let textToCopy;
+    if (aiOutput.style.display !== 'none' && codeElement.textContent) {
+      textToCopy = codeElement.textContent;
+      showToast('📋 Generated script copied to clipboard!');
+    } else {
+      textToCopy = JSON.stringify(config, null, 2);
+      showToast('📋 JSON copied to clipboard!');
+    }
+    
+    navigator.clipboard.writeText(textToCopy);
+  });
+  
+  // Download JSON button
+  document.getElementById('download-json-btn').addEventListener('click', () => {
+    const aiOutput = document.getElementById('ai-output');
+    const codeElement = document.getElementById('generated-code');
+    
+    let content, filename, mimeType;
+    if (aiOutput.style.display !== 'none' && codeElement.textContent) {
+      content = codeElement.textContent;
+      filename = `${config.name.replace(/\s+/g, '-').toLowerCase()}-scraper.js`;
+      mimeType = 'application/javascript';
+      showToast('💾 Script downloaded!');
+    } else {
+      content = JSON.stringify(config, null, 2);
+      filename = `${config.name.replace(/\s+/g, '-').toLowerCase()}.json`;
+      mimeType = 'application/json';
+      showToast('💾 JSON downloaded!');
+    }
+    
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+  
+  // Close button
+  document.getElementById('close-modal-btn').addEventListener('click', () => {
+    modal.remove();
+    
+    // Clear builder state and go to library
+    chrome.storage.local.remove(['activeBuilderTemplate', 'builderFieldValues', 'builderStepValues', 'builderFieldNotes', 'currentBuilderStep', 'templateLoaded']);
+    
+    // Switch to library tab
+    const libraryBtn = document.querySelector('[data-tab="library"]');
+    if (libraryBtn) libraryBtn.click();
+  });
+  
+  // Close on background click
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.remove();
+    }
+  });
+}
+
+async function checkOllamaAndEnableAI() {
+  const statusDiv = document.getElementById('ollama-check');
+  const aiBtn = document.getElementById('generate-ai-script-btn');
+  
+  try {
+    const agent = new window.ScraperAIAgent();
+    const status = await agent.checkOllamaStatus();
+    
+    if (status.available) {
+      statusDiv.innerHTML = `
+        ✅ <strong>AI Ready!</strong> Using ${status.recommended || 'local model'}<br>
+        <span style="color: #666; font-size: 11px;">Models available: ${status.models.map(m => m.name).join(', ')}</span>
+      `;
+      aiBtn.disabled = false;
+    } else {
+      statusDiv.innerHTML = `
+        ⚠️ <strong>Local AI not found</strong><br>
+        <span style="color: #666; font-size: 11px;">
+          Install <a href="${status.installUrl}" target="_blank" style="color: #6366f1;">Ollama</a> to enable AI script generation<br>
+          Recommended: <code>ollama pull deepseek-coder:6.7b</code>
+        </span>
+      `;
+      aiBtn.disabled = true;
+    }
+  } catch (error) {
+    statusDiv.innerHTML = `❌ Could not check AI status: ${error.message}`;
+    aiBtn.disabled = true;
+  }
+}
+
+async function generateAIScript(config) {
+  const agent = new window.ScraperAIAgent();
+  
+  // Get the template
+  chrome.storage.local.get(['activeBuilderTemplate'], async (result) => {
+    const template = result.activeBuilderTemplate;
+    
+    if (!template) {
+      throw new Error('Template not found');
+    }
+    
+    try {
+      const result = await agent.generateScraperWithAI(config, template);
+      
+      // Display generated code
+      const codeElement = document.getElementById('generated-code');
+      codeElement.textContent = result.code;
+      
+      // Display analysis
+      const analysisContent = document.getElementById('analysis-content');
+      let analysisHTML = '<div style="font-size: 11px;">';
+      
+      analysisHTML += '<strong>📦 Required Tools:</strong><br>';
+      analysisHTML += result.analysis.tools.map(t => `• ${t}`).join('<br>');
+      
+      analysisHTML += '<br><br><strong>📊 Field Analysis:</strong><br>';
+      const fieldCount = Object.keys(result.analysis.fields).length;
+      analysisHTML += `Analyzed ${fieldCount} fields with custom extraction logic`;
+      
+      if (Object.keys(result.analysis.steps).length > 0) {
+        analysisHTML += '<br><br><strong>🔄 Multi-Step Interactions:</strong><br>';
+        analysisHTML += `${Object.keys(result.analysis.steps).length} complex interaction sequences detected`;
+      }
+      
+      analysisHTML += '</div>';
+      analysisContent.innerHTML = analysisHTML;
+      
+      // Show output
+      document.getElementById('ai-output').style.display = 'block';
+      
+      // Save script with config
+      config.generatedScript = {
+        code: result.code,
+        analysis: result.analysis,
+        metadata: result.metadata
+      };
+      
+      // Update in storage
+      const scrapers = JSON.parse(localStorage.getItem('scrapers') || '[]');
+      const index = scrapers.findIndex(s => s.name === config.name);
+      if (index >= 0) {
+        scrapers[index] = config;
+        localStorage.setItem('scrapers', JSON.stringify(scrapers));
+      }
+      
+      showToast('✨ AI script generated successfully!');
+    } catch (error) {
+      throw error;
+    }
+  });
+}
+
+function captureElement(fieldId) {
+  console.log('🎯 Starting capture for field:', fieldId);
+  
+  // Save current state
+  chrome.storage.local.get(['currentBuilderStep'], (result) => {
+    const currentStep = result.currentBuilderStep || 1;
+    chrome.storage.local.set({ 
+      capturingField: fieldId,
+      capturingStep: currentStep 
+    });
+  });
+  
+  // Check if we already have a selected tab
+  chrome.storage.local.get(['selectedScrapingTab'], (result) => {
+    if (result.selectedScrapingTab) {
+      // Use the existing tab
+      startCapture(fieldId, result.selectedScrapingTab);
+    } else {
+      // Show tab selector to choose which tab to capture from
+      showTabSelector((selectedTab) => {
+        if (!selectedTab) return;
+        
+        // Save the selected tab
+        chrome.storage.local.set({ selectedScrapingTab: selectedTab });
+        updateSelectedTabDisplay(selectedTab);
+        
+        startCapture(fieldId, selectedTab);
+      });
+    }
+  });
+}
+
+function startCapture(fieldId, selectedTab) {
+  const tabId = selectedTab.id;
+  const tabUrl = selectedTab.url;
+  
+  // Check if it's a restricted page
+  if (tabUrl.startsWith('chrome://') || tabUrl.startsWith('chrome-extension://') || tabUrl.startsWith('edge://')) {
+    alert('❌ Cannot capture elements on browser internal pages.\n\nPlease select a regular website.');
+    return;
+  }
+  
+  // Show feedback that capture is starting
+  const button = document.querySelector(`.capture-btn[data-field-id="${fieldId}"]`);
+  if (button) {
+    const originalText = button.textContent;
+    button.textContent = '👆 Click element on page';
+    button.style.backgroundColor = '#3b82f6';
+    button.style.color = 'white';
+    button.disabled = true;
+    
+    // Store original for reset
+    button.dataset.originalText = originalText;
+  }
+    
+    
+    // Inject the content script if not already injected
+    chrome.scripting.executeScript({
+      target: { tabId: tabId },
+      files: ['content.js']
+    }).then(() => {
+      console.log('✅ Content script injected');
+      
+      // Small delay to ensure script is ready
+      setTimeout(() => {
+        // Send message to content script to start capture mode
+        chrome.tabs.sendMessage(tabId, {
+          action: 'startCapture',
+          fieldId: fieldId
+        }).then((response) => {
+          console.log('✅ Capture mode started on page:', response);
+        }).catch((error) => {
+          console.error('Error sending message:', error);
+          // Don't show alert here - the capture might still work
+        });
+      }, 100);
+      
+    }).catch((error) => {
+      console.error('Error injecting content script:', error);
+      
+      // Reset button
+      if (button) {
+        button.textContent = button.dataset.originalText || '🎯 Capture';
+        button.style.backgroundColor = '';
+        button.style.color = '';
+        button.disabled = false;
+      }
+      
+      if (error.message.includes('Cannot access')) {
+        alert('❌ Cannot access this page.\n\nThis might be a restricted page like chrome:// or a browser internal page.\n\nPlease select a different tab.');
+      } else {
+        alert('❌ Could not inject content script.\n\nTry refreshing the page and trying again.');
+      }
+    });
+}
+
+// Update selected tab display
+function updateSelectedTabDisplay(tab) {
+  const display = document.getElementById('selected-tab-display');
+  const title = document.getElementById('selected-tab-title');
+  const url = document.getElementById('selected-tab-url');
+  
+  if (display && title && url && tab) {
+    display.style.display = 'block';
+    title.textContent = tab.title || 'Untitled';
+    url.textContent = tab.url;
+  }
+}
+
+// Clear selected tab
+function clearSelectedTab() {
+  chrome.storage.local.remove('selectedScrapingTab');
+  const display = document.getElementById('selected-tab-display');
+  if (display) {
+    display.style.display = 'none';
+  }
+}
+
+// Listen for captured selector GLOBALLY
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === 'selectorCaptured') {
+    const targetId = message.fieldId;
+    const selector = message.selector;
+    
+    console.log('✅ Received selector for', targetId, ':', selector);
+    
+    // Check if this is for a step (contains '-step-')
+    if (targetId.includes('-step-')) {
+      const stepInput = document.querySelector(`.step-selector[data-step-id="${targetId}"]`);
+      const button = document.querySelector(`.capture-step-action-btn[data-step-id="${targetId}"]`);
+      
+      if (stepInput) {
+        stepInput.value = selector;
+        stepInput.style.backgroundColor = '#d4edda';
+        stepInput.style.border = '2px solid #10b981';
+        setTimeout(() => { 
+          stepInput.style.backgroundColor = ''; 
+          stepInput.style.border = '';
+        }, 2000);
+        showToast(`✅ Step captured: ${selector.substring(0, 40)}...`);
+      }
+      
+      if (button) {
+        button.textContent = '✅ Captured!';
+        button.disabled = false;
+        setTimeout(() => {
+          button.textContent = '🎯 Capture Selector';
+        }, 2000);
+      }
+      
+      sendResponse({ received: true });
+      return true;
+    }
+    
+    // Otherwise, handle as regular field capture
+    const fieldId = targetId;
+    
+    console.log('📍 Current step container:', document.querySelector('.step.active'));
+    
+    // Save to storage
+    chrome.storage.local.get(['builderFieldValues'], (result) => {
+      const values = result.builderFieldValues || {};
+      values[fieldId] = selector;
+      chrome.storage.local.set({ 
+        builderFieldValues: values,
+        capturingField: null
+      });
+      console.log('💾 Saved to storage. All values:', values);
+    });
+    
+    // Fill the input field
+    const input = document.getElementById(fieldId);
+    console.log('📝 Looking for input field:', fieldId, 'Found:', input);
+    
+    if (input) {
+      input.value = selector;
+      
+      // Visual feedback - longer duration
+      input.style.backgroundColor = '#d4edda';
+      input.style.border = '2px solid #10b981';
+      setTimeout(() => { 
+        input.style.backgroundColor = ''; 
+        input.style.border = '';
+      }, 3000);
+      
+      // Save the value
+      saveFieldValue(input);
+      
+      // Scroll to the field
+      input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      
+      console.log('✅ Field updated and saved! Value:', input.value);
+      
+      // Show toast notification
+      showToast(`✅ Captured: ${selector.substring(0, 50)}...`);
+    } else {
+      console.error('❌ Could not find input field:', fieldId);
+      showToast(`❌ Error: Field ${fieldId} not found`);
+    }
+    
+    // Reset capture button
+    const button = document.querySelector(`.capture-btn[data-field-id="${fieldId}"]`);
+    if (button) {
+      button.textContent = '✅ Captured!';
+      button.style.backgroundColor = '#10b981';
+      setTimeout(() => {
+        button.textContent = button.dataset.originalText || '🎯 Capture';
+        button.style.backgroundColor = '';
+        button.style.color = '';
+        button.disabled = false;
+      }, 3000);
+    }
+    
+    sendResponse({ received: true });
+  }
+  return true;
+});
+
+// Show toast notification
+function showToast(message) {
+  const toast = document.createElement('div');
+  toast.textContent = message;
+  toast.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #1f2937;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    z-index: 10000;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    animation: slideIn 0.3s ease;
+  `;
+  
+  document.body.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transition = 'opacity 0.3s';
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+// Add a capture step to a field
+function addCaptureStep(fieldId) {
+  const stepsContainer = document.getElementById(`${fieldId}-steps`);
+  if (!stepsContainer) return;
+  
+  const stepCount = stepsContainer.children.length + 1;
+  const stepId = `${fieldId}-step-${stepCount}`;
+  
+  const stepHtml = `
+    <div class="capture-step-item" data-step-id="${stepId}" style="background: #f9fafb; border: 1px solid #d1d5db; border-radius: 6px; padding: 12px; margin-bottom: 10px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <strong style="font-size: 12px; color: #374151;">Step ${stepCount}</strong>
+        <button type="button" class="remove-step-btn" data-step-id="${stepId}" style="background: #ef4444; color: white; border: none; border-radius: 4px; padding: 4px 10px; font-size: 11px; cursor: pointer; font-weight: 500;">
+          🗑️ Remove
+        </button>
+      </div>
+      
+      <div style="margin-bottom: 8px;">
+        <label style="font-size: 11px; color: #6b7280; display: block; margin-bottom: 4px; font-weight: 500;">Action Type</label>
+        <select class="step-action-type" data-step-id="${stepId}" style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px;">
+          <option value="click">Click element</option>
+          <option value="hover">Hover over element</option>
+          <option value="wait">Wait (seconds)</option>
+          <option value="scroll">Scroll to element</option>
+        </select>
+      </div>
+      
+      <div style="margin-bottom: 8px;">
+        <label style="font-size: 11px; color: #6b7280; display: block; margin-bottom: 4px; font-weight: 500;">Selector / Value</label>
+        <input type="text" class="step-selector" data-step-id="${stepId}" placeholder="e.g., #button or 2 (for wait)" style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px;">
+      </div>
+      
+      <button type="button" class="capture-step-action-btn" data-step-id="${stepId}" style="width: 100%; padding: 8px; background: #8b5cf6; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 500; margin-bottom: 8px;">
+        🎯 Capture Selector
+      </button>
+      
+      <div>
+        <label style="font-size: 11px; color: #6b7280; display: block; margin-bottom: 4px; font-weight: 500;">Note (optional)</label>
+        <textarea class="step-note" data-step-id="${stepId}" placeholder="Describe what this step does..." style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 11px; resize: vertical; min-height: 50px; font-family: inherit;"></textarea>
+      </div>
+    </div>
+  `;
+  
+  stepsContainer.insertAdjacentHTML('beforeend', stepHtml);
+  showToast(`✅ Step ${stepCount} added`);
+}
+
+// Capture element for a specific step
+function captureStepAction(stepId) {
+  // Check if we have a saved tab
+  chrome.storage.local.get(['selectedScrapingTab'], (result) => {
+    const savedTab = result.selectedScrapingTab;
+    
+    if (savedTab) {
+      // Use saved tab
+      startCaptureForStep(stepId, savedTab);
+    } else {
+      // Show tab selector
+      showTabSelector((selectedTab) => {
+        if (!selectedTab) return;
+        startCaptureForStep(stepId, selectedTab);
+      });
+    }
+  });
+}
+
+function startCaptureForStep(stepId, selectedTab) {
+  const tabId = selectedTab.id;
+  const tabUrl = selectedTab.url;
+  
+  if (tabUrl.startsWith('chrome://') || tabUrl.startsWith('chrome-extension://') || tabUrl.startsWith('edge://')) {
+    alert('❌ Cannot capture on browser internal pages.');
+    return;
+  }
+  
+  // Update button feedback
+  const button = document.querySelector(`.capture-step-action-btn[data-step-id="${stepId}"]`);
+  if (button) {
+    button.textContent = '⏳ Click element on page...';
+    button.disabled = true;
+  }
+  
+  // Inject and start capture
+  chrome.scripting.executeScript({
+    target: { tabId: tabId },
+    files: ['content.js']
+  }).then(() => {
+    setTimeout(() => {
+      chrome.tabs.sendMessage(tabId, {
+        action: 'startCapture',
+        fieldId: stepId  // Use stepId instead of fieldId
+      }).then(() => {
+        console.log('✅ Capture started for step:', stepId);
+      }).catch((error) => {
+        console.error('Error:', error);
+        if (button) {
+          button.textContent = '🎯 Capture for this step';
+          button.disabled = false;
+        }
+      });
+    }, 100);
+  }).catch((error) => {
+    console.error('Error injecting script:', error);
+    alert('❌ Could not inject content script.');
+    if (button) {
+      button.textContent = '🎯 Capture for this step';
+      button.disabled = false;
+    }
+  });
+}
+
+// Add a capture step to a field
+function addCaptureStep(fieldId) {
+  const stepsContainer = document.getElementById(`${fieldId}-steps`);
+  if (!stepsContainer) return;
+  
+  const stepCount = stepsContainer.children.length + 1;
+  const stepId = `${fieldId}-step-${stepCount}`;
+  
+  const stepHtml = `
+    <div class="capture-step-item" data-step-id="${stepId}" style="background: white; border: 1px solid #d1d5db; border-radius: 4px; padding: 10px; margin-bottom: 8px;">
+      <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+        <div style="flex: 1;">
+          <div style="font-size: 11px; font-weight: 600; color: #374151; margin-bottom: 4px;">Step ${stepCount}</div>
+          <select class="step-action-type" data-step-id="${stepId}" style="font-size: 11px; padding: 4px; border: 1px solid #d1d5db; border-radius: 3px; width: 100%; margin-bottom: 6px;">
+            <option value="click">Click element</option>
+            <option value="hover">Hover over element</option>
+            <option value="wait">Wait (seconds)</option>
+            <option value="scroll">Scroll to element</option>
+          </select>
+          <input type="text" class="step-selector" data-step-id="${stepId}" placeholder="Selector or value" style="font-size: 11px; padding: 4px; border: 1px solid #d1d5db; border-radius: 3px; width: 100%; margin-bottom: 6px;">
+          <textarea class="step-note" data-step-id="${stepId}" placeholder="Note (optional)" style="font-size: 10px; padding: 4px; border: 1px solid #d1d5db; border-radius: 3px; width: 100%; resize: vertical; min-height: 40px;"></textarea>
+        </div>
+        <button type="button" class="remove-step-btn" data-step-id="${stepId}" style="margin-left: 8px; background: #ef4444; color: white; border: none; border-radius: 3px; padding: 4px 8px; font-size: 10px; cursor: pointer;">❌</button>
+      </div>
+      <button type="button" class="capture-step-action-btn" data-step-id="${stepId}" style="font-size: 10px; padding: 4px 8px; background: #8b5cf6; color: white; border: none; border-radius: 3px; cursor: pointer; width: 100%;">
+        🎯 Capture for this step
+      </button>
+    </div>
+  `;
+  
+  stepsContainer.insertAdjacentHTML('beforeend', stepHtml);
+}
+
+// Capture element for a specific step
+function captureStepAction(stepId) {
+  showTabSelector((selectedTab) => {
+    if (!selectedTab) return;
+    
+    startCaptureForStep(stepId, selectedTab);
+  });
+}
+
+function startCaptureForStep(stepId, selectedTab) {
+  const tabId = selectedTab.id;
+  const tabUrl = selectedTab.url;
+  
+  if (tabUrl.startsWith('chrome://') || tabUrl.startsWith('chrome-extension://') || tabUrl.startsWith('edge://')) {
+    alert('❌ Cannot capture on browser internal pages.');
+    return;
+  }
+  
+  // Inject and start capture
+  chrome.scripting.executeScript({
+    target: { tabId: tabId },
+    files: ['content.js']
+  }).then(() => {
+    setTimeout(() => {
+      chrome.tabs.sendMessage(tabId, {
+        action: 'startCapture',
+        fieldId: stepId  // Use stepId instead of fieldId
+      }).then(() => {
+        console.log('✅ Capture started for step:', stepId);
+      }).catch((error) => {
+        console.error('Error:', error);
+      });
+    }, 100);
+  }).catch((error) => {
+    console.error('Error injecting script:', error);
+    alert('❌ Could not inject content script.');
+  });
+}
+
+// Update global listener to handle step captures
+let originalGlobalListener = chrome.runtime.onMessage.addListener;
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === 'selectorCaptured') {
+    const targetId = message.fieldId;
+    
+    // Check if this is for a step (contains '-step-')
+    if (targetId.includes('-step-')) {
+      const stepInput = document.querySelector(`.step-selector[data-step-id="${targetId}"]`);
+      if (stepInput) {
+        stepInput.value = message.selector;
+        stepInput.style.backgroundColor = '#d4edda';
+        setTimeout(() => { stepInput.style.backgroundColor = ''; }, 2000);
+        showToast(`✅ Step captured: ${message.selector.substring(0, 40)}...`);
+      }
+      sendResponse({ received: true });
+      return true;
+    }
+  }
+})
 
 // Initialize
 if (document.getElementById('steps-list')) {
