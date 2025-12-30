@@ -954,15 +954,30 @@ Generate the complete scraper code following this pattern. Use EXACT selectors p
       // We'll reconstruct the $ function in the iframe
     };
   }
-        stack: error.stack,
-        fieldsExtracted: 0,
-        executionSuccess: false
-      };
-    }
-  }
   
   // Diagnose why the script failed
-  async diagnoseScriptFailure(script, testResult, scraperConfig) {
+  async diagnoseScriptFailure(script, testResult, scraperConfig, relevantContext = null) {
+    // Build context from knowledge base
+    let knowledgeContext = '';
+    if (relevantContext) {
+      if (relevantContext.similarFailures && relevantContext.similarFailures.length > 0) {
+        knowledgeContext += '\n\nPAST FAILURES TO AVOID:\n';
+        relevantContext.similarFailures.slice(0, 3).forEach((f, i) => {
+          knowledgeContext += `${i+1}. Error: "${f.error}" - Root cause: "${f.rootCause}"\n`;
+        });
+      }
+      
+      if (relevantContext.similarSuccesses && relevantContext.similarSuccesses.length > 0) {
+        knowledgeContext += '\n\nSUCCESSFUL PATTERNS:\n';
+        relevantContext.similarSuccesses.slice(0, 2).forEach((s, i) => {
+          knowledgeContext += `${i+1}. Used: ${s.tools.join(', ')} - Extracted ${s.fieldsExtracted} fields\n`;
+          if (s.selectors && s.selectors.length > 0) {
+            knowledgeContext += `   Selectors: ${s.selectors.slice(0, 3).join(', ')}\n`;
+          }
+        });
+      }
+    }
+    
     const prompt = `You are a debugging expert. Analyze this web scraper failure:
 
 SCRIPT:
@@ -978,6 +993,7 @@ TEST RESULT:
 
 EXPECTED FIELDS (from config):
 ${Object.keys(scraperConfig.fields).filter(k => !k.startsWith('step1-')).slice(0, 10).join(', ')}
+${knowledgeContext}
 
 DIAGNOSIS TASK:
 Identify the TOP 3 most likely problems:
