@@ -1813,7 +1813,9 @@ function showTabSelector(callback) {
       
       tabItem.onclick = () => {
         modal.remove();
-        callback(tab);
+        if (callback && typeof callback === 'function') {
+          callback(tab);
+        }
       };
       
       content.appendChild(tabItem);
@@ -1824,7 +1826,12 @@ function showTabSelector(callback) {
     cancelBtn.textContent = 'Cancel';
     cancelBtn.className = 'btn-secondary';
     cancelBtn.style.cssText = 'margin-top: 12px; width: 100%;';
-    cancelBtn.onclick = () => modal.remove();
+    cancelBtn.onclick = () => {
+      modal.remove();
+      if (callback && typeof callback === 'function') {
+        callback(null); // Signal cancellation
+      }
+    };
     content.appendChild(cancelBtn);
     
     modal.appendChild(content);
@@ -2255,8 +2262,23 @@ function captureElement(fieldId) {
   // Check if we already have a selected tab
   chrome.storage.local.get(['selectedScrapingTab'], (result) => {
     if (result.selectedScrapingTab) {
-      // Use the existing tab
-      startCapture(fieldId, result.selectedScrapingTab);
+      // Validate the tab still exists
+      chrome.tabs.get(result.selectedScrapingTab.id, (tab) => {
+        if (chrome.runtime.lastError || !tab) {
+          // Tab no longer exists, clear it and show selector
+          console.log('⚠️ Stored tab no longer exists, selecting new tab');
+          clearSelectedTab();
+          showTabSelector((selectedTab) => {
+            if (!selectedTab) return;
+            chrome.storage.local.set({ selectedScrapingTab: selectedTab });
+            updateSelectedTabDisplay(selectedTab);
+            startCapture(fieldId, selectedTab);
+          });
+        } else {
+          // Tab still exists, use it
+          startCapture(fieldId, result.selectedScrapingTab);
+        }
+      });
     } else {
       // Show tab selector to choose which tab to capture from
       showTabSelector((selectedTab) => {
@@ -2273,19 +2295,28 @@ function captureElement(fieldId) {
 }
 
 function startCapture(fieldId, selectedTab) {
+  if (!selectedTab || !selectedTab.id) {
+    console.error('❌ Invalid tab selected');
+    alert('❌ Invalid tab. Please select a valid tab.');
+    return;
+  }
+  
   const tabId = selectedTab.id;
-  const tabUrl = selectedTab.url;
+  const tabUrl = selectedTab.url || '';
   
   // Check if it's a restricted page
   if (tabUrl.startsWith('chrome://') || tabUrl.startsWith('chrome-extension://') || tabUrl.startsWith('edge://')) {
     alert('❌ Cannot capture elements on browser internal pages.\n\nPlease select a regular website.');
+    clearSelectedTab();
     return;
   }
   
   // Show feedback that capture is starting
   const button = document.querySelector(`.capture-btn[data-field-id="${fieldId}"]`);
+  let originalText = '🎯 Capture Element';
+  
   if (button) {
-    const originalText = button.textContent;
+    originalText = button.textContent;
     button.textContent = '👆 Click element on page';
     button.style.backgroundColor = '#3b82f6';
     button.style.color = 'white';
@@ -2321,17 +2352,22 @@ function startCapture(fieldId, selectedTab) {
       console.error('Error injecting content script:', error);
       
       // Reset button
-      if (button) {
-        button.textContent = button.dataset.originalText || '🎯 Capture';
-        button.style.backgroundColor = '';
-        button.style.color = '';
-        button.disabled = false;
+      const resetButton = document.querySelector(`.capture-btn[data-field-id="${fieldId}"]`);
+      if (resetButton) {
+        resetButton.textContent = resetButton.dataset.originalText || '🎯 Capture Element';
+        resetButton.style.backgroundColor = '';
+        resetButton.style.color = '';
+        resetButton.disabled = false;
       }
       
-      if (error.message.includes('Cannot access')) {
-        alert('❌ Cannot access this page.\n\nThis might be a restricted page like chrome:// or a browser internal page.\n\nPlease select a different tab.');
+      if (error.message && error.message.includes('Cannot access')) {
+        alert('❌ Cannot access this page.\n\nThis might be a restricted page like chrome:// or a browser internal page.\n\nClearing tab selection - click "Change Tab" to select a different tab.');
+        clearSelectedTab();
+      } else if (error.message && error.message.includes('No tab with id')) {
+        alert('❌ Tab no longer exists.\n\nClearing tab selection - click any Capture button to select a new tab.');
+        clearSelectedTab();
       } else {
-        alert('❌ Could not inject content script.\n\nTry refreshing the page and trying again.');
+        alert('❌ Could not inject content script.\n\nTry refreshing the target page and trying again, or select a different tab.');
       }
     });
 }
@@ -2351,11 +2387,25 @@ function updateSelectedTabDisplay(tab) {
 
 // Clear selected tab
 function clearSelectedTab() {
-  chrome.storage.local.remove('selectedScrapingTab');
+  chrome.storage.local.remove('selectedScrapingTab', () => {
+    console.log('✅ Selected tab cleared');
+  });
+  
   const display = document.getElementById('selected-tab-display');
   if (display) {
     display.style.display = 'none';
   }
+  
+  // Reset any capture buttons that might be stuck
+  const captureButtons = document.querySelectorAll('.capture-btn');
+  captureButtons.forEach(button => {
+    if (button.disabled) {
+      button.textContent = button.dataset.originalText || '🎯 Capture Element';
+      button.style.backgroundColor = '';
+      button.style.color = '';
+      button.disabled = false;
+    }
+  });
 }
 
 // Listen for captured selector GLOBALLY
