@@ -42,6 +42,7 @@ let templates = [];
 // Load templates from database API and examples
 async function loadTemplates() {
   templates = [];
+  const seenNames = new Set();
   
   // Load from database API
   try {
@@ -49,12 +50,18 @@ async function loadTemplates() {
     if (apiResponse.ok) {
       const apiData = await apiResponse.json();
       if (apiData.templates && Array.isArray(apiData.templates)) {
-        templates.push(...apiData.templates.map(t => ({
-          ...t,
-          source: 'database',
-          id: t.id
-        })));
-        console.log(`✅ Loaded ${apiData.templates.length} templates from database`);
+        apiData.templates.forEach(t => {
+          // Only add if it has steps array (builder template)
+          if (t.steps && Array.isArray(t.steps)) {
+            templates.push({
+              ...t,
+              source: 'database',
+              id: t.id
+            });
+            seenNames.add(t.name?.toLowerCase());
+          }
+        });
+        console.log(`✅ Loaded ${templates.length} templates from database`);
       }
     }
   } catch (error) {
@@ -63,9 +70,6 @@ async function loadTemplates() {
   
   // Load example templates from files
   const exampleFiles = [
-    'honolulu-calendar.json',
-    'extension-test-export.json',
-    'test-static.json',
     'court-calendar-example.json'
   ];
   
@@ -74,11 +78,18 @@ async function loadTemplates() {
       const response = await fetch(chrome.runtime.getURL(`examples/${file}`));
       if (response.ok) {
         const template = await response.json();
-        templates.push({
-          ...template,
-          source: 'example',
-          filename: file
-        });
+        // Only add if it has steps array and not already loaded
+        if (template.steps && Array.isArray(template.steps)) {
+          const nameLower = template.name?.toLowerCase();
+          if (!seenNames.has(nameLower)) {
+            templates.push({
+              ...template,
+              source: 'example',
+              filename: file
+            });
+            seenNames.add(nameLower);
+          }
+        }
       }
     } catch (error) {
       console.error(`Failed to load example ${file}:`, error);
