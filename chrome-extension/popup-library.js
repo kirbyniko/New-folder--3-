@@ -3197,8 +3197,46 @@ function showScriptModal(script, editable) {
 }
 
 async function generateScriptForScraper(scraper, existingScraperId = null) {
+  let progressLog = null;
+  
   try {
-    showToast('⏳ Generating script...', 0);
+    // Create progress display
+    progressLog = document.createElement('div');
+    progressLog.id = 'generation-progress-log';
+    progressLog.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border: 2px solid #3b82f6;
+      border-radius: 12px;
+      padding: 20px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 400px;
+      overflow-y: auto;
+      z-index: 10000;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      font-family: monospace;
+      font-size: 12px;
+    `;
+    progressLog.innerHTML = `
+      <h3 style="margin: 0 0 12px 0; font-family: sans-serif;">🤖 AI Agent Working...</h3>
+      <div id="progress-messages" style="line-height: 1.6;"></div>
+    `;
+    document.body.appendChild(progressLog);
+    
+    const messagesDiv = document.getElementById('progress-messages');
+    const addMessage = (msg) => {
+      const line = document.createElement('div');
+      line.textContent = msg;
+      line.style.marginBottom = '4px';
+      messagesDiv.appendChild(line);
+      progressLog.scrollTop = progressLog.scrollHeight;
+    };
+    
+    addMessage('⏳ Initializing AI agent...');
     
     // Check Ollama
     const agent = new window.ScraperAIAgent();
@@ -3206,30 +3244,27 @@ async function generateScriptForScraper(scraper, existingScraperId = null) {
     
     if (!status.available) {
       alert('❌ Ollama is not running. Please start Ollama first.\\n\\nInstall from: ' + status.installUrl);
+      progressLog.remove();
       return;
     }
+    
+    addMessage('✅ Ollama connected');
     
     // Get template for context
     const template = templates.find(t => t.name === scraper.templateName);
     
-    // Analyze and generate
-    showToast('🤖 AI analyzing scraper...', 0);
-    const analysisContext = await agent.analyzeScraperConfig(scraper, template);
+    // Use the new agentic generation system with progress callback
+    const agenticResult = await agent.generateScraperWithAI(scraper, template, (msg) => {
+      addMessage(msg);
+    });
     
-    showToast('📝 Generating code...', 0);
-    const generatedCode = await agent.generateScraperScript(scraper, analysisContext, template);
+    console.log('🎯 Agentic generation complete:', {
+      iterations: agenticResult.iterations,
+      success: agenticResult.success,
+      fieldsExtracted: agenticResult.finalTestResult?.fieldsExtracted
+    });
     
-    console.log('🔍 Raw generated code length:', generatedCode?.length);
-    console.log('🔍 Raw generated code preview:', generatedCode?.substring(0, 200));
-    
-    // Clean up code
-    let cleanCode = generatedCode.trim();
-    if (cleanCode.startsWith('```')) {
-      cleanCode = cleanCode.replace(/^```(?:javascript|js)?\\n/, '').replace(/```$/, '').trim();
-    }
-    
-    console.log('🔍 Clean code length:', cleanCode.length);
-    console.log('🔍 Clean code preview:', cleanCode.substring(0, 200));
+    const cleanCode = agenticResult.script;
     
     if (!cleanCode || cleanCode.length < 10) {
       throw new Error('Generated code is empty or too short. AI may have failed to generate code.');
@@ -3238,24 +3273,53 @@ async function generateScriptForScraper(scraper, existingScraperId = null) {
     // Count AI fields
     const aiFieldsCount = scraper.aiFields ? Object.values(scraper.aiFields).filter(f => f.enabled).length : 0;
     
-    // Save script
+    // Save script with test results
     const scriptData = {
       scraperId: existingScraperId || (scraper.name + '-' + Date.now()),
       scraperName: scraper.name,
       scraperConfig: scraper,
       code: cleanCode,
       generatedAt: new Date().toISOString(),
-      aiFieldsCount: aiFieldsCount
+      aiFieldsCount: aiFieldsCount,
+      agenticResult: {
+        iterations: agenticResult.iterations,
+        success: agenticResult.success,
+        fieldsExtracted: agenticResult.finalTestResult?.fieldsExtracted,
+        testError: agenticResult.finalTestResult?.error
+      }
     };
     
     saveGeneratedScript(scriptData);
-    showToast('✅ Script generated successfully!');
     
-    // Switch to Scripts tab
-    document.querySelector('.tab-button[data-tab="scripts"]').click();
+    const successMsg = agenticResult.success 
+      ? `✅ Script generated and tested successfully! (${agenticResult.iterations} iterations, ${agenticResult.finalTestResult.fieldsExtracted} fields extracted)`
+      : `⚠️ Script generated but may need refinement (${agenticResult.iterations} iterations, ${agenticResult.finalTestResult?.fieldsExtracted || 0} fields extracted)`;
+    
+    addMessage('\n' + successMsg);
+    
+    // Close progress after delay
+    setTimeout(() => {
+      progressLog.remove();
+      showToast(successMsg);
+      // Switch to Scripts tab
+      document.querySelector('.tab-button[data-tab="scripts"]').click();
+    }, 2000);
     
   } catch (error) {
     console.error('Script generation error:', error);
+    
+    if (progressLog) {
+      const messagesDiv = progressLog.querySelector('#progress-messages');
+      if (messagesDiv) {
+        const errorLine = document.createElement('div');
+        errorLine.textContent = '❌ ERROR: ' + error.message;
+        errorLine.style.color = '#dc2626';
+        errorLine.style.fontWeight = 'bold';
+        messagesDiv.appendChild(errorLine);
+      }
+      
+      setTimeout(() => progressLog.remove(), 5000);
+    }
     
     let errorMessage = error.message;
     if (error.message.includes('403') || error.message.includes('Forbidden')) {
