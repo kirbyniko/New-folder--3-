@@ -5,6 +5,7 @@ let isCapturing = false;
 let currentField = null;
 let highlightedElement = null;
 let captureOverlay = null;
+let captureCooldown = false; // Prevent rapid re-triggering
 
 // Create overlay for visual feedback
 function createOverlay() {
@@ -272,12 +273,19 @@ function handleMouseMove(e) {
 
 // Click handler
 function handleClick(e) {
-  if (!isCapturing) return;
+  if (!isCapturing || captureCooldown) return;
+  
+  // Immediately disable to prevent double-clicks
+  captureCooldown = true;
   
   e.preventDefault();
   e.stopPropagation();
+  e.stopImmediatePropagation();
   
   const element = e.target;
+  
+  // Stop capturing FIRST before any async operations
+  stopCapturing();
   
   // Capture element data
   const selector = getOptimalSelector(element);
@@ -313,12 +321,15 @@ function handleClick(e) {
     selector: selector,
     data: capturedData
   }).then(() => {
-    console.log('✅ Sent to background worker');
+    console.log('\u2705 Sent to background worker');
     // Show success notification
-    showNotification('✅ Captured! Selector saved. Reopen extension to continue.', 4000);
+    showNotification('\u2705 Captured! Selector saved.', 3000);
+    // Reset cooldown after a delay
+    setTimeout(() => { captureCooldown = false; }, 1000);
   }).catch((error) => {
     console.log('Background worker received message:', error);
-    showNotification('✅ Captured! Selector saved. Reopen extension to continue.', 4000);
+    showNotification('\u2705 Captured! Selector saved.', 3000);
+    setTimeout(() => { captureCooldown = false; }, 1000);
   });
   
   // Also try to send to popup directly (for when popup is still open)
@@ -326,9 +337,6 @@ function handleClick(e) {
     type: 'ELEMENT_CAPTURED',
     data: capturedData
   }).catch(() => console.log('Popup closed'));
-  
-  // Stop capturing after first click for dynamic builder
-  stopCapturing();
 }
 
 // Show notification to user
@@ -365,6 +373,18 @@ function showNotification(message, duration = 3000) {
 
 // Start capturing mode
 function startCapturing(field) {
+  // Prevent starting if in cooldown
+  if (captureCooldown) {
+    console.log('⚠️ Capture in cooldown, ignoring start request');
+    return;
+  }
+  
+  // Stop any existing capture first
+  if (isCapturing) {
+    stopCapturing();
+  }
+  
+  console.log('🎯 Starting capture for:', field);
   isCapturing = true;
   currentField = field;
   
@@ -392,8 +412,8 @@ function startCapturing(field) {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   `;
   notification.innerHTML = `
-    <strong>🎯 Click to capture: ${field}</strong>
-    <div style="font-size:12px; color:#aaa; margin-top:4px;">Press ESC to cancel</div>
+    <strong>🎯 Click element to capture: ${field}</strong>
+    <div style="font-size:12px; color:#aaa; margin-top:4px;">Press <kbd style="background:#333;padding:2px 6px;border-radius:3px;">ESC</kbd> to cancel</div>
   `;
   notification.id = 'scraper-builder-notification';
   document.body.appendChild(notification);
@@ -401,6 +421,8 @@ function startCapturing(field) {
 
 // Stop capturing mode
 function stopCapturing() {
+  console.log('\ud83d\uded1 Stopping capture mode');
+  
   isCapturing = false;
   currentField = null;
   
@@ -410,9 +432,13 @@ function stopCapturing() {
     captureOverlay = null;
   }
   
-  // Remove event listeners
+  // Remove ALL event listeners with capture phase
   document.removeEventListener('mousemove', handleMouseMove, true);
   document.removeEventListener('click', handleClick, true);
+  
+  // Also remove from bubble phase (safety)
+  document.removeEventListener('mousemove', handleMouseMove, false);
+  document.removeEventListener('click', handleClick, false);
   
   // Remove hover highlights
   document.querySelectorAll('.scraper-builder-hover-highlight').forEach(el => {
@@ -428,11 +454,18 @@ function stopCapturing() {
   if (notification) notification.remove();
 }
 
-// Listen for ESC key
+// Listen for ESC key to cancel
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && isCapturing) {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('\u274c Capture cancelled by ESC key');
     stopCapturing();
-    chrome.runtime.sendMessage({ type: 'CAPTURE_CANCELLED' });
+    showNotification('\u274c Capture cancelled', 2000);
+    chrome.runtime.sendMessage({ type: 'CAPTURE_CANCELLED' }).catch(() => {});
+    
+    // Reset cooldown
+    captureCooldown = false;
   }
 });
 
