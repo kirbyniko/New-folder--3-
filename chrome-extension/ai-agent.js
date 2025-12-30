@@ -709,122 +709,50 @@ Generate the complete scraper code following this pattern. Use EXACT selectors p
   
   // Execute script safely in a CSP-compliant way
   async executeScriptInSandbox(scriptCode, url, html) {
+    // Note: Due to CSP and cross-origin restrictions in Chrome extensions,
+    // we can't safely execute arbitrary user code in the extension context.
+    // Instead, we'll do a basic static analysis and return a helpful message.
+    
     try {
-      // Parse HTML with DOMParser (CSP-safe)
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
+      // Do basic validation
+      const hasModuleExports = scriptCode.includes('module.exports');
+      const hasAsyncFunction = scriptCode.includes('async function') || scriptCode.includes('async (');
+      const hasRequire = scriptCode.includes('require(');
       
-      // Create a cheerio-like API using real DOM methods
-      const createCheerioLike = (contextDoc) => {
-        const $ = (selector) => {
-          const elements = Array.from(contextDoc.querySelectorAll(selector));
-          
-          const cheerioObj = {
-            length: elements.length,
-            get: (index) => elements[index],
-            first: () => {
-              const el = elements[0];
-              return {
-                text: () => el?.textContent?.trim() || '',
-                attr: (name) => el?.getAttribute(name) || '',
-                html: () => el?.innerHTML || ''
-              };
-            },
-            text: () => elements[0]?.textContent?.trim() || '',
-            attr: (name) => elements[0]?.getAttribute(name) || '',
-            html: () => elements[0]?.innerHTML || '',
-            find: (subselector) => $(subselector),
-            each: (callback) => {
-              elements.forEach((el, i) => {
-                const wrapped = {
-                  text: () => el.textContent?.trim() || '',
-                  attr: (name) => el.getAttribute(name) || '',
-                  html: () => el.innerHTML || '',
-                  find: (s) => {
-                    const found = Array.from(el.querySelectorAll(s));
-                    return $(s);
-                  }
-                };
-                callback(i, wrapped);
-              });
-            },
-            map: (callback) => {
-              return elements.map((el, i) => {
-                const wrapped = $(el);
-                return callback(i, wrapped);
-              });
-            }
-          };
-          
-          return cheerioObj;
-        };
-        
-        $.load = (htmlContent) => {
-          const newDoc = parser.parseFromString(htmlContent, 'text/html');
-          return createCheerioLike(newDoc);
-        };
-        
-        return $;
-      };
-      
-      const $ = createCheerioLike(doc);
-      
-      // Mock axios
-      const axios = {
-        get: async (targetUrl, options) => ({
-          data: html,
-          status: 200,
-          headers: {},
-          config: options || {}
-        }),
-        post: async (targetUrl, data, options) => ({
-          data: {},
-          status: 200,
-          headers: {},
-          config: options || {}
-        })
-      };
-      
-      // Mock other common libraries
-      const dayjs = (date) => ({
-        format: (fmt) => new Date(date).toISOString(),
-        toDate: () => new Date(date),
-        isValid: () => true
-      });
-      
-      // Create a safe require function
-      const require = (moduleName) => {
-        const modules = {
-          'cheerio': { load: $.load },
-          'axios': axios,
-          'dayjs': dayjs,
-          'pdf-parse': async () => ({ text: '' })
-        };
-        return modules[moduleName] || {};
-      };
-      
-      // Create module.exports container
-      const module = { exports: null };
-      const exports = {};
-      
-      // Instead of eval, we'll manually parse and execute common patterns
-      // This is a simplified interpreter for the most common scraper patterns
-      
-      // Try to extract the async function from the script
-      let scraperFunction = null;
-      
-      // Pattern 1: module.exports = async function scrape(url) { ... }
-      const pattern1 = /module\.exports\s*=\s*async\s+function\s+\w*\s*\([^)]*\)\s*{([\s\S]*)}/;
-      const match1 = scriptCode.match(pattern1);
-      
-      if (match1) {
-        // We found the pattern, but we can't use eval
-        // Instead, we'll execute this in a sandboxed iframe
-        return await this.executeInIframe(scriptCode, url, html, $, axios, require);
+      // Check for common issues
+      const issues = [];
+      if (!hasModuleExports) {
+        issues.push('Missing module.exports');
+      }
+      if (!hasAsyncFunction) {
+        issues.push('Missing async function');
       }
       
-      // If we can't safely execute, return an error
-      throw new Error('Script format not supported for CSP-safe execution. Try running test in a new tab instead.');
+      if (issues.length > 0) {
+        return {
+          success: false,
+          error: `Static analysis found issues: ${issues.join(', ')}`,
+          fieldsExtracted: 0,
+          executionSuccess: false,
+          hint: 'Use the ▶️ Test button to run script in a real tab for accurate testing'
+        };
+      }
+      
+      // Script looks structurally valid, but we can't execute it here
+      // Return a result that indicates the script needs real tab testing
+      return {
+        success: false,
+        error: 'Script validation passed but requires real tab testing due to Chrome extension security restrictions',
+        fieldsExtracted: 0,
+        executionSuccess: false,
+        hint: 'This script cannot be executed in the extension sandbox. Click ▶️ Test to run it in a real browser tab where it will work properly.',
+        staticAnalysis: {
+          hasModuleExports,
+          hasAsyncFunction,
+          hasRequire,
+          looksValid: true
+        }
+      };
       
     } catch (error) {
       return {
@@ -834,125 +762,6 @@ Generate the complete scraper code following this pattern. Use EXACT selectors p
         executionSuccess: false
       };
     }
-  }
-  
-  // Execute in sandboxed iframe with proper CSP handling
-  async executeInIframe(scriptCode, url, html, $, axios, require) {
-    return new Promise((resolve) => {
-      try {
-        // Create a sandboxed iframe
-        const iframe = document.createElement('iframe');
-        iframe.sandbox = 'allow-scripts';
-        iframe.style.display = 'none';
-        document.body.appendChild(iframe);
-        
-        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-        
-        // Create a script that sets up the environment and runs the scraper
-        const setupScript = `
-          <script>
-            (async () => {
-              try {
-                // Mock environment
-                const $ = ${JSON.stringify(this.serializeCheerioResults($, html))};
-                const axios = {
-                  get: async () => ({ data: ${JSON.stringify(html)} })
-                };
-                const require = (name) => {
-                  if (name === 'cheerio') return { load: () => $ };
-                  if (name === 'axios') return axios;
-                  return {};
-                };
-                
-                // The actual scraper code
-                const module = { exports: null };
-                ${scriptCode}
-                
-                // Execute the exported function
-                const result = await module.exports('${url}');
-                
-                // Send result back to parent
-                window.parent.postMessage({
-                  type: 'scraper-result',
-                  result: result
-                }, '*');
-              } catch (error) {
-                window.parent.postMessage({
-                  type: 'scraper-error',
-                  error: error.message,
-                  stack: error.stack
-                }, '*');
-              }
-            })();
-          </script>
-        `;
-        
-        // Listen for results
-        const messageHandler = (event) => {
-          if (event.data.type === 'scraper-result') {
-            window.removeEventListener('message', messageHandler);
-            iframe.remove();
-            
-            const result = event.data.result;
-            const fieldsExtracted = result?.data ? 
-              Object.keys(result.data).filter(k => result.data[k]).length : 0;
-            
-            resolve({
-              success: result?.success || false,
-              data: result?.data || {},
-              fieldsExtracted,
-              executionSuccess: true
-            });
-          } else if (event.data.type === 'scraper-error') {
-            window.removeEventListener('message', messageHandler);
-            iframe.remove();
-            
-            resolve({
-              success: false,
-              error: event.data.error,
-              fieldsExtracted: 0,
-              executionSuccess: false
-            });
-          }
-        };
-        
-        window.addEventListener('message', messageHandler);
-        
-        // Timeout after 10 seconds
-        setTimeout(() => {
-          window.removeEventListener('message', messageHandler);
-          iframe.remove();
-          resolve({
-            success: false,
-            error: 'Execution timeout',
-            fieldsExtracted: 0,
-            executionSuccess: false
-          });
-        }, 10000);
-        
-        // Write and execute
-        iframeDoc.open();
-        iframeDoc.write(setupScript);
-        iframeDoc.close();
-        
-      } catch (error) {
-        resolve({
-          success: false,
-          error: error.message,
-          fieldsExtracted: 0,
-          executionSuccess: false
-        });
-      }
-    });
-  }
-  
-  // Helper to serialize cheerio results for iframe
-  serializeCheerioResults($, html) {
-    // Return a simplified object that can be JSON-stringified
-    return {
-      html: html,
-      // We'll reconstruct the $ function in the iframe
-    };
   }
   
   // Diagnose why the script failed

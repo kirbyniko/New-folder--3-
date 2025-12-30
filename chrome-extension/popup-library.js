@@ -3572,6 +3572,33 @@ async function debugScriptWithAgent(scriptData) {
       (msg) => addMessage(msg)
     );
     
+    // Check if this is a sandbox limitation
+    if (testResult.hint && testResult.hint.includes('real tab')) {
+      addMessage('⚠️ Sandbox limitation detected');
+      addMessage('💡 Extension security prevents running scripts in sandbox');
+      
+      const useRealTest = await agent.chat.askForFeedback(
+        'This script cannot be tested in the extension sandbox due to Chrome security policies.\n\n' +
+        'Would you like to run a full test in a real browser tab instead?\n\n' +
+        '(This will open the target website and execute the script there)',
+        ['Yes, run full test', 'No, regenerate from scratch', 'Cancel']
+      );
+      
+      if (useRealTest.includes('full test')) {
+        addMessage('🚀 Running full test in new tab...');
+        progressLog.remove();
+        await runScriptTest(scriptData);
+        return;
+      } else if (useRealTest.includes('scratch')) {
+        progressLog.remove();
+        await generateScriptForScraper(scriptData.scraperConfig, scriptData.scraperId);
+        return;
+      } else {
+        progressLog.remove();
+        return;
+      }
+    }
+    
     if (testResult.success && testResult.fieldsExtracted > 0) {
       addMessage(`✅ Script works! Extracted ${testResult.fieldsExtracted} fields`);
       addMessage('💡 No debugging needed - script is functional');
@@ -3626,13 +3653,23 @@ ${diagnosis.recommendation}
   • Fields Extracted: ${testResult.fieldsExtracted}
   • Execution Success: ${testResult.executionSuccess || 'N/A'}
 
-${testResult.error?.includes('CSP') || testResult.error?.includes('unsafe-eval') || testResult.error?.includes('Content Security Policy') ? `
-⚠️ CSP ISSUE DETECTED:
-This error is caused by Chrome's Content Security Policy blocking
-dynamic code execution in the extension sandbox.
+${testResult.error?.includes('CSP') || 
+  testResult.error?.includes('unsafe-eval') || 
+  testResult.error?.includes('Content Security Policy') ||
+  testResult.error?.includes('cross-origin') ||
+  testResult.error?.includes('Blocked a frame') ? `
+⚠️ CHROME EXTENSION SECURITY RESTRICTION:
+This error is caused by Chrome's security policies that prevent
+extensions from executing dynamic code.
 
-💡 SOLUTION: Use the ▶️ Test button instead of Debug.
-The Test button runs your script in a real tab where CSP doesn't apply.
+💡 RECOMMENDED ACTION:
+Instead of debugging in the sandbox, use one of these options:
+  1. Click ▶️ TEST button - Runs script in a real browser tab (full testing)
+  2. Click 🔄 REGENERATE - Generate a new script from scratch
+  3. Click ✏️ EDIT - Manually fix the script code
+
+The 🔧 Debug feature is limited by browser security and works best
+for simple validation. For accurate testing, always use ▶️ Test.
 ` : ''}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
       `.trim();
