@@ -398,6 +398,7 @@ CRITICAL REQUIREMENTS:
 3. FOR AI_ANALYZE fields: After extracting content, call analyzeWithAI(content, prompt) and use AI response
 4. Handle missing elements gracefully (return null, not crash)
 5. Return format: { success: true, data: { fieldId: value, ... }, metadata: { scrapedAt, url } }
+6. NEVER use eval(), Function(), or any dynamic code execution - Chrome extensions block this
 
 EXAMPLE STRUCTURE:
 \`\`\`javascript
@@ -706,98 +707,253 @@ Generate the complete scraper code following this pattern. Use EXACT selectors p
     }
   }
   
-  // Execute script safely
+  // Execute script safely in a CSP-compliant way
   async executeScriptInSandbox(scriptCode, url, html) {
     try {
-      // Create a minimal Node.js-like environment
-      const cheerio = window.cheerio || { load: () => null }; // Will need to bundle cheerio
+      // Parse HTML with DOMParser (CSP-safe)
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
       
-      // Simple cheerio-like implementation for testing
-      const $ = (selector) => {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        const elements = doc.querySelectorAll(selector);
-        
-        return {
-          length: elements.length,
-          first: () => ({
-            text: () => elements[0]?.textContent || '',
-            attr: (name) => elements[0]?.getAttribute(name) || null
-          }),
-          text: () => elements[0]?.textContent || '',
-          attr: (name) => elements[0]?.getAttribute(name) || null,
-          each: (callback) => {
-            elements.forEach((el, i) => {
-              callback(i, {
-                textContent: el.textContent,
-                getAttribute: (name) => el.getAttribute(name)
+      // Create a cheerio-like API using real DOM methods
+      const createCheerioLike = (contextDoc) => {
+        const $ = (selector) => {
+          const elements = Array.from(contextDoc.querySelectorAll(selector));
+          
+          const cheerioObj = {
+            length: elements.length,
+            get: (index) => elements[index],
+            first: () => {
+              const el = elements[0];
+              return {
+                text: () => el?.textContent?.trim() || '',
+                attr: (name) => el?.getAttribute(name) || '',
+                html: () => el?.innerHTML || ''
+              };
+            },
+            text: () => elements[0]?.textContent?.trim() || '',
+            attr: (name) => elements[0]?.getAttribute(name) || '',
+            html: () => elements[0]?.innerHTML || '',
+            find: (subselector) => $(subselector),
+            each: (callback) => {
+              elements.forEach((el, i) => {
+                const wrapped = {
+                  text: () => el.textContent?.trim() || '',
+                  attr: (name) => el.getAttribute(name) || '',
+                  html: () => el.innerHTML || '',
+                  find: (s) => {
+                    const found = Array.from(el.querySelectorAll(s));
+                    return $(s);
+                  }
+                };
+                callback(i, wrapped);
               });
-            });
-          }
+            },
+            map: (callback) => {
+              return elements.map((el, i) => {
+                const wrapped = $(el);
+                return callback(i, wrapped);
+              });
+            }
+          };
+          
+          return cheerioObj;
         };
+        
+        $.load = (htmlContent) => {
+          const newDoc = parser.parseFromString(htmlContent, 'text/html');
+          return createCheerioLike(newDoc);
+        };
+        
+        return $;
       };
       
-      $.load = (htmlContent) => $;
+      const $ = createCheerioLike(doc);
       
       // Mock axios
       const axios = {
-        get: async (targetUrl) => ({
+        get: async (targetUrl, options) => ({
           data: html,
-          status: 200
+          status: 200,
+          headers: {},
+          config: options || {}
+        }),
+        post: async (targetUrl, data, options) => ({
+          data: {},
+          status: 200,
+          headers: {},
+          config: options || {}
         })
       };
       
-      // Create module.exports context
-      let exportedFunction = null;
+      // Mock other common libraries
+      const dayjs = (date) => ({
+        format: (fmt) => new Date(date).toISOString(),
+        toDate: () => new Date(date),
+        isValid: () => true
+      });
+      
+      // Create a safe require function
+      const require = (moduleName) => {
+        const modules = {
+          'cheerio': { load: $.load },
+          'axios': axios,
+          'dayjs': dayjs,
+          'pdf-parse': async () => ({ text: '' })
+        };
+        return modules[moduleName] || {};
+      };
+      
+      // Create module.exports container
       const module = { exports: null };
+      const exports = {};
       
-      // Wrap and execute the script
-      const wrappedScript = `
-        (async function() {
-          ${scriptCode}
-          return module.exports;
-        })();
-      `;
+      // Instead of eval, we'll manually parse and execute common patterns
+      // This is a simplified interpreter for the most common scraper patterns
       
-      const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
-      const executor = new AsyncFunction('module', 'require', '$', 'axios', wrappedScript);
+      // Try to extract the async function from the script
+      let scraperFunction = null;
       
-      // Mock require
-      const mockRequire = (name) => {
-        if (name === 'cheerio') return { load: $.load };
-        if (name === 'axios') return axios;
-        return {};
-      };
+      // Pattern 1: module.exports = async function scrape(url) { ... }
+      const pattern1 = /module\.exports\s*=\s*async\s+function\s+\w*\s*\([^)]*\)\s*{([\s\S]*)}/;
+      const match1 = scriptCode.match(pattern1);
       
-      exportedFunction = await executor(module, mockRequire, $, axios);
-      
-      if (typeof exportedFunction !== 'function') {
-        exportedFunction = module.exports;
+      if (match1) {
+        // We found the pattern, but we can't use eval
+        // Instead, we'll execute this in a sandboxed iframe
+        return await this.executeInIframe(scriptCode, url, html, $, axios, require);
       }
       
-      if (typeof exportedFunction !== 'function') {
-        throw new Error('Script did not export a function');
-      }
-      
-      // Execute the scraper
-      const result = await exportedFunction(url);
-      
-      // Analyze result
-      const fieldsExtracted = result?.data ? Object.keys(result.data).filter(k => result.data[k] !== null && result.data[k] !== undefined).length : 0;
-      
-      return {
-        success: result?.success || false,
-        data: result?.data || {},
-        error: result?.error,
-        fieldsExtracted,
-        url,
-        executionSuccess: true
-      };
+      // If we can't safely execute, return an error
+      throw new Error('Script format not supported for CSP-safe execution. Try running test in a new tab instead.');
       
     } catch (error) {
       return {
         success: false,
         error: error.message,
+        fieldsExtracted: 0,
+        executionSuccess: false
+      };
+    }
+  }
+  
+  // Execute in sandboxed iframe with proper CSP handling
+  async executeInIframe(scriptCode, url, html, $, axios, require) {
+    return new Promise((resolve) => {
+      try {
+        // Create a sandboxed iframe
+        const iframe = document.createElement('iframe');
+        iframe.sandbox = 'allow-scripts';
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+        
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+        
+        // Create a script that sets up the environment and runs the scraper
+        const setupScript = `
+          <script>
+            (async () => {
+              try {
+                // Mock environment
+                const $ = ${JSON.stringify(this.serializeCheerioResults($, html))};
+                const axios = {
+                  get: async () => ({ data: ${JSON.stringify(html)} })
+                };
+                const require = (name) => {
+                  if (name === 'cheerio') return { load: () => $ };
+                  if (name === 'axios') return axios;
+                  return {};
+                };
+                
+                // The actual scraper code
+                const module = { exports: null };
+                ${scriptCode}
+                
+                // Execute the exported function
+                const result = await module.exports('${url}');
+                
+                // Send result back to parent
+                window.parent.postMessage({
+                  type: 'scraper-result',
+                  result: result
+                }, '*');
+              } catch (error) {
+                window.parent.postMessage({
+                  type: 'scraper-error',
+                  error: error.message,
+                  stack: error.stack
+                }, '*');
+              }
+            })();
+          </script>
+        `;
+        
+        // Listen for results
+        const messageHandler = (event) => {
+          if (event.data.type === 'scraper-result') {
+            window.removeEventListener('message', messageHandler);
+            iframe.remove();
+            
+            const result = event.data.result;
+            const fieldsExtracted = result?.data ? 
+              Object.keys(result.data).filter(k => result.data[k]).length : 0;
+            
+            resolve({
+              success: result?.success || false,
+              data: result?.data || {},
+              fieldsExtracted,
+              executionSuccess: true
+            });
+          } else if (event.data.type === 'scraper-error') {
+            window.removeEventListener('message', messageHandler);
+            iframe.remove();
+            
+            resolve({
+              success: false,
+              error: event.data.error,
+              fieldsExtracted: 0,
+              executionSuccess: false
+            });
+          }
+        };
+        
+        window.addEventListener('message', messageHandler);
+        
+        // Timeout after 10 seconds
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler);
+          iframe.remove();
+          resolve({
+            success: false,
+            error: 'Execution timeout',
+            fieldsExtracted: 0,
+            executionSuccess: false
+          });
+        }, 10000);
+        
+        // Write and execute
+        iframeDoc.open();
+        iframeDoc.write(setupScript);
+        iframeDoc.close();
+        
+      } catch (error) {
+        resolve({
+          success: false,
+          error: error.message,
+          fieldsExtracted: 0,
+          executionSuccess: false
+        });
+      }
+    });
+  }
+  
+  // Helper to serialize cheerio results for iframe
+  serializeCheerioResults($, html) {
+    // Return a simplified object that can be JSON-stringified
+    return {
+      html: html,
+      // We'll reconstruct the $ function in the iframe
+    };
+  }
         stack: error.stack,
         fieldsExtracted: 0,
         executionSuccess: false

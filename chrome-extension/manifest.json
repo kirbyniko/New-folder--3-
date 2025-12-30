@@ -38,5 +38,11 @@
       "resources": ["content.css", "examples/*.json"],
       "matches": ["<all_urls>"]
     }
-  ]
+  ],
+  "sandbox": {
+    "pages": ["sandbox.html"]
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
 }

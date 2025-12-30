@@ -3626,6 +3626,14 @@ ${diagnosis.recommendation}
   • Fields Extracted: ${testResult.fieldsExtracted}
   • Execution Success: ${testResult.executionSuccess || 'N/A'}
 
+${testResult.error?.includes('CSP') || testResult.error?.includes('unsafe-eval') || testResult.error?.includes('Content Security Policy') ? `
+⚠️ CSP ISSUE DETECTED:
+This error is caused by Chrome's Content Security Policy blocking
+dynamic code execution in the extension sandbox.
+
+💡 SOLUTION: Use the ▶️ Test button instead of Debug.
+The Test button runs your script in a real tab where CSP doesn't apply.
+` : ''}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
       `.trim();
       
