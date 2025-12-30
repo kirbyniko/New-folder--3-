@@ -1741,6 +1741,10 @@ function fillBaseUrlField(fieldId, url) {
 
 // Show tab selector modal
 function showTabSelector(callback) {
+  // Remove any existing tab selector modals first
+  const existingModals = document.querySelectorAll('.tab-selector-modal');
+  existingModals.forEach(m => m.remove());
+  
   // Get all tabs
   chrome.tabs.query({}, (allTabs) => {
     // Filter out extension and chrome pages
@@ -1752,11 +1756,15 @@ function showTabSelector(callback) {
     
     if (webTabs.length === 0) {
       alert('No web pages found. Please open a webpage in another tab.');
+      if (callback && typeof callback === 'function') {
+        callback(null);
+      }
       return;
     }
     
-    // Create modal
+    // Create modal with ID for tracking
     const modal = document.createElement('div');
+    modal.className = 'tab-selector-modal';
     modal.style.cssText = `
       position: fixed;
       top: 0;
@@ -1782,7 +1790,7 @@ function showTabSelector(callback) {
     `;
     
     const title = document.createElement('h3');
-    title.textContent = '🔗 Select Tab to Get URL From';
+    title.textContent = '🔗 Select Tab to Capture From';
     title.style.cssText = 'margin: 0 0 16px 0; font-size: 14px;';
     content.appendChild(title);
     
@@ -1811,8 +1819,16 @@ function showTabSelector(callback) {
       tabItem.appendChild(tabTitle);
       tabItem.appendChild(tabUrl);
       
-      tabItem.onclick = () => {
-        modal.remove();
+      tabItem.onclick = (e) => {
+        e.stopPropagation(); // Prevent event bubbling
+        console.log('✅ Tab selected:', tab.title);
+        
+        // Remove modal immediately
+        if (modal.parentNode) {
+          modal.parentNode.removeChild(modal);
+        }
+        
+        // Call callback with selected tab
         if (callback && typeof callback === 'function') {
           callback(tab);
         }
@@ -1825,11 +1841,19 @@ function showTabSelector(callback) {
     const cancelBtn = document.createElement('button');
     cancelBtn.textContent = 'Cancel';
     cancelBtn.className = 'btn-secondary';
-    cancelBtn.style.cssText = 'margin-top: 12px; width: 100%;';
-    cancelBtn.onclick = () => {
-      modal.remove();
+    cancelBtn.style.cssText = 'margin-top: 12px; width: 100%; padding: 8px; cursor: pointer;';
+    cancelBtn.onclick = (e) => {
+      e.stopPropagation();
+      console.log('❌ Tab selection cancelled');
+      
+      // Remove modal
+      if (modal.parentNode) {
+        modal.parentNode.removeChild(modal);
+      }
+      
+      // Call callback with null
       if (callback && typeof callback === 'function') {
-        callback(null); // Signal cancellation
+        callback(null);
       }
     };
     content.appendChild(cancelBtn);
@@ -1839,7 +1863,20 @@ function showTabSelector(callback) {
     
     // Close on background click
     modal.onclick = (e) => {
-      if (e.target === modal) modal.remove();
+      if (e.target === modal) {
+        console.log('❌ Background clicked, closing modal');
+        if (modal.parentNode) {
+          modal.parentNode.removeChild(modal);
+        }
+        if (callback && typeof callback === 'function') {
+          callback(null);
+        }
+      }
+    };
+    
+    // Prevent content clicks from closing modal
+    content.onclick = (e) => {
+      e.stopPropagation();
     };
   });
 }
