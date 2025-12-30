@@ -704,6 +704,23 @@
       </button>
     </div>
     
+    <!-- Agent Settings -->
+    <div style="margin: 16px 0; padding: 12px; background: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
+      <h4 style="margin: 0 0 8px 0; font-size: 13px;">🤖 Agent Settings</h4>
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12px;">
+        <input type="checkbox" id="interactive-mode-toggle" style="cursor: pointer;">
+        <span>Interactive Mode (ask for feedback during generation)</span>
+      </label>
+      <div style="margin-top: 8px; display: flex; gap: 8px;">
+        <button id="view-knowledge-btn" class="btn-secondary" style="flex: 1; padding: 6px; font-size: 11px;">
+          📚 Knowledge Base
+        </button>
+        <button id="clear-knowledge-btn" class="btn-secondary" style="flex: 1; padding: 6px; font-size: 11px;">
+          🗑️ Clear Knowledge
+        </button>
+      </div>
+    </div>
+    
     <div id="script-list" style="display: flex; flex-direction: column; gap: 12px;">
       <p style="text-align: center; color: #999; padding: 20px;">No scripts generated yet</p>
     </div>
@@ -745,6 +762,8 @@
     </div>
   </div>
 
+  <script src="agent-knowledge.js"></script>
+  <script src="agent-chat.js"></script>
   <script src="popup.js"></script>
   <script src="popup-library.js"></script>
   <script src="ai-agent.js"></script>

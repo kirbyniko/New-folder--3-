@@ -7,6 +7,11 @@ class ScraperAIAgent {
     this.model = 'deepseek-coder:6.7b'; // or 'codellama:13b'
     this.contextFiles = {};
     this.analysisResults = {};
+    
+    // Initialize knowledge base and chat
+    this.knowledge = new window.AgentKnowledge();
+    this.chat = new window.AgentChat();
+    this.interactiveMode = false; // Can be toggled by user
   }
 
   // Check if Ollama is running
@@ -500,16 +505,46 @@ Generate the complete scraper code following this pattern. Use EXACT selectors p
     const updateProgress = (message) => {
       console.log(message);
       if (progressCallback) progressCallback(message);
+      if (this.interactiveMode) {
+        this.chat.addMessage('agent', message);
+      }
     };
     
     updateProgress('🤖 Starting AI scraper generation...');
     
-    // Stage 0: Initialize
+    // Start chat session if interactive mode
+    if (this.interactiveMode) {
+      this.chat.startSession(scraperConfig, {});
+    }
+    
+    // Stage 0: Get relevant knowledge
+    updateProgress('🧠 Checking knowledge base...');
+    const relevantContext = this.knowledge.getRelevantContext(scraperConfig);
+    
+    if (relevantContext.warnings.length > 0) {
+      updateProgress(`⚠️ Knowledge base warnings:`);
+      relevantContext.warnings.forEach(w => updateProgress(`  ${w}`));
+    }
+    
+    if (relevantContext.recommendedPatterns.length > 0) {
+      updateProgress(`💡 Recommended patterns found: ${relevantContext.recommendedPatterns.length}`);
+    }
+    
+    // Check if we should use a specific context template
+    const contextTemplate = this.determineContextTemplate(scraperConfig, template);
+    if (contextTemplate) {
+      updateProgress(`📚 Using context: "${contextTemplate.description}"`);
+    }
+    
+    // Stage 1: Initialize and analyze
     this.loadContextFiles();
     
-    // Stage 1: Analyze and generate initial script
     updateProgress('📊 Analyzing scraper configuration...');
     const analysisContext = await this.analyzeScraperConfig(scraperConfig, template);
+    
+    // Enhance analysis with knowledge
+    analysisContext.relevantContext = relevantContext;
+    analysisContext.contextTemplate = contextTemplate;
     
     updateProgress('✍️ Generating initial script with AI...');
     let script = await this.generateScraperScript(scraperConfig, analysisContext, template);
@@ -523,6 +558,7 @@ Generate the complete scraper code following this pattern. Use EXACT selectors p
     const maxIterations = 3;
     let iteration = 0;
     let testResult = null;
+    let lastDiagnosis = null;
     
     while (iteration < maxIterations) {
       iteration++;
@@ -533,18 +569,49 @@ Generate the complete scraper code following this pattern. Use EXACT selectors p
       
       if (testResult.success && testResult.fieldsExtracted > 0) {
         updateProgress(`✅ Success! Script extracted ${testResult.fieldsExtracted} fields`);
+        
+        // Record success in knowledge base
+        this.knowledge.recordSuccess(scraperConfig, script, testResult, lastDiagnosis);
+        updateProgress('🧠 Success pattern saved to knowledge base');
         break;
       }
       
       // Diagnose and fix
       updateProgress(`❌ Test failed: ${testResult.error || 'No fields extracted'}`);
       updateProgress('🔍 Diagnosing issues...');
-      const diagnosis = await this.diagnoseScriptFailure(script, testResult, scraperConfig);
-      updateProgress(`💡 Diagnosis: ${diagnosis.rootCause}`);
+      lastDiagnosis = await this.diagnoseScriptFailure(script, testResult, scraperConfig, relevantContext);
+      updateProgress(`💡 Diagnosis: ${lastDiagnosis.rootCause}`);
+      
+      // Record failure for learning
+      this.knowledge.recordFailure(scraperConfig, script, testResult, lastDiagnosis);
+      
+      // Ask for user feedback if in interactive mode
+      if (this.interactiveMode && iteration === 1) {
+        try {
+          updateProgress('💬 Requesting user feedback...');
+          const feedback = await this.chat.askForFeedback(
+            `The script failed with: "${testResult.error}"\n\nDiagnosis: ${lastDiagnosis.rootCause}\n\nDo you have any insights or suggestions?`,
+            [
+              'Continue with automatic fix',
+              'The page structure looks different',
+              'Try a different approach',
+              'Skip and show me the script'
+            ]
+          );
+          
+          if (feedback !== '[skipped]') {
+            updateProgress(`📝 User feedback: ${feedback}`);
+            // Add feedback to diagnosis context
+            lastDiagnosis.userFeedback = feedback;
+          }
+        } catch (err) {
+          updateProgress('⏭️ Feedback timeout - continuing automatically');
+        }
+      }
       
       if (iteration < maxIterations) {
         updateProgress('🔧 Attempting to fix script...');
-        script = await this.fixScript(script, diagnosis, testResult, scraperConfig);
+        script = await this.fixScript(script, lastDiagnosis, testResult, scraperConfig, relevantContext);
         script = this.cleanGeneratedCode(script);
         updateProgress('✅ Script updated');
       }
@@ -552,12 +619,46 @@ Generate the complete scraper code following this pattern. Use EXACT selectors p
     
     updateProgress('🎉 Generation complete!');
     
+    const finalSuccess = testResult?.success && testResult?.fieldsExtracted > 0;
+    
+    // Show knowledge base summary
+    const summary = this.knowledge.getSummary();
+    updateProgress(`\n📊 Knowledge Base: ${summary.totalSuccesses} successes, ${summary.totalFailures} failures (${summary.successRate}% success rate)`);
+    
     return {
       script,
       iterations: iteration,
       finalTestResult: testResult,
-      success: testResult?.success && testResult?.fieldsExtracted > 0
+      success: finalSuccess,
+      knowledgeUsed: relevantContext,
+      chatHistory: this.interactiveMode ? this.chat.chatHistory : null
     };
+  }
+  
+  // Determine which context template to use
+  determineContextTemplate(scraperConfig, template) {
+    const templateName = scraperConfig.templateName?.toLowerCase() || '';
+    
+    if (templateName.includes('court') || templateName.includes('calendar')) {
+      return this.knowledge.getContextForTask('court-calendar');
+    }
+    if (templateName.includes('bill') || templateName.includes('legislative')) {
+      return this.knowledge.getContextForTask('legislative-bills');
+    }
+    if (templateName.includes('agenda') || templateName.includes('meeting')) {
+      return this.knowledge.getContextForTask('meeting-agendas');
+    }
+    
+    // Check URL patterns
+    const url = scraperConfig.fields['step1-calendar_url'] || 
+                scraperConfig.fields['step1-court_url'] || 
+                scraperConfig.fields['step1-listing_url'] || '';
+    
+    if (url.includes('.pdf')) {
+      return this.knowledge.getContextForTask('pdf-extraction');
+    }
+    
+    return null;
   }
   
   // Test script by actually running it
@@ -757,10 +858,26 @@ Respond with ONLY a JSON object:
   }
   
   // Fix the script based on diagnosis
-  async fixScript(script, diagnosis, testResult, scraperConfig) {
+  async fixScript(script, diagnosis, testResult, scraperConfig, relevantContext = null) {
     const targetUrl = scraperConfig.fields['step1-calendar_url'] || 
                      scraperConfig.fields['step1-court_url'] || 
                      scraperConfig.fields['step1-listing_url'];
+    
+    // Build enhanced context
+    let enhancedContext = '';
+    
+    if (relevantContext?.contextTemplate) {
+      const ctx = relevantContext.contextTemplate;
+      enhancedContext += `\n\nRELEVANT CONTEXT (${ctx.description}):\n`;
+      enhancedContext += `Common patterns:\n${ctx.commonPatterns.join('\n')}\n`;
+      if (ctx.examples) {
+        enhancedContext += `\nExample code:\n${ctx.examples}\n`;
+      }
+    }
+    
+    if (diagnosis.userFeedback) {
+      enhancedContext += `\n\nUSER FEEDBACK: ${diagnosis.userFeedback}\n`;
+    }
     
     const prompt = `You are a code repair expert. Fix this broken web scraper.
 
@@ -773,6 +890,7 @@ DIAGNOSIS:
 Problems: ${diagnosis.problems.join(', ')}
 Root cause: ${diagnosis.rootCause}
 Recommendation: ${diagnosis.recommendation}
+${enhancedContext}
 
 TEST FAILURE:
 ${testResult.error || 'No specific error'}

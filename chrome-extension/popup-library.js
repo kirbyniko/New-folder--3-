@@ -3250,6 +3250,13 @@ async function generateScriptForScraper(scraper, existingScraperId = null) {
     
     addMessage('✅ Ollama connected');
     
+    // Set interactive mode based on user preference
+    const interactiveMode = localStorage.getItem('agentInteractiveMode') === 'true';
+    agent.interactiveMode = interactiveMode;
+    if (interactiveMode) {
+      addMessage('💬 Interactive mode: Agent will ask for feedback');
+    }
+    
     // Get template for context
     const template = templates.find(t => t.name === scraper.templateName);
     
@@ -3342,6 +3349,130 @@ Then try generating the script again.`;
     alert('❌ Error generating script:\\n\\n' + errorMessage);
     showToast('');
   }
+}
+
+// Interactive mode toggle
+document.getElementById('interactive-mode-toggle')?.addEventListener('change', (e) => {
+  localStorage.setItem('agentInteractiveMode', e.target.checked);
+  showToast(e.target.checked ? '🤖 Interactive mode enabled' : '🤖 Interactive mode disabled');
+});
+
+// Load interactive mode state
+const savedInteractiveMode = localStorage.getItem('agentInteractiveMode') === 'true';
+if (document.getElementById('interactive-mode-toggle')) {
+  document.getElementById('interactive-mode-toggle').checked = savedInteractiveMode;
+}
+
+// View knowledge base
+document.getElementById('view-knowledge-btn')?.addEventListener('click', () => {
+  const knowledge = new window.AgentKnowledge();
+  const summary = knowledge.getSummary();
+  
+  showKnowledgeModal(knowledge, summary);
+});
+
+// Clear knowledge base
+document.getElementById('clear-knowledge-btn')?.addEventListener('click', () => {
+  if (confirm('⚠️ This will delete all learned patterns and knowledge. Are you sure?')) {
+    const knowledge = new window.AgentKnowledge();
+    knowledge.clearKnowledge();
+    showToast('🗑️ Knowledge base cleared');
+  }
+});
+
+function showKnowledgeModal(knowledge, summary) {
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+  `;
+  
+  const content = document.createElement('div');
+  content.style.cssText = `
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  `;
+  
+  content.innerHTML = `
+    <h3 style="margin: 0 0 16px 0;">📚 Agent Knowledge Base</h3>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+      <div style="padding: 12px; background: #f0f9ff; border-radius: 8px;">
+        <div style="font-size: 24px; font-weight: bold; color: #0ea5e9;">${summary.totalSuccesses}</div>
+        <div style="font-size: 12px; color: #666;">Successes</div>
+      </div>
+      <div style="padding: 12px; background: #fef2f2; border-radius: 8px;">
+        <div style="font-size: 24px; font-weight: bold; color: #ef4444;">${summary.totalFailures}</div>
+        <div style="font-size: 12px; color: #666;">Failures</div>
+      </div>
+      <div style="padding: 12px; background: #f0fdf4; border-radius: 8px;">
+        <div style="font-size: 24px; font-weight: bold; color: #10b981;">${summary.successRate}%</div>
+        <div style="font-size: 12px; color: #666;">Success Rate</div>
+      </div>
+      <div style="padding: 12px; background: #faf5ff; border-radius: 8px;">
+        <div style="font-size: 24px; font-weight: bold; color: #a855f7;">${summary.domainsKnown}</div>
+        <div style="font-size: 12px; color: #666;">Domains Known</div>
+      </div>
+    </div>
+    
+    ${summary.topDomains.length > 0 ? `
+      <h4 style="margin: 16px 0 8px 0; font-size: 14px;">🏆 Top Domains</h4>
+      <div style="font-size: 12px;">
+        ${summary.topDomains.map(d => `
+          <div style="padding: 6px 0; border-bottom: 1px solid #eee;">
+            <strong>${d.domain}</strong>: ${d.successCount} successes
+          </div>
+        `).join('')}
+      </div>
+    ` : ''}
+    
+    ${summary.commonIssues.length > 0 ? `
+      <h4 style="margin: 16px 0 8px 0; font-size: 14px;">⚠️ Common Issues</h4>
+      <div style="font-size: 12px;">
+        ${summary.commonIssues.map(issue => `
+          <div style="padding: 6px 0; border-bottom: 1px solid #eee;">• ${issue}</div>
+        `).join('')}
+      </div>
+    ` : ''}
+    
+    <h4 style="margin: 16px 0 8px 0; font-size: 14px;">📖 Context Library</h4>
+    <div style="font-size: 12px;">
+      ${Object.keys(knowledge.knowledge.contextLibrary).map(key => `
+        <div style="padding: 8px; margin-bottom: 8px; background: #f9fafb; border-radius: 6px; border-left: 3px solid #3b82f6;">
+          <strong>${key}</strong>: ${knowledge.knowledge.contextLibrary[key].description}
+        </div>
+      `).join('')}
+    </div>
+    
+    <button id="close-knowledge-modal" style="margin-top: 16px; width: 100%; padding: 10px; border: none; border-radius: 6px; background: #3b82f6; color: white; cursor: pointer;">
+      Close
+    </button>
+  `;
+  
+  modal.appendChild(content);
+  document.body.appendChild(modal);
+  
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.remove();
+  });
+  
+  document.getElementById('close-knowledge-modal').addEventListener('click', () => {
+    modal.remove();
+  });
 }
 
 document.getElementById('generate-new-script-btn')?.addEventListener('click', async () => {
