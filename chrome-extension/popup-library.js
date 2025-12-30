@@ -3573,7 +3573,12 @@ async function debugScriptWithAgent(scriptData) {
     );
     
     // Check if this is a sandbox limitation
-    if (testResult.hint && testResult.hint.includes('real tab')) {
+    const isSandboxLimitation = 
+      (testResult.hint && testResult.hint.includes('real tab')) ||
+      (testResult.error && testResult.error.includes('requires real tab testing')) ||
+      (testResult.error && testResult.error.includes('security restrictions'));
+    
+    if (isSandboxLimitation) {
       addMessage('⚠️ Sandbox limitation detected');
       addMessage('💡 Extension security prevents running scripts in sandbox');
       
