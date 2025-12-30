@@ -3908,6 +3908,85 @@ ${diagnosis.rootCause}
   }
 }
 
+async function regenerateScriptWithPuppeteer(scriptData) {
+  try {
+    // Show loading state
+    const progressDiv = document.createElement('div');
+    progressDiv.className = 'progress-log';
+    progressDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 10000; min-width: 400px;';
+    progressDiv.innerHTML = `
+      <h3 style="margin-top: 0;">🔄 Regenerating with Puppeteer...</h3>
+      <p>Adding browser automation support for JavaScript rendering</p>
+      <div class="spinner" style="margin: 20px auto;"></div>
+    `;
+    document.body.appendChild(progressDiv);
+    
+    // Get the AI agent
+    const agent = new AIAgent();
+    
+    // Add Puppeteer requirement to scraper config
+    const enhancedConfig = {
+      ...scriptData.scraperConfig,
+      requiresPuppeteer: true,
+      fields: {
+        ...scriptData.scraperConfig.fields,
+        'puppeteer-enabled': true,
+        'puppeteer-reason': 'Page requires JavaScript rendering'
+      }
+    };
+    
+    // Generate new script with Puppeteer support
+    progressDiv.innerHTML = `
+      <h3 style="margin-top: 0;">🤖 Generating Puppeteer script...</h3>
+      <p>This may take 30-60 seconds</p>
+      <div class="spinner" style="margin: 20px auto;"></div>
+    `;
+    
+    const newScriptCode = await agent.generateScraperWithAI(enhancedConfig, null, (progress) => {
+      console.log('Generation progress:', progress);
+    }, {
+      usePuppeteer: true,
+      reason: 'Original script failed due to dynamic JavaScript content'
+    });
+    
+    // Save updated script
+    await chrome.storage.local.get(['generatedScripts'], async (result) => {
+      const scripts = result.generatedScripts || [];
+      const scriptIndex = scripts.findIndex(s => s.scraperId === scriptData.scraperId);
+      
+      if (scriptIndex !== -1) {
+        scripts[scriptIndex] = {
+          ...scripts[scriptIndex],
+          code: newScriptCode,
+          requiresPuppeteer: true,
+          regeneratedAt: new Date().toISOString(),
+          regenerationReason: 'JavaScript rendering required'
+        };
+        
+        await chrome.storage.local.set({ generatedScripts: scripts });
+      }
+    });
+    
+    progressDiv.remove();
+    
+    // Show success and offer to test again
+    const testAgain = confirm(
+      '✅ Script Regenerated with Puppeteer!\n\n' +
+      'The scraper now uses a real browser to render JavaScript.\n\n' +
+      'Would you like to test it now?'
+    );
+    
+    if (testAgain) {
+      // Reload scripts list to get updated script
+      location.reload();
+    }
+    
+  } catch (error) {
+    console.error('Regeneration error:', error);
+    alert('❌ Failed to regenerate script:\n\n' + error.message);
+  }
+}
+
 async function runScriptTest(scriptData) {
   try {
     const button = document.querySelector(`.test-script-btn[data-scraper-id="${scriptData.scraperId}"]`);
@@ -3947,6 +4026,23 @@ async function runScriptTest(scriptData) {
       }
       
       const result = await response.json();
+      
+      // Check if page requires JavaScript rendering
+      if (result.requiresJavaScript) {
+        const userWantsRegenerate = confirm(
+          `⚠️ JavaScript Rendering Required\n\n` +
+          `Detection: ${result.jsDetectionReason}\n\n` +
+          `This page loads content dynamically with JavaScript. The current scraper only fetches static HTML.\n\n` +
+          `Would you like to regenerate this scraper with Puppeteer support?\n` +
+          `(This will use a real browser to render JavaScript)`
+        );
+        
+        if (userWantsRegenerate) {
+          // Trigger regeneration with Puppeteer flag
+          await regenerateScriptWithPuppeteer(scriptData);
+          return;
+        }
+      }
       
       // Show results
       showTestResultsModal(result, scriptData.scraperName);

@@ -310,8 +310,9 @@ Consider: cheerio, axios, puppeteer, dayjs, pdf-parse`;
   }
 
   // Stage 4: Generate scraper script
-  async generateScraperScript(scraperConfig, analysisContext, template) {
+  async generateScraperScript(scraperConfig, analysisContext, template, options = {}) {
     const { fieldAnalysis, stepAnalysis, requiredTools } = analysisContext;
+    const { usePuppeteer = false, reason = '' } = options;
     
     // Check if any fields use AI analysis
     const hasAIFields = scraperConfig.aiFields && Object.values(scraperConfig.aiFields).some(f => f.enabled);
@@ -383,24 +384,74 @@ async function analyzeWithAI(content, prompt) {
 
 SCRAPER: ${scraperConfig.name}
 TARGET URL: ${targetUrl || 'url parameter'}
-PACKAGES: cheerio, axios${hasAIFields ? ', node-fetch' : ''}
+PACKAGES: ${usePuppeteer ? 'puppeteer' : 'cheerio, axios'}${hasAIFields ? ', node-fetch' : ''}
+${usePuppeteer ? `\nREQUIRES PUPPETEER: ${reason}` : ''}
 
 FIELDS TO EXTRACT:
 ${fieldsDescription}
 
 CRITICAL REQUIREMENTS:
 1. Use the TARGET URL above - hardcode it or use as default parameter
-2. Extract ACTUAL VALUES not HTML:
-   - For text: use .text().trim()
-   - For href: use .attr('href')
+2. ${usePuppeteer ? 'Use Puppeteer to render JavaScript before extracting data' : 'Use axios to fetch HTML'}
+3. Extract ACTUAL VALUES not HTML:
+   - For text: use .text().trim()${usePuppeteer ? ' or textContent' : ''}
+   - For href: use .attr('href')${usePuppeteer ? ' or getAttribute("href")' : ''}
    - For dates/times: extract text then parse to ISO format
    - For containers: find all matching elements
-3. FOR AI_ANALYZE fields: After extracting content, call analyzeWithAI(content, prompt) and use AI response
-4. Handle missing elements gracefully (return null, not crash)
-5. Return format: { success: true, data: { fieldId: value, ... }, metadata: { scrapedAt, url } }
-6. NEVER use eval(), Function(), or any dynamic code execution - Chrome extensions block this
+4. FOR AI_ANALYZE fields: After extracting content, call analyzeWithAI(content, prompt) and use AI response
+5. Handle missing elements gracefully (return null, not crash)
+6. Return format: { success: true, data: { fieldId: value, ... }, metadata: { scrapedAt, url } }
+7. NEVER use eval(), Function(), or any dynamic code execution
 
-EXAMPLE STRUCTURE:
+${usePuppeteer ? `PUPPETEER EXAMPLE:
+\`\`\`javascript
+const puppeteer = require('puppeteer');${aiHelperCode}
+
+module.exports = async function scrape(url = '${targetUrl}') {
+  let browser;
+  try {
+    browser = await puppeteer.launch({ headless: true });
+    const page = await browser.newPage();
+    await page.goto(url, { waitUntil: 'networkidle0' });
+    
+    const data = await page.evaluate(() => {
+      const result = {};
+      
+      // Extract each field using DOM selectors
+      const exampleElement = document.querySelector('.selector');
+      result.fieldId = exampleElement ? exampleElement.textContent.trim() : null;
+      
+      return result;
+    });
+    
+    // Apply AI analysis if needed
+    for (const [key, value] of Object.entries(data)) {
+      if (value && /* field needs AI */) {
+        data[key + '_analyzed'] = await analyzeWithAI(value, 'your prompt');
+      }
+    }
+    
+    return {
+      success: true,
+      data,
+      metadata: {
+        scrapedAt: new Date().toISOString(),
+        url,
+        fieldsFound: Object.keys(data).length
+      }
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message,
+      metadata: { scrapedAt: new Date().toISOString(), url }
+    };
+  } finally {
+    if (browser) await browser.close();
+  }
+};
+\`\`\`
+` : `EXAMPLE STRUCTURE:
 \`\`\`javascript
 const cheerio = require('cheerio');
 const axios = require('axios');${aiHelperCode}
@@ -438,10 +489,10 @@ module.exports = async function scrape(url = '${targetUrl}') {
   }
 };
 \`\`\`
-
+`}
 Generate the complete scraper code following this pattern. Use EXACT selectors provided. Extract clean values. NO markdown, NO explanations, ONLY code:`;
 
-    console.log('📝 Generating script with prompt length:', prompt.length);
+    console.log('📝 Generating script with prompt length:', prompt.length, usePuppeteer ? '(Puppeteer mode)' : '(Cheerio mode)');
 
     return await this.queryLLM(prompt, { 
       temperature: 0.1,  // Lower temperature for more consistent output
@@ -502,7 +553,7 @@ Generate the complete scraper code following this pattern. Use EXACT selectors p
   }
 
   // Master orchestrator: Run full AI analysis pipeline
-  async generateScraperWithAI(scraperConfig, template, progressCallback = null) {
+  async generateScraperWithAI(scraperConfig, template, progressCallback = null, options = {}) {
     const updateProgress = (message) => {
       console.log(message);
       if (progressCallback) progressCallback(message);
@@ -510,6 +561,8 @@ Generate the complete scraper code following this pattern. Use EXACT selectors p
         this.chat.addMessage('agent', message);
       }
     };
+    
+    const { usePuppeteer = false, reason = '' } = options;
     
     updateProgress('🤖 Starting AI scraper generation...');
     
@@ -548,7 +601,10 @@ Generate the complete scraper code following this pattern. Use EXACT selectors p
     analysisContext.contextTemplate = contextTemplate;
     
     updateProgress('✍️ Generating initial script with AI...');
-    let script = await this.generateScraperScript(scraperConfig, analysisContext, template);
+    if (usePuppeteer) {
+      updateProgress(`🎭 Using Puppeteer mode: ${reason}`);
+    }
+    let script = await this.generateScraperScript(scraperConfig, analysisContext, template, options);
     
     // Clean up the script
     script = this.cleanGeneratedCode(script);

@@ -26,6 +26,8 @@ interface ExecuteResponse {
   stack?: string;
   logs: string[];
   duration: number;
+  requiresJavaScript?: boolean;
+  jsDetectionReason?: string;
 }
 
 /**
