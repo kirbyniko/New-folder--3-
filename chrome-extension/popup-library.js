@@ -3923,125 +3923,46 @@ async function runScriptTest(scriptData) {
     
     if (!targetUrl) {
       alert('❌ No target URL found in scraper configuration');
+      if (button) {
+        button.textContent = '▶️ Test';
+        button.disabled = false;
+      }
       return;
     }
     
-    // Open URL in new tab
-    const tab = await chrome.tabs.create({ url: targetUrl, active: false });
-    
-    // Wait for page to load
-    await new Promise(resolve => {
-      chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
-        if (tabId === tab.id && info.status === 'complete') {
-          chrome.tabs.onUpdated.removeListener(listener);
-          setTimeout(resolve, 1000); // Extra delay for dynamic content
-        }
+    // Execute via backend server (no CSP restrictions!)
+    try {
+      const response = await fetch('http://localhost:3002/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          scriptCode: scriptData.code,
+          targetUrl: targetUrl,
+          timeout: 30000
+        })
       });
-    });
-    
-    // Execute script on the page
-    const results = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: (scriptCode, scraperConfig) => {
-        // Create execution environment
-        const logs = [];
-        const aiCalls = [];
-        
-        // Override console.log to capture logs
-        const originalLog = console.log;
-        console.log = (...args) => {
-          logs.push(args.join(' '));
-          originalLog(...args);
-        };
-        
-        // Wrap analyzeWithAI to track AI calls
-        const originalAnalyzeWithAI = window.analyzeWithAI;
-        window.analyzeWithAI = async (content, prompt) => {
-          const startTime = Date.now();
-          aiCalls.push({
-            prompt: prompt,
-            input: content.substring(0, 500) + (content.length > 500 ? '...' : ''),
-            inputLength: content.length,
-            timestamp: new Date().toISOString()
-          });
-          
-          try {
-            const response = await fetch('http://localhost:11434/api/generate', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                model: 'deepseek-coder:6.7b',
-                prompt: `${prompt}\\n\\nContent:\\n${content}`,
-                stream: false,
-                options: { temperature: 0.3, num_predict: 500 }
-              })
-            });
-            const data = await response.json();
-            const result = data.response.trim();
-            
-            aiCalls[aiCalls.length - 1].response = result;
-            aiCalls[aiCalls.length - 1].duration = Date.now() - startTime;
-            
-            return result;
-          } catch (error) {
-            aiCalls[aiCalls.length - 1].error = error.message;
-            aiCalls[aiCalls.length - 1].duration = Date.now() - startTime;
-            return null;
-          }
-        };
-        
-        // Execute the scraper
-        try {
-          const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
-          const scrapeFunc = new AsyncFunction('return (' + scriptCode + ')')();
-          
-          return scrapeFunc(window.location.href).then(result => {
-            console.log = originalLog;
-            return {
-              success: true,
-              data: result,
-              logs: logs,
-              aiCalls: aiCalls,
-              url: window.location.href,
-              timestamp: new Date().toISOString()
-            };
-          }).catch(error => {
-            console.log = originalLog;
-            return {
-              success: false,
-              error: error.message,
-              stack: error.stack,
-              logs: logs,
-              aiCalls: aiCalls,
-              url: window.location.href
-            };
-          });
-        } catch (error) {
-          console.log = originalLog;
-          return {
-            success: false,
-            error: error.message,
-            stack: error.stack,
-            logs: logs,
-            aiCalls: aiCalls,
-            url: window.location.href
-          };
-        }
-      },
-      args: [scriptData.code, scriptData.scraperConfig]
-    });
-    
-    const result = results[0].result;
-    
-    // Close the test tab
-    await chrome.tabs.remove(tab.id);
-    
-    // Show results
-    showTestResultsModal(result, scriptData.scraperName);
+      
+      if (!response.ok) {
+        throw new Error(`Backend server error: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      
+      // Show results
+      showTestResultsModal(result, scriptData.scraperName);
+      
+    } catch (error) {
+      // Check if backend is not running
+      if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+        alert(`❌ Backend Server Not Running\n\nTo run scrapers, start the backend server:\n\n1. Open terminal in: scraper-backend/\n2. Run: npm run execute\n   Or double-click: start-execute.bat\n\nThe server will run on http://localhost:3002\n\nWhy? Browser extensions can't execute dynamic code due to CSP restrictions. The backend runs scripts in Node.js where these restrictions don't apply.`);
+      } else {
+        throw error;
+      }
+    }
     
   } catch (error) {
     console.error('Test execution error:', error);
-    alert('❌ Error running test:\\n\\n' + error.message);
+    alert('❌ Error running test:\n\n' + error.message);
   } finally {
     const button = document.querySelector(`.test-script-btn[data-scraper-id="${scriptData.scraperId}"]`);
     if (button) {
