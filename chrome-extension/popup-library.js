@@ -3908,21 +3908,122 @@ ${diagnosis.rootCause}
   }
 }
 
+// Modal Helper Functions
+function showLoadingModal(title, message) {
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `
+    <div class="modal-content" style="text-align: center; padding: 40px;">
+      <h2 style="margin: 0 0 15px 0; color: #2563eb;">${title}</h2>
+      <p style="color: #666; margin-bottom: 25px;">${message}</p>
+      <div class="spinner" style="margin: 0 auto;"></div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  return modal;
+}
+
+function updateLoadingModal(modal, title, message) {
+  const content = modal.querySelector('.modal-content');
+  if (content) {
+    content.innerHTML = `
+      <h2 style="margin: 0 0 15px 0; color: #2563eb;">${title}</h2>
+      <p style="color: #666; margin-bottom: 25px;">${message}</p>
+      <div class="spinner" style="margin: 0 auto;"></div>
+    `;
+  }
+}
+
+function closeModal(modal) {
+  if (modal && modal.parentNode) {
+    modal.remove();
+  }
+}
+
+async function showSuccessModal(title, message, buttonText, onConfirm) {
+  return new Promise((resolve) => {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal-content" style="text-align: center; padding: 40px;">
+        <div style="font-size: 48px; margin-bottom: 20px;">✅</div>
+        <h2 style="margin: 0 0 15px 0; color: #059669;">${title}</h2>
+        <p style="color: #666; margin-bottom: 25px;">${message}</p>
+        <button class="btn-primary" style="padding: 12px 30px; font-size: 16px;">
+          ${buttonText}
+        </button>
+      </div>
+    `;
+    
+    const button = modal.querySelector('button');
+    button.addEventListener('click', () => {
+      modal.remove();
+      if (onConfirm) onConfirm();
+      resolve();
+    });
+    
+    document.body.appendChild(modal);
+  });
+}
+
+async function showJavaScriptDetectionModal(result, scriptData) {
+  return new Promise((resolve) => {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal-content" style="max-width: 500px; padding: 30px;">
+        <div style="text-align: center; font-size: 48px; margin-bottom: 20px;">⚠️</div>
+        <h2 style="margin: 0 0 15px 0; color: #ea580c; text-align: center;">JavaScript Rendering Required</h2>
+        
+        <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 4px;">
+          <strong style="color: #92400e;">Detection:</strong>
+          <p style="margin: 5px 0 0 0; color: #78350f;">${result.jsDetectionReason}</p>
+        </div>
+        
+        <p style="color: #666; line-height: 1.6;">
+          This page loads content dynamically with JavaScript. Your current scraper only fetches static HTML.
+        </p>
+        
+        <div style="background: #e0f2fe; border-left: 4px solid #0284c7; padding: 15px; margin: 20px 0; border-radius: 4px;">
+          <strong style="color: #075985;">Solution:</strong>
+          <p style="margin: 5px 0 0 0; color: #0c4a6e;">
+            Regenerate with <strong>Puppeteer</strong> support to use a real browser for rendering.
+          </p>
+        </div>
+        
+        <div style="display: flex; gap: 10px; margin-top: 25px;">
+          <button class="btn-secondary" data-action="cancel" style="flex: 1; padding: 12px;">
+            Cancel
+          </button>
+          <button class="btn-primary" data-action="regenerate" style="flex: 1; padding: 12px;">
+            🎭 Regenerate with Puppeteer
+          </button>
+        </div>
+      </div>
+    `;
+    
+    modal.querySelector('[data-action="cancel"]').addEventListener('click', () => {
+      modal.remove();
+      resolve(false);
+    });
+    
+    modal.querySelector('[data-action="regenerate"]').addEventListener('click', async () => {
+      modal.remove();
+      await regenerateScriptWithPuppeteer(scriptData);
+      resolve(true);
+    });
+    
+    document.body.appendChild(modal);
+  });
+}
+
 async function regenerateScriptWithPuppeteer(scriptData) {
   try {
-    // Show loading state
-    const progressDiv = document.createElement('div');
-    progressDiv.className = 'progress-log';
-    progressDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 10000; min-width: 400px;';
-    progressDiv.innerHTML = `
-      <h3 style="margin-top: 0;">🔄 Regenerating with Puppeteer...</h3>
-      <p>Adding browser automation support for JavaScript rendering</p>
-      <div class="spinner" style="margin: 20px auto;"></div>
-    `;
-    document.body.appendChild(progressDiv);
+    // Show loading modal
+    const modal = showLoadingModal('🔄 Regenerating with Puppeteer', 'Adding browser automation support for JavaScript rendering');
     
     // Get the AI agent
-    const agent = new AIAgent();
+    const agent = new ScraperAIAgent();
     
     // Add Puppeteer requirement to scraper config
     const enhancedConfig = {
@@ -3936,11 +4037,7 @@ async function regenerateScriptWithPuppeteer(scriptData) {
     };
     
     // Generate new script with Puppeteer support
-    progressDiv.innerHTML = `
-      <h3 style="margin-top: 0;">🤖 Generating Puppeteer script...</h3>
-      <p>This may take 30-60 seconds</p>
-      <div class="spinner" style="margin: 20px auto;"></div>
-    `;
+    updateLoadingModal(modal, '🤖 Generating Puppeteer script', 'This may take 30-60 seconds');
     
     const newScriptCode = await agent.generateScraperWithAI(enhancedConfig, null, (progress) => {
       console.log('Generation progress:', progress);
@@ -3967,19 +4064,15 @@ async function regenerateScriptWithPuppeteer(scriptData) {
       }
     });
     
-    progressDiv.remove();
+    closeModal(modal);
     
-    // Show success and offer to test again
-    const testAgain = confirm(
-      '✅ Script Regenerated with Puppeteer!\n\n' +
-      'The scraper now uses a real browser to render JavaScript.\n\n' +
-      'Would you like to test it now?'
+    // Show success modal
+    await showSuccessModal(
+      '✅ Script Regenerated!',
+      'The scraper now uses Puppeteer to render JavaScript.',
+      'Test Now',
+      () => location.reload()
     );
-    
-    if (testAgain) {
-      // Reload scripts list to get updated script
-      location.reload();
-    }
     
   } catch (error) {
     console.error('Regeneration error:', error);
@@ -4029,19 +4122,8 @@ async function runScriptTest(scriptData) {
       
       // Check if page requires JavaScript rendering
       if (result.requiresJavaScript) {
-        const userWantsRegenerate = confirm(
-          `⚠️ JavaScript Rendering Required\n\n` +
-          `Detection: ${result.jsDetectionReason}\n\n` +
-          `This page loads content dynamically with JavaScript. The current scraper only fetches static HTML.\n\n` +
-          `Would you like to regenerate this scraper with Puppeteer support?\n` +
-          `(This will use a real browser to render JavaScript)`
-        );
-        
-        if (userWantsRegenerate) {
-          // Trigger regeneration with Puppeteer flag
-          await regenerateScriptWithPuppeteer(scriptData);
-          return;
-        }
+        await showJavaScriptDetectionModal(result, scriptData);
+        return;
       }
       
       // Show results
