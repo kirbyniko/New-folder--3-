@@ -104,11 +104,75 @@ async function executeScript(req: ExecuteRequest): Promise<ExecuteResponse> {
       )
     ]);
     
+    // Detect if page likely needs JavaScript rendering
+    let requiresJavaScript = false;
+    let jsDetectionReason = '';
+    
+    if (result && typeof result === 'object') {
+      const resultData = result.data || result;
+      const dataKeys = Object.keys(resultData);
+      const hasNoData = dataKeys.length === 0 || 
+                        (result.metadata?.fieldsFound === 0) ||
+                        (result.events?.length === 0);
+      
+      if (hasNoData) {
+        logs.push('[JS DETECTION] No data found, checking for JavaScript indicators...');
+        // Fetch page to check for JS indicators
+        try {
+          const pageResponse = await axios.get(req.targetUrl, { timeout: 5000 });
+          const html = pageResponse.data;
+          
+          // Check for common JS framework indicators
+          const jsIndicators = [
+            { pattern: /<div[^>]+id=["']root["'][^>]*><\/div>/i, reason: 'React root element detected' },
+            { pattern: /<div[^>]+id=["']app["'][^>]*><\/div>/i, reason: 'Vue/SPA app element detected' },
+            { pattern: /ng-app|ng-controller|\[ng-/i, reason: 'Angular directives detected' },
+            { pattern: /<noscript>.*?enable JavaScript.*?<\/noscript>/is, reason: 'NoScript warning found' },
+            { pattern: /data-react-|data-reactroot/i, reason: 'React data attributes detected' },
+            { pattern: /__NEXT_DATA__|_next\/static/i, reason: 'Next.js detected' },
+            { pattern: /_nuxt\/|__NUXT__/i, reason: 'Nuxt.js detected' },
+            { pattern: /src=["'][^"']*\.js["'][^>]*defer|async/i, reason: 'Deferred/async JavaScript detected' },
+            { pattern: /<script[^>]*>\s*window\./i, reason: 'Window object manipulation detected' }
+          ];
+          
+          for (const indicator of jsIndicators) {
+            if (indicator.pattern.test(html)) {
+              requiresJavaScript = true;
+              jsDetectionReason = indicator.reason;
+              logs.push(`[JS DETECTION] ✓ ${jsDetectionReason}`);
+              break;
+            }
+          }
+          
+          // If still no detection but page is suspiciously small
+          if (!requiresJavaScript && html.length < 5000 && hasNoData) {
+            requiresJavaScript = true;
+            jsDetectionReason = 'Page HTML is suspiciously minimal (< 5KB) with no data found';
+            logs.push(`[JS DETECTION] ✓ ${jsDetectionReason}`);
+          }
+          
+          // If STILL no detection but we have empty data, assume JS is needed
+          if (!requiresJavaScript && hasNoData) {
+            requiresJavaScript = true;
+            jsDetectionReason = 'Scraper returned no data - page may require JavaScript rendering';
+            logs.push(`[JS DETECTION] ✓ ${jsDetectionReason} (default assumption)`);
+          }
+        } catch (err) {
+          logs.push(`[JS DETECTION] Could not fetch page for analysis: ${err}`);
+          // If we can't fetch, but have no data, assume JS needed
+          requiresJavaScript = true;
+          jsDetectionReason = 'Cannot analyze page, but scraper returned no data - assuming JavaScript required';
+        }
+      }
+    }
+    
     return {
       success: true,
       data: result,
       logs,
-      duration: Date.now() - startTime
+      duration: Date.now() - startTime,
+      requiresJavaScript,
+      jsDetectionReason
     };
     
   } catch (error: any) {
