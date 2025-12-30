@@ -3069,11 +3069,12 @@ function loadScriptsList() {
       
       <pre style="background: #1e1e1e; color: #d4d4d4; padding: 12px; border-radius: 6px; font-size: 11px; max-height: 150px; overflow: auto; margin: 8px 0;">${script.code.substring(0, 300)}${script.code.length > 300 ? '...' : ''}</pre>
       
-      <div style="display: flex; gap: 8px; margin-top: 8px;">
-        <button class="btn-secondary view-script-btn" data-scraper-id="${script.scraperId}" style="flex: 1; padding: 6px;">👁️ View Full</button>
-        <button class="btn-secondary edit-script-btn" data-scraper-id="${script.scraperId}" style="flex: 1; padding: 6px;">✏️ Edit</button>
-        <button class="btn-secondary regenerate-script-btn" data-scraper-id="${script.scraperId}" style="flex: 1; padding: 6px;">🔄 Regenerate</button>
-        <button class="btn-primary test-script-btn" data-scraper-id="${script.scraperId}" style="flex: 1; padding: 6px;">▶️ Test</button>
+      <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+        <button class="btn-secondary view-script-btn" data-scraper-id="${script.scraperId}" style="flex: 1; min-width: 80px; padding: 6px; font-size: 11px;">👁️ View</button>
+        <button class="btn-secondary edit-script-btn" data-scraper-id="${script.scraperId}" style="flex: 1; min-width: 80px; padding: 6px; font-size: 11px;">✏️ Edit</button>
+        <button class="btn-secondary debug-script-btn" data-scraper-id="${script.scraperId}" style="flex: 1; min-width: 80px; padding: 6px; font-size: 11px;">🔧 Debug</button>
+        <button class="btn-secondary regenerate-script-btn" data-scraper-id="${script.scraperId}" style="flex: 1; min-width: 80px; padding: 6px; font-size: 11px;">🔄 Regen</button>
+        <button class="btn-primary test-script-btn" data-scraper-id="${script.scraperId}" style="flex: 1; min-width: 80px; padding: 6px; font-size: 11px;">▶️ Test</button>
       </div>
     </div>
   `).join('');
@@ -3084,6 +3085,16 @@ function loadScriptsList() {
       const scraperId = e.target.dataset.scraperId;
       if (confirm('Delete this generated script?')) {
         deleteGeneratedScript(scraperId);
+      }
+    });
+  });
+  
+  container.querySelectorAll('.debug-script-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const scraperId = e.target.dataset.scraperId;
+      const script = getGeneratedScripts().find(s => s.scraperId === scraperId);
+      if (script) {
+        await debugScriptWithAgent(script);
       }
     });
   });
@@ -3494,6 +3505,269 @@ document.getElementById('generate-new-script-btn')?.addEventListener('click', as
   
   await generateScriptForScraper(scraper);
 });
+
+// Debug existing script with agent
+async function debugScriptWithAgent(scriptData) {
+  let progressLog = null;
+  
+  try {
+    // Create progress display
+    progressLog = document.createElement('div');
+    progressLog.id = 'debug-progress-log';
+    progressLog.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border: 2px solid #ef4444;
+      border-radius: 12px;
+      padding: 20px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 400px;
+      overflow-y: auto;
+      z-index: 10000;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      font-family: monospace;
+      font-size: 12px;
+    `;
+    progressLog.innerHTML = `
+      <h3 style="margin: 0 0 12px 0; font-family: sans-serif;">🔧 Agent Debugging...</h3>
+      <div id="debug-messages" style="line-height: 1.6;"></div>
+    `;
+    document.body.appendChild(progressLog);
+    
+    const messagesDiv = document.getElementById('debug-messages');
+    const addMessage = (msg) => {
+      const line = document.createElement('div');
+      line.textContent = msg;
+      line.style.marginBottom = '4px';
+      messagesDiv.appendChild(line);
+      progressLog.scrollTop = progressLog.scrollHeight;
+    };
+    
+    addMessage('🔍 Testing current script...');
+    
+    // Initialize agent
+    const agent = new window.ScraperAIAgent();
+    agent.interactiveMode = true; // Always use interactive mode for debugging
+    agent.chat.startSession(scriptData.scraperConfig, {});
+    
+    // Check Ollama
+    const status = await agent.checkOllamaStatus();
+    if (!status.available) {
+      alert('❌ Ollama is not running. Please start Ollama first.');
+      progressLog.remove();
+      return;
+    }
+    
+    addMessage('✅ Ollama connected');
+    
+    // Test the current script
+    addMessage('🌐 Fetching target page...');
+    const testResult = await agent.testScriptAgentically(
+      scriptData.code, 
+      scriptData.scraperConfig,
+      (msg) => addMessage(msg)
+    );
+    
+    if (testResult.success && testResult.fieldsExtracted > 0) {
+      addMessage(`✅ Script works! Extracted ${testResult.fieldsExtracted} fields`);
+      addMessage('💡 No debugging needed - script is functional');
+      
+      setTimeout(() => {
+        progressLog.remove();
+        showToast('✅ Script is working correctly!');
+      }, 2000);
+      return;
+    }
+    
+    // Script failed - start interactive debugging
+    addMessage(`❌ Script failed: ${testResult.error || 'No fields extracted'}`);
+    addMessage('🔍 Starting interactive debugging...');
+    
+    // Diagnose with knowledge base context
+    const relevantContext = agent.knowledge.getRelevantContext(scriptData.scraperConfig);
+    addMessage('🧠 Checking knowledge base...');
+    
+    const diagnosis = await agent.diagnoseScriptFailure(
+      scriptData.code,
+      testResult,
+      scriptData.scraperConfig,
+      relevantContext
+    );
+    
+    addMessage(`💡 Diagnosis: ${diagnosis.rootCause}`);
+    
+    // Ask user for feedback
+    addMessage('💬 Requesting your input...');
+    
+    try {
+      const feedback = await agent.chat.askForFeedback(
+        `Your script "${scriptData.scraperName}" is failing.\n\n` +
+        `Error: ${testResult.error || 'No fields extracted'}\n\n` +
+        `AI Diagnosis: ${diagnosis.rootCause}\n\n` +
+        `Problems identified:\n${diagnosis.problems.map((p, i) => `${i+1}. ${p}`).join('\n')}\n\n` +
+        `What should I do?`,
+        [
+          'Fix it automatically',
+          'Let me provide specific feedback',
+          'Show me the diagnosis details',
+          'Regenerate from scratch'
+        ]
+      );
+      
+      addMessage(`📝 Your choice: ${feedback}`);
+      
+      if (feedback.includes('scratch')) {
+        // Regenerate completely
+        addMessage('🔄 Regenerating script from scratch...');
+        progressLog.remove();
+        await generateScriptForScraper(scriptData.scraperConfig, scriptData.scraperId);
+        return;
+      }
+      
+      if (feedback.includes('details')) {
+        // Show full diagnosis
+        const diagnosisText = `
+PROBLEMS:
+${diagnosis.problems.map((p, i) => `${i+1}. ${p}`).join('\n')}
+
+ROOT CAUSE:
+${diagnosis.rootCause}
+
+RECOMMENDATION:
+${diagnosis.recommendation}
+
+TEST RESULT:
+- Success: ${testResult.success}
+- Fields extracted: ${testResult.fieldsExtracted}
+- Error: ${testResult.error || 'None'}
+        `.trim();
+        
+        alert(diagnosisText);
+        
+        // Ask again what to do
+        const nextAction = await agent.chat.askForFeedback(
+          'Now that you\'ve seen the details, what should I do?',
+          ['Fix it automatically', 'Let me provide feedback', 'Cancel']
+        );
+        
+        if (nextAction.includes('Cancel')) {
+          progressLog.remove();
+          return;
+        }
+        
+        addMessage(`📝 Your choice: ${nextAction}`);
+      }
+      
+      // Get additional feedback if requested
+      let additionalFeedback = null;
+      if (feedback.includes('specific feedback') || feedback.includes('provide feedback')) {
+        additionalFeedback = await agent.chat.askForFeedback(
+          'Please describe what you know about the page structure or what might be wrong:',
+          []
+        );
+        
+        if (additionalFeedback !== '[skipped]') {
+          addMessage(`💬 Your feedback: ${additionalFeedback}`);
+          diagnosis.userFeedback = additionalFeedback;
+        }
+      }
+      
+      // Attempt to fix
+      addMessage('🔧 Fixing script with AI...');
+      const fixedScript = await agent.fixScript(
+        scriptData.code,
+        diagnosis,
+        testResult,
+        scriptData.scraperConfig,
+        relevantContext
+      );
+      
+      const cleanedScript = agent.cleanGeneratedCode(fixedScript);
+      addMessage('✅ Fixed script generated');
+      
+      // Test the fixed script
+      addMessage('🧪 Testing fixed script...');
+      const fixedTestResult = await agent.testScriptAgentically(
+        cleanedScript,
+        scriptData.scraperConfig,
+        (msg) => addMessage(msg)
+      );
+      
+      if (fixedTestResult.success && fixedTestResult.fieldsExtracted > 0) {
+        addMessage(`✅ Success! Fixed script extracted ${fixedTestResult.fieldsExtracted} fields`);
+        
+        // Update the script
+        scriptData.code = cleanedScript;
+        scriptData.generatedAt = new Date().toISOString();
+        scriptData.agenticResult = {
+          iterations: 1,
+          success: true,
+          fieldsExtracted: fixedTestResult.fieldsExtracted,
+          debugSession: true
+        };
+        
+        saveGeneratedScript(scriptData);
+        agent.knowledge.recordSuccess(scriptData.scraperConfig, cleanedScript, fixedTestResult, diagnosis);
+        
+        addMessage('💾 Script updated and saved');
+        addMessage('\n🎉 Debugging complete!');
+        
+        setTimeout(() => {
+          progressLog.remove();
+          showToast('✅ Script fixed and saved!');
+          loadScriptsList();
+        }, 2000);
+      } else {
+        addMessage(`❌ Fixed script still failing: ${fixedTestResult.error || 'No fields'}`);
+        
+        // Record failure
+        agent.knowledge.recordFailure(scriptData.scraperConfig, cleanedScript, fixedTestResult, diagnosis);
+        
+        // Ask if they want to continue
+        const continueDebug = await agent.chat.askForFeedback(
+          'The fix didn\'t work. Would you like to try again or regenerate from scratch?',
+          ['Try fixing again', 'Regenerate from scratch', 'Cancel']
+        );
+        
+        if (continueDebug.includes('scratch')) {
+          progressLog.remove();
+          await generateScriptForScraper(scriptData.scraperConfig, scriptData.scraperId);
+        } else if (continueDebug.includes('again')) {
+          progressLog.remove();
+          await debugScriptWithAgent(scriptData); // Recursive call
+        } else {
+          progressLog.remove();
+        }
+      }
+      
+    } catch (err) {
+      addMessage(`⚠️ Error: ${err.message}`);
+      setTimeout(() => progressLog.remove(), 3000);
+    }
+    
+  } catch (error) {
+    console.error('Debug error:', error);
+    
+    if (progressLog) {
+      const messagesDiv = progressLog.querySelector('#debug-messages');
+      if (messagesDiv) {
+        const errorLine = document.createElement('div');
+        errorLine.textContent = '❌ ERROR: ' + error.message;
+        errorLine.style.color = '#dc2626';
+        errorLine.style.fontWeight = 'bold';
+        messagesDiv.appendChild(errorLine);
+      }
+      
+      setTimeout(() => progressLog.remove(), 5000);
+    }
+    
+    alert('❌ Debug failed: ' + error.message);
+  }
+}
 
 async function runScriptTest(scriptData) {
   try {
