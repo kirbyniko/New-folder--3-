@@ -1,11 +1,22 @@
 <!DOCTYPE html>
-<html>
+<html style="min-width: 800px; min-height: 600px;">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Scraper Platform</title>
   <link rel="stylesheet" href="popup.css">
   <style>
+    body {
+      margin: 0;
+      padding: 0;
+      min-width: 800px;
+      min-height: 600px;
+      max-width: 100vw;
+      max-height: 100vh;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    
     /* Tab Navigation */
     .tab-nav {
       display: flex;
@@ -14,6 +25,8 @@
       position: sticky;
       top: 0;
       z-index: 100;
+      flex-wrap: nowrap;
+      overflow-x: auto;
     }
     
     .tab-button {
@@ -43,8 +56,9 @@
     .tab-content {
       display: none;
       padding: 16px;
-      max-height: 500px;
+      height: calc(100vh - 60px);
       overflow-y: auto;
+      overflow-x: hidden;
     }
     
     .tab-content.active {

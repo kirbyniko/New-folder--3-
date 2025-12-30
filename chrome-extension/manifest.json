@@ -13,7 +13,8 @@
     "<all_urls>"
   ],
   "action": {
-    "default_popup": "popup.html"
+    "default_popup": "popup.html",
+    "default_title": "Scraper Builder"
   },
   "side_panel": {
     "default_path": "popup.html"

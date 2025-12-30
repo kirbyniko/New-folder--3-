@@ -3604,12 +3604,33 @@ async function debugScriptWithAgent(scriptData) {
     addMessage('💬 Requesting your input...');
     
     try {
+      const errorDetails = `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 ERROR DETAILS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔴 Error Message:
+${testResult.error || 'No fields extracted'}
+
+🔍 AI Diagnosis:
+${diagnosis.rootCause}
+
+⚠️ Problems Identified:
+${diagnosis.problems.map((p, i) => `  ${i+1}. ${p}`).join('\n')}
+
+💡 Recommendation:
+${diagnosis.recommendation}
+
+📊 Test Results:
+  • Success: ${testResult.success}
+  • Fields Extracted: ${testResult.fieldsExtracted}
+  • Execution Success: ${testResult.executionSuccess || 'N/A'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      `.trim();
+      
       const feedback = await agent.chat.askForFeedback(
-        `Your script "${scriptData.scraperName}" is failing.\n\n` +
-        `Error: ${testResult.error || 'No fields extracted'}\n\n` +
-        `AI Diagnosis: ${diagnosis.rootCause}\n\n` +
-        `Problems identified:\n${diagnosis.problems.map((p, i) => `${i+1}. ${p}`).join('\n')}\n\n` +
-        `What should I do?`,
+        `Your script "${scriptData.scraperName}" is failing.\n\n${errorDetails}\n\nWhat should I do?`,
         [
           'Fix it automatically',
           'Let me provide specific feedback',
@@ -3727,13 +3748,81 @@ TEST RESULT:
         // Record failure
         agent.knowledge.recordFailure(scriptData.scraperConfig, cleanedScript, fixedTestResult, diagnosis);
         
-        // Ask if they want to continue
+        // Ask if they want to continue with detailed error info
+        const secondErrorDetails = `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 FIXED SCRIPT STILL FAILING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔴 New Error:
+${fixedTestResult.error || 'No fields extracted'}
+
+📊 New Test Results:
+  • Success: ${fixedTestResult.success}
+  • Fields Extracted: ${fixedTestResult.fieldsExtracted}
+  • Execution Success: ${fixedTestResult.executionSuccess || 'N/A'}
+
+📝 Original Diagnosis:
+${diagnosis.rootCause}
+
+💭 This suggests the fix may have:
+  • Not addressed the root cause
+  • Introduced a new issue
+  • Or the page structure is more complex
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        `.trim();
+        
         const continueDebug = await agent.chat.askForFeedback(
-          'The fix didn\'t work. Would you like to try again or regenerate from scratch?',
-          ['Try fixing again', 'Regenerate from scratch', 'Cancel']
+          secondErrorDetails + '\n\nWould you like to try again or regenerate from scratch?',
+          ['Try fixing again', 'Regenerate from scratch', 'Show me the fixed code', 'Cancel']
         );
         
-        if (continueDebug.includes('scratch')) {
+        if (continueDebug.includes('fixed code')) {
+          // Show the fixed code in a modal
+          const codeModal = document.createElement('div');
+          codeModal.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border: 2px solid #3b82f6;
+            border-radius: 12px;
+            padding: 20px;
+            max-width: 700px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            z-index: 100001;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+          `;
+          codeModal.innerHTML = `
+            <h3 style="margin: 0 0 12px 0;">🔧 Fixed Script Code</h3>
+            <pre style="background: #1e1e1e; color: #d4d4d4; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 11px;">${cleanedScript}</pre>
+            <button onclick="this.parentElement.remove()" style="margin-top: 12px; width: 100%; padding: 10px; border: none; background: #3b82f6; color: white; border-radius: 6px; cursor: pointer;">Close</button>
+          `;
+          document.body.appendChild(codeModal);
+          
+          // Ask again after showing code
+          setTimeout(async () => {
+            codeModal.remove();
+            const nextAction = await agent.chat.askForFeedback(
+              'Now that you\'ve seen the fixed code, what would you like to do?',
+              ['Try fixing again', 'Regenerate from scratch', 'Cancel']
+            );
+            
+            if (nextAction.includes('scratch')) {
+              progressLog.remove();
+              await generateScriptForScraper(scriptData.scraperConfig, scriptData.scraperId);
+            } else if (nextAction.includes('again')) {
+              progressLog.remove();
+              await debugScriptWithAgent(scriptData);
+            } else {
+              progressLog.remove();
+            }
+          }, 100);
+        } else if (continueDebug.includes('scratch')) {
           progressLog.remove();
           await generateScriptForScraper(scriptData.scraperConfig, scriptData.scraperId);
         } else if (continueDebug.includes('again')) {

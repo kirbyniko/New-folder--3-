@@ -79,7 +79,7 @@ class AgentChat {
 
     content.innerHTML = `
       <h3 style="margin: 0 0 16px 0;">🤖 Agent needs your input</h3>
-      <p style="margin: 0 0 20px 0; line-height: 1.5;">${question}</p>
+      <div style="margin: 0 0 20px 0; line-height: 1.6; max-height: 300px; overflow-y: auto; white-space: pre-wrap; font-size: 13px;">${question}</div>
       <div id="feedback-options"></div>
       <div style="margin-top: 16px;">
         <textarea 
