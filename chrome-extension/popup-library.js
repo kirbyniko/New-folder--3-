@@ -4019,8 +4019,22 @@ async function showJavaScriptDetectionModal(result, scriptData) {
 
 async function regenerateScriptWithPuppeteer(scriptData) {
   try {
-    // Show loading modal
-    const modal = showLoadingModal('🔄 Regenerating with Puppeteer', 'Adding browser automation support for JavaScript rendering');
+    // Use the existing progress log system
+    const progressLog = document.createElement('div');
+    progressLog.className = 'progress-log';
+    progressLog.innerHTML = '<h3>🔄 Regenerating with Puppeteer</h3><div class="progress-messages"></div>';
+    document.body.appendChild(progressLog);
+    
+    const messagesDiv = progressLog.querySelector('.progress-messages');
+    const addMessage = (msg) => {
+      const p = document.createElement('p');
+      p.textContent = msg;
+      messagesDiv.appendChild(p);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    };
+    
+    addMessage('🎭 Adding Puppeteer support for JavaScript rendering');
+    addMessage('📝 Preparing enhanced configuration...');
     
     // Get the AI agent
     const agent = new ScraperAIAgent();
@@ -4036,47 +4050,80 @@ async function regenerateScriptWithPuppeteer(scriptData) {
       }
     };
     
-    // Generate new script with Puppeteer support
-    updateLoadingModal(modal, '🤖 Generating Puppeteer script', 'This may take 30-60 seconds');
+    addMessage('🤖 Starting AI generation with Puppeteer mode...');
     
-    const newScriptCode = await agent.generateScraperWithAI(enhancedConfig, null, (progress) => {
-      console.log('Generation progress:', progress);
-    }, {
-      usePuppeteer: true,
-      reason: 'Original script failed due to dynamic JavaScript content'
-    });
-    
-    // Save updated script
-    await chrome.storage.local.get(['generatedScripts'], async (result) => {
-      const scripts = result.generatedScripts || [];
-      const scriptIndex = scripts.findIndex(s => s.scraperId === scriptData.scraperId);
-      
-      if (scriptIndex !== -1) {
-        scripts[scriptIndex] = {
-          ...scripts[scriptIndex],
-          code: newScriptCode,
-          requiresPuppeteer: true,
-          regeneratedAt: new Date().toISOString(),
-          regenerationReason: 'JavaScript rendering required'
-        };
-        
-        await chrome.storage.local.set({ generatedScripts: scripts });
+    // Generate new script with Puppeteer support using progress callback
+    const newScriptCode = await agent.generateScraperWithAI(
+      enhancedConfig, 
+      null, 
+      (progress) => {
+        addMessage(progress);
+      }, 
+      {
+        usePuppeteer: true,
+        reason: 'Original script failed due to dynamic JavaScript content'
       }
+    );
+    
+    addMessage('💾 Saving updated script...');
+    
+    // Save updated script (use Promise-based approach)
+    const storageResult = await new Promise((resolve) => {
+      chrome.storage.local.get(['generatedScripts'], (result) => resolve(result));
     });
     
-    closeModal(modal);
+    const scripts = storageResult.generatedScripts || [];
+    const scriptIndex = scripts.findIndex(s => s.scraperId === scriptData.scraperId);
     
-    // Show success modal
-    await showSuccessModal(
-      '✅ Script Regenerated!',
-      'The scraper now uses Puppeteer to render JavaScript.',
-      'Test Now',
-      () => location.reload()
-    );
+    if (scriptIndex !== -1) {
+      scripts[scriptIndex] = {
+        ...scripts[scriptIndex],
+        code: newScriptCode,
+        requiresPuppeteer: true,
+        regeneratedAt: new Date().toISOString(),
+        regenerationReason: 'JavaScript rendering required'
+      };
+      
+      await new Promise((resolve) => {
+        chrome.storage.local.set({ generatedScripts: scripts }, resolve);
+      });
+      
+      addMessage('✅ Script saved successfully!');
+    } else {
+      throw new Error('Script not found in storage');
+    }
+    
+    // Success!
+    const successLine = document.createElement('p');
+    successLine.textContent = '🎉 Regeneration complete! Reload to see changes.';
+    successLine.style.color = '#059669';
+    successLine.style.fontWeight = 'bold';
+    messagesDiv.appendChild(successLine);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+      progressLog.remove();
+      // Reload the scripts list to show updated script
+      loadScriptsList();
+    }, 3000);
     
   } catch (error) {
     console.error('Regeneration error:', error);
-    alert('❌ Failed to regenerate script:\n\n' + error.message);
+    
+    // Show error in progress log if it exists
+    const progressLog = document.querySelector('.progress-log');
+    if (progressLog) {
+      const messagesDiv = progressLog.querySelector('.progress-messages');
+      const errorLine = document.createElement('p');
+      errorLine.textContent = '❌ Error: ' + error.message;
+      errorLine.style.color = '#dc2626';
+      errorLine.style.fontWeight = 'bold';
+      messagesDiv.appendChild(errorLine);
+      
+      setTimeout(() => progressLog.remove(), 5000);
+    } else {
+      alert('❌ Failed to regenerate script:\n\n' + error.message);
+    }
   }
 }
 
@@ -4120,8 +4167,8 @@ async function runScriptTest(scriptData) {
       
       const result = await response.json();
       
-      // Check if page requires JavaScript rendering
-      if (result.requiresJavaScript) {
+      // Check if page requires JavaScript rendering (but only if not already using Puppeteer)
+      if (result.requiresJavaScript && !scriptData.requiresPuppeteer) {
         await showJavaScriptDetectionModal(result, scriptData);
         return;
       }
