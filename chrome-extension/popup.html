@@ -181,6 +181,7 @@
     <button class="tab-button" data-tab="template">🏭 Template</button>
     <button class="tab-button" data-tab="build">🛠️ Build</button>
     <button class="tab-button active" data-tab="library">📚 Library</button>
+    <button class="tab-button" data-tab="scripts">🤖 Scripts</button>
     <button class="tab-button" data-tab="test">🧪 Test</button>
   </div>
 
@@ -685,6 +686,26 @@
       <div id="scraper-list" class="scraper-list">
         <p style="text-align: center; color: #999; padding: 20px;">Loading templates...</p>
       </div>
+    </div>
+  </div>
+
+  <!-- Scripts Tab -->
+  <div id="tab-scripts" class="tab-content">
+    <h3 style="margin-top: 0;">🤖 Generated Scripts</h3>
+    <p style="font-size: 12px; color: #666; margin-bottom: 8px;">AI-generated scraper scripts ready to run</p>
+    
+    <div style="margin-bottom: 16px;">
+      <label style="display: block; font-size: 12px; font-weight: 500; margin-bottom: 6px;">Generate New Script</label>
+      <select id="script-selector" class="form-control" style="width: 100%; margin-bottom: 8px;">
+        <option value="">Select a scraper...</option>
+      </select>
+      <button id="generate-new-script-btn" class="btn-primary" style="width: 100%; padding: 10px;">
+        ⚡ Generate Script
+      </button>
+    </div>
+    
+    <div id="script-list" style="display: flex; flex-direction: column; gap: 12px;">
+      <p style="text-align: center; color: #999; padding: 20px;">No scripts generated yet</p>
     </div>
   </div>
 

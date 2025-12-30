@@ -1,6 +1,8 @@
 // Content script - injected into web pages
 // Handles element selection and highlighting
 
+console.log('🔧 Content script loaded/reloaded at', new Date().toISOString());
+
 let isCapturing = false;
 let currentField = null;
 let highlightedElement = null;
@@ -190,6 +192,9 @@ function getOptimalSelector(element) {
 
 // Extract value from element
 function extractValue(element, field) {
+  // Safety check for null/undefined field
+  if (!field) return element.textContent?.trim() || null;
+  
   // For links, get href
   if (field.includes('link') || field.includes('url')) {
     const link = element.tagName === 'A' ? element : element.querySelector('a');
@@ -214,6 +219,9 @@ function extractValue(element, field) {
 
 // Get attribute if element has meaningful attributes
 function getRelevantAttribute(element, field) {
+  // Safety check for null/undefined field
+  if (!field) return null;
+  
   if (element.tagName === 'A' && element.href) return 'href';
   if (element.tagName === 'IMG' && element.src) return 'src';
   if (field.includes('url') || field.includes('link')) return 'href';
@@ -239,9 +247,12 @@ function showInfoBox(element, x, y) {
   const selector = getOptimalSelector(element);
   const value = extractValue(element, currentField || '');
   
+  // Handle SVG elements where className is an object, not a string
+  const className = typeof element.className === 'string' ? element.className : (element.className?.baseVal || '');
+  
   box.innerHTML = `
     <strong>🎯 ${currentField || 'Hover'}</strong>
-    <div>${element.tagName.toLowerCase()}${element.className ? '.' + element.className.split(' ')[0] : ''}</div>
+    <div>${element.tagName.toLowerCase()}${className ? '.' + className.split(' ')[0] : ''}</div>
     <code>${selector}</code>
     ${value ? `<div style="margin-top:6px; color:#aaa;">Value: ${value.substring(0, 50)}${value.length > 50 ? '...' : ''}</div>` : ''}
   `;
@@ -273,7 +284,14 @@ function handleMouseMove(e) {
 
 // Click handler
 function handleClick(e) {
-  if (!isCapturing || captureCooldown) return;
+  console.log('👆 Click detected - isCapturing:', isCapturing, 'captureCooldown:', captureCooldown);
+  
+  if (!isCapturing || captureCooldown) {
+    console.log('❌ Ignoring click - not capturing or in cooldown');
+    return;
+  }
+  
+  console.log('✅ Processing click on element:', e.target);
   
   // Immediately disable to prevent double-clicks
   captureCooldown = true;
@@ -284,16 +302,21 @@ function handleClick(e) {
   
   const element = e.target;
   
+  // Save the field name BEFORE stopping (stopCapturing sets currentField to null)
+  const fieldId = currentField;
+  console.log('💾 Saved field ID:', fieldId);
+  
   // Stop capturing FIRST before any async operations
+  console.log('🛑 Stopping capture mode...');
   stopCapturing();
   
   // Capture element data
   const selector = getOptimalSelector(element);
-  const value = extractValue(element, currentField);
-  const attribute = getRelevantAttribute(element, currentField);
+  const value = extractValue(element, fieldId);
+  const attribute = getRelevantAttribute(element, fieldId);
   
   const capturedData = {
-    field: currentField,
+    field: fieldId,
     selector: selector,
     outerHTML: element.outerHTML.substring(0, 500), // Truncate for storage
     value: value,
@@ -304,7 +327,7 @@ function handleClick(e) {
   };
   
   // Special handling for container elements
-  if (currentField === 'event-container' || currentField === 'bills-container') {
+  if (fieldId === 'event-container' || fieldId === 'bills-container') {
     const children = element.children;
     capturedData.childCount = children.length;
     capturedData.childSelector = children.length > 0 ? getOptimalSelector(children[0]) : null;
@@ -317,7 +340,7 @@ function handleClick(e) {
   // Send to background worker (always works, even if popup is closed)
   chrome.runtime.sendMessage({
     action: 'selectorCaptured',
-    fieldId: currentField,
+    fieldId: fieldId,
     selector: selector,
     data: capturedData
   }).then(() => {
@@ -373,27 +396,31 @@ function showNotification(message, duration = 3000) {
 
 // Start capturing mode
 function startCapturing(field) {
-  // Prevent starting if in cooldown
-  if (captureCooldown) {
-    console.log('⚠️ Capture in cooldown, ignoring start request');
-    return;
-  }
+  console.log('🚀 startCapturing() called with field:', field);
   
   // Stop any existing capture first
   if (isCapturing) {
+    console.log('⚠️ Stopping existing capture first');
     stopCapturing();
   }
+  
+  // Reset cooldown - allow starting new capture from popup button
+  captureCooldown = false;
+  console.log('✅ Cooldown reset');
   
   console.log('🎯 Starting capture for:', field);
   isCapturing = true;
   currentField = field;
+  console.log('📊 State updated - isCapturing:', isCapturing, 'currentField:', currentField);
   
   // Create overlay
   captureOverlay = createOverlay();
+  console.log('✅ Overlay created');
   
   // Add event listeners
   document.addEventListener('mousemove', handleMouseMove, true);
   document.addEventListener('click', handleClick, true);
+  console.log('✅ Event listeners attached (mousemove + click with capture phase)');
   
   // Show notification
   const notification = document.createElement('div');
@@ -471,10 +498,13 @@ document.addEventListener('keydown', (e) => {
 
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  console.log('📨 Content script received message:', message);
+  
   // Handle both old format (type: 'START_CAPTURE') and new format (action: 'startCapture')
   const messageType = message.type || message.action;
   
   if (messageType === 'START_CAPTURE' || messageType === 'startCapture') {
+    console.log('🎯 Processing start capture request for field:', message.field || message.fieldId);
     startCapturing(message.field || message.fieldId);
     sendResponse({ success: true });
     return true; // Keep channel open

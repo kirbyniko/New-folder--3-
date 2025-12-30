@@ -2993,4 +2993,569 @@ document.getElementById('refresh-library-btn')?.addEventListener('click', async 
 // Load library on startup
 loadTemplates().then(() => {
   loadScraperLibrary();
+  loadScriptsList();
+  populateScriptSelector();
 });
+
+// ========================================
+// Script Management System
+// ========================================
+
+function getGeneratedScripts() {
+  return JSON.parse(localStorage.getItem('generatedScripts') || '[]');
+}
+
+function saveGeneratedScript(scriptData) {
+  const scripts = getGeneratedScripts();
+  const existingIndex = scripts.findIndex(s => s.scraperId === scriptData.scraperId);
+  
+  if (existingIndex >= 0) {
+    scripts[existingIndex] = scriptData;
+  } else {
+    scripts.push(scriptData);
+  }
+  
+  localStorage.setItem('generatedScripts', JSON.stringify(scripts));
+  loadScriptsList();
+  populateScriptSelector();
+}
+
+function deleteGeneratedScript(scraperId) {
+  const scripts = getGeneratedScripts();
+  const filtered = scripts.filter(s => s.scraperId !== scraperId);
+  localStorage.setItem('generatedScripts', JSON.stringify(filtered));
+  loadScriptsList();
+  populateScriptSelector();
+}
+
+function populateScriptSelector() {
+  const selector = document.getElementById('script-selector');
+  if (!selector) return;
+  
+  const scrapers = JSON.parse(localStorage.getItem('scrapers') || '[]');
+  selector.innerHTML = '<option value="">Select a scraper to generate script...</option>';
+  
+  scrapers.forEach((scraper, index) => {
+    const option = document.createElement('option');
+    option.value = index;
+    option.textContent = `${scraper.name}`;
+    selector.appendChild(option);
+  });
+}
+
+function loadScriptsList() {
+  const container = document.getElementById('script-list');
+  if (!container) return;
+  
+  const scripts = getGeneratedScripts();
+  
+  if (scripts.length === 0) {
+    container.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No scripts generated yet. Select a scraper and click Generate.</p>';
+    return;
+  }
+  
+  container.innerHTML = scripts.map(script => `
+    <div class="script-card" data-scraper-id="${script.scraperId}" style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; background: #f9fafb;">
+      <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+        <div>
+          <h4 style="margin: 0 0 4px 0; font-size: 15px;">${script.scraperName}</h4>
+          <p style="margin: 0; font-size: 11px; color: #666;">
+            Generated ${new Date(script.generatedAt).toLocaleString()}
+            ${script.aiFieldsCount > 0 ? ` • ${script.aiFieldsCount} AI fields` : ''}
+          </p>
+        </div>
+        <button class="btn-danger delete-script-btn" data-scraper-id="${script.scraperId}" style="padding: 4px 8px; font-size: 11px;">🗑️</button>
+      </div>
+      
+      <pre style="background: #1e1e1e; color: #d4d4d4; padding: 12px; border-radius: 6px; font-size: 11px; max-height: 150px; overflow: auto; margin: 8px 0;">${script.code.substring(0, 300)}${script.code.length > 300 ? '...' : ''}</pre>
+      
+      <div style="display: flex; gap: 8px; margin-top: 8px;">
+        <button class="btn-secondary view-script-btn" data-scraper-id="${script.scraperId}" style="flex: 1; padding: 6px;">👁️ View Full</button>
+        <button class="btn-secondary edit-script-btn" data-scraper-id="${script.scraperId}" style="flex: 1; padding: 6px;">✏️ Edit</button>
+        <button class="btn-secondary regenerate-script-btn" data-scraper-id="${script.scraperId}" style="flex: 1; padding: 6px;">🔄 Regenerate</button>
+        <button class="btn-primary test-script-btn" data-scraper-id="${script.scraperId}" style="flex: 1; padding: 6px;">▶️ Test</button>
+      </div>
+    </div>
+  `).join('');
+  
+  // Attach event listeners
+  container.querySelectorAll('.delete-script-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const scraperId = e.target.dataset.scraperId;
+      if (confirm('Delete this generated script?')) {
+        deleteGeneratedScript(scraperId);
+      }
+    });
+  });
+  
+  container.querySelectorAll('.view-script-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const scraperId = e.target.dataset.scraperId;
+      const script = getGeneratedScripts().find(s => s.scraperId === scraperId);
+      if (script) showScriptModal(script, false);
+    });
+  });
+  
+  container.querySelectorAll('.edit-script-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const scraperId = e.target.dataset.scraperId;
+      const script = getGeneratedScripts().find(s => s.scraperId === scraperId);
+      if (script) showScriptModal(script, true);
+    });
+  });
+  
+  container.querySelectorAll('.regenerate-script-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const button = e.target;
+      const scraperId = button.dataset.scraperId;
+      const scrapers = JSON.parse(localStorage.getItem('scrapers') || '[]');
+      const scraper = scrapers.find(s => (s.name + '-' + Date.now()) === scraperId || s.name === scraperId.split('-')[0]);
+      
+      if (scraper && confirm('Regenerate script for ' + scraper.name + '?')) {
+        await generateScriptForScraper(scraper, scraperId);
+      }
+    });
+  });
+  
+  container.querySelectorAll('.test-script-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const scraperId = e.target.dataset.scraperId;
+      const script = getGeneratedScripts().find(s => s.scraperId === scraperId);
+      if (script) await runScriptTest(script);
+    });
+  });
+}
+
+function showScriptModal(script, editable) {
+  console.log('📄 Opening script modal for:', script.scraperName);
+  console.log('📄 Script code length:', script.code?.length);
+  console.log('📄 Script code preview:', script.code?.substring(0, 200));
+  
+  const modal = document.createElement('div');
+  modal.className = 'script-modal-overlay';
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 20px;
+  `;
+  
+  const content = document.createElement('div');
+  content.style.cssText = `
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 900px;
+    max-height: 90vh;
+    overflow-y: auto;
+  `;
+  
+  content.innerHTML = `
+    <h2 style="margin-top: 0;">${editable ? '✏️ Edit' : '👁️ View'} Script: ${script.scraperName}</h2>
+    <textarea id="script-code-editor" style="width: 100%; min-height: 400px; font-family: 'Courier New', monospace; font-size: 12px; padding: 12px; border: 1px solid #ccc; border-radius: 6px; background: #1e1e1e; color: #d4d4d4;" ${editable ? '' : 'readonly'}>${script.code}</textarea>
+    <div style="margin-top: 16px; display: flex; gap: 8px;">
+      <button id="copy-script-modal" class="btn-secondary">📋 Copy</button>
+      ${editable ? '<button id="save-script-modal" class="btn-primary">💾 Save Changes</button>' : ''}
+      <button id="close-script-modal" class="btn-secondary" style="margin-left: auto;">Close</button>
+    </div>
+  `;
+  
+  modal.appendChild(content);
+  document.body.appendChild(modal);
+  
+  document.getElementById('copy-script-modal').addEventListener('click', () => {
+    const code = document.getElementById('script-code-editor').value;
+    navigator.clipboard.writeText(code);
+    showToast('✅ Script copied to clipboard');
+  });
+  
+  if (editable) {
+    document.getElementById('save-script-modal').addEventListener('click', () => {
+      script.code = document.getElementById('script-code-editor').value;
+      script.generatedAt = new Date().toISOString();
+      saveGeneratedScript(script);
+      showToast('✅ Script updated');
+      modal.remove();
+    });
+  }
+  
+  document.getElementById('close-script-modal').addEventListener('click', () => {
+    modal.remove();
+  });
+  
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.remove();
+  });
+}
+
+async function generateScriptForScraper(scraper, existingScraperId = null) {
+  try {
+    showToast('⏳ Generating script...', 0);
+    
+    // Check Ollama
+    const agent = new window.ScraperAIAgent();
+    const status = await agent.checkOllamaStatus();
+    
+    if (!status.available) {
+      alert('❌ Ollama is not running. Please start Ollama first.\\n\\nInstall from: ' + status.installUrl);
+      return;
+    }
+    
+    // Get template for context
+    const template = templates.find(t => t.name === scraper.templateName);
+    
+    // Analyze and generate
+    showToast('🤖 AI analyzing scraper...', 0);
+    const analysisContext = await agent.analyzeScraperConfig(scraper, template);
+    
+    showToast('📝 Generating code...', 0);
+    const generatedCode = await agent.generateScraperScript(scraper, analysisContext, template);
+    
+    console.log('🔍 Raw generated code length:', generatedCode?.length);
+    console.log('🔍 Raw generated code preview:', generatedCode?.substring(0, 200));
+    
+    // Clean up code
+    let cleanCode = generatedCode.trim();
+    if (cleanCode.startsWith('```')) {
+      cleanCode = cleanCode.replace(/^```(?:javascript|js)?\\n/, '').replace(/```$/, '').trim();
+    }
+    
+    console.log('🔍 Clean code length:', cleanCode.length);
+    console.log('🔍 Clean code preview:', cleanCode.substring(0, 200));
+    
+    if (!cleanCode || cleanCode.length < 10) {
+      throw new Error('Generated code is empty or too short. AI may have failed to generate code.');
+    }
+    
+    // Count AI fields
+    const aiFieldsCount = scraper.aiFields ? Object.values(scraper.aiFields).filter(f => f.enabled).length : 0;
+    
+    // Save script
+    const scriptData = {
+      scraperId: existingScraperId || (scraper.name + '-' + Date.now()),
+      scraperName: scraper.name,
+      scraperConfig: scraper,
+      code: cleanCode,
+      generatedAt: new Date().toISOString(),
+      aiFieldsCount: aiFieldsCount
+    };
+    
+    saveGeneratedScript(scriptData);
+    showToast('✅ Script generated successfully!');
+    
+    // Switch to Scripts tab
+    document.querySelector('.tab-button[data-tab="scripts"]').click();
+    
+  } catch (error) {
+    console.error('Script generation error:', error);
+    
+    let errorMessage = error.message;
+    if (error.message.includes('403') || error.message.includes('Forbidden')) {
+      errorMessage = `Ollama is blocking the request due to CORS policy.
+
+To fix this, restart Ollama with CORS enabled:
+
+Windows PowerShell:
+$env:OLLAMA_ORIGINS="*"; ollama serve
+
+Or set it permanently:
+1. Close Ollama completely
+2. Open System Environment Variables
+3. Add: OLLAMA_ORIGINS=*
+4. Restart Ollama
+
+Then try generating the script again.`;
+    }
+    
+    alert('❌ Error generating script:\\n\\n' + errorMessage);
+    showToast('');
+  }
+}
+
+document.getElementById('generate-new-script-btn')?.addEventListener('click', async () => {
+  const selector = document.getElementById('script-selector');
+  const selectedIndex = selector.value;
+  
+  if (selectedIndex === '') {
+    alert('ℹ️ Please select a scraper first');
+    return;
+  }
+  
+  const scrapers = JSON.parse(localStorage.getItem('scrapers') || '[]');
+  const scraper = scrapers[parseInt(selectedIndex)];
+  
+  if (!scraper) {
+    alert('❌ Scraper not found');
+    return;
+  }
+  
+  await generateScriptForScraper(scraper);
+});
+
+async function runScriptTest(scriptData) {
+  try {
+    const button = document.querySelector(`.test-script-btn[data-scraper-id="${scriptData.scraperId}"]`);
+    if (button) {
+      button.textContent = '⏳ Running...';
+      button.disabled = true;
+    }
+    
+    // Get target URL from scraper config
+    const targetUrl = scriptData.scraperConfig.fields['step1-calendar_url'] || 
+                     scriptData.scraperConfig.fields['step1-court_url'] ||
+                     scriptData.scraperConfig.fields['step1-listing_url'];
+    
+    if (!targetUrl) {
+      alert('❌ No target URL found in scraper configuration');
+      return;
+    }
+    
+    // Open URL in new tab
+    const tab = await chrome.tabs.create({ url: targetUrl, active: false });
+    
+    // Wait for page to load
+    await new Promise(resolve => {
+      chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
+        if (tabId === tab.id && info.status === 'complete') {
+          chrome.tabs.onUpdated.removeListener(listener);
+          setTimeout(resolve, 1000); // Extra delay for dynamic content
+        }
+      });
+    });
+    
+    // Execute script on the page
+    const results = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: (scriptCode, scraperConfig) => {
+        // Create execution environment
+        const logs = [];
+        const aiCalls = [];
+        
+        // Override console.log to capture logs
+        const originalLog = console.log;
+        console.log = (...args) => {
+          logs.push(args.join(' '));
+          originalLog(...args);
+        };
+        
+        // Wrap analyzeWithAI to track AI calls
+        const originalAnalyzeWithAI = window.analyzeWithAI;
+        window.analyzeWithAI = async (content, prompt) => {
+          const startTime = Date.now();
+          aiCalls.push({
+            prompt: prompt,
+            input: content.substring(0, 500) + (content.length > 500 ? '...' : ''),
+            inputLength: content.length,
+            timestamp: new Date().toISOString()
+          });
+          
+          try {
+            const response = await fetch('http://localhost:11434/api/generate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                model: 'deepseek-coder:6.7b',
+                prompt: `${prompt}\\n\\nContent:\\n${content}`,
+                stream: false,
+                options: { temperature: 0.3, num_predict: 500 }
+              })
+            });
+            const data = await response.json();
+            const result = data.response.trim();
+            
+            aiCalls[aiCalls.length - 1].response = result;
+            aiCalls[aiCalls.length - 1].duration = Date.now() - startTime;
+            
+            return result;
+          } catch (error) {
+            aiCalls[aiCalls.length - 1].error = error.message;
+            aiCalls[aiCalls.length - 1].duration = Date.now() - startTime;
+            return null;
+          }
+        };
+        
+        // Execute the scraper
+        try {
+          const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
+          const scrapeFunc = new AsyncFunction('return (' + scriptCode + ')')();
+          
+          return scrapeFunc(window.location.href).then(result => {
+            console.log = originalLog;
+            return {
+              success: true,
+              data: result,
+              logs: logs,
+              aiCalls: aiCalls,
+              url: window.location.href,
+              timestamp: new Date().toISOString()
+            };
+          }).catch(error => {
+            console.log = originalLog;
+            return {
+              success: false,
+              error: error.message,
+              stack: error.stack,
+              logs: logs,
+              aiCalls: aiCalls,
+              url: window.location.href
+            };
+          });
+        } catch (error) {
+          console.log = originalLog;
+          return {
+            success: false,
+            error: error.message,
+            stack: error.stack,
+            logs: logs,
+            aiCalls: aiCalls,
+            url: window.location.href
+          };
+        }
+      },
+      args: [scriptData.code, scriptData.scraperConfig]
+    });
+    
+    const result = results[0].result;
+    
+    // Close the test tab
+    await chrome.tabs.remove(tab.id);
+    
+    // Show results
+    showTestResultsModal(result, scriptData.scraperName);
+    
+  } catch (error) {
+    console.error('Test execution error:', error);
+    alert('❌ Error running test:\\n\\n' + error.message);
+  } finally {
+    const button = document.querySelector(`.test-script-btn[data-scraper-id="${scriptData.scraperId}"]`);
+    if (button) {
+      button.textContent = '▶️ Test';
+      button.disabled = false;
+    }
+  }
+}
+
+function showTestResultsModal(result, scraperName) {
+  const modal = document.createElement('div');
+  modal.className = 'test-results-modal-overlay';
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 20px;
+  `;
+  
+  const content = document.createElement('div');
+  content.style.cssText = `
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 1000px;
+    max-height: 90vh;
+    overflow-y: auto;
+  `;
+  
+  const aiSection = result.aiCalls && result.aiCalls.length > 0 ? `
+    <div style="margin-top: 20px;">
+      <h3>🤖 AI Analysis Calls (${result.aiCalls.length})</h3>
+      ${result.aiCalls.map((call, i) => `
+        <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+          <h4 style="margin: 0 0 8px 0; font-size: 13px;">Call ${i + 1} ${call.error ? '❌' : '✅'} (${call.duration}ms)</h4>
+          <div style="margin-bottom: 8px;">
+            <strong style="font-size: 12px;">Prompt:</strong>
+            <pre style="background: #fff; padding: 8px; border-radius: 4px; font-size: 11px; margin: 4px 0;">${call.prompt}</pre>
+          </div>
+          <div style="margin-bottom: 8px;">
+            <strong style="font-size: 12px;">Input (${call.inputLength} chars):</strong>
+            <pre style="background: #fff; padding: 8px; border-radius: 4px; font-size: 11px; margin: 4px 0; max-height: 150px; overflow-y: auto;">${call.input}</pre>
+          </div>
+          ${call.response ? `
+            <div>
+              <strong style="font-size: 12px;">AI Response:</strong>
+              <pre style="background: #d4edda; padding: 8px; border-radius: 4px; font-size: 11px; margin: 4px 0;">${call.response}</pre>
+            </div>
+          ` : ''}
+          ${call.error ? `
+            <div>
+              <strong style="font-size: 12px; color: #dc2626;">Error:</strong>
+              <pre style="background: #fee; padding: 8px; border-radius: 4px; font-size: 11px; margin: 4px 0; color: #dc2626;">${call.error}</pre>
+            </div>
+          ` : ''}
+        </div>
+      `).join('')}
+    </div>
+  ` : '';
+  
+  content.innerHTML = `
+    <h2 style="margin-top: 0;">${result.success ? '✅' : '❌'} Test Results: ${scraperName}</h2>
+    <p style="font-size: 12px; color: #666; margin: 0 0 16px 0;">
+      <strong>URL:</strong> ${result.url}<br>
+      <strong>Time:</strong> ${new Date(result.timestamp).toLocaleString()}
+    </p>
+    
+    ${result.success ? `
+      <div style="margin-bottom: 20px;">
+        <h3>📊 Scraped Data</h3>
+        <pre style="background: #f5f5f5; padding: 16px; border-radius: 8px; overflow-x: auto; max-height: 300px; font-size: 12px;">${JSON.stringify(result.data, null, 2)}</pre>
+      </div>
+    ` : `
+      <div style="margin-bottom: 20px; background: #fee2e2; border: 1px solid #dc2626; border-radius: 8px; padding: 16px;">
+        <h3 style="color: #dc2626; margin-top: 0;">❌ Error</h3>
+        <pre style="color: #991b1b; font-size: 12px;">${result.error}\\n\\n${result.stack || ''}</pre>
+      </div>
+    `}
+    
+    ${aiSection}
+    
+    ${result.logs && result.logs.length > 0 ? `
+      <div style="margin-top: 20px;">
+        <h3>📝 Console Logs</h3>
+        <pre style="background: #1e1e1e; color: #d4d4d4; padding: 12px; border-radius: 8px; overflow-x: auto; max-height: 200px; font-size: 11px;">${result.logs.join('\\n')}</pre>
+      </div>
+    ` : ''}
+    
+    <div style="margin-top: 16px; display: flex; gap: 8px;">
+      <button id="copy-test-results" class="btn-secondary">📋 Copy All Results</button>
+      <button id="copy-scraped-data" class="btn-secondary">📋 Copy Data Only</button>
+      <button id="close-test-results" class="btn-primary" style="margin-left: auto;">Close</button>
+    </div>
+  `;
+  
+  modal.appendChild(content);
+  document.body.appendChild(modal);
+  
+  document.getElementById('copy-test-results').addEventListener('click', () => {
+    navigator.clipboard.writeText(JSON.stringify(result, null, 2));
+    showToast('✅ Full results copied');
+  });
+  
+  document.getElementById('copy-scraped-data').addEventListener('click', () => {
+    navigator.clipboard.writeText(JSON.stringify(result.data, null, 2));
+    showToast('✅ Data copied');
+  });
+  
+  document.getElementById('close-test-results').addEventListener('click', () => {
+    modal.remove();
+  });
+  
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.remove();
+  });
+}
+

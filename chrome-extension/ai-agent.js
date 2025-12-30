@@ -3,7 +3,7 @@
 
 class ScraperAIAgent {
   constructor() {
-    this.ollamaEndpoint = 'http://localhost:11434/api/generate';
+    this.ollamaEndpoint = 'http://127.0.0.1:11434/api/generate';
     this.model = 'deepseek-coder:6.7b'; // or 'codellama:13b'
     this.contextFiles = {};
     this.analysisResults = {};
@@ -210,6 +210,32 @@ Common errors to handle:
     };
   }
 
+  // Orchestrate full scraper analysis
+  async analyzeScraperConfig(scraperConfig, template) {
+    const fieldAnalysis = {};
+    const stepAnalysis = {};
+    
+    // Analyze all fields
+    if (template && template.steps) {
+      for (const step of template.steps) {
+        for (const field of step.fields || []) {
+          if (scraperConfig.fields[field.id]) {
+            fieldAnalysis[field.id] = await this.analyzeField(field, scraperConfig);
+          }
+        }
+      }
+    }
+    
+    // Determine required tools
+    const requiredTools = await this.determineRequiredTools(scraperConfig, fieldAnalysis, stepAnalysis);
+    
+    return {
+      fieldAnalysis,
+      stepAnalysis,
+      requiredTools
+    };
+  }
+
   // Stage 1: Analyze each field capture requirement
   async analyzeField(field, scraperConfig) {
     const aiConfig = scraperConfig.aiFields?.[field.id];
@@ -284,76 +310,58 @@ Consider: cheerio, axios, puppeteer, dayjs, pdf-parse`;
     
     // Check if any fields use AI analysis
     const hasAIFields = scraperConfig.aiFields && Object.values(scraperConfig.aiFields).some(f => f.enabled);
-    
-    // Build context from relevant context files
-    const contextParts = [];
-    if (hasAIFields) {
-      contextParts.push(this.contextFiles.aiRuntime);
-    }
-    if (requiredTools.some(t => t.includes('pdf'))) {
-      contextParts.push(this.contextFiles.pdfParsing);
-    }
-    contextParts.push(this.contextFiles.htmlParsing);
-    contextParts.push(this.contextFiles.apiRequests);
-    contextParts.push(this.contextFiles.errorHandling);
 
-    // Build AI fields list
-    let aiFieldsList = '';
-    if (hasAIFields) {
-      aiFieldsList = '\n\nAI-ENABLED FIELDS (call analyzeWithAI after scraping):\n';
-      for (const [fieldId, aiConfig] of Object.entries(scraperConfig.aiFields || {})) {
-        if (aiConfig.enabled) {
-          const fieldInfo = template?.steps?.flatMap(s => s.fields).find(f => f.id === fieldId);
-          aiFieldsList += `  ${fieldId} (${fieldInfo?.name || fieldId}): "${aiConfig.prompt || 'Analyze this content'}"\n`;
-        }
-      }
-    }
+    // Build simplified field list (no analysis to save tokens)
+    const fields = Object.entries(scraperConfig.fields)
+      .filter(([id]) => !id.startsWith('step1-')) // Skip metadata fields
+      .slice(0, 10) // Limit to first 10 fields
+      .map(([id, selector]) => `  ${id}: "${selector}"`)
+      .join('\n');
 
-    const fields = Object.entries(scraperConfig.fields).map(([id, selector]) => {
-      const analysis = fieldAnalysis[id];
-      const aiMarker = scraperConfig.aiFields?.[id]?.enabled ? ' [AI-ENABLED]' : '';
-      return `  ${id}: "${selector}" // ${analysis || ''}${aiMarker}`;
-    }).join('\n');
+    const prompt = `Generate a Node.js web scraper function.
 
-    const prompt = `Generate a complete Node.js web scraper based on this configuration:
+Scraper: ${scraperConfig.name}
+Packages: ${requiredTools.slice(0, 3).join(', ')}
+Target URL: ${scraperConfig.fields['step1-calendar_url'] || scraperConfig.fields['step1-court_url'] || 'provided as parameter'}
 
-SCRAPER NAME: ${scraperConfig.name}
-PACKAGES: ${requiredTools.join(', ')}
+Fields to extract:
+${fields}
 
-FIELDS TO EXTRACT:
-${fields}${aiFieldsList}
+Requirements:
+- Export: module.exports = async function scrape(url)
+- Use cheerio/axios for HTML parsing
+${hasAIFields ? '- Include analyzeWithAI(content, prompt) helper function that calls http://localhost:11434/api/generate' : ''}
+- Return: { success: true, data: {...fields...} }
+- Add try/catch error handling
+- Keep code concise
 
-BASE URL: ${scraperConfig.fields['step1-base_url'] || ''}
-TARGET URL: ${scraperConfig.fields['step1-court_url'] || scraperConfig.fields['step1-listing_url'] || ''}
+Generate ONLY the JavaScript code:`;
 
-${contextParts.join('\n\n')}
-
-REQUIREMENTS:
-1. Use async/await
-2. Export a function: module.exports = async function scrape(url)
-3. FOR AI-ENABLED FIELDS: After scraping content, call analyzeWithAI(content, prompt) and use the AI response
-4. Include analyzeWithAI() helper function at top if any AI fields exist
-5. Return JSON with all fields
-6. Handle errors gracefully
-7. Include comments explaining each step
-8. Use the exact selectors provided
-9. Return format: { success: true, data: { field1: value1, ... } }
-
-Generate ONLY the JavaScript code, no explanations:`;
+    console.log('📝 Generating script with prompt length:', prompt.length);
 
     return await this.queryLLM(prompt, { 
       temperature: 0.2, 
-      max_tokens: 2000,
-      stop: ['```'] 
+      max_tokens: 3000,
+      stop: [] 
     });
   }
 
   // Query local LLM
   async queryLLM(prompt, options = {}) {
     try {
+      console.log('📤 Sending to Ollama:', {
+        model: options.model || this.model,
+        promptLength: prompt.length,
+        promptPreview: prompt.substring(0, 300) + '...',
+        maxTokens: options.max_tokens || 500
+      });
+      
       const response = await fetch(this.ollamaEndpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Origin': 'http://127.0.0.1'
+        },
         body: JSON.stringify({
           model: options.model || this.model,
           prompt: prompt,
@@ -367,10 +375,21 @@ Generate ONLY the JavaScript code, no explanations:`;
       });
 
       if (!response.ok) {
-        throw new Error(`LLM request failed: ${response.status}`);
+        const errorText = await response.text();
+        console.error('Ollama error response:', errorText);
+        throw new Error(`LLM request failed: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
+      console.log('🤖 Ollama response:', data);
+      console.log('🤖 Response text length:', data.response?.length);
+      console.log('🤖 Response preview:', data.response?.substring(0, 200));
+      
+      if (!data.response || data.response.trim().length === 0) {
+        console.error('❌ Ollama returned empty response. Full data:', data);
+        throw new Error('AI returned empty response. Check if the model is loaded correctly.');
+      }
+      
       return data.response.trim();
     } catch (error) {
       console.error('LLM query failed:', error);
