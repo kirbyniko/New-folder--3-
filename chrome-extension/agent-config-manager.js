@@ -203,8 +203,27 @@ class AgentConfigManager {
     };
   }
 
-  estimateCPURisk(totalTokens) {
-    // Based on empirical testing with qwen2.5-coder:14b on 16GB GPU
+  async estimateCPURisk(totalTokens) {
+    // Estimate CPU usage risk based on token count and detected hardware
+    
+    // Try to get dynamic limits from system detection
+    if (window.SystemCapabilityDetector) {
+      try {
+        const detector = new window.SystemCapabilityDetector();
+        await detector.detectAll();
+        const limits = detector.getRecommendedLimits();
+        
+        // Use detected limits
+        if (totalTokens <= limits.gpuSafe) return 'none'; // Pure GPU
+        if (totalTokens <= limits.balanced) return 'low'; // 5-10% CPU
+        if (totalTokens <= limits.ollama32K) return 'medium'; // 10-20% CPU
+        return 'high'; // >20% CPU
+      } catch (error) {
+        console.warn('Failed to detect capabilities, using fallback:', error);
+      }
+    }
+    
+    // Fallback to conservative static thresholds
     if (totalTokens <= 2048) return 'none'; // 0% CPU
     if (totalTokens <= 4096) return 'low';  // 5-10% CPU
     if (totalTokens <= 6144) return 'medium'; // 10-20% CPU

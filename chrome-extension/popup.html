@@ -795,6 +795,46 @@
             <span id="current-cpu-risk" style="color: #f59e0b;">MEDIUM</span>
           </div>
         </div>
+        
+        <!-- System Capabilities (Hardware Detection) -->
+        <div id="system-capabilities" style="margin-top: 8px; padding: 8px; background: #f9fafb; border-radius: 6px; border: 1px solid #e5e7eb; display: none;">
+          <div style="font-size: 11px; color: #666; margin-bottom: 6px; font-weight: 600;">🔍 Detected Hardware:</div>
+          
+          <!-- Ollama Status -->
+          <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+            <span id="ollama-indicator" style="font-size: 14px;">⏳</span>
+            <div style="flex: 1;">
+              <div style="font-size: 11px; font-weight: 500;">Ollama (Local AI)</div>
+              <div id="ollama-status" style="font-size: 10px; color: #666;">Checking...</div>
+            </div>
+          </div>
+          
+          <!-- GPU Status -->
+          <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+            <span id="gpu-indicator" style="font-size: 14px;">⏳</span>
+            <div style="flex: 1;">
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <span style="font-size: 11px; font-weight: 500;">GPU VRAM</span>
+                <button id="set-vram-btn" style="font-size: 9px; padding: 1px 4px; background: #e5e7eb; border: none; border-radius: 3px; cursor: pointer; color: #666;" title="Set VRAM manually">⚙️</button>
+              </div>
+              <div id="gpu-vram-status" style="font-size: 10px; color: #666;">Detecting...</div>
+            </div>
+          </div>
+          
+          <!-- WebGPU Status -->
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span id="webgpu-indicator" style="font-size: 14px;">⏳</span>
+            <div style="flex: 1;">
+              <div style="font-size: 11px; font-weight: 500;">WebGPU (Browser AI)</div>
+              <div id="webgpu-status" style="font-size: 10px; color: #666;">Checking...</div>
+            </div>
+          </div>
+          
+          <!-- Recommendation -->
+          <div id="hardware-recommendation" style="margin-top: 6px; padding: 6px; background: #eff6ff; border-radius: 4px; font-size: 10px; color: #1e40af; display: none;">
+            💡 <span id="recommendation-text">Install Ollama for 8x more context</span>
+          </div>
+        </div>
       </div>
       
       <!-- Model Selector -->
@@ -921,27 +961,12 @@
   <script src="agent-knowledge.js"></script>
   <script src="agent-chat.js"></script>
   <script src="scraper-context.js"></script>
-  <script src="agent-config-manager.js"></script>
-  <script src="agent-config-ui.js"></script>
+    <script src="system-capability-detector.js"></script>
+    <script src="agent-config-manager.js"></script>
+    <script src="agent-config-ui.js"></script>
+    <script src="agent-config-loader.js"></script>
   <script src="popup.js"></script>
   <script src="popup-library.js"></script>
   <script src="ai-agent.js"></script>
-  
-  <!-- Load Intelligence Config Panel inline -->
-  <script>
-    // Load agent-config-panel.html content
-    fetch(chrome.runtime.getURL('agent-config-panel.html'))
-      .then(r => r.text())
-      .then(html => {
-        const div = document.createElement('div');
-        div.innerHTML = html;
-        document.body.appendChild(div);
-        
-        // Initialize UI after panel is loaded
-        if (window.AgentConfigUI) {
-          window.agentConfigUI = new AgentConfigUI();
-        }
-      });
-  </script>
 </body>
 </html>

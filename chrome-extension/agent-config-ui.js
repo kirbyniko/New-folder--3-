@@ -131,10 +131,16 @@ class AgentConfigUI {
     }
 
     // Update gauge label
-    document.getElementById('gauge-current').textContent = estimates.total.toLocaleString();
+    const gaugeCurrent = document.getElementById('gauge-current');
+    if (gaugeCurrent) {
+      gaugeCurrent.textContent = estimates.total.toLocaleString();
+    }
 
     // Update token details
-    document.getElementById('token-total').textContent = estimates.total.toLocaleString();
+    const tokenTotal = document.getElementById('token-total');
+    if (tokenTotal) {
+      tokenTotal.textContent = estimates.total.toLocaleString();
+    }
     
     const gpuStatus = document.getElementById('gpu-status');
     if (gpuStatus) {
@@ -283,10 +289,20 @@ class AgentConfigUI {
 // Initialize UI when DOM is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
-    window.agentConfigUI = new AgentConfigUI();
+    // Wait for config panel to be loaded
+    setTimeout(() => {
+      if (document.getElementById('agent-config-panel')) {
+        window.agentConfigUI = new AgentConfigUI();
+      }
+    }, 100);
   });
 } else {
-  window.agentConfigUI = new AgentConfigUI();
+  // DOM already loaded, wait for config panel
+  setTimeout(() => {
+    if (document.getElementById('agent-config-panel')) {
+      window.agentConfigUI = new AgentConfigUI();
+    }
+  }, 100);
 }
 
 // Add toast animations

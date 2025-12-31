@@ -1061,6 +1061,76 @@ async function toggleSystemInfo() {
   }
 }
 
+// Update System Capabilities UI
+function updateSystemCapabilitiesUI(capabilities, summary) {
+  const panel = document.getElementById('system-capabilities');
+  if (!panel) return;
+  
+  panel.style.display = 'block';
+  
+  // Ollama Status
+  const ollamaIndicator = document.getElementById('ollama-indicator');
+  const ollamaStatus = document.getElementById('ollama-status');
+  if (capabilities.ollama.available) {
+    ollamaIndicator.textContent = '✅';
+    const modelCount = capabilities.ollama.models.length;
+    const maxContext = Math.max(...Object.values(capabilities.ollama.contextLimits));
+    ollamaStatus.textContent = `${modelCount} model${modelCount !== 1 ? 's' : ''}, ${(maxContext/1000).toFixed(0)}K context`;
+    ollamaStatus.style.color = '#10b981';
+  } else {
+    ollamaIndicator.textContent = '❌';
+    ollamaStatus.textContent = 'Not available - Install for better context';
+    ollamaStatus.style.color = '#666';
+  }
+  
+  // GPU Status
+  const gpuIndicator = document.getElementById('gpu-indicator');
+  const gpuStatus = document.getElementById('gpu-vram-status');
+  if (capabilities.gpu.detected) {
+    const vramGB = Math.floor(capabilities.gpu.estimatedVRAM / 1024);
+    const isManual = capabilities.gpu.vendor === 'manual-override';
+    
+    if (isManual) {
+      gpuIndicator.textContent = '✅';
+      gpuStatus.textContent = `${vramGB}GB (manual)`;
+      gpuStatus.style.color = '#10b981';
+    } else {
+      // Show confidence based on detection method
+      const confidence = capabilities.gpu.estimatedVRAM >= 16384 ? 'HIGH' : 'MEDIUM';
+      gpuIndicator.textContent = confidence === 'HIGH' ? '✅' : '⚠️';
+      gpuStatus.textContent = `~${vramGB}GB detected (${capabilities.gpu.vendor})`;
+      gpuStatus.style.color = confidence === 'HIGH' ? '#10b981' : '#f59e0b';
+    }
+  } else {
+    gpuIndicator.textContent = '⚠️';
+    gpuStatus.textContent = 'Could not detect (assuming 8GB)';
+    gpuStatus.style.color = '#f59e0b';
+  }
+  
+  // WebGPU Status
+  const webgpuIndicator = document.getElementById('webgpu-indicator');
+  const webgpuStatus = document.getElementById('webgpu-status');
+  if (capabilities.webgpu.available) {
+    webgpuIndicator.textContent = '✅';
+    webgpuStatus.textContent = 'Available (4K context limit)';
+    webgpuStatus.style.color = '#10b981';
+  } else {
+    webgpuIndicator.textContent = '❌';
+    webgpuStatus.textContent = 'Not available';
+    webgpuStatus.style.color = '#666';
+  }
+  
+  // Show recommendation
+  const recPanel = document.getElementById('hardware-recommendation');
+  const recText = document.getElementById('recommendation-text');
+  if (summary && summary.recommendations.length > 0) {
+    recPanel.style.display = 'block';
+    // Pick the most important recommendation
+    const topRec = summary.recommendations[0];
+    recText.textContent = topRec.replace(/^[✅💡⚠️❌]\s*/, ''); // Strip emoji prefix
+  }
+}
+
 // Initialize Intelligence Configuration UI
 function initializeIntelligenceConfig() {
   const openBtn = document.getElementById('open-intelligence-config');
@@ -1069,8 +1139,8 @@ function initializeIntelligenceConfig() {
     return;
   }
 
-  // Update summary display
-  function updateSummaryDisplay() {
+  // Update summary display with hardware detection
+  async function updateSummaryDisplay() {
     if (typeof AgentConfigManager !== 'function') {
       console.warn('AgentConfigManager not loaded yet');
       return;
@@ -1081,13 +1151,47 @@ function initializeIntelligenceConfig() {
       const estimates = configManager.tokenEstimates;
       const summary = configManager.getSummary();
 
+      // Detect system capabilities
+      let capabilities = null;
+      if (window.SystemCapabilityDetector) {
+        const detector = new window.SystemCapabilityDetector();
+        capabilities = await detector.detectAll();
+        const capSummary = detector.getSummary();
+        
+        // Update System Capabilities UI
+        updateSystemCapabilitiesUI(capabilities, capSummary);
+        
+        // Log capabilities for user visibility
+        console.log('🔍 System Capabilities Detected:');
+        console.log(`  GPU VRAM: ~${capabilities.gpu.estimatedVRAM}MB`);
+        console.log(`  Ollama: ${capabilities.ollama.available ? '✅ Available' : '❌ Not available'}`);
+        if (capabilities.ollama.available) {
+          console.log(`  Models: ${capabilities.ollama.models.map(m => m.name).join(', ')}`);
+          console.log(`  Max Context: ${Math.max(...Object.values(capabilities.ollama.contextLimits))} tokens`);
+        }
+        console.log(`  WebGPU: ${capabilities.webgpu.available ? '✅ Available' : '❌ Not available'}`);
+        console.log(`  Recommendations:`);
+        capSummary.recommendations.forEach(rec => console.log(`    ${rec}`));
+      }
+
       // Update summary section
       document.getElementById('current-tokens').textContent = `~${estimates.total.toLocaleString()} tokens`;
       
       const gpuStatus = document.getElementById('current-gpu-status');
       if (gpuStatus) {
-        gpuStatus.textContent = estimates.fitsInGPU ? '✅ Yes' : '❌ No';
-        gpuStatus.style.color = estimates.fitsInGPU ? '#10b981' : '#ef4444';
+        if (capabilities && capabilities.gpu.detected) {
+          const vramGB = Math.floor(capabilities.gpu.estimatedVRAM / 1024);
+          const limits = window.SystemCapabilityDetector ? 
+            (new window.SystemCapabilityDetector()).getRecommendedLimits() : 
+            { gpuSafe: 2048, balanced: 6144 };
+          
+          const fitsInGPU = estimates.total <= limits.balanced;
+          gpuStatus.textContent = fitsInGPU ? `✅ Yes (~${vramGB}GB)` : `⚠️ High (~${vramGB}GB)`;
+          gpuStatus.style.color = fitsInGPU ? '#10b981' : '#f59e0b';
+        } else {
+          gpuStatus.textContent = estimates.fitsInGPU ? '✅ Yes' : '❌ No';
+          gpuStatus.style.color = estimates.fitsInGPU ? '#10b981' : '#ef4444';
+        }
       }
 
       const cpuRisk = document.getElementById('current-cpu-risk');
@@ -1098,8 +1202,15 @@ function initializeIntelligenceConfig() {
           'medium': '#f59e0b',
           'high': '#ef4444'
         };
-        cpuRisk.textContent = estimates.cpuRisk.toUpperCase();
-        cpuRisk.style.color = riskColors[estimates.cpuRisk] || '#666';
+        
+        // Use async estimateCPURisk for dynamic detection
+        let risk = estimates.cpuRisk;
+        if (configManager.estimateCPURisk.constructor.name === 'AsyncFunction') {
+          risk = await configManager.estimateCPURisk(estimates.total);
+        }
+        
+        cpuRisk.textContent = risk.toUpperCase();
+        cpuRisk.style.color = riskColors[risk] || '#666';
       }
 
       // Show summary
@@ -1122,12 +1233,40 @@ function initializeIntelligenceConfig() {
     }, 100);
   });
 
+  // Manual VRAM setting button
+  const setVramBtn = document.getElementById('set-vram-btn');
+  if (setVramBtn) {
+    setVramBtn.addEventListener('click', () => {
+      const currentVRAM = localStorage.getItem('manualGPUVRAM');
+      const currentGB = currentVRAM ? Math.floor(parseInt(currentVRAM) / 1024) : 8;
+      
+      const vramInput = prompt(
+        'Enter your GPU VRAM in GB:\n\nCommon values:\n• 4GB - Entry level\n• 8GB - Mid-range\n• 12GB - RTX 3060/4060 Ti\n• 16GB - RTX 4060 Ti 16GB\n• 24GB - RTX 3090/4090\n• 48GB - Professional cards',
+        currentGB
+      );
+      
+      if (vramInput !== null) {
+        const vramGB = parseInt(vramInput);
+        if (isNaN(vramGB) || vramGB <= 0) {
+          alert('Please enter a valid number greater than 0');
+          return;
+        }
+        
+        localStorage.setItem('manualGPUVRAM', (vramGB * 1024).toString());
+        console.log(`✅ GPU VRAM manually set to ${vramGB}GB`);
+        
+        // Refresh display
+        updateSummaryDisplay();
+      }
+    });
+  }
+  
   // Update summary on load and when config changes
   setTimeout(updateSummaryDisplay, 500); // Wait for AgentConfigManager to load
   
   // Listen for config changes
   window.addEventListener('storage', (e) => {
-    if (e.key === 'agentIntelligenceConfig') {
+    if (e.key === 'agentIntelligenceConfig' || e.key === 'manualGPUVRAM') {
       updateSummaryDisplay();
     }
   });
