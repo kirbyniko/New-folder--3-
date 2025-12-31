@@ -189,165 +189,184 @@ initDatabase();
 /**
  * API Handlers
  */
-const handlers: Record<string, (req: http.IncomingMessage, res: http.ServerResponse, body: any) => Promise<void>> = {
+type Handler = (req: http.IncomingMessage, res: http.ServerResponse, body: any) => Promise<void>;
+
+const handlers: Record<string, Record<string, Handler>> = {
   
   // Execute scraper script
-  '/api/execute': async (req, res, body) => {
-    const result = await executeScript(body.scriptCode, body.targetUrl);
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(result));
+  '/api/execute': {
+    'POST': async (req, res, body) => {
+      const result = await executeScript(body.scriptCode, body.targetUrl);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(result));
+    }
   },
   
   // Save scraper config
-  '/api/scrapers': async (req, res, body) => {
-    try {
-      const { name, url, templateName, fields, aiFields, scriptCode, testResult } = body;
-      
-      const result = await pool.query(`
-        INSERT INTO scraper_configs (name, url, template_name, fields, ai_fields, script_code, test_result)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-        RETURNING id, created_at
-      `, [name, url, templateName, fields, aiFields, scriptCode, testResult]);
-      
-      res.writeHead(201, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ 
-        success: true, 
-        id: result.rows[0].id,
-        created_at: result.rows[0].created_at
-      }));
-    } catch (error: any) {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: false, error: error.message }));
+  '/api/scrapers': {
+    'POST': async (req, res, body) => {
+      try {
+        const { name, url, templateName, fields, aiFields, scriptCode, testResult } = body;
+        
+        const result = await pool.query(`
+          INSERT INTO scraper_configs (name, url, template_name, fields, ai_fields, script_code, test_result)
+          VALUES ($1, $2, $3, $4, $5, $6, $7)
+          RETURNING id, created_at
+        `, [name, url, templateName, fields, aiFields, scriptCode, testResult]);
+        
+        res.writeHead(201, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ 
+          success: true, 
+          id: result.rows[0].id,
+          created_at: result.rows[0].created_at
+        }));
+      } catch (error: any) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: error.message }));
+      }
     }
   },
   
-  // Update scraper config
-  '/api/scrapers/:id': async (req, res, body) => {
-    try {
-      const url = new URL(req.url!, `http://${req.headers.host}`);
-      const id = url.pathname.split('/').pop();
-      
-      const { name, url: scraperUrl, templateName, fields, aiFields, scriptCode, testResult } = body;
-      
-      await pool.query(`
-        UPDATE scraper_configs 
-        SET name = $1, url = $2, template_name = $3, fields = $4, 
-            ai_fields = $5, script_code = $6, test_result = $7, updated_at = NOW()
-        WHERE id = $8
-      `, [name, scraperUrl, templateName, fields, aiFields, scriptCode, testResult, id]);
-      
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: true }));
-    } catch (error: any) {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: false, error: error.message }));
+  // Update scraper
+  '/api/scrapers/:id': {
+    'PUT': async (req, res, body) => {
+      try {
+        const url = new URL(req.url!, `http://${req.headers.host}`);
+        const id = url.pathname.split('/').pop();
+        
+        const { name, url: scraperUrl, templateName, fields, aiFields, scriptCode, testResult } = body;
+        
+        await pool.query(`
+          UPDATE scraper_configs 
+          SET name = $1, url = $2, template_name = $3, fields = $4, 
+              ai_fields = $5, script_code = $6, test_result = $7, updated_at = NOW()
+          WHERE id = $8
+        `, [name, scraperUrl, templateName, fields, aiFields, scriptCode, testResult, id]);
+        
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      } catch (error: any) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: error.message }));
+      }
     }
   },
   
-  // Get all scrapers
-  '/api/scrapers/list': async (req, res, body) => {
-    try {
-      const result = await pool.query(`
-        SELECT id, name, url, template_name, fields, ai_fields, created_at, updated_at
-        FROM scraper_configs
+  // List all scrapers
+  '/api/scrapers/list': {
+    'GET': async (req, res, body) => {
+      try {
+        const result = await pool.query(`
+          SELECT id, name, url, template_name, fields, ai_fields, created_at, updated_at
+          FROM scraper_configs
         ORDER BY updated_at DESC
       `);
       
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ scrapers: result.rows }));
     } catch (error: any) {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ scrapers: [] }));
     }
   },
   
   // Delete scraper
-  '/api/scrapers/:id/delete': async (req, res, body) => {
-    try {
-      const url = new URL(req.url!, `http://${req.headers.host}`);
-      const id = url.pathname.split('/')[3];
-      
-      await pool.query('DELETE FROM scraper_configs WHERE id = $1', [id]);
-      
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: true }));
-    } catch (error: any) {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: false, error: error.message }));
+  '/api/scrapers/:id/delete': {
+    'DELETE': async (req, res, body) => {
+      try {
+        const url = new URL(req.url!, `http://${req.headers.host}`);
+        const id = url.pathname.split('/')[3];
+        
+        await pool.query('DELETE FROM scraper_configs WHERE id = $1', [id]);
+        
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      } catch (error: any) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: error.message }));
+      }
     }
   },
   
-  // Get templates
-  '/api/templates': async (req, res, body) => {
-    try {
-      const result = await pool.query(`
-        SELECT id, name, description, steps, storage, created_at
-        FROM templates
-        ORDER BY name
-      `);
-      
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ templates: result.rows }));
-    } catch (error: any) {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ templates: [] }));
-    }
-  },
-  
-  // Save template
-  '/api/templates': async (req, res, body) => {
-    try {
-      const { name, description, steps, storage } = body;
-      
-      const result = await pool.query(`
-        INSERT INTO templates (name, description, steps, storage)
-        VALUES ($1, $2, $3, $4)
-        ON CONFLICT (name) DO UPDATE 
-        SET description = $2, steps = $3, storage = $4
-        RETURNING id
-      `, [name, description, steps, storage]);
-      
-      res.writeHead(201, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: true, id: result.rows[0].id }));
-    } catch (error: any) {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: false, error: error.message }));
+  // Templates endpoint
+  '/api/templates': {
+    'GET': async (req, res, body) => {
+      try {
+        const result = await pool.query(`
+          SELECT id, name, description, steps, storage, created_at
+          FROM templates
+          ORDER BY name
+        `);
+        
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ templates: result.rows }));
+      } catch (error: any) {
+        console.error('❌ GET /api/templates error:', error.message);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ templates: [] }));
+      }
+    },
+    'POST': async (req, res, body) => {
+      try {
+        const { name, description, steps, storage } = body;
+        
+        const result = await pool.query(`
+          INSERT INTO templates (name, description, steps, storage)
+          VALUES ($1, $2, $3, $4)
+          ON CONFLICT (name) DO UPDATE 
+          SET description = $2, steps = $3, storage = $4
+          RETURNING id
+        `, [name, description, steps, storage]);
+        
+        res.writeHead(201, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, id: result.rows[0].id }));
+      } catch (error: any) {
+        console.error('❌ POST /api/templates error:', error.message);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: error.message }));
+      }
     }
   },
   
   // Save RAG episode
-  '/api/rag/episode': async (req, res, body) => {
-    try {
-      const { domain, templateType, url, success, script, testResult, diagnosis, embedding, summary } = body;
-      
-      await pool.query(`
-        INSERT INTO rag_episodes (domain, template_type, url, success, script, test_result, diagnosis, embedding, summary)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-      `, [domain, templateType, url, success, script, testResult, diagnosis, embedding, summary]);
-      
-      res.writeHead(201, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: true }));
-    } catch (error: any) {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: false, error: error.message }));
+  '/api/rag/episode': {
+    'POST': async (req, res, body) => {
+      try {
+        const { domain, templateType, url, success, script, testResult, diagnosis, embedding, summary } = body;
+        
+        await pool.query(`
+          INSERT INTO rag_episodes (domain, template_type, url, success, script, test_result, diagnosis, embedding, summary)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        `, [domain, templateType, url, success, script, testResult, diagnosis, embedding, summary]);
+        
+        res.writeHead(201, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      } catch (error: any) {
+        console.error('❌ POST /api/rag/episode error:', error.message);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: error.message }));
+      }
     }
   },
   
   // Get RAG episodes
-  '/api/rag/episodes': async (req, res, body) => {
-    try {
-      const result = await pool.query(`
-        SELECT domain, template_type, url, success, test_result, diagnosis, summary, created_at
-        FROM rag_episodes
-        ORDER BY created_at DESC
-        LIMIT 200
-      `);
-      
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ episodes: result.rows }));
-    } catch (error: any) {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ episodes: [] }));
+  '/api/rag/episodes': {
+    'GET': async (req, res, body) => {
+      try {
+        const result = await pool.query(`
+          SELECT domain, template_type, url, success, test_result, diagnosis, summary, created_at
+          FROM rag_episodes
+          ORDER BY created_at DESC
+          LIMIT 200
+        `);
+        
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ episodes: result.rows }));
+      } catch (error: any) {
+        console.error('❌ GET /api/rag/episodes error:', error.message);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ episodes: [] }));
+      }
     }
   }
 };
@@ -377,17 +396,18 @@ const server = http.createServer(async (req, res) => {
   // Route to handler
   const url = new URL(req.url!, `http://${req.headers.host}`);
   const path = url.pathname;
+  const method = req.method || 'GET';
   
   // Exact match
-  let handler = handlers[path];
+  let handler = handlers[path]?.[method];
   
   // Pattern match (for :id routes)
   if (!handler) {
-    for (const [pattern, h] of Object.entries(handlers)) {
+    for (const [pattern, methods] of Object.entries(handlers)) {
       if (pattern.includes(':id')) {
         const regex = new RegExp('^' + pattern.replace(':id', '\\d+') + '$');
         if (regex.test(path)) {
-          handler = h;
+          handler = methods[method];
           break;
         }
       }
