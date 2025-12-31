@@ -793,21 +793,30 @@ Generate the complete scraper code now:`;
 
     // Try WebGPU first if available and initialized
     if (this.useWebGPU && this.webgpuReady && this.webgpuInitialized) {
-      try {
-        console.log('🎮 Using WebGPU inference (local, fast)');
-        return await this.queryWebGPU(prompt, options);
-      } catch (error) {
-        const errorMsg = error.message || error.toString();
-        
-        // Check if context window exceeded
-        if (errorMsg.includes('context window size')) {
-          console.warn('⚠️ Prompt too long for WebGPU (4096 token limit)');
-          console.log('↩️  Falling back to Ollama for larger context');
-        } else {
-          console.error('❌ WebGPU failed:', errorMsg);
-          console.warn('↩️  Falling back to Ollama');
+      // Rough token estimate: ~4 chars per token
+      const estimatedTokens = Math.ceil(prompt.length / 4);
+      const WEBGPU_TOKEN_LIMIT = 4096;
+      
+      if (estimatedTokens > WEBGPU_TOKEN_LIMIT) {
+        console.log(`⚠️ Prompt too long for WebGPU (estimated ${estimatedTokens} tokens, limit ${WEBGPU_TOKEN_LIMIT})`);
+        console.log('🔄 Skipping WebGPU, using Ollama directly for larger context');
+      } else {
+        try {
+          console.log('🎮 Using WebGPU inference (local, fast)');
+          return await this.queryWebGPU(prompt, options);
+        } catch (error) {
+          const errorMsg = error.message || error.toString();
+          
+          // Check if context window exceeded
+          if (errorMsg.includes('context window size')) {
+            console.warn('⚠️ Prompt too long for WebGPU (4096 token limit)');
+            console.log('↩️  Falling back to Ollama for larger context');
+          } else {
+            console.error('❌ WebGPU failed:', errorMsg);
+            console.warn('↩️  Falling back to Ollama');
+          }
+          // Continue to Ollama fallback below
         }
-        // Continue to Ollama fallback below
       }
     }
 
