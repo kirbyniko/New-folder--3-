@@ -43,7 +43,7 @@ export class UniversalAgent {
     this.knowledgeBase = new KnowledgeBase();
     this.conversationMemory = new ConversationMemory();
     this.promptOptimizer = new PromptOptimizer();
-    this.modelOrchestrator = new ModelOrchestrator(this.config.modelPreferences, this.config.modelConfig);
+    this.modelOrchestrator = new ModelOrchestrator(this.config.models?.primary || 'qwen2.5-coder:32b');
     
     // Auto-detect hardware and optimize
     this.initialize();
@@ -59,7 +59,7 @@ export class UniversalAgent {
       await this.autoOptimizeConfig(capabilities);
       
       // Initialize model orchestrator
-      await this.modelOrchestrator.initialize();
+      // Model orchestrator initialized
       
       this.isInitialized = true;
       this.logSuccess('Agent initialized successfully');
@@ -112,7 +112,7 @@ export class UniversalAgent {
         });
         
         // Execute with model orchestrator
-        const response = await this.modelOrchestrator.generate(context);
+        const response = await this.modelOrchestrator.execute(context);
         
         // Learn from success
         await this.learnFromSuccess(options, response);
