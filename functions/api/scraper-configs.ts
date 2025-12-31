@@ -1,9 +1,7 @@
 /**
  * API endpoint for managing scraper configurations
- * Allows Chrome extension to save/load scraper definitions to/from PostgreSQL
+ * Uses Neon HTTP API for Cloudflare Workers compatibility (no TCP connections)
  */
-
-import pg from 'pg';
 
 interface ScraperConfig {
   id?: string;
@@ -20,9 +18,54 @@ interface ScraperConfig {
   updatedAt?: string;
 }
 
+// Parse Neon connection string to extract API components
+function parseNeonUrl(connectionString: string) {
+  const match = connectionString.match(/postgresql:\/\/([^:]+):([^@]+)@([^\/]+)\/(.+?)(\?|$)/);
+  if (!match) throw new Error('Invalid DATABASE_URL format');
+  
+  const [, username, password, host, database] = match;
+  const projectId = host.split('.')[0].split('-').slice(-1)[0]; // Extract from ep-xxx-xxx-adlutkdw
+  
+  return { username, password, host, database, projectId };
+}
+
+// Execute SQL query via Neon HTTP API
+async function query(connectionString: string, sql: string, params: any[] = []) {
+  const { host, database, username, password } = parseNeonUrl(connectionString);
+  
+  // Neon HTTP API endpoint (remove pooler suffix and use direct endpoint)
+  const directHost = host.replace('-pooler', '');
+  const apiUrl = `https://${directHost}/sql`;
+  
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Neon-Connection-String': connectionString,
+      'Neon-Raw-Text-Output': 'true',
+      'Neon-Array-Mode': 'false'
+    },
+    body: JSON.stringify({
+      query: sql,
+      params: params
+    })
+  });
+  
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Database query failed: ${error}`);
+  }
+  
+  const result = await response.json();
+  return result.rows || [];
+}
+
 export async function onRequest(context: any) {
   const { request, env } = context;
   const url = new URL(request.url);
+  
+  // Temporary hardcoded connection string for testing
+  const DATABASE_URL = env.DATABASE_URL || 'postgresql://neondb_owner:npg_j3RuDlkJep6n@ep-frosty-dream-adlutkdw-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
   
   // CORS headers
   const corsHeaders = {
@@ -35,23 +78,14 @@ export async function onRequest(context: any) {
     return new Response(null, { headers: corsHeaders });
   }
 
-  let client: pg.Client | null = null;
-  
   try {
-    client = new pg.Client({
-      connectionString: env.DATABASE_URL
-    });
-    await client.connect();
-    
     // GET - List all scraper configs
     if (request.method === 'GET') {
-      const result = await client.query(`
-        SELECT id, name, description, start_url, fields, ai_fields, storage, created_at, updated_at
-        FROM scraper_configs
-        ORDER BY updated_at DESC
-      `);
+      const rows = await query(DATABASE_URL, 
+        'SELECT id, name, description, start_url, fields, ai_fields, storage, created_at, updated_at FROM scraper_configs ORDER BY updated_at DESC'
+      );
       
-      const configs = result.rows.map((row: any) => ({
+      const configs = rows.map((row: any) => ({
         id: row.id,
         name: row.name,
         description: row.description,
@@ -72,20 +106,19 @@ export async function onRequest(context: any) {
     if (request.method === 'POST') {
       const config: ScraperConfig = await request.json();
       
-      const result = await client.query(`
-        INSERT INTO scraper_configs (name, description, start_url, fields, ai_fields, storage)
-        VALUES ($1, $2, $3, $4, $5, $6)
-        RETURNING id, name, description, start_url, fields, ai_fields, storage, created_at, updated_at
-      `, [
-        config.name,
-        config.description || null,
-        config.startUrl,
-        JSON.stringify(config.fields),
-        config.aiFields ? JSON.stringify(config.aiFields) : null,
-        config.storage ? JSON.stringify(config.storage) : null
-      ]);
+      const rows = await query(DATABASE_URL,
+        'INSERT INTO scraper_configs (name, description, start_url, fields, ai_fields, storage) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, description, start_url, fields, ai_fields, storage, created_at, updated_at',
+        [
+          config.name,
+          config.description || null,
+          config.startUrl,
+          JSON.stringify(config.fields),
+          config.aiFields ? JSON.stringify(config.aiFields) : null,
+          config.storage ? JSON.stringify(config.storage) : null
+        ]
+      );
       
-      const saved = result.rows[0];
+      const saved = rows[0];
       
       return new Response(JSON.stringify({
         success: true,
@@ -116,29 +149,27 @@ export async function onRequest(context: any) {
         });
       }
       
-      const result = await client.query(`
-        UPDATE scraper_configs
-        SET name = $1, description = $2, start_url = $3, fields = $4, ai_fields = $5, storage = $6, updated_at = NOW()
-        WHERE id = $7
-        RETURNING id, name, description, start_url, fields, ai_fields, storage, created_at, updated_at
-      `, [
-        config.name,
-        config.description || null,
-        config.startUrl,
-        JSON.stringify(config.fields),
-        config.aiFields ? JSON.stringify(config.aiFields) : null,
-        config.storage ? JSON.stringify(config.storage) : null,
-        config.id
-      ]);
+      const rows = await query(DATABASE_URL,
+        'UPDATE scraper_configs SET name = $1, description = $2, start_url = $3, fields = $4, ai_fields = $5, storage = $6, updated_at = NOW() WHERE id = $7 RETURNING id, name, description, start_url, fields, ai_fields, storage, created_at, updated_at',
+        [
+          config.name,
+          config.description || null,
+          config.startUrl,
+          JSON.stringify(config.fields),
+          config.aiFields ? JSON.stringify(config.aiFields) : null,
+          config.storage ? JSON.stringify(config.storage) : null,
+          config.id
+        ]
+      );
       
-      if (result.rows.length === 0) {
+      if (rows.length === 0) {
         return new Response(JSON.stringify({ error: 'Config not found' }), {
           status: 404,
           headers: { 'Content-Type': 'application/json', ...corsHeaders }
         });
       }
       
-      const saved = result.rows[0];
+      const saved = rows[0];
       
       return new Response(JSON.stringify({
         success: true,
@@ -169,7 +200,7 @@ export async function onRequest(context: any) {
         });
       }
       
-      await client.query('DELETE FROM scraper_configs WHERE id = $1', [id]);
+      await query(DATABASE_URL, 'DELETE FROM scraper_configs WHERE id = $1', [id]);
       
       return new Response(JSON.stringify({ success: true }), {
         headers: { 'Content-Type': 'application/json', ...corsHeaders }
@@ -189,9 +220,5 @@ export async function onRequest(context: any) {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...corsHeaders }
     });
-  } finally {
-    if (client) {
-      await client.end();
-    }
   }
 }
