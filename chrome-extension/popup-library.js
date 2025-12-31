@@ -299,6 +299,59 @@ function saveScrapers() {
   displayTemplates();
 }
 
+// Export all scrapers to JSON file
+function exportAllScrapers() {
+  const data = {
+    version: '1.0',
+    exportedAt: new Date().toISOString(),
+    scrapers: scrapers
+  };
+  
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `scrapers-backup-${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  
+  alert(`✅ Exported ${scrapers.length} scraper(s) to file`);
+}
+
+// Import scrapers from JSON file
+function importScrapersFromFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      
+      if (!data.scrapers || !Array.isArray(data.scrapers)) {
+        throw new Error('Invalid scraper backup file');
+      }
+      
+      // Merge with existing scrapers (avoid duplicates by name)
+      const existingNames = new Set(scrapers.map(s => s.name));
+      let imported = 0;
+      let skipped = 0;
+      
+      for (const scraper of data.scrapers) {
+        if (existingNames.has(scraper.name)) {
+          skipped++;
+        } else {
+          scrapers.push(scraper);
+          imported++;
+        }
+      }
+      
+      saveScrapers();
+      alert(`✅ Imported ${imported} scraper(s)\n${skipped > 0 ? `⚠️ Skipped ${skipped} duplicate(s)` : ''}`);
+    } catch (error) {
+      alert(`❌ Failed to import: ${error.message}`);
+    }
+  };
+  reader.readAsText(file);
+}
+
 function useTemplate(index) {
   const template = templates[index];
   
@@ -373,6 +426,22 @@ document.getElementById('import-json-btn').addEventListener('click', () => {
     showStatus(`✅ Scraper "${scraper.name}" imported successfully!`, 'success');
   } catch (error) {
     showStatus(`❌ Invalid JSON: ${error.message}`, 'error');
+  }
+});
+
+// Export all scrapers button
+document.getElementById('export-all-scrapers-btn').addEventListener('click', exportAllScrapers);
+
+// Import from file button
+document.getElementById('import-scrapers-file-btn').addEventListener('click', () => {
+  document.getElementById('import-file-input').click();
+});
+
+document.getElementById('import-file-input').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    importScrapersFromFile(file);
+    e.target.value = ''; // Reset input
   }
 });
 
