@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Agent Studio - Local LLM Control</title>
+  <link rel="stylesheet" href="style-new.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar for Context & Settings -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2>🤖 Agent Studio</h2>
+        <button id="new-chat-btn" class="btn btn-primary">+ New Chat</button>
+      </div>
+
+      <!-- Agent Configuration -->
+      <div class="sidebar-section">
+        <h3>🎯 Agent Mode</h3>
+        <select id="agent-mode" class="select-input">
+          <option value="general">💬 General Assistant</option>
+          <option value="code-generator">💻 Code Generator</option>
+          <option value="web-scraper">🕷️ Web Scraper</option>
+          <option value="data-analyst">📊 Data Analyst</option>
+          <option value="content-writer">✍️ Content Writer</option>
+        </select>
+      </div>
+
+      <!-- Quick Settings -->
+      <div class="sidebar-section">
+        <h3>⚙️ Settings</h3>
+        <div class="setting-item">
+          <label>Model</label>
+          <select id="model-select" class="select-input">
+            <option value="qwen2.5-coder:32b">Qwen 2.5 Coder 32B</option>
+            <option value="qwen2.5-coder:14b">Qwen 2.5 Coder 14B</option>
+            <option value="llama3.2:latest">Llama 3.2</option>
+          </select>
+        </div>
+        <div class="setting-item">
+          <label>Temperature: <span id="temp-value">0.7</span></label>
+          <input type="range" id="temperature" min="0" max="2" step="0.1" value="0.7">
+        </div>
+        <div class="setting-item">
+          <label>Max Tokens: <span id="tokens-value">4096</span></label>
+          <input type="range" id="max-tokens" min="512" max="8192" step="512" value="4096">
+        </div>
+      </div>
+
+      <!-- Context Files -->
+      <div class="sidebar-section">
+        <h3>📁 Context Files</h3>
+        <div class="context-files-header">
+          <button id="add-files-btn" class="btn btn-secondary btn-sm">+ Add Files</button>
+          <input type="file" id="file-input" multiple hidden>
+        </div>
+        <div id="context-files-list" class="context-files-list">
+          <div class="empty-state">No files added</div>
+        </div>
+      </div>
+
+      <!-- Conversation History -->
+      <div class="sidebar-section">
+        <h3>💬 Conversations</h3>
+        <div id="conversations-list" class="conversations-list">
+          <div class="empty-state">No conversations yet</div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="sidebar-section sidebar-stats">
+        <div class="stat-item">
+          <span class="stat-label">Tokens Used</span>
+          <span class="stat-value" id="tokens-used">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Messages</span>
+          <span class="stat-value" id="messages-count">0</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Chat Area -->
+    <main class="main-content">
+      <div class="chat-container">
+        <div id="messages-container" class="messages-container">
+          <!-- Welcome Message -->
+          <div class="welcome-message">
+            <h1>👋 Welcome to AI Agent Studio</h1>
+            <p>Your local LLM control center with full context awareness</p>
+            <div class="quick-actions">
+              <button class="quick-action" data-prompt="Help me build a web scraper for [URL]">
+                🕷️ Build Web Scraper
+              </button>
+              <button class="quick-action" data-prompt="Review and improve this code">
+                💻 Code Review
+              </button>
+              <button class="quick-action" data-prompt="Analyze this data and create visualizations">
+                📊 Data Analysis
+              </button>
+              <button class="quick-action" data-prompt="Write a technical article about">
+                ✍️ Content Writing
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="input-area">
+          <div class="input-toolbar">
+            <button id="attach-btn" class="toolbar-btn" title="Attach files">
+              📎
+            </button>
+            <button id="code-btn" class="toolbar-btn" title="Insert code">
+              &lt;/&gt;
+            </button>
+            <button id="template-btn" class="toolbar-btn" title="Use template">
+              📋
+            </button>
+            <div class="toolbar-spacer"></div>
+            <button id="stop-btn" class="toolbar-btn" title="Stop generation" style="display:none;">
+              ⏹️ Stop
+            </button>
+            <button id="regenerate-btn" class="toolbar-btn" title="Regenerate response" style="display:none;">
+              🔄 Regenerate
+            </button>
+          </div>
+
+          <div class="input-wrapper">
+            <textarea 
+              id="message-input" 
+              placeholder="Type your message... (Shift+Enter for new line)"
+              rows="3"
+            ></textarea>
+            <button id="send-btn" class="send-btn">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M2 10L18 2L12 18L10 12L2 10Z"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="input-status">
+            <span id="status-text">Ready</span>
+            <span class="status-indicator" id="status-indicator"></span>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="main-unified.js"></script>
+</body>
+</html>

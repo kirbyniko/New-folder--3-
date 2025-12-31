@@ -407,3 +407,5 @@ Output: Professional documentation with proper formatting, code examples, and cl
       .map(([id, template]) => ({ id, name: template.name }));
   }
 }
+
+export default AgentTemplates;
