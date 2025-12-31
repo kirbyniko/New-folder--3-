@@ -119,6 +119,23 @@ class AgentStudio {
       document.getElementById('tokens-value').textContent = e.target.value;
     });
 
+    // Tab switching
+    document.querySelectorAll('.sidebar-tab').forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        const tabName = e.target.dataset.tab;
+        
+        // Update active tab button
+        document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
+        e.target.classList.add('active');
+        
+        // Show corresponding content
+        document.querySelectorAll('.sidebar-content').forEach(content => {
+          content.style.display = 'none';
+        });
+        document.getElementById(`${tabName}-tab`).style.display = 'block';
+      });
+    });
+
     // File upload
     document.getElementById('add-files-btn').addEventListener('click', () => {
       document.getElementById('file-input').click();
