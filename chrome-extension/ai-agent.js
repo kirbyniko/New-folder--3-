@@ -1387,6 +1387,31 @@ Return ONLY the compressed prompt, no explanations.`;
     
     const { usePuppeteer = false, reason = '' } = options;
     
+    // ⚡ ITERATIVE LEARNING MODE CHECK
+    // If enabled and we have many fields (30+), use batch processing
+    const fieldCount = Object.keys(scraperConfig.fields || {}).filter(k => !k.startsWith('step1-')).length;
+    if (this.useIterativeLearning && fieldCount >= 30) {
+      updateProgress(`🔄 Iterative Learning Mode: Processing ${fieldCount} fields in batches`);
+      
+      // Get URL and page structure for iterative processing
+      const targetUrl = scraperConfig.fields['step1-calendar_url'] || 
+                       scraperConfig.fields['step1-court_url'] || 
+                       scraperConfig.fields['step1-listing_url'] ||
+                       scraperConfig.fields['step1-agenda_url'];
+      
+      if (!targetUrl) {
+        updateProgress('❌ No target URL found in config');
+        throw new Error('Target URL required for iterative learning');
+      }
+      
+      // Get page structure (reuse existing analysis if available)
+      updateProgress('📊 Analyzing page structure...');
+      const pageStructure = await this.analyzePageStructure(targetUrl);
+      
+      // Use iterative learning agent
+      return await this.generateWithIterativeLearning(scraperConfig, targetUrl, pageStructure);
+    }
+    
     updateProgress('🤖 Starting AI scraper generation...');
     console.log('🔍 DEBUG: scraperConfig received:', JSON.stringify(scraperConfig, null, 2));
     
@@ -2449,16 +2474,25 @@ Generate the FIXED complete script now:`;
     }
 
     try {
-      const result = await this.iterativeAgent.extractWithIterativeLearning(
+      const result = await this.iterativeAgent.generateScraperWithIterativeLearning(
         scraperConfig,
         url,
         pageStructure
       );
 
-      console.log(`✅ Iterative learning complete: ${result.metadata.iterations} total iterations`);
-      console.log(`📊 Batches processed:`, result.metadata.batchResults);
+      console.log(`✅ Iterative generation complete: ${result.metadata.totalIterations} iterations across ${result.metadata.batches} batches`);
+      console.log(`📚 Learned patterns:`, result.metadata.learnedPatterns);
 
-      return result;
+      // Return in format expected by main flow
+      return {
+        script: result.script,
+        analysisContext: {
+          iterativeMode: true,
+          batches: result.metadata.batches,
+          totalIterations: result.metadata.totalIterations,
+          learnedPatterns: result.metadata.learnedPatterns
+        }
+      };
     } catch (error) {
       console.error('❌ Iterative learning failed:', error);
       throw error;

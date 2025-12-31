@@ -17,107 +17,123 @@ class IterativeLearningAgent {
   }
 
   /**
-   * CORE INSIGHT: Divide 72 fields into small batches (10-15 each)
-   * Try each batch separately, learn what works, retry failures
+   * CORE INSIGHT: Instead of extracting directly, generate a better scraper
+   * by iteratively testing and improving it with focused context
    */
-  async extractWithIterativeLearning(scraperConfig, url, pageStructure) {
-    console.log('🔄 Starting iterative learning extraction');
+  async generateScraperWithIterativeLearning(scraperConfig, url, pageStructure) {
+    console.log('🔄 Starting iterative scraper generation (multi-pass approach)');
     
     // Step 1: Divide fields into manageable batches
     const fieldBatches = this.createFieldBatches(scraperConfig, 12); // ~12 fields per batch
     console.log(`📦 Split ${Object.keys(scraperConfig.fields).length} fields into ${fieldBatches.length} batches`);
 
-    const allResults = {};
-    const allMetadata = { iterations: 0, batchResults: [] };
+    let combinedScript = null;
+    let allLearnedPatterns = [];
+    let totalIterations = 0;
 
-    // Step 2: Process each batch with learning
+    // Step 2: Generate scraper for each batch, then combine
     for (let batchIdx = 0; batchIdx < fieldBatches.length; batchIdx++) {
       const batch = fieldBatches[batchIdx];
-      console.log(`\n🎯 Processing batch ${batchIdx + 1}/${fieldBatches.length} (${batch.fields.length} fields)`);
+      console.log(`\n🎯 Generating scraper for batch ${batchIdx + 1}/${fieldBatches.length} (${batch.fields.length} fields)`);
 
-      const batchResult = await this.processBatchWithRetry(
+      const batchResult = await this.generateBatchScraper(
         batch,
         url,
         pageStructure,
-        batchIdx === 0 ? null : allResults // Pass previous results as context
+        allLearnedPatterns,
+        batchIdx
       );
 
-      // Merge results
-      Object.assign(allResults, batchResult.data);
-      allMetadata.batchResults.push({
-        batchIndex: batchIdx,
-        fieldsAttempted: batch.fields.length,
-        fieldsExtracted: Object.keys(batchResult.data).filter(k => batchResult.data[k] !== null).length,
-        iterations: batchResult.iterations,
-        learnedPatterns: batchResult.learnedPatterns
-      });
-      allMetadata.iterations += batchResult.iterations;
-    }
+      totalIterations += batchResult.iterations;
+      allLearnedPatterns.push(...batchResult.learnedPatterns);
 
-    return {
-      success: true,
-      data: allResults,
-      metadata: allMetadata
-    };
-  }
-
-  /**
-   * Process a single batch with up to 3 retry attempts
-   */
-  async processBatchWithRetry(batch, url, pageStructure, previousResults) {
-    let attempt = 0;
-    let extractedData = {};
-    let failedFields = [...batch.fields];
-    const learnedPatterns = [];
-
-    while (attempt < 3 && failedFields.length > 0) {
-      attempt++;
-      console.log(`  🔄 Attempt ${attempt} for ${failedFields.length} fields`);
-
-      // Build focused prompt for this attempt
-      const prompt = this.buildFocusedPrompt({
-        fields: failedFields,
-        url,
-        pageStructure,
-        previousResults,
-        learnedPatterns,
-        attempt
-      });
-
-      // Generate scraper with focused prompt
-      const scraperCode = await this.generateFocusedScraper(prompt);
-      
-      // Execute scraper
-      const result = await this.executeScraper(scraperCode, url);
-
-      if (result.success && result.data) {
-        // Analyze what worked and what didn't
-        const analysis = this.analyzeResults(result.data, failedFields);
-        
-        // Merge successful extractions
-        Object.assign(extractedData, analysis.extracted);
-        
-        // Learn from patterns
-        learnedPatterns.push(...analysis.patterns);
-        
-        // Update failed fields list
-        failedFields = analysis.stillFailed;
-
-        console.log(`  ✅ Extracted ${analysis.extracted.length} fields`);
-        console.log(`  ⚠️  ${failedFields.length} fields still missing`);
-        
-        // If we got everything, stop iterating
-        if (failedFields.length === 0) break;
+      // Merge scripts
+      if (!combinedScript) {
+        combinedScript = batchResult.script;
       } else {
-        console.log(`  ❌ Attempt ${attempt} failed:`, result.error);
+        // Merge field extractions from multiple batches
+        combinedScript = this.mergeScraperScripts(combinedScript, batchResult.script);
       }
     }
 
     return {
-      data: extractedData,
-      iterations: attempt,
-      learnedPatterns
+      script: combinedScript,
+      metadata: {
+        totalIterations,
+        batches: fieldBatches.length,
+        learnedPatterns: allLearnedPatterns
+      }
     };
+  }
+
+  /**
+   * Generate scraper for a single batch with retry
+   */
+  async generateBatchScraper(batch, url, pageStructure, learnedPatterns, batchIdx) {
+    let attempt = 0;
+    let bestScript = null;
+    let learnedFromBatch = [];
+
+    while (attempt < 2 && !bestScript) { // Max 2 attempts per batch
+      attempt++;
+      console.log(`  🔄 Attempt ${attempt} for batch ${batchIdx + 1}`);
+
+      // Build focused prompt
+      const prompt = this.buildFocusedPrompt({
+        fields: batch.fields,
+        url,
+        pageStructure,
+        previousResults: null,
+        learnedPatterns: [...learnedPatterns, ...learnedFromBatch],
+        attempt
+      });
+
+      // Generate scraper code
+      const script = await this.generateFocusedScraper(prompt);
+      
+      // Quick validation: does it look like valid code?
+      if (script.includes('module.exports') && script.includes('async function')) {
+        bestScript = script;
+        console.log(`  ✅ Generated scraper for batch ${batchIdx + 1}`);
+        
+        // Learn from structure
+        if (script.includes('querySelector')) learnedFromBatch.push('Uses querySelector pattern');
+        if (script.includes('Array.from')) learnedFromBatch.push('Uses Array.from for iteration');
+        
+        break;
+      } else {
+        console.log(`  ⚠️ Attempt ${attempt} produced invalid code, retrying...`);
+      }
+    }
+
+    return {
+      script: bestScript || '// Failed to generate',
+      iterations: attempt,
+      learnedPatterns: learnedFromBatch
+    };
+  }
+
+  /**
+   * Merge two scraper scripts by combining their data extraction logic
+   */
+  mergeScraperScripts(script1, script2) {
+    // Extract data objects from both scripts
+    const dataMatch1 = script1.match(/const data = await page\.evaluate\(\(\) => \(([\s\S]*?)\)\);/);
+    const dataMatch2 = script2.match(/const data = await page\.evaluate\(\(\) => \(([\s\S]*?)\)\);/);
+    
+    if (!dataMatch1 || !dataMatch2) {
+      console.warn('⚠️ Could not merge scripts, using first one');
+      return script1;
+    }
+
+    // Combine the data objects
+    const data1 = dataMatch1[1];
+    const data2 = dataMatch2[1];
+    
+    // Simple merge: combine the object properties
+    const mergedData = data1.slice(0, -1) + ',\n    ' + data2.trim();
+    
+    return script1.replace(dataMatch1[1], mergedData);
   }
 
   /**
@@ -253,8 +269,10 @@ Return: {success: true, data: {...}, metadata: {fieldsFound: N}}
    * Generate focused scraper with minimal prompt
    */
   async generateFocusedScraper(prompt) {
-    // Use the existing AI agent but with focused prompt
-    const response = await this.aiAgent.queryLLM(prompt, { stream: false });
+    console.log(`  📝 Generating scraper (${Math.ceil(prompt.length / 3.3)} tokens)`);
+    
+    // Use the existing AI agent's queryOllama method
+    const response = await this.aiAgent.queryOllama(prompt, { stream: false });
     
     // Extract code from response
     const codeMatch = response.match(/```(?:javascript|js)?\n([\s\S]*?)```/);
@@ -262,6 +280,13 @@ Return: {success: true, data: {...}, metadata: {fieldsFound: N}}
       return codeMatch[1].trim();
     }
     
+    // If no code block, try to extract module.exports pattern
+    const moduleMatch = response.match(/module\.exports\s*=[\s\S]*?};/);
+    if (moduleMatch) {
+      return moduleMatch[0];
+    }
+    
+    // Last resort: return as-is and hope for the best
     return response;
   }
 
