@@ -99,6 +99,12 @@ function setupEventListeners() {
     ghostModeBtn.addEventListener('click', toggleGhostMode);
   }
   
+  // System Info Panel
+  const showSystemInfoBtn = document.getElementById('show-system-info-btn');
+  if (showSystemInfoBtn) {
+    showSystemInfoBtn.addEventListener('click', toggleSystemInfo);
+  }
+  
   // Capture buttons
   document.querySelectorAll('.capture-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -962,6 +968,92 @@ function updateUI() {
     }
   });
   
-  // Go to saved step
+  // Go to step saved step
   goToStep(state.currentStep || 1);
+}
+
+// Toggle system info panel
+async function toggleSystemInfo() {
+  const panel = document.getElementById('system-info-panel');
+  const btn = document.getElementById('show-system-info-btn');
+  
+  if (panel.style.display === 'none') {
+    panel.style.display = 'block';
+    btn.textContent = '🔍 Hide System Resources';
+    panel.innerHTML = '<div style="text-align: center; padding: 10px;"><span style="font-size: 12px;">⏳ Loading system info...</span></div>';
+    
+    try {
+      // Fetch Ollama models and their status
+      const response = await fetch('http://localhost:11434/api/ps');
+      const data = await response.json();
+      
+      let html = '<div style="line-height: 1.6;">';
+      html += '<strong style="font-size: 11px; color: #333;">📊 LOADED MODELS</strong><br><br>';
+      
+      if (data.models && data.models.length > 0) {
+        data.models.forEach(model => {
+          const name = model.name || 'unknown';
+          const size = (model.size / 1024 / 1024 / 1024).toFixed(1) + ' GB';
+          const processor = model.details?.quantization_level || 'unknown';
+          
+          // Parse processor split
+          let gpuPercent = 0;
+          let cpuPercent = 0;
+          if (processor.includes('%')) {
+            const match = processor.match(/(\d+)%\/(\d+)%\s+([^/]+)\/([^/]+)/);
+            if (match) {
+              gpuPercent = parseInt(match[2]);
+              cpuPercent = parseInt(match[1]);
+            }
+          }
+          
+          // Color code based on GPU usage
+          let statusColor = '#28a745'; // green
+          if (gpuPercent < 100) {
+            statusColor = '#ffc107'; // yellow
+          }
+          if (gpuPercent < 50) {
+            statusColor = '#dc3545'; // red
+          }
+          
+          html += `<div style="margin-bottom: 12px; padding: 8px; background: #fff; border: 1px solid #dee2e6; border-radius: 3px;">`;
+          html += `<div style="font-weight: bold; color: ${statusColor};">● ${name}</div>`;
+          html += `<div style="margin-top: 4px; color: #666;">Size: ${size}</div>`;
+          
+          if (gpuPercent > 0 || cpuPercent > 0) {
+            html += `<div style="margin-top: 4px;">`;
+            html += `<span style="color: ${statusColor};">GPU: ${gpuPercent}%</span> | `;
+            html += `<span style="color: #6c757d;">CPU: ${cpuPercent}%</span>`;
+            html += `</div>`;
+            
+            if (gpuPercent < 100) {
+              html += `<div style="margin-top: 4px; font-size: 9px; color: #dc3545;">`;
+              html += `⚠️ Model split between GPU/CPU - slower performance`;
+              html += `</div>`;
+            }
+          }
+          
+          html += `</div>`;
+        });
+      } else {
+        html += '<div style="color: #666;">No models currently loaded</div>';
+      }
+      
+      html += '</div>';
+      panel.innerHTML = html;
+    } catch (error) {
+      panel.innerHTML = `
+        <div style="color: #dc3545; padding: 8px;">
+          <strong>❌ Error fetching system info</strong><br>
+          <span style="font-size: 9px;">${error.message}</span><br><br>
+          <span style="font-size: 9px; color: #666;">
+            Make sure Ollama is running on localhost:11434
+          </span>
+        </div>
+      `;
+    }
+  } else {
+    panel.style.display = 'none';
+    btn.textContent = '🔍 Check System Resources';
+  }
 }

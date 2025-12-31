@@ -27,6 +27,11 @@ class ScraperAIAgent {
     this.chat = new window.AgentChat();
     this.interactiveMode = false;
     
+    // Initialize enhanced RAG systems
+    this.enhancedMemory = new window.EnhancedAgentMemory();
+    this.conversationMemory = new window.ConversationMemory();
+    this.promptOptimizer = new window.PromptOptimizer();
+    
     // Initialize WebGPU iframe
     this.initWebGPUInference();
   }
@@ -563,6 +568,16 @@ async function analyzeWithAI(content, prompt, model = null, contexts = null) {
   }
 }` : '';
 
+    // Get RAG context from enhanced memory
+    let ragContext = null;
+    if (this.enhancedMemory && this.enhancedMemory.encoderReady) {
+      try {
+        ragContext = await this.enhancedMemory.getGenerationContext(scraperConfig);
+      } catch (error) {
+        console.warn('RAG context retrieval failed:', error);
+      }
+    }
+    
     // Load selected context guides
     let contextGuidance = '';
     if (this.selectedContexts && this.selectedContexts.length > 0 && window.SCRAPER_CONTEXTS) {
@@ -589,7 +604,9 @@ PAGE STRUCTURE ANALYSIS:
 - Body Content: ${analysisContext.pageStructure?.bodyLength || 'Unknown'} bytes
 ${analysisContext.pageStructure?.commonIds?.length ? `- Relevant IDs: ${analysisContext.pageStructure.commonIds.join(', ')}` : ''}
 ${analysisContext.pageStructure?.commonClasses?.length ? `- Relevant Classes: ${analysisContext.pageStructure.commonClasses.join(', ')}` : ''}
-${contextGuidance}
+
+${this.formatRAGContext(ragContext)}${contextGuidance}
+
 FIELDS TO EXTRACT:
 ${fieldsDescription}
 
@@ -1828,6 +1845,87 @@ Generate the FIXED complete script now:`;
     }
     
     return code.trim();
+  }
+
+  // Format RAG context for prompt injection
+  formatRAGContext(ragContext) {
+    if (!ragContext) return '';
+
+    let context = '\n=== MEMORY & PAST EXPERIENCE ===\n';
+    
+    // Add similar successes
+    if (ragContext.similarSuccesses?.length > 0) {
+      context += '\n📊 PAST SUCCESSES (similar scrapers):\n';
+      ragContext.similarSuccesses.slice(0, 3).forEach((ep, i) => {
+        context += `${i + 1}. ${ep.summary}\n`;
+        if (ep.relevanceScore) {
+          context += `   Relevance: ${(ep.relevanceScore * 100).toFixed(0)}%\n`;
+        }
+      });
+    }
+
+    // Add domain knowledge
+    if (ragContext.domainKnowledge) {
+      const dk = ragContext.domainKnowledge;
+      
+      if (Object.keys(dk.commonSelectors || {}).length > 0) {
+        const topSelectors = Object.entries(dk.commonSelectors)
+          .sort(([,a], [,b]) => b - a)
+          .slice(0, 5)
+          .map(([sel, count]) => `${sel} (used ${count}x)`)
+          .join(', ');
+        context += `\n🎯 Common selectors for this domain: ${topSelectors}\n`;
+      }
+
+      if (Object.keys(dk.commonTools || {}).length > 0) {
+        const topTools = Object.entries(dk.commonTools)
+          .sort(([,a], [,b]) => b - a)
+          .slice(0, 3)
+          .map(([tool]) => tool)
+          .join(', ');
+        context += `🛠️ Common tools: ${topTools}\n`;
+      }
+    }
+
+    // Add recommended techniques
+    if (ragContext.recommendedTechniques?.length > 0) {
+      context += '\n💡 RECOMMENDED TECHNIQUES:\n';
+      ragContext.recommendedTechniques.slice(0, 2).forEach((tech, i) => {
+        if (tech.selectors?.length) {
+          context += `${i + 1}. Selectors: ${tech.selectors.slice(0, 3).join(', ')}\n`;
+        }
+      });
+    }
+
+    // Add warnings from failures
+    if (ragContext.similarFailures?.length > 0) {
+      context += '\n⚠️ AVOID THESE MISTAKES:\n';
+      ragContext.similarFailures.slice(0, 2).forEach((ep, i) => {
+        const cause = ep.diagnosis?.rootCause || 'Unknown issue';
+        context += `${i + 1}. ${cause}\n`;
+      });
+    }
+
+    context += '=== END MEMORY ===\n\n';
+    return context;
+  }
+
+  // Record generation episode in enhanced memory
+  async recordGenerationEpisode(config, script, testResult, diagnosis, conversationHistory) {
+    if (!this.enhancedMemory) return;
+
+    try {
+      await this.enhancedMemory.recordEpisode(
+        config, 
+        script, 
+        testResult, 
+        diagnosis, 
+        conversationHistory || []
+      );
+      console.log('✅ Episode recorded in enhanced memory');
+    } catch (error) {
+      console.warn('Failed to record episode:', error);
+    }
   }
 }
 

@@ -769,6 +769,17 @@
           </optgroup>
         </select>
         <div id="model-status" style="font-size: 10px; color: #666; margin-top: 4px;">Checking available models...</div>
+        
+        <!-- System Diagnostics Button -->
+        <button id="show-system-info-btn" type="button" class="btn-secondary" style="width: 100%; margin-top: 8px; font-size: 11px; padding: 6px;">
+          🔍 Check System Resources
+        </button>
+        <div id="system-info-panel" style="display: none; margin-top: 8px; padding: 10px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; font-size: 10px; font-family: monospace;">
+          <div style="text-align: center; padding: 10px;">
+            <span style="font-size: 12px;">⏳ Loading system info...</span>
+          </div>
+        </div>
+        
         <div style="font-size: 10px; color: #888; margin-top: 8px; padding: 8px; background: #f5f5f5; border-radius: 4px;">
           <strong>💡 How it works:</strong><br>
           • WebGPU (7B) tries first - fast for fixes &amp; small prompts<br>
@@ -845,6 +856,12 @@
     </div>
   </div>
 
+  <!-- Enhanced RAG System -->
+  <script src="agent-memory-enhanced.js"></script>
+  <script src="agent-conversation-memory.js"></script>
+  <script src="agent-prompt-optimizer.js"></script>
+  
+  <!-- Core Agent System -->
   <script src="agent-knowledge.js"></script>
   <script src="agent-chat.js"></script>
   <script src="scraper-context.js"></script>
