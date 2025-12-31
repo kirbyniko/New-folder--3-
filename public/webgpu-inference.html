@@ -137,20 +137,20 @@
             return;
           }
           
-          // Stall: no new tokens for 10 seconds (only after first token)
-          if (timeSinceLastUpdate > 10000) {
-            console.warn('⚠️ Generation stalled (no tokens for 10s), completing with current output');
+          // Stall: no new tokens for 5 seconds (only after first token)
+          if (timeSinceLastUpdate > 5000) {
+            console.warn(`⚠️ Generation stalled (no tokens for 5s), completing with ${tokenCount} tokens`);
             completeGeneration();
           }
-          // Timeout: taking too long overall (5 minutes)
-          else if (totalTime > 300) {
-            console.warn('⚠️ Generation timeout (5 minutes), completing with current output');
+          // Timeout: taking too long overall (3 minutes for fixes)
+          else if (totalTime > 180) {
+            console.warn(`⚠️ Generation timeout (3 minutes), completing with ${tokenCount} tokens`);
             completeGeneration();
           }
           // Warn if slow but don't stop (let user know it's working)
-          else if (totalTime > 30 && charsPerSecond < 2 && charsPerSecond > 0) {
+          else if (totalTime > 20 && charsPerSecond < 2 && charsPerSecond > 0) {
             if (!this.slowWarningShown) {
-              console.warn(`⏱️ Generation is slow (${charsPerSecond.toFixed(1)} chars/sec) but continuing...`);
+              console.warn(`⏱️ Generation is slow (${charsPerSecond.toFixed(1)} chars/sec, ${tokenCount} tokens so far) but continuing...`);
               this.slowWarningShown = true;
             }
           }

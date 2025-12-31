@@ -1085,14 +1085,25 @@ Generate the complete scraper code now:`;
                          script.includes('export {');
         
         if (!hasExport) {
-          // Try to auto-fix by adding module.exports if we detect a scraper function
-          const hasScrapeFunction = script.match(/(?:async\s+)?function\s+\w+\s*\(/);
-          if (hasScrapeFunction) {
-            console.log('⚙️ Auto-fixing: Adding module.exports wrapper');
-            script = script + '\n\nmodule.exports = scrape;';
+          // Try to auto-fix by detecting the main function and adding export
+          const functionMatch = script.match(/(?:async\s+)?function\s+(\w+)\s*\(/);
+          if (functionMatch) {
+            const functionName = functionMatch[1];
+            console.log(`⚙️ Auto-fixing: Adding module.exports = ${functionName};`);
+            script = script + `\n\nmodule.exports = ${functionName};`;
             break; // Success after auto-fix
           }
-          throw new Error('Script missing export statement');
+          
+          // Check if it's an arrow function assigned to const
+          const arrowMatch = script.match(/const\s+(\w+)\s*=\s*(?:async\s*)?\([^)]*\)\s*=>/);
+          if (arrowMatch) {
+            const functionName = arrowMatch[1];
+            console.log(`⚙️ Auto-fixing: Adding module.exports = ${functionName};`);
+            script = script + `\n\nmodule.exports = ${functionName};`;
+            break; // Success after auto-fix
+          }
+          
+          throw new Error('Script missing export statement and could not detect function name');
         }
         
         // Success!
@@ -1174,15 +1185,19 @@ Generate the complete scraper code now:`;
         updateProgress('🔧 Attempting to fix script...');
         
         let progressTimer = null;
+        let progressCount = 0;
         try {
-          // Add timeout and progress tracking
+          // Add timeout and progress tracking (less spammy)
           progressTimer = setInterval(() => {
-            updateProgress('⏳ Still generating fix...');
-          }, 10000); // Update every 10 seconds
+            progressCount++;
+            if (progressCount % 2 === 0) { // Only show every 20s
+              updateProgress(`⏳ Still generating fix... (${progressCount * 10}s elapsed)`);
+            }
+          }, 10000); // Check every 10 seconds
           
           const fixPromise = this.fixScript(script, lastDiagnosis, testResult, scraperConfig, relevantContext);
           const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Fix generation timeout after 60s')), 60000)
+            setTimeout(() => reject(new Error('Fix generation timeout after 90s')), 90000) // Increased to 90s
           );
           
           const rawFix = await Promise.race([fixPromise, timeoutPromise]);
@@ -1296,6 +1311,27 @@ Generate the complete scraper code now:`;
         const result = await response.json();
         
         console.log('📦 Backend response:', result);
+        
+        // Check for catastrophic errors (infinite loops, stack overflows)
+        if (result.error) {
+          const errorLower = result.error.toLowerCase();
+          if (errorLower.includes('maximum call stack') || errorLower.includes('stack overflow')) {
+            return {
+              success: false,
+              error: 'Infinite recursion detected - script contains infinite loop',
+              fieldsExtracted: 0,
+              hint: 'Remove recursive calls or add proper termination conditions'
+            };
+          }
+          if (errorLower.includes('timeout') || errorLower.includes('execution time')) {
+            return {
+              success: false,
+              error: 'Script execution timeout - likely infinite loop or very slow page',
+              fieldsExtracted: 0,
+              hint: 'Add timeout to waitFor calls, reduce wait times, or simplify logic'
+            };
+          }
+        }
         
         // The script returns { success, data, metadata } but we need the inner data
         // Check if result.data is the nested response
