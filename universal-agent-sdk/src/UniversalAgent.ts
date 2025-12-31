@@ -385,8 +385,8 @@ export class UniversalAgent {
   /**
    * Get current token estimates
    */
-  getTokenEstimates() {
-    return this.configManager.tokenEstimates;
+  async getTokenEstimates() {
+    return await this.configManager.calculateTokenEstimates();
   }
 
   /**

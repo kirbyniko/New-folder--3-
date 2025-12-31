@@ -174,4 +174,45 @@ export class AgentConfigManager {
     this.config = { ...this.config, ...presetConfig };
     return true;
   }
+
+  /**
+   * Update configuration based on detected hardware capabilities
+   */
+  updateFromCapabilities(capabilities: any, limits: any): void {
+    // Adjust context limits based on detected hardware
+    if (limits.contextWindow) {
+      // Adjust RAG episodes if enabled
+      if (typeof this.config.rag === 'object' && this.config.rag.maxResults !== undefined) {
+        this.config.rag.maxResults = Math.min(
+          this.config.rag.maxResults,
+          Math.floor(limits.contextWindow / 2000) // ~2K tokens per episode
+        );
+      }
+    }
+
+    // Adjust based on available model
+    if (capabilities.ollama?.available && capabilities.ollama?.models?.length > 0) {
+      // Use maximum settings for Ollama
+      this.applyPreset('maximum');
+    } else if (capabilities.webgpu?.available) {
+      // Use GPU-optimized settings for WebGPU
+      this.applyPreset('gpu');
+    } else {
+      // Fallback to minimal
+      this.applyPreset('minimal');
+    }
+  }
+
+  /**
+   * Update configuration with new intelligence settings and/or preset
+   */
+  updateConfig(intelligence?: Partial<IntelligenceConfig>, preset?: string): void {
+    if (preset) {
+      this.applyPreset(preset);
+    }
+    
+    if (intelligence) {
+      this.config = { ...this.config, ...intelligence };
+    }
+  }
 }

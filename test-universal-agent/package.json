@@ -1,0 +1,15 @@
+{
+  "name": "test-universal-agent",
+  "version": "1.0.0",
+  "description": "Test app for universal-agent-sdk",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "node test-basic.js",
+    "test:chat": "node test-chat.js",
+    "test:hardware": "node test-hardware.js"
+  },
+  "dependencies": {
+    "universal-agent-sdk": "file:../universal-agent-sdk"
+  }
+}
