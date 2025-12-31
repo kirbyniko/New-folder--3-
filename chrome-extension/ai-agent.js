@@ -1132,8 +1132,22 @@ Generate the complete scraper code now:`;
       if (iteration < maxIterations) {
         updateProgress('🔧 Attempting to fix script...');
         
+        let progressTimer = null;
         try {
-          const rawFix = await this.fixScript(script, lastDiagnosis, testResult, scraperConfig, relevantContext);
+          // Add timeout and progress tracking
+          progressTimer = setInterval(() => {
+            updateProgress('⏳ Still generating fix...');
+          }, 10000); // Update every 10 seconds
+          
+          const fixPromise = this.fixScript(script, lastDiagnosis, testResult, scraperConfig, relevantContext);
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Fix generation timeout after 60s')), 60000)
+          );
+          
+          const rawFix = await Promise.race([fixPromise, timeoutPromise]);
+          clearInterval(progressTimer);
+          progressTimer = null;
+          updateProgress('✅ Fix generated, extracting code...');
           const fixedScript = this.extractCode(rawFix);
           const cleanedScript = this.cleanGeneratedCode(fixedScript);
           
@@ -1145,6 +1159,7 @@ Generate the complete scraper code now:`;
             updateProgress('✅ Script updated');
           }
         } catch (fixError) {
+          if (progressTimer) clearInterval(progressTimer);
           updateProgress(`⚠️ Fix extraction failed: ${fixError.message}, keeping original script`);
           // Don't throw - keep original script and continue
         }
