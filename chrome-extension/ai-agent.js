@@ -1538,7 +1538,17 @@ Return ONLY the compressed prompt, no explanations.`;
         }
       }
       
-      // Step 6: Remove RAG context if STILL too large
+      // Step 6: Remove context guides if STILL too large
+      if (Math.ceil(reducedPrompt.length / 3.3) > viability.safeLimit) {
+        const contextGuidesPattern = /=== REUSABLE PATTERNS ===[\s\S]*?=== END PATTERNS ===/i;
+        const beforeGuides = reducedPrompt.length;
+        reducedPrompt = reducedPrompt.replace(contextGuidesPattern, '');
+        if (reducedPrompt.length < beforeGuides) {
+          updateProgress(`   ✂️ Removed context guides: ${beforeGuides - reducedPrompt.length} chars saved`);
+        }
+      }
+      
+      // Step 7: Remove RAG context if STILL too large
       if (Math.ceil(reducedPrompt.length / 3.3) > viability.safeLimit) {
         const ragPattern = /KNOWLEDGE BASE CONTEXT:[\s\S]*?(?=FIELDS TO EXTRACT:|$)/i;
         const beforeRAG = reducedPrompt.length;
