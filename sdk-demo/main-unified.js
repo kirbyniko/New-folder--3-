@@ -10,6 +10,7 @@
 
 import { UniversalAgent } from 'universal-agent-sdk';
 import MetricsService from './src/services/MetricsService.js';
+import { TemplateManager } from './src/components/TemplateManager.js';
 
 class AgentStudio {
   constructor() {
@@ -18,6 +19,7 @@ class AgentStudio {
     this.messages = [];
     this.isGenerating = false;
     this.currentStream = null;
+    this.templateManager = null;
     
     this.config = {
       model: 'qwen2.5-coder:32b',
@@ -55,6 +57,10 @@ class AgentStudio {
     this.attachEventListeners();
     this.loadConversations();
     this.loadModels();
+    
+    // Initialize TemplateManager
+    this.templateManager = new TemplateManager();
+    console.log('✅ Template Manager initialized');
   }
 
   attachEventListeners() {

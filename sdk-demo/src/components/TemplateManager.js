@@ -11,6 +11,7 @@ export class TemplateManager {
   constructor() {
     this.currentTemplate = null;
     this.templates = [];
+    this.apiUrl = 'https://civitracker.pages.dev/api/scraper-templates'; // Cloudflare Pages
     this.init();
   }
 
@@ -19,14 +20,63 @@ export class TemplateManager {
     this.setupEventListeners();
   }
 
-  loadTemplates() {
-    const saved = localStorage.getItem('scraperTemplates');
-    this.templates = saved ? JSON.parse(saved) : this.getDefaultTemplates();
+  async loadTemplates() {
+    try {
+      // Try to load from API first
+      const response = await fetch(this.apiUrl);
+      const data = await response.json();
+      
+      if (data.success && data.templates) {
+        this.templates = data.templates;
+        console.log(`✅ Loaded ${data.templates.length} templates from database`);
+      } else {
+        throw new Error('Failed to load from API');
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to load from API, using defaults:', error);
+      // Fallback to localStorage or defaults
+      const saved = localStorage.getItem('scraperTemplates');
+      this.templates = saved ? JSON.parse(saved) : this.getDefaultTemplates();
+    }
+    
     this.renderTemplatesList();
   }
 
   saveTemplates() {
+    // Save to localStorage as backup
     localStorage.setItem('scraperTemplates', JSON.stringify(this.templates));
+  }
+
+  async saveTemplateToAPI(template) {
+    try {
+      const response = await fetch(this.apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: template.id,
+          name: template.name,
+          description: template.description,
+          category: template.category || 'Custom',
+          url_pattern: template.urlPattern || '.*',
+          selectors: template.fields || {},
+          example_url: template.exampleUrl || '',
+          requires_javascript: template.requiresJs ? 1 : 0,
+          is_public: 1
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        console.log('✅ Template saved to database');
+        return true;
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (error) {
+      console.error('❌ Failed to save to API:', error);
+      return false;
+    }
   }
 
   setupEventListeners() {
@@ -46,22 +96,121 @@ export class TemplateManager {
     });
   }
 
-  createNewTemplate() {
-    const name = prompt('Template Name:', 'My Scraper Template');
-    if (!name) return;
-
-    this.currentTemplate = {
-      id: Date.now().toString(),
-      name,
-      description: '',
-      eventType: 'other',
-      scraperSource: name.toLowerCase().replace(/\s+/g, '_'),
-      steps: [],
-      created: new Date().toISOString(),
-      modified: new Date().toISOString()
+  async createNewTemplate() {
+    // Show modal dialog for template creation
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 10000;';
+    
+    modal.innerHTML = `
+      <div style="background: white; padding: 32px; border-radius: 12px; width: 90%; max-width: 500px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+        <h2 style="margin: 0 0 20px 0; color: #1f2937;">✨ Create New Template</h2>
+        
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #374151;">Template Name</label>
+          <input type="text" id="template-name" placeholder="e.g., News Article Scraper" 
+                 style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
+        </div>
+        
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #374151;">Description</label>
+          <textarea id="template-desc" placeholder="What does this template scrape?" rows="3"
+                    style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; resize: vertical;"></textarea>
+        </div>
+        
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #374151;">Category</label>
+          <select id="template-category" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
+            <option value="News">📰 News</option>
+            <option value="E-commerce">🛒 E-commerce</option>
+            <option value="Jobs">💼 Jobs</option>
+            <option value="Real Estate">🏠 Real Estate</option>
+            <option value="Events">📅 Events</option>
+            <option value="Government">🏛️ Government</option>
+            <option value="Social Media">👥 Social Media</option>
+            <option value="Food">🍽️ Food</option>
+            <option value="Blog">✍️ Blog</option>
+            <option value="Academic">🎓 Academic</option>
+            <option value="Custom">⚙️ Custom</option>
+          </select>
+        </div>
+        
+        <div style="margin-bottom: 24px;">
+          <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #374151;">Example URL</label>
+          <input type="url" id="template-url" placeholder="https://example.com/page" 
+                 style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
+        </div>
+        
+        <div style="display: flex; gap: 12px; justify-content: flex-end;">
+          <button id="cancel-template" style="padding: 10px 24px; background: #f3f4f6; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">
+            Cancel
+          </button>
+          <button id="create-template" style="padding: 10px 24px; background: #4f46e5; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">
+            Create Template
+          </button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Focus name input
+    setTimeout(() => document.getElementById('template-name').focus(), 100);
+    
+    // Handle cancel
+    document.getElementById('cancel-template').onclick = () => {
+      modal.remove();
     };
-
-    this.renderTemplateEditor();
+    
+    // Handle create
+    document.getElementById('create-template').onclick = async () => {
+      const name = document.getElementById('template-name').value.trim();
+      const description = document.getElementById('template-desc').value.trim();
+      const category = document.getElementById('template-category').value;
+      const exampleUrl = document.getElementById('template-url').value.trim();
+      
+      if (!name) {
+        alert('Please enter a template name');
+        return;
+      }
+      
+      const template = {
+        id: `template-${Date.now()}`,
+        name,
+        description,
+        category,
+        url_pattern: exampleUrl ? new URL(exampleUrl).hostname : '.*',
+        selectors: {},
+        example_url: exampleUrl,
+        requires_javascript: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      // Save to API
+      const saved = await this.saveTemplateToAPI(template);
+      
+      if (saved) {
+        this.templates.push(template);
+        this.saveTemplates();
+        this.renderTemplatesList();
+        
+        // Show success message
+        alert(`✅ Template "${name}" created successfully!`);
+        modal.remove();
+      } else {
+        // Still add locally even if API fails
+        this.templates.push(template);
+        this.saveTemplates();
+        this.renderTemplatesList();
+        alert(`⚠️ Template created locally. Cloud sync may be unavailable.`);
+        modal.remove();
+      }
+    };
+    
+    // Close on background click
+    modal.onclick = (e) => {
+      if (e.target === modal) modal.remove();
+    };
   }
 
   addStep() {
@@ -87,36 +236,115 @@ export class TemplateManager {
     if (!container) return;
 
     if (this.templates.length === 0) {
-      container.innerHTML = '<p style="text-align: center; color: #999;">No templates yet. Create your first template!</p>';
+      container.innerHTML = `
+        <div style="text-align: center; padding: 32px; color: #6b7280;">
+          <div style="font-size: 48px; margin-bottom: 16px;">📋</div>
+          <p style="font-size: 16px; margin-bottom: 8px; color: #374151; font-weight: 500;">No templates yet</p>
+          <p style="font-size: 14px;">Create your first template to get started!</p>
+        </div>
+      `;
       return;
     }
 
-    let html = '<div style="display: grid; gap: 12px;">';
+    // Group by category
+    const byCategory = {};
     this.templates.forEach(template => {
-      const stepCount = template.steps?.length || 0;
+      const cat = template.category || 'Custom';
+      if (!byCategory[cat]) byCategory[cat] = [];
+      byCategory[cat].push(template);
+    });
+
+    let html = '';
+    
+    Object.keys(byCategory).sort().forEach(category => {
       html += `
-        <div class="template-card" style="padding: 16px; background: white; border: 1px solid #e5e7eb; border-radius: 8px; cursor: pointer;" data-id="${template.id}">
-          <div style="display: flex; justify-content: space-between; align-items: start;">
-            <div>
-              <h4 style="margin: 0 0 4px 0; color: #1f2937;">${template.name}</h4>
-              <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 12px;">${template.description || 'No description'}</p>
-              <div style="display: flex; gap: 8px; font-size: 11px;">
-                <span style="padding: 2px 8px; background: #e0e7ff; color: #4f46e5; border-radius: 4px;">${stepCount} steps</span>
-                <span style="padding: 2px 8px; background: #fef3c7; color: #92400e; border-radius: 4px;">${template.eventType}</span>
+        <div style="margin-bottom: 24px;">
+          <h4 style="margin: 0 0 12px 0; color: #6b7280; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em;">${category}</h4>
+          <div style="display: grid; gap: 10px;">
+      `;
+      
+      byCategory[category].forEach(template => {
+        const selectorCount = Object.keys(template.selectors || {}).length;
+        const usageCount = template.use_count || 0;
+        const requiresJs = template.requires_javascript ? '⚡ JS' : '';
+        
+        html += `
+          <div class="template-card" style="padding: 14px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: all 0.2s;" 
+               data-id="${template.id}"
+               onmouseover="this.style.background='#f3f4f6'; this.style.borderColor='#4f46e5';"
+               onmouseout="this.style.background='#f9fafb'; this.style.borderColor='#e5e7eb';">
+            <div style="display: flex; justify-content: space-between; align-items: start; gap: 12px;">
+              <div style="flex: 1;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                  <h4 style="margin: 0; color: #111827; font-size: 14px; font-weight: 600;">${template.name}</h4>
+                  ${requiresJs ? '<span style="font-size: 10px; padding: 2px 6px; background: #fef3c7; color: #92400e; border-radius: 3px;">' + requiresJs + '</span>' : ''}
+                </div>
+                <p style="margin: 4px 0; color: #6b7280; font-size: 12px; line-height: 1.4;">${template.description || 'No description'}</p>
+                <div style="display: flex; gap: 6px; margin-top: 6px; font-size: 11px; color: #9ca3af;">
+                  <span>📊 ${selectorCount} fields</span>
+                  <span>•</span>
+                  <span>👥 ${usageCount} uses</span>
+                  ${template.example_url ? '<span>• <a href="' + template.example_url + '" target="_blank" style="color: #4f46e5;">Example</a></span>' : ''}
+                </div>
+              </div>
+              <div style="display: flex; gap: 4px; flex-shrink: 0;">
+                <button class="use-template-btn" data-id="${template.id}" 
+                        style="padding: 6px 12px; background: #4f46e5; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 11px; font-weight: 500; white-space: nowrap;">
+                  Use Template
+                </button>
+                <button class="delete-template-btn" data-id="${template.id}" 
+                        style="padding: 6px 10px; background: #fee; color: #dc2626; border: 1px solid #fecaca; border-radius: 5px; cursor: pointer; font-size: 11px;">
+                  🗑️
+                </button>
               </div>
             </div>
-            <div style="display: flex; gap: 4px;">
-              <button class="edit-template-btn" data-id="${template.id}" style="padding: 6px 12px; background: #6366f1; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;">✏️ Edit</button>
-              <button class="delete-template-btn" data-id="${template.id}" style="padding: 6px 12px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;">🗑️</button>
-            </div>
           </div>
-        </div>
-      `;
+        `;
+      });
+      
+      html += '</div></div>';
     });
-    html += '</div>';
+
     container.innerHTML = html;
 
-    // Attach event listeners
+    // Attach event listeners for Use Template buttons
+    container.querySelectorAll('.use-template-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.id;
+        const template = this.templates.find(t => t.id === id);
+        if (template) {
+          // Emit event for builder to use
+          window.dispatchEvent(new CustomEvent('template-selected', { detail: template }));
+          alert(`✅ Template "${template.name}" loaded! Switch to the Builder tab to configure your scraper.`);
+        }
+      });
+    });
+
+    // Attach event listeners for Delete buttons
+    container.querySelectorAll('.delete-template-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.id;
+        const template = this.templates.find(t => t.id === id);
+        
+        if (confirm(`Delete template "${template.name}"?`)) {
+          try {
+            // Try to delete from API
+            await fetch(`${this.apiUrl}?id=${id}`, { method: 'DELETE' });
+          } catch (error) {
+            console.warn('Failed to delete from API:', error);
+          }
+          
+          // Remove from local array
+          this.templates = this.templates.filter(t => t.id !== id);
+          this.saveTemplates();
+          this.renderTemplatesList();
+        }
+      });
+    });
+    
+    // Old edit button handler (if still present)
     container.querySelectorAll('.edit-template-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
