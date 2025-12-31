@@ -9,10 +9,24 @@
 
     let engine = null;
     let isInitialized = false;
+    let isInitializing = false;
 
     // Initialize the engine with a small code-focused model
     async function initializeEngine() {
-      if (isInitialized) return;
+      if (isInitialized) {
+        console.log('✅ Engine already initialized, reusing existing instance');
+        return;
+      }
+      if (isInitializing) {
+        console.log('⏳ Engine initialization already in progress, waiting...');
+        // Wait for existing initialization
+        while (isInitializing && !isInitialized) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        return;
+      }
+      
+      isInitializing = true;
       
       console.log('🚀 Initializing WebGPU inference engine...');
       console.log('📦 Model will be cached in browser storage after first download');
@@ -35,6 +49,7 @@
         });
         
         isInitialized = true;
+        isInitializing = false;
         console.log('✅ Engine initialized');
         
         window.parent.postMessage({
@@ -44,6 +59,7 @@
         
       } catch (error) {
         console.error('❌ Engine initialization failed:', error);
+        isInitializing = false;
         window.parent.postMessage({
           type: 'INIT_COMPLETE',
           success: false,
@@ -121,21 +137,22 @@
             return;
           }
           
-          // Stall: no new tokens for 5 seconds (only after first token)
-          if (timeSinceLastUpdate > 5000) {
-            console.warn('⚠️ Generation stalled (no tokens for 5s), completing with current output');
+          // Stall: no new tokens for 10 seconds (only after first token)
+          if (timeSinceLastUpdate > 10000) {
+            console.warn('⚠️ Generation stalled (no tokens for 10s), completing with current output');
             completeGeneration();
           }
-          // Timeout: taking too long overall
-          else if (totalTime > 120) {
-            console.warn('⚠️ Generation timeout (2 minutes), completing with current output');
+          // Timeout: taking too long overall (5 minutes)
+          else if (totalTime > 300) {
+            console.warn('⚠️ Generation timeout (5 minutes), completing with current output');
             completeGeneration();
           }
-          // Too slow: severely degraded performance (< 1 char/sec after 30s indicates serious issue)
-          // Give model more time to warm up before checking speed
-          else if (totalTime > 30 && charsPerSecond < 1) {
-            console.warn(`⚠️ Generation critically slow (${charsPerSecond.toFixed(1)} chars/sec), completing with current output`);
-            completeGeneration();
+          // Warn if slow but don't stop (let user know it's working)
+          else if (totalTime > 30 && charsPerSecond < 2 && charsPerSecond > 0) {
+            if (!this.slowWarningShown) {
+              console.warn(`⏱️ Generation is slow (${charsPerSecond.toFixed(1)} chars/sec) but continuing...`);
+              this.slowWarningShown = true;
+            }
           }
         }, 1000);
 
