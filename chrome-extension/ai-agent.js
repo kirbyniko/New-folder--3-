@@ -18,6 +18,9 @@ class ScraperAIAgent {
     this.contextFiles = {};
     this.analysisResults = {};
     
+    // Selected context guides (user can configure)
+    this.selectedContexts = ['basic-selectors', 'error-handling']; // Defaults
+    
     // Initialize knowledge base and chat
     this.knowledge = new window.AgentKnowledge();
     this.chat = new window.AgentChat();
@@ -513,6 +516,19 @@ async function analyzeWithAI(content, prompt) {
   }
 }` : '';
 
+    // Load selected context guides
+    let contextGuidance = '';
+    if (this.selectedContexts && this.selectedContexts.length > 0 && window.SCRAPER_CONTEXTS) {
+      contextGuidance = '\n\n=== PROVEN PATTERNS & TACTICS ===\n';
+      for (const contextKey of this.selectedContexts) {
+        const ctx = window.SCRAPER_CONTEXTS[contextKey];
+        if (ctx) {
+          contextGuidance += `\n${ctx.content}\n`;
+        }
+      }
+      contextGuidance += '\n=== END PATTERNS ===\n\n';
+    }
+
     const prompt = `Generate a Node.js data extraction script.
 
 SCRAPER: ${scraperConfig.name}
@@ -526,7 +542,7 @@ PAGE STRUCTURE ANALYSIS:
 - Body Content: ${analysisContext.pageStructure?.bodyLength || 'Unknown'} bytes
 ${analysisContext.pageStructure?.commonIds?.length ? `- Relevant IDs: ${analysisContext.pageStructure.commonIds.join(', ')}` : ''}
 ${analysisContext.pageStructure?.commonClasses?.length ? `- Relevant Classes: ${analysisContext.pageStructure.commonClasses.join(', ')}` : ''}
-
+${contextGuidance}
 FIELDS TO EXTRACT:
 ${fieldsDescription}
 
