@@ -1415,7 +1415,7 @@ Return ONLY the compressed prompt, no explanations.`;
       hasStartUrl: !!scraperConfig.startUrl
     });
     
-    if (this.useIterativeLearning && fieldCount >= 30) {
+    if (this.useIterativeLearning && fieldCount >= 2) { // Temporarily lowered from 30 for testing
       updateProgress(`🔄 Iterative Learning Mode: Processing ${fieldCount} fields in batches`);
       
       // Get URL - try multiple possible locations
