@@ -1434,7 +1434,17 @@ Return ONLY the compressed prompt, no explanations.`;
       } else {
         // Get page structure (reuse existing analysis if available)
         updateProgress('📊 Analyzing page structure...');
-        const pageStructure = await this.analyzePageStructure(targetUrl);
+        const pageStructureObj = await this.analyzePageStructure(targetUrl);
+        
+        // Convert page structure object to string format for iterative agent
+        const pageStructure = `
+Framework: ${pageStructureObj.framework || 'None'}
+HTML Size: ${pageStructureObj.htmlLength || 0} bytes
+Needs JavaScript: ${pageStructureObj.needsPuppeteer ? 'Yes' : 'No'}
+
+Relevant IDs: ${(pageStructureObj.commonIds || []).join(', ')}
+Relevant Classes: ${(pageStructureObj.commonClasses || []).join(', ')}
+`.trim();
         
         // Use iterative learning agent
         updateProgress(`🎯 Using iterative batching for ${fieldCount} fields`);
