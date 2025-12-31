@@ -24,18 +24,19 @@
 
     <!-- Navigation -->
     <nav class="nav">
-      <button class="nav-btn active" data-tab="overview">Overview</button>
+      <button class="nav-btn" data-tab="overview">Overview</button>
+      <button class="nav-btn active" data-tab="agent-editor">🎛️ Agent Editor</button>
+      <button class="nav-btn" data-tab="chat">💬 Iterative Chat</button>
+      <button class="nav-btn" data-tab="files">📁 File Manager</button>
+      <button class="nav-btn" data-tab="scraper">🕷️ Scraper Builder</button>
       <button class="nav-btn" data-tab="hardware">Hardware Detection</button>
-      <button class="nav-btn" data-tab="config">Configuration</button>
-      <button class="nav-btn" data-tab="execute">Execute Tasks</button>
-      <button class="nav-btn" data-tab="memory">Memory & Learning</button>
       <button class="nav-btn" data-tab="playground">Playground</button>
     </nav>
 
     <!-- Content Sections -->
     <main class="content">
       <!-- Overview Tab -->
-      <section id="overview" class="tab-content active">
+      <section id="overview" class="tab-content">
         <div class="hero">
           <h2>Build Intelligent Agents That Adapt to Hardware</h2>
           <p>Universal Agent SDK automatically detects available AI inference options (Ollama, GPU, WebGPU) and optimizes configuration for maximum performance.</p>
@@ -90,6 +91,26 @@ const response = await agent.execute({
 });
 </code></pre>
         </div>
+      </section>
+
+      <!-- Agent Editor Tab -->
+      <section id="agent-editor" class="tab-content active">
+        <div id="agent-editor-container"></div>
+      </section>
+
+      <!-- Iterative Chat Tab -->
+      <section id="chat" class="tab-content">
+        <div id="chat-container"></div>
+      </section>
+
+      <!-- File Manager Tab -->
+      <section id="files" class="tab-content">
+        <div id="file-manager-container"></div>
+      </section>
+
+      <!-- Scraper Builder Tab -->
+      <section id="scraper" class="tab-content">
+        <div id="scraper-builder-container"></div>
       </section>
 
       <!-- Hardware Detection Tab -->
@@ -326,6 +347,6 @@ const response = await agent.execute({
     </footer>
   </div>
 
-  <script type="module" src="/main.js"></script>
+  <script type="module" src="/main-new.js"></script>
 </body>
 </html>
