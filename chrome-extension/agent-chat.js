@@ -29,7 +29,7 @@ class AgentChat {
   }
 
   // Agent asks for feedback
-  async askForFeedback(question, options = null, timeout = 60000) {
+  async askForFeedback(question, options = null, timeout = 300000) {
     return new Promise((resolve, reject) => {
       this.waitingForFeedback = true;
       this.addMessage('agent', question, { options, expectingResponse: true });
@@ -41,7 +41,7 @@ class AgentChat {
         resolve(response);
       });
       
-      // Timeout after 60 seconds
+      // Timeout after 5 minutes (give user time to respond)
       setTimeout(() => {
         if (this.waitingForFeedback) {
           this.waitingForFeedback = false;
