@@ -3207,7 +3207,7 @@ function showScriptModal(script, editable) {
   });
 }
 
-async function generateScriptForScraper(scraper, existingScraperId = null) {
+async function generateScriptForScraper(scraper, existingScraperId = null, options = {}) {
   let progressLog = null;
   
   try {
@@ -3232,8 +3232,10 @@ async function generateScriptForScraper(scraper, existingScraperId = null) {
       font-family: monospace;
       font-size: 12px;
     `;
+    
+    const title = options.usePuppeteer ? '🎭 Regenerating with Puppeteer...' : '🤖 AI Agent Working...';
     progressLog.innerHTML = `
-      <h3 style="margin: 0 0 12px 0; font-family: sans-serif;">🤖 AI Agent Working...</h3>
+      <h3 style="margin: 0 0 12px 0; font-family: sans-serif;">${title}</h3>
       <div id="progress-messages" style="line-height: 1.6;"></div>
     `;
     document.body.appendChild(progressLog);
@@ -3246,6 +3248,11 @@ async function generateScriptForScraper(scraper, existingScraperId = null) {
       messagesDiv.appendChild(line);
       progressLog.scrollTop = progressLog.scrollHeight;
     };
+    
+    if (options.usePuppeteer) {
+      addMessage('🎭 Using Puppeteer mode for JavaScript rendering');
+      addMessage('Reason: ' + (options.reason || 'Page requires JavaScript'));
+    }
     
     addMessage('⏳ Initializing AI agent...');
     
@@ -3274,7 +3281,7 @@ async function generateScriptForScraper(scraper, existingScraperId = null) {
     // Use the new agentic generation system with progress callback
     const agenticResult = await agent.generateScraperWithAI(scraper, template, (msg) => {
       addMessage(msg);
-    });
+    }, options); // Pass options (including usePuppeteer)
     
     console.log('🎯 Agentic generation complete:', {
       iterations: agenticResult.iterations,
