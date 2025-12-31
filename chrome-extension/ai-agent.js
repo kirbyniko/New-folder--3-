@@ -1473,6 +1473,39 @@ Return ONLY the compressed prompt, no explanations.`;
       analysisContext.generationPromptCache = realPrompt;
     }
     
+    // ⚡ CRITICAL: Verify actual Ollama CPU usage before proceeding
+    updateProgress('🔍 Verifying actual GPU usage with Ollama...');
+    try {
+      const ollamaStatus = await fetch('http://localhost:11434/api/ps').then(r => r.json());
+      const currentModel = ollamaStatus.models?.find(m => m.name === this.model);
+      
+      if (currentModel) {
+        // Parse CPU/GPU split from processor field (e.g., "6%/94% CPU/GPU")
+        const processorMatch = currentModel.processor?.match(/(\d+)%\/(\d+)% CPU\/GPU/);
+        if (processorMatch) {
+          const cpuPercent = parseInt(processorMatch[1]);
+          const gpuPercent = parseInt(processorMatch[2]);
+          
+          updateProgress(`📊 Ollama status: ${cpuPercent}% CPU, ${gpuPercent}% GPU, Context: ${currentModel.details?.parameter_size || 'unknown'}`);
+          
+          if (cpuPercent > 0) {
+            updateProgress(`❌ CRITICAL FAILURE: Ollama is using ${cpuPercent}% CPU!`);
+            updateProgress(`🚫 This will cause unacceptably slow generation.`);
+            updateProgress(`💡 The qwen2.5-coder:14b model cannot achieve 0% CPU on your hardware.`);
+            updateProgress(`💡 Suggestions:`);
+            updateProgress(`   • Switch to deepseek-coder:6.7b (3.8GB, faster)`);
+            updateProgress(`   • Use a different machine with more VRAM`);
+            throw new Error(`Cannot proceed: Ollama using ${cpuPercent}% CPU. 0% CPU is required for acceptable performance.`);
+          }
+          
+          updateProgress(`✅ VERIFIED: Ollama running at ${gpuPercent}% GPU (0% CPU)`);
+        }
+      }
+    } catch (error) {
+      console.warn('Could not verify Ollama CPU usage:', error);
+      updateProgress(`⚠️ Warning: Could not verify Ollama CPU usage, proceeding anyway`);
+    }
+    
     let script;
     let scriptGenerationAttempts = 0;
     const maxScriptAttempts = 3;
