@@ -131,9 +131,9 @@
             console.warn('⚠️ Generation timeout (2 minutes), completing with current output');
             completeGeneration();
           }
-          // Too slow: degraded performance (< 10 chars/sec is abnormally slow)
-          else if (totalTime > 10 && charsPerSecond < 10) {
-            console.warn(`⚠️ Generation too slow (${charsPerSecond.toFixed(1)} chars/sec), completing with current output`);
+          // Too slow: severely degraded performance (< 3 chars/sec after 10s indicates serious issue)
+          else if (totalTime > 10 && charsPerSecond < 3) {
+            console.warn(`⚠️ Generation critically slow (${charsPerSecond.toFixed(1)} chars/sec), completing with current output`);
             completeGeneration();
           }
         }, 1000);

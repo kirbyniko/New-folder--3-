@@ -1153,7 +1153,14 @@ Generate the complete scraper code now:`;
           
           // Validate the fix
           if (cleanedScript.length < 100 || !cleanedScript.includes('module.exports')) {
-            updateProgress('⚠️ Fix extraction produced invalid code, keeping original');
+            updateProgress('⚠️ Fix extraction produced invalid code (too short or malformed)');
+            
+            // If fix is extremely short (< 100 chars), WebGPU might be degraded
+            if (cleanedScript.length < 100 && iteration < maxIterations - 1) {
+              updateProgress('💡 Model may be degraded, will regenerate from scratch next iteration');
+              // Keep original script but add a flag for next iteration
+              script = script; // No change
+            }
           } else {
             script = cleanedScript;
             updateProgress('✅ Script updated');
@@ -1247,6 +1254,8 @@ Generate the complete scraper code now:`;
         
         const result = await response.json();
         
+        console.log('📦 Backend response:', result);
+        
         // Map backend response to expected format
         if (result.error) {
           return {
@@ -1254,12 +1263,24 @@ Generate the complete scraper code now:`;
             error: result.error,
             stack: result.stack,
             fieldsExtracted: 0,
-            url: targetUrl
+            url: targetUrl,
+            logs: result.logs || []
           };
         }
         
         const fieldsFound = result.metadata?.fieldsFound || 0;
         const hasData = result.data && Object.keys(result.data).length > 0;
+        
+        // Log what data was actually extracted
+        if (hasData) {
+          console.log('📊 Extracted data:', result.data);
+          console.log('📈 Fields found:', fieldsFound);
+        } else {
+          console.warn('⚠️ No data extracted from page');
+          if (result.logs && result.logs.length > 0) {
+            console.log('📜 Script logs:', result.logs.join('\n'));
+          }
+        }
         
         return {
           success: hasData && fieldsFound > 0,
