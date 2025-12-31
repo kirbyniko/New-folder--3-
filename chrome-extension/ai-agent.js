@@ -4,7 +4,7 @@
 class ScraperAIAgent {
   constructor() {
     this.ollamaEndpoint = 'http://127.0.0.1:11434/api/generate';
-    this.model = 'deepseek-coder:6.7b'; // or 'codellama:13b'
+    this.model = 'qwen2.5-coder:32b'; // Best coding model - excellent at following instructions
     this.contextFiles = {};
     this.analysisResults = {};
     
