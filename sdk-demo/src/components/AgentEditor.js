@@ -478,7 +478,7 @@ const response = await fetch('http://localhost:11434/api/generate', {
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
     model: '${this.config.model}',
-    prompt: `${this.config.systemPrompt}\n\nUser: ${testPrompt}\n\nAssistant:`,
+    prompt: \`${this.config.systemPrompt}\\n\\nUser: ${testPrompt}\\n\\nAssistant:\`,
     options: {
       temperature: ${this.config.temperature},
       top_p: ${this.config.topP},
