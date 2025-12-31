@@ -749,17 +749,33 @@
       <div style="margin-bottom: 12px;">
         <label style="display: block; font-size: 12px; font-weight: 500; margin-bottom: 4px;">Default AI Model:</label>
         <select id="agent-model-selector" class="form-control" style="width: 100%; font-size: 12px; padding: 6px;">
-          <option value="qwen2.5-coder:32b">Qwen2.5-Coder 32B (32K context)</option>
-          <option value="qwen2.5-coder:14b">Qwen2.5-Coder 14B (32K context)</option>
-          <option value="qwen2.5-coder:7b">Qwen2.5-Coder 7B (32K context)</option>
-          <option value="deepseek-coder-v2:16b">DeepSeek-Coder V2 16B (64K context)</option>
-          <option value="qwen2.5-coder:72b">Qwen2.5-Coder 72B (128K context)</option>
-          <option value="deepseek-coder:33b">DeepSeek-Coder 33B (16K context)</option>
-          <option value="deepseek-coder:6.7b">DeepSeek-Coder 6.7B (16K context)</option>
-          <option value="codellama:13b">CodeLlama 13B (16K context)</option>
-          <option value="codellama:7b">CodeLlama 7B (16K context)</option>
+          <optgroup label="🚀 Ultra High-End (48GB+ RAM)">
+            <option value="deepseek-coder-v2:236b">DeepSeek-Coder V2 236B (64K context) - MASSIVE</option>
+            <option value="qwen2.5-coder:72b">Qwen2.5-Coder 72B (128K context) - BEST</option>
+          </optgroup>
+          <optgroup label="⚡ High-End (32GB+ RAM)">
+            <option value="qwen2.5-coder:32b">Qwen2.5-Coder 32B (32K context) - Recommended</option>
+            <option value="deepseek-coder:33b">DeepSeek-Coder 33B (16K context)</option>
+            <option value="deepseek-coder-v2:16b">DeepSeek-Coder V2 16B (64K context)</option>
+          </optgroup>
+          <optgroup label="💻 Medium (16GB RAM)">
+            <option value="qwen2.5-coder:14b">Qwen2.5-Coder 14B (32K context)</option>
+            <option value="codellama:13b">CodeLlama 13B (16K context)</option>
+          </optgroup>
+          <optgroup label="⚙️ Lightweight (8GB RAM)">
+            <option value="qwen2.5-coder:7b">Qwen2.5-Coder 7B (32K context)</option>
+            <option value="deepseek-coder:6.7b">DeepSeek-Coder 6.7B (16K context)</option>
+            <option value="codellama:7b">CodeLlama 7B (16K context)</option>
+          </optgroup>
         </select>
         <div id="model-status" style="font-size: 10px; color: #666; margin-top: 4px;">Checking available models...</div>
+        <div style="font-size: 10px; color: #888; margin-top: 8px; padding: 8px; background: #f5f5f5; border-radius: 4px;">
+          <strong>💡 How it works:</strong><br>
+          • WebGPU (7B) tries first - fast for fixes &amp; small prompts<br>
+          • Falls back to this model when prompt &gt; 4096 tokens<br>
+          • Initial generation usually needs Ollama (context guides)<br>
+          • Bigger models = better quality, slower speed
+        </div>
       </div>
       
       <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12px; margin-bottom: 8px;">
