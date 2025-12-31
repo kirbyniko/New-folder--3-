@@ -131,8 +131,9 @@
             console.warn('⚠️ Generation timeout (2 minutes), completing with current output');
             completeGeneration();
           }
-          // Too slow: severely degraded performance (< 3 chars/sec after 10s indicates serious issue)
-          else if (totalTime > 10 && charsPerSecond < 3) {
+          // Too slow: severely degraded performance (< 1 char/sec after 30s indicates serious issue)
+          // Give model more time to warm up before checking speed
+          else if (totalTime > 30 && charsPerSecond < 1) {
             console.warn(`⚠️ Generation critically slow (${charsPerSecond.toFixed(1)} chars/sec), completing with current output`);
             completeGeneration();
           }
