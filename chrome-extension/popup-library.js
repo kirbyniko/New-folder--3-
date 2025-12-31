@@ -4066,7 +4066,7 @@ async function runScriptTest(scriptData) {
         body: JSON.stringify({
           scriptCode: scriptData.code,
           targetUrl: targetUrl,
-          timeout: 30000
+          timeout: 90000
         })
       });
       

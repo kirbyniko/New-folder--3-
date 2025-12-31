@@ -1179,7 +1179,7 @@ Generate the complete scraper code now:`;
           body: JSON.stringify({
             scriptCode,
             targetUrl,
-            timeout: 30000
+            timeout: 90000
           })
         });
         
