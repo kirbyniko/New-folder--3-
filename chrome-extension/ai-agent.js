@@ -48,10 +48,16 @@ class ScraperAIAgent {
       // Use deployed Cloudflare Pages domain
       this.webgpuIframe.src = 'https://civitracker.pages.dev/webgpu-inference.html';
       
-      // Listen for messages from iframe
-      window.addEventListener('message', (event) => {
-        this.handleWebGPUMessage(event.data);
-      });
+      // Create bound message handler so we can remove it later
+      this.messageHandler = (event) => {
+        // Only handle messages from our iframe
+        if (event.source === this.webgpuIframe?.contentWindow) {
+          this.handleWebGPUMessage(event.data);
+        }
+      };
+      
+      // Listen for messages from iframe (use bound handler for proper cleanup)
+      window.addEventListener('message', this.messageHandler);
 
       this.webgpuIframe.onload = () => {
         console.log('🚀 WebGPU inference iframe loaded');
@@ -70,8 +76,10 @@ class ScraperAIAgent {
       case 'READY':
         console.log('✅ WebGPU available');
         this.webgpuReady = true;
-        // Auto-initialize engine
-        this.webgpuIframe.contentWindow.postMessage({ type: 'INIT_ENGINE' }, '*');
+        // Auto-initialize engine (check iframe still exists)
+        if (this.webgpuIframe?.contentWindow) {
+          this.webgpuIframe.contentWindow.postMessage({ type: 'INIT_ENGINE' }, '*');
+        }
         break;
 
       case 'INIT_PROGRESS':
@@ -1050,11 +1058,17 @@ Generate the complete scraper code now:`;
     // Get target URL for page analysis
     const targetUrl = scraperConfig.fields['step1-calendar_url'] || 
                      scraperConfig.fields['step1-court_url'] || 
-                     scraperConfig.fields['step1-listing_url'];
+                     scraperConfig.fields['step1-listing_url'] ||
+                     scraperConfig.fields['step1-url'] ||
+                     // Fallback: find any field with 'url' in the key
+                     Object.entries(scraperConfig.fields || {})
+                       .find(([key]) => key.toLowerCase().includes('url'))?.[1];
     
-    // NEW: Analyze actual page structure first
+    // NEW: Analyze actual page structure first (skip if no URL)
     updateProgress('🔍 Analyzing page structure...');
-    const pageStructure = await this.analyzePageStructure(targetUrl);
+    const pageStructure = targetUrl 
+      ? await this.analyzePageStructure(targetUrl)
+      : { framework: 'Unknown', htmlLength: 0, bodyLength: 0, needsPuppeteer: false };
     updateProgress(`📊 Page analysis: ${pageStructure.framework || 'Static HTML'}, ${pageStructure.htmlLength} bytes`);
     
     if (pageStructure.needsPuppeteer && !usePuppeteer) {
