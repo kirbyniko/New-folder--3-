@@ -23,6 +23,9 @@ document.addEventListener('DOMContentLoaded', () => {
   
   setupEventListeners();
   loadState();
+  
+  // Initialize intelligence config UI
+  initializeIntelligenceConfig();
 });
 
 console.log('✅ Event listener for DOMContentLoaded registered');
@@ -1056,4 +1059,76 @@ async function toggleSystemInfo() {
     panel.style.display = 'none';
     btn.textContent = '🔍 Check System Resources';
   }
+}
+
+// Initialize Intelligence Configuration UI
+function initializeIntelligenceConfig() {
+  const openBtn = document.getElementById('open-intelligence-config');
+  if (!openBtn) {
+    console.warn('Intelligence config button not found');
+    return;
+  }
+
+  // Update summary display
+  function updateSummaryDisplay() {
+    if (typeof AgentConfigManager !== 'function') {
+      console.warn('AgentConfigManager not loaded yet');
+      return;
+    }
+
+    try {
+      const configManager = new AgentConfigManager();
+      const estimates = configManager.tokenEstimates;
+      const summary = configManager.getSummary();
+
+      // Update summary section
+      document.getElementById('current-tokens').textContent = `~${estimates.total.toLocaleString()} tokens`;
+      
+      const gpuStatus = document.getElementById('current-gpu-status');
+      if (gpuStatus) {
+        gpuStatus.textContent = estimates.fitsInGPU ? '✅ Yes' : '❌ No';
+        gpuStatus.style.color = estimates.fitsInGPU ? '#10b981' : '#ef4444';
+      }
+
+      const cpuRisk = document.getElementById('current-cpu-risk');
+      if (cpuRisk) {
+        const riskColors = {
+          'none': '#10b981',
+          'low': '#8bc34a',
+          'medium': '#f59e0b',
+          'high': '#ef4444'
+        };
+        cpuRisk.textContent = estimates.cpuRisk.toUpperCase();
+        cpuRisk.style.color = riskColors[estimates.cpuRisk] || '#666';
+      }
+
+      // Show summary
+      document.getElementById('intelligence-summary').style.display = 'block';
+    } catch (error) {
+      console.warn('Error updating intelligence summary:', error);
+    }
+  }
+
+  // Open config panel
+  openBtn.addEventListener('click', () => {
+    // Wait for panel to be loaded
+    setTimeout(() => {
+      if (window.agentConfigUI) {
+        window.agentConfigUI.show();
+      } else {
+        console.error('AgentConfigUI not initialized');
+        alert('Configuration panel is loading. Please try again in a moment.');
+      }
+    }, 100);
+  });
+
+  // Update summary on load and when config changes
+  setTimeout(updateSummaryDisplay, 500); // Wait for AgentConfigManager to load
+  
+  // Listen for config changes
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'agentIntelligenceConfig') {
+      updateSummaryDisplay();
+    }
+  });
 }

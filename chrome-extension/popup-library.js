@@ -4534,10 +4534,18 @@ async function runScriptTest(scriptData) {
       button.disabled = true;
     }
     
-    // Get target URL from scraper config
-    const targetUrl = scriptData.scraperConfig.fields['step1-calendar_url'] || 
-                     scriptData.scraperConfig.fields['step1-court_url'] ||
-                     scriptData.scraperConfig.fields['step1-listing_url'];
+    // Get target URL from scraper config - try multiple locations
+    let fields = scriptData.scraperConfig.fields;
+    if (typeof fields === 'string') {
+      fields = JSON.parse(fields);
+    }
+    
+    const targetUrl = fields?.['step1-calendar_url'] || 
+                     fields?.['step1-court_url'] ||
+                     fields?.['step1-listing_url'] ||
+                     scriptData.scraperConfig.startUrl ||
+                     scriptData.scraperConfig.url ||
+                     scriptData.scraperConfig.targetUrl;
     
     if (!targetUrl) {
       alert('❌ No target URL found in scraper configuration');

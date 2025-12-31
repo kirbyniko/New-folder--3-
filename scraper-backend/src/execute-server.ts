@@ -212,10 +212,54 @@ const server = http.createServer(async (req, res) => {
     return;
   }
   
-  // Only accept POST to /execute
-  if (req.method !== 'POST' || req.url !== '/execute') {
+  // Only accept POST to /execute or /fetch-html
+  if (req.method !== 'POST') {
     res.writeHead(404, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: 'Not found. Use POST /execute' }));
+    res.end(JSON.stringify({ error: 'Not found. Use POST /execute or POST /fetch-html' }));
+    return;
+  }
+  
+  // Route to appropriate handler
+  if (req.url === '/fetch-html') {
+    // Simple HTML fetcher for providing context to LLM
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        console.log('📥 /fetch-html received body:', body);
+        const parsed = JSON.parse(body);
+        console.log('📦 Parsed JSON:', parsed);
+        const { url } = parsed;
+        if (!url) {
+          console.log('❌ Missing url in request:', parsed);
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Missing url parameter', received: parsed }));
+          return;
+        }
+        
+        console.log(`🌐 Fetching HTML from: ${url}`);
+        const response = await axios.get(url, {
+          timeout: 10000,
+          headers: { 'User-Agent': 'Mozilla/5.0' }
+        });
+        
+        console.log(`✅ Fetched ${response.data.length} chars from ${url}`);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, html: response.data }));
+      } catch (error: any) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ 
+          success: false, 
+          error: error.message 
+        }));
+      }
+    });
+    return;
+  }
+  
+  if (req.url !== '/execute') {
+    res.writeHead(404, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Not found. Use POST /execute or POST /fetch-html' }));
     return;
   }
   

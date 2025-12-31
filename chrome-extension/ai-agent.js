@@ -14,7 +14,8 @@ class ScraperAIAgent {
     this.ollamaEndpoint = 'http://127.0.0.1:11434/api/generate';
     // Load model from localStorage (set by user in UI)
     this.model = localStorage.getItem('agentDefaultModel') || 'qwen2.5-coder:32b';
-    this.useWebGPU = true; // Prefer WebGPU
+    this.useWebGPU = true; // Prefer WebGPU by default
+    this.preferOllama = localStorage.getItem('preferOllama') !== 'false'; // Default true (32K context, faster)
     
     // Iterative Learning Mode (recommended for small context windows)
     this.useIterativeLearning = localStorage.getItem('useIterativeLearning') === 'true';
@@ -36,8 +37,35 @@ class ScraperAIAgent {
     this.conversationMemory = new window.ConversationMemory();
     this.promptOptimizer = new window.PromptOptimizer();
     
+    // Initialize configuration manager (with fallback if not loaded)
+    if (typeof window.AgentConfigManager === 'function') {
+      this.configManager = new window.AgentConfigManager();
+      console.log('🎛️ Intelligence systems configured:', this.configManager.getSummary());
+    } else {
+      console.warn('⚠️ AgentConfigManager not loaded, using defaults');
+      this.configManager = null;
+    }
+    
     // Initialize WebGPU iframe
     this.initWebGPUInference();
+  }
+
+  // Get default generation config (fallback if configManager not loaded)
+  getDefaultGenConfig() {
+    return {
+      useRAG: true,
+      ragEpisodes: 3,
+      useKnowledge: true,
+      useContextGuides: true,
+      enabledGuides: ['scraper-guide', 'basic-selectors', 'puppeteer-tactics', 'error-handling', 'date-parsing'],
+      useHTMLContext: true,
+      htmlMaxChars: 10000,
+      usePromptOptimizer: false,
+      usePageAnalysis: true,
+      useAttemptHistory: true,
+      maxHistoryAttempts: 3,
+      estimatedTokens: { total: 8000, fitsInGPU: false, cpuRisk: 'medium' }
+    };
   }
 
   // Initialize WebGPU inference iframe
@@ -815,7 +843,7 @@ Generate the complete scraper code now:`;
     }
 
     // Try WebGPU first if available and initialized
-    if (this.useWebGPU && this.webgpuReady && this.webgpuInitialized) {
+    if (this.useWebGPU && this.webgpuReady && this.webgpuInitialized && !this.preferOllama) {
       // Rough token estimate: ~3.3 chars per token (more conservative)
       const estimatedTokens = Math.ceil(prompt.length / 3.3);
       const WEBGPU_TOKEN_LIMIT = 4096;
@@ -843,8 +871,10 @@ Generate the complete scraper code now:`;
       }
     }
 
-    // Fallback to Ollama (or if WebGPU not ready)
-    if (!this.webgpuReady || !this.webgpuInitialized) {
+    // Fallback to Ollama (or if WebGPU not ready, or if Ollama preferred)
+    if (this.preferOllama) {
+      console.log('⚡ Using Ollama (preferred - 32K context, faster)');
+    } else if (!this.webgpuReady || !this.webgpuInitialized) {
       console.log('⏳ WebGPU not ready, using Ollama');
     }
     
@@ -1448,6 +1478,10 @@ Relevant Classes: ${(pageStructureObj.commonClasses || []).join(', ')}
         
         // Use iterative learning agent
         updateProgress(`🎯 Using iterative batching for ${fieldCount} fields`);
+        
+        // Store targetUrl in scraperConfig for later use (e.g., fetching HTML context)
+        scraperConfig.targetUrl = targetUrl;
+        
         return await this.generateWithIterativeLearning(scraperConfig, targetUrl, pageStructure);
       }
     }
@@ -2225,21 +2259,101 @@ module.exports = async function scrape(url) {
   async fixScript(script, diagnosis, testResult, scraperConfig, relevantContext = null) {
     const targetUrl = scraperConfig.fields['step1-calendar_url'] || 
                      scraperConfig.fields['step1-court_url'] || 
-                     scraperConfig.fields['step1-listing_url'];
+                     scraperConfig.fields['step1-listing_url'] ||
+                     scraperConfig.targetUrl;  // Fallback to direct targetUrl field
+    
+    console.log('🔍 fixScript - scraperConfig.fields:', scraperConfig.fields);
+    console.log('🎯 fixScript - targetUrl:', targetUrl);
     
     // Build enhanced context
     let enhancedContext = '';
     
-    // CRITICAL: Include selected context guides on EVERY fix attempt
-    if (this.selectedContexts && this.selectedContexts.length > 0 && window.SCRAPER_CONTEXTS) {
+    // 🧠 RETRIEVE SIMILAR SUCCESSFUL EPISODES FROM MEMORY (RAG)
+    const genConfig = this.configManager ? this.configManager.getGenerationConfig() : this.getDefaultGenConfig();
+    if (this.enhancedMemory && genConfig.useRAG) {
+      try {
+        const similarEpisodes = await this.enhancedMemory.findSimilarEpisodes(scraperConfig, genConfig.ragEpisodes);
+        if (similarEpisodes && similarEpisodes.length > 0) {
+          enhancedContext += '\n\n=== PAST SUCCESSFUL PATTERNS (RAG Memory) ===\n';
+          similarEpisodes.forEach((ep, i) => {
+            enhancedContext += `\n--- Example ${i + 1}: ${ep.summary} ---\n`;
+            if (ep.successFactors && ep.successFactors.length > 0) {
+              enhancedContext += `Success factors: ${ep.successFactors.join(', ')}\n`;
+            }
+            if (ep.codeSnippet) {
+              enhancedContext += `Code pattern:\n${ep.codeSnippet.substring(0, 500)}\n`;
+            }
+          });
+          enhancedContext += '=== END RAG MEMORY ===\n\n';
+          console.log(`🧠 Retrieved ${similarEpisodes.length} similar episodes from memory`);
+        }
+      } catch (error) {
+        console.warn('⚠️ Could not retrieve memory:', error.message);
+      }
+    }
+    
+    // 🎯 FETCH ACTUAL HTML SNIPPET - This is the key to fixing selectors!
+    let htmlSnippet = '';
+    if (genConfig.useHTMLContext) {
+      try {
+        if (!targetUrl) {
+          console.warn('⚠️ No targetUrl found in scraperConfig');
+        } else {
+        // Use backend server to bypass CORS restrictions
+        const fetchResponse = await fetch('http://localhost:3002/fetch-html', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: targetUrl })
+        });
+      
+        if (fetchResponse.ok) {
+          const { html } = await fetchResponse.json();
+          console.log(`✅ Fetched HTML: ${html.length} chars from ${targetUrl}`);
+          // Extract first 10000 chars of body content (we have 32K context available!)
+          const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+          if (bodyMatch) {
+            const bodyContent = bodyMatch[1];
+            // Take configured chars to show page structure
+            const maxChars = genConfig.htmlMaxChars || 10000;
+            let snippet = bodyContent.substring(0, maxChars);
+            const lastTagStart = snippet.lastIndexOf('<');
+            const lastTagEnd = snippet.lastIndexOf('>');
+            if (lastTagStart > lastTagEnd) {
+              snippet = snippet.substring(0, lastTagStart);
+            }
+            htmlSnippet = `\n\n=== ACTUAL HTML STRUCTURE (first ${Math.floor(maxChars/1000)}KB) ===\n${snippet}\n... (truncated)\n=== END HTML ===\n\n`;
+            console.log(`📄 HTML snippet prepared: ${htmlSnippet.length} chars (max: ${maxChars})`);
+            console.log(`📊 Token estimate: ~${Math.floor(htmlSnippet.length / 4)} tokens`);
+          } else {
+            console.warn('⚠️ No <body> tag found in HTML');
+          }
+          } else {
+            console.warn(`⚠️ fetch-html returned status ${fetchResponse.status}`);
+          }
+        }
+      } catch (error) {
+        console.log('⚠️ Could not fetch HTML for fix context:', error.message);
+      }
+    } else {
+      console.log('ℹ️ HTML context disabled in agent configuration');
+    }
+    
+    // Include context guides based on configuration
+    if (genConfig.useContextGuides && window.SCRAPER_CONTEXTS) {
       enhancedContext += '\n\n=== PROVEN PATTERNS & TACTICS ===\n';
-      for (const contextKey of this.selectedContexts) {
+      const enabledGuides = genConfig.enabledGuides || [];
+      let guidesIncluded = 0;
+      for (const contextKey of enabledGuides) {
         const ctx = window.SCRAPER_CONTEXTS[contextKey];
-        if (ctx) {
-          enhancedContext += `\n${ctx.content}\n`;
+        if (ctx && ctx.content) {
+          enhancedContext += `\n--- ${ctx.name} ---\n${ctx.content}\n`;
+          guidesIncluded++;
         }
       }
-      enhancedContext += '\n=== END PATTERNS ===\n\n';
+      enhancedContext += `\n=== END PATTERNS (${guidesIncluded} guides) ===\n\n`;
+      console.log(`📚 Included ${guidesIncluded} context guides`);
+    } else {
+      console.log('ℹ️ Context guides disabled in agent configuration');
     }
     
     if (relevantContext?.contextTemplate) {
@@ -2254,6 +2368,12 @@ module.exports = async function scrape(url) {
     if (diagnosis.userFeedback) {
       enhancedContext += `\n\nUSER FEEDBACK: ${diagnosis.userFeedback}\n`;
     }
+    
+    // Log total context size and token estimate
+    const totalContextChars = enhancedContext.length + htmlSnippet.length;
+    const estimatedTokens = Math.floor(totalContextChars / 4);
+    console.log(`📊 Total context size: ${totalContextChars} chars (~${estimatedTokens} tokens)`);
+    console.log(`📊 Configuration estimates: ${JSON.stringify(genConfig.estimatedTokens)}`);
     
     // Include stack trace if available for syntax errors
     let errorDetails = testResult.error || 'No specific error';
@@ -2272,7 +2392,7 @@ DIAGNOSIS:
 Problems: ${diagnosis.problems.join(', ')}
 Root cause: ${diagnosis.rootCause}
 Recommendation: ${diagnosis.recommendation}
-${enhancedContext}
+${htmlSnippet}${enhancedContext}
 
 TEST FAILURE:
 ${errorDetails}
@@ -2281,12 +2401,11 @@ Fields extracted: ${testResult.fieldsExtracted} (expected more)
 TARGET URL: ${targetUrl}
 
 CRITICAL FIXES NEEDED:
-1. Fix any SYNTAX ERRORS first - check for missing/extra parentheses, brackets, braces
-2. Ensure all async functions are properly declared with 'async' keyword
-3. Add try-catch blocks where missing
-4. Ensure selectors are correct - use .first().text().trim() or .first().attr('href')
-5. Check module.exports format: module.exports = async function scrape(url) { ... }
-6. Return proper format: { success: true, data: {...}, metadata: {...} }
+1. Look at the ACTUAL HTML above - use selectors that match real classes/IDs
+2. Fix any SYNTAX ERRORS - check parentheses, brackets, braces
+3. Try different selector strategies: .class, #id, [data-attr], nth-child()
+4. For arrays: Array.from(document.querySelectorAll('.selector'))
+5. Return format: { success: true, data: {...}, metadata: {...} }
 
 OUTPUT FORMAT (EXACT):
 ===CODE_START===
@@ -2523,13 +2642,142 @@ Generate the FIXED complete script now:`;
       console.log(`✅ Iterative generation complete: ${result.metadata.totalIterations} iterations across ${result.metadata.batches} batches`);
       console.log(`📚 Learned patterns:`, result.metadata.learnedPatterns);
 
+      // Now test the generated script and iterate if needed
+      let currentScript = result.script;
+      let testResult = null;
+      let agenticIterations = 0;
+      const maxAgenticIterations = 10; // Increased - fast iterations with 7b model
+      const attemptedApproaches = []; // Track what we've tried
+      
+      console.log('🧪 Testing generated script...');
+      
+      for (let i = 0; i < maxAgenticIterations; i++) {
+        agenticIterations++;
+        
+        // Test the script
+        testResult = await this.testScriptAgentically(currentScript, scraperConfig);
+        
+        console.log(`🔍 Test iteration ${agenticIterations}/${maxAgenticIterations}:`, {
+          fieldsExtracted: testResult?.fieldsExtracted || 0,
+          success: testResult?.success,
+          error: testResult?.error
+        });
+        
+        // Check if we extracted actual data (not just empty arrays or nulls)
+        const hasActualData = testResult?.extractedData && Object.values(testResult.extractedData).some(val => {
+          if (Array.isArray(val)) return val.length > 0;
+          return val !== null && val !== undefined && val !== '';
+        });
+        
+        console.log(`📊 Has actual data: ${hasActualData}`);
+        
+        // If successful with real data, we're done!
+        if (testResult?.success && hasActualData) {
+          console.log(`✅ Script successful with real data after ${agenticIterations} test iterations`);
+          break;
+        }
+        
+        // If not last iteration, try to improve
+        if (i < maxAgenticIterations - 1) {
+          console.log(`🔄 Attempting to improve script (iteration ${agenticIterations + 1})...`);
+          
+          // Track this approach to avoid repeating
+          const scriptHash = currentScript.substring(0, 200); // Simple fingerprint
+          
+          // If model generated same thing 3 times, give up
+          const timesRepeated = attemptedApproaches.filter(h => h === scriptHash).length;
+          if (timesRepeated >= 2) {
+            console.log(`❌ Model stuck in loop after ${timesRepeated + 1} identical attempts - accepting current result`);
+            break;
+          }
+          
+          attemptedApproaches.push(scriptHash);
+          
+          // Build diagnosis with increasing desperation/creativity
+          const problems = [`Only extracted ${testResult.fieldsExtracted || 0} fields`];
+          
+          if (i === 0) {
+            problems.push('Selectors may be incorrect');
+          } else if (i === 1) {
+            problems.push('Try different CSS selectors (IDs, classes, data attributes)');
+          } else if (i === 2) {
+            problems.push('Previous attempts failed - try completely different approach');
+          } else {
+            problems.push(`${i} attempts failed - be creative, try XPath or different element types`);
+          }
+          
+          const diagnosis = {
+            problems,
+            rootCause: testResult.error || `Selectors don't match page structure after ${i + 1} attempts`,
+            recommendation: `Iteration ${i + 1}: Try a DIFFERENT approach than previous ${i} attempts. Be creative with selectors.`,
+            attemptNumber: i + 1,
+            totalAttempts: maxAgenticIterations,
+            previousAttempts: attemptedApproaches.length
+          };
+          
+          // Use existing fixScript function
+          const rawFix = await this.fixScript(
+            currentScript,
+            diagnosis,
+            testResult,
+            scraperConfig,
+            null // No knowledge context for now
+          );
+          
+          const improvedScript = this.extractCode(rawFix);
+          const cleanedScript = this.cleanGeneratedCode(improvedScript);
+          
+          // Check if we got something different
+          const newHash = cleanedScript.substring(0, 200);
+          if (attemptedApproaches.includes(newHash)) {
+            console.log(`⚠️ Model generated same approach again! Attempt ${i + 2}`);
+          }
+          
+          if (cleanedScript && cleanedScript.length > 100) {
+            currentScript = cleanedScript;
+            console.log(`✅ Generated improved version (${cleanedScript.length} chars)`);
+          } else {
+            console.log('⚠️ Improvement failed, keeping current script');
+            break;
+          }
+        }
+      }
+
       // Return in format expected by main flow
+      // Accept any result after iterations complete
+      console.log(`🏁 Agentic iterations complete: ${agenticIterations} attempts made`);
+      
+      // 🧠 RECORD THIS GENERATION IN MEMORY (for future RAG retrieval)
+      if (testResult && testResult.success) {
+        try {
+          await this.recordGenerationEpisode(
+            scraperConfig,
+            currentScript,
+            testResult,
+            { problems: [], rootCause: 'Success', recommendation: 'Use this pattern' },
+            [] // No conversation history in iterative mode
+          );
+          console.log('✅ Successful pattern recorded in RAG memory');
+        } catch (error) {
+          console.warn('⚠️ Failed to record episode:', error);
+        }
+      }
+      
       return {
-        script: result.script,
+        script: currentScript,
+        iterations: agenticIterations,
+        finalTestResult: testResult || { 
+          fieldsExtracted: 0,
+          success: false,
+          error: 'No test results available'
+        },
+        success: testResult?.success || false, // Accept even if no fields extracted
         analysisContext: {
           iterativeMode: true,
-          batches: result.metadata.batches,
-          totalIterations: result.metadata.totalIterations,
+          batchGeneration: result.metadata.batches,
+          totalFields: result.metadata.totalFields,
+          batchIterations: result.metadata.totalIterations,
+          agenticIterations: agenticIterations,
           learnedPatterns: result.metadata.learnedPatterns
         }
       };

@@ -25,7 +25,8 @@ class IterativeLearningAgent {
     
     // Step 1: Divide fields into manageable batches
     const fieldBatches = this.createFieldBatches(scraperConfig, 12); // ~12 fields per batch
-    console.log(`📦 Split ${Object.keys(scraperConfig.fields).length} fields into ${fieldBatches.length} batches`);
+    const totalFields = fieldBatches.reduce((sum, batch) => sum + batch.fields.length, 0);
+    console.log(`📦 Split ${totalFields} fields into ${fieldBatches.length} batches`);
 
     let combinedScript = null;
     let allLearnedPatterns = [];
@@ -58,9 +59,11 @@ class IterativeLearningAgent {
 
     return {
       script: combinedScript,
+      url: url, // Include URL for testing
       metadata: {
         totalIterations,
         batches: fieldBatches.length,
+        totalFields: totalFields,
         learnedPatterns: allLearnedPatterns
       }
     };

@@ -760,6 +760,43 @@
         </label>
       </div>
       
+      <!-- Prefer Ollama Toggle -->
+      <div style="margin-bottom: 12px; padding: 8px; background: #fff; border-radius: 6px; border: 1px solid #e5e7eb;">
+        <label style="display: flex; align-items: center; cursor: pointer;">
+          <input type="checkbox" id="prefer-ollama-toggle" style="margin-right: 8px;">
+          <div>
+            <div style="font-size: 12px; font-weight: 600; color: #6366f1;">
+              ⚡ Prefer Ollama (32K context, faster)
+            </div>
+            <div style="font-size: 11px; color: #666; margin-top: 2px;">
+              Use Ollama instead of WebGPU when available. 8x more context (32K vs 4K), ~33% faster. Requires Ollama running.
+            </div>
+          </div>
+        </label>
+      </div>
+      
+      <!-- Intelligence Configuration Button -->
+      <div style="margin-bottom: 12px;">
+        <button id="open-intelligence-config" class="btn-primary" style="width: 100%; padding: 10px; font-size: 13px; font-weight: 600;">
+          🧠 Intelligence Configuration
+        </button>
+        <div id="intelligence-summary" style="margin-top: 8px; padding: 8px; background: #fff; border-radius: 6px; border: 1px solid #e5e7eb; display: none;">
+          <div style="font-size: 11px; color: #666; margin-bottom: 4px;">Current Configuration:</div>
+          <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 2px;">
+            <span>Context Size:</span>
+            <strong id="current-tokens">~8000 tokens</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 2px;">
+            <span>GPU Compatible:</span>
+            <span id="current-gpu-status">❌ No</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 12px;">
+            <span>CPU Risk:</span>
+            <span id="current-cpu-risk" style="color: #f59e0b;">MEDIUM</span>
+          </div>
+        </div>
+      </div>
+      
       <!-- Model Selector -->
       <div style="margin-bottom: 12px;">
         <label style="display: block; font-size: 12px; font-weight: 500; margin-bottom: 4px;">Default AI Model:</label>
@@ -797,8 +834,8 @@
         
         <div style="font-size: 10px; color: #888; margin-top: 8px; padding: 8px; background: #f5f5f5; border-radius: 4px;">
           <strong>💡 How it works:</strong><br>
-          • WebGPU (7B) tries first - fast for fixes &amp; small prompts<br>
-          • Falls back to this model when prompt &gt; 4096 tokens<br>
+          • If "Prefer Ollama" enabled: Uses Ollama (32K context, faster)<br>
+          • If disabled: WebGPU first (4K limit) → Ollama fallback<br>
           • Initial generation usually needs Ollama (context guides)<br>
           • Bigger models = better quality, slower speed
         </div>
@@ -884,8 +921,27 @@
   <script src="agent-knowledge.js"></script>
   <script src="agent-chat.js"></script>
   <script src="scraper-context.js"></script>
+  <script src="agent-config-manager.js"></script>
+  <script src="agent-config-ui.js"></script>
   <script src="popup.js"></script>
   <script src="popup-library.js"></script>
   <script src="ai-agent.js"></script>
+  
+  <!-- Load Intelligence Config Panel inline -->
+  <script>
+    // Load agent-config-panel.html content
+    fetch(chrome.runtime.getURL('agent-config-panel.html'))
+      .then(r => r.text())
+      .then(html => {
+        const div = document.createElement('div');
+        div.innerHTML = html;
+        document.body.appendChild(div);
+        
+        // Initialize UI after panel is loaded
+        if (window.AgentConfigUI) {
+          window.agentConfigUI = new AgentConfigUI();
+        }
+      });
+  </script>
 </body>
 </html>

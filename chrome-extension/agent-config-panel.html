@@ -1,0 +1,531 @@
+<!-- Agent Intelligence Configuration Panel -->
+<div id="agent-config-panel" class="config-panel" style="display: none;">
+  <div class="config-header">
+    <h3>🧠 Agent Intelligence Configuration</h3>
+    <button id="close-config-btn" class="btn-icon">✕</button>
+  </div>
+
+  <div class="config-body">
+    <!-- Token Estimates -->
+    <div class="token-summary">
+      <div class="token-gauge">
+        <div class="gauge-fill" id="token-gauge-fill"></div>
+        <div class="gauge-labels">
+          <span>0</span>
+          <span class="gauge-current" id="gauge-current">0</span>
+          <span>32K</span>
+        </div>
+      </div>
+      <div class="token-details">
+        <div class="token-row">
+          <span>Context Size:</span>
+          <strong id="token-total">0</strong> tokens
+        </div>
+        <div class="token-row">
+          <span>Fits in GPU:</span>
+          <span id="gpu-status" class="status-badge">Unknown</span>
+        </div>
+        <div class="token-row">
+          <span>CPU Risk:</span>
+          <span id="cpu-risk" class="status-badge">Unknown</span>
+        </div>
+      </div>
+      <div class="recommendation" id="recommendation">
+        Select systems below to configure intelligence level
+      </div>
+    </div>
+
+    <!-- Quick Presets -->
+    <div class="config-section">
+      <h4>⚡ Quick Presets</h4>
+      <div class="preset-buttons">
+        <button class="preset-btn" data-preset="maximum-intelligence">
+          <div class="preset-name">Maximum Intelligence</div>
+          <div class="preset-desc">All systems (8-12K tokens)</div>
+        </button>
+        <button class="preset-btn" data-preset="balanced">
+          <div class="preset-name">Balanced</div>
+          <div class="preset-desc">Core systems (5-7K tokens)</div>
+        </button>
+        <button class="preset-btn" data-preset="gpu-optimized">
+          <div class="preset-name">GPU Optimized</div>
+          <div class="preset-desc">Compressed (3-4K tokens)</div>
+        </button>
+        <button class="preset-btn" data-preset="minimal">
+          <div class="preset-name">Minimal</div>
+          <div class="preset-desc">Bare essentials (2-3K tokens)</div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Individual Systems -->
+    <div class="config-section">
+      <h4>🔧 Individual Systems</h4>
+      
+      <!-- RAG Memory -->
+      <div class="system-config">
+        <div class="system-header">
+          <label class="toggle-switch">
+            <input type="checkbox" id="system-enhancedMemory" checked>
+            <span class="slider"></span>
+          </label>
+          <div class="system-info">
+            <div class="system-name">RAG Episodic Memory</div>
+            <div class="system-desc">Retrieves similar past successful patterns</div>
+            <div class="system-tokens">~<span id="tokens-enhancedMemory">800</span> tokens</div>
+          </div>
+        </div>
+        <div class="system-controls" id="controls-enhancedMemory">
+          <label>Episode count:
+            <input type="range" id="rag-episodes" min="0" max="10" value="3" step="1">
+            <span id="rag-episodes-value">3</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Knowledge Base -->
+      <div class="system-config">
+        <div class="system-header">
+          <label class="toggle-switch">
+            <input type="checkbox" id="system-knowledgeBase" checked>
+            <span class="slider"></span>
+          </label>
+          <div class="system-info">
+            <div class="system-name">Domain Knowledge Base</div>
+            <div class="system-desc">Learned patterns by domain and template type</div>
+            <div class="system-tokens">~<span id="tokens-knowledgeBase">400</span> tokens</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Context Guides -->
+      <div class="system-config">
+        <div class="system-header">
+          <label class="toggle-switch">
+            <input type="checkbox" id="system-contextGuides" checked>
+            <span class="slider"></span>
+          </label>
+          <div class="system-info">
+            <div class="system-name">Context Guides</div>
+            <div class="system-desc">Proven scraping patterns and tactics</div>
+            <div class="system-tokens">~<span id="tokens-contextGuides">1450</span> tokens</div>
+          </div>
+        </div>
+        <div class="system-controls" id="controls-contextGuides">
+          <div class="guide-checkboxes">
+            <label><input type="checkbox" data-guide="scraper-guide" checked> Scraper Guide (600)</label>
+            <label><input type="checkbox" data-guide="basic-selectors" checked> Basic Selectors (200)</label>
+            <label><input type="checkbox" data-guide="puppeteer-tactics" checked> Puppeteer Tactics (300)</label>
+            <label><input type="checkbox" data-guide="error-handling" checked> Error Handling (200)</label>
+            <label><input type="checkbox" data-guide="date-parsing" checked> Date Parsing (150)</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- HTML Context -->
+      <div class="system-config">
+        <div class="system-header">
+          <label class="toggle-switch">
+            <input type="checkbox" id="system-htmlContext" checked>
+            <span class="slider"></span>
+          </label>
+          <div class="system-info">
+            <div class="system-name">Live HTML Snapshot</div>
+            <div class="system-desc">Fetches actual page HTML for selector validation</div>
+            <div class="system-tokens">~<span id="tokens-htmlContext">2500</span> tokens</div>
+          </div>
+        </div>
+        <div class="system-controls" id="controls-htmlContext">
+          <label>HTML size:
+            <input type="range" id="html-size" min="0" max="50000" value="10000" step="1000">
+            <span id="html-size-value">10000</span> chars
+          </label>
+        </div>
+      </div>
+
+      <!-- Page Structure Analysis -->
+      <div class="system-config">
+        <div class="system-header">
+          <label class="toggle-switch">
+            <input type="checkbox" id="system-pageStructureAnalysis" checked>
+            <span class="slider"></span>
+          </label>
+          <div class="system-info">
+            <div class="system-name">Page Structure Analysis</div>
+            <div class="system-desc">Analyzes framework, IDs, classes before generation</div>
+            <div class="system-tokens">~<span id="tokens-pageStructureAnalysis">200</span> tokens</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Prompt Optimizer -->
+      <div class="system-config">
+        <div class="system-header">
+          <label class="toggle-switch">
+            <input type="checkbox" id="system-promptOptimizer">
+            <span class="slider"></span>
+          </label>
+          <div class="system-info">
+            <div class="system-name">Prompt Compression</div>
+            <div class="system-desc">Compresses prompts to fit GPU token limits</div>
+            <div class="system-tokens">Saves ~<span id="tokens-promptOptimizer">2000</span> tokens</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Attempt History -->
+      <div class="system-config">
+        <div class="system-header">
+          <label class="toggle-switch">
+            <input type="checkbox" id="system-attemptHistory" checked>
+            <span class="slider"></span>
+          </label>
+          <div class="system-info">
+            <div class="system-name">Previous Attempt History</div>
+            <div class="system-desc">Includes past failed attempts in fix prompts</div>
+            <div class="system-tokens">~<span id="tokens-attemptHistory">600</span> tokens</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Import/Export -->
+    <div class="config-section">
+      <h4>💾 Import/Export</h4>
+      <div class="import-export-buttons">
+        <button id="export-config-btn" class="btn-secondary">Export Configuration</button>
+        <button id="import-config-btn" class="btn-secondary">Import Configuration</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="config-footer">
+    <button id="reset-config-btn" class="btn-secondary">Reset to Defaults</button>
+    <button id="save-config-btn" class="btn-primary">Save Configuration</button>
+  </div>
+</div>
+
+<style>
+.config-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 50px rgba(0,0,0,0.3);
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+}
+
+.config-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.config-header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+.btn-icon:hover {
+  background: #f0f0f0;
+}
+
+.config-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.token-summary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.token-gauge {
+  position: relative;
+  height: 40px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 20px;
+  overflow: hidden;
+  margin-bottom: 15px;
+}
+
+.gauge-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4CAF50 0%, #FFC107 50%, #F44336 100%);
+  transition: width 0.3s ease;
+  border-radius: 20px;
+}
+
+.gauge-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.gauge-current {
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.token-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.token-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.status-badge {
+  background: rgba(255,255,255,0.3);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.recommendation {
+  background: rgba(255,255,255,0.2);
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.config-section {
+  margin-bottom: 25px;
+}
+
+.config-section h4 {
+  font-size: 16px;
+  margin-bottom: 12px;
+  color: #333;
+}
+
+.preset-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.preset-btn {
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  background: white;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s;
+}
+
+.preset-btn:hover {
+  border-color: #667eea;
+  background: #f8f9ff;
+}
+
+.preset-btn.active {
+  border-color: #667eea;
+  background: #667eea;
+  color: white;
+}
+
+.preset-name {
+  font-weight: bold;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.preset-desc {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.system-config {
+  margin-bottom: 15px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.system-header {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background: #f8f9fa;
+  gap: 12px;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 26px;
+  flex-shrink: 0;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .3s;
+  border-radius: 26px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .3s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: #667eea;
+}
+
+input:checked + .slider:before {
+  transform: translateX(22px);
+}
+
+.system-info {
+  flex: 1;
+}
+
+.system-name {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.system-desc {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 2px;
+}
+
+.system-tokens {
+  font-size: 12px;
+  color: #667eea;
+  font-weight: 500;
+}
+
+.system-controls {
+  padding: 12px;
+  border-top: 1px solid #e0e0e0;
+  background: white;
+}
+
+.system-controls label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.system-controls input[type="range"] {
+  flex: 1;
+  height: 4px;
+}
+
+.guide-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.guide-checkboxes label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.import-export-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.config-footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 15px 20px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.btn-primary, .btn-secondary {
+  padding: 10px 20px;
+  border-radius: 6px;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: #667eea;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #5568d3;
+}
+
+.btn-secondary {
+  background: #e0e0e0;
+  color: #333;
+}
+
+.btn-secondary:hover {
+  background: #d0d0d0;
+}
+</style>
+
+<script src="agent-config-ui.js"></script>
