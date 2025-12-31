@@ -1531,13 +1531,35 @@ Return ONLY the compressed prompt, no explanations.`;
       // For Steps 5-7, check against PROMPT limit (safeLimit - responseTokens)
       const maxPromptTokens = viability.safeLimit - viability.responseTokens;
       
-      // Step 5: Remove PAGE STRUCTURE ANALYSIS if still too large
+      // Step 5: Condense (don't remove) PAGE STRUCTURE ANALYSIS if still too large
       if (Math.ceil(reducedPrompt.length / 3.3) > maxPromptTokens) {
-        const pageStructurePattern = /PAGE STRUCTURE ANALYSIS:[\s\S]*?(?=FIELDS TO EXTRACT:|$)/i;
-        const beforeStructure = reducedPrompt.length;
-        reducedPrompt = reducedPrompt.replace(pageStructurePattern, '');
-        if (reducedPrompt.length < beforeStructure) {
-          updateProgress(`   ✂️ Removed page structure: ${beforeStructure - reducedPrompt.length} chars saved`);
+        const pageStructurePattern = /PAGE STRUCTURE ANALYSIS:([\s\S]*?)(?=\n\n|FIELDS TO EXTRACT:|$)/i;
+        const match = reducedPrompt.match(pageStructurePattern);
+        if (match) {
+          // Keep only the most critical info: framework and top 5 IDs/classes
+          const lines = match[1].split('\n').filter(l => l.trim());
+          const frameworkLine = lines.find(l => l.includes('Framework:'));
+          const idsLine = lines.find(l => l.includes('Relevant IDs:'));
+          const classesLine = lines.find(l => l.includes('Relevant Classes:'));
+          
+          let condensed = 'PAGE STRUCTURE ANALYSIS:\n';
+          if (frameworkLine) condensed += frameworkLine + '\n';
+          if (idsLine) {
+            // Keep only first 5 IDs
+            const ids = idsLine.split(':')[1].split(',').slice(0, 5).join(',');
+            condensed += `- Relevant IDs:${ids}\n`;
+          }
+          if (classesLine) {
+            // Keep only first 5 classes  
+            const classes = classesLine.split(':')[1].split(',').slice(0, 5).join(',');
+            condensed += `- Relevant Classes:${classes}\n`;
+          }
+          
+          const beforeStructure = reducedPrompt.length;
+          reducedPrompt = reducedPrompt.replace(match[0], condensed);
+          if (reducedPrompt.length < beforeStructure) {
+            updateProgress(`   ✂️ Condensed page structure: ${beforeStructure - reducedPrompt.length} chars saved`);
+          }
         }
       }
       
