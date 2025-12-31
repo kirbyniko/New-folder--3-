@@ -1,17 +1,103 @@
 // AI Agent for Scraper Generation
-// Uses local LLM (Ollama) running on user's machine
+// Uses WebGPU inference via hidden iframe (fully local, no cloud)
 
 class ScraperAIAgent {
   constructor() {
+    // WebGPU iframe for local inference
+    this.webgpuIframe = null;
+    this.webgpuReady = false;
+    this.webgpuInitialized = false;
+    this.pendingRequests = new Map();
+    this.requestId = 0;
+    
+    // Fallback to Ollama if WebGPU unavailable
     this.ollamaEndpoint = 'http://127.0.0.1:11434/api/generate';
-    this.model = 'qwen2.5-coder:32b'; // Best coding model - excellent at following instructions
+    this.model = 'qwen2.5-coder:32b';
+    this.useWebGPU = true; // Prefer WebGPU
+    
     this.contextFiles = {};
     this.analysisResults = {};
     
     // Initialize knowledge base and chat
     this.knowledge = new window.AgentKnowledge();
     this.chat = new window.AgentChat();
-    this.interactiveMode = false; // Can be toggled by user
+    this.interactiveMode = false;
+    
+    // Initialize WebGPU iframe
+    this.initWebGPUInference();
+  }
+
+  // Initialize WebGPU inference iframe
+  async initWebGPUInference() {
+    return new Promise((resolve) => {
+      // Create hidden iframe pointing to our webapp
+      this.webgpuIframe = document.createElement('iframe');
+      this.webgpuIframe.style.display = 'none';
+      this.webgpuIframe.src = 'https://your-domain.pages.dev/webgpu-inference.html'; // TODO: Update with your domain
+      
+      // Listen for messages from iframe
+      window.addEventListener('message', (event) => {
+        this.handleWebGPUMessage(event.data);
+      });
+
+      this.webgpuIframe.onload = () => {
+        console.log('🚀 WebGPU inference iframe loaded');
+        resolve();
+      };
+
+      document.body.appendChild(this.webgpuIframe);
+    });
+  }
+
+  // Handle messages from WebGPU iframe
+  handleWebGPUMessage(message) {
+    const { type, data, text, success, error, progress } = message;
+
+    switch (type) {
+      case 'READY':
+        console.log('✅ WebGPU available');
+        this.webgpuReady = true;
+        // Auto-initialize engine
+        this.webgpuIframe.contentWindow.postMessage({ type: 'INIT_ENGINE' }, '*');
+        break;
+
+      case 'INIT_PROGRESS':
+        console.log(`📥 Loading model: ${progress}% - ${text}`);
+        break;
+
+      case 'INIT_COMPLETE':
+        if (success) {
+          console.log('✅ WebGPU engine initialized');
+          this.webgpuInitialized = true;
+          this.useWebGPU = true;
+        } else {
+          console.warn('❌ WebGPU initialization failed:', error);
+          console.log('↩️  Falling back to Ollama');
+          this.useWebGPU = false;
+        }
+        break;
+
+      case 'GENERATION_PROGRESS':
+        console.log(`📝 Generating... (${text.length} chars)`);
+        break;
+
+      case 'GENERATION_COMPLETE':
+        if (this.currentGenerationResolve) {
+          if (success) {
+            this.currentGenerationResolve(text);
+          } else {
+            this.currentGenerationReject(new Error(error));
+          }
+          this.currentGenerationResolve = null;
+          this.currentGenerationReject = null;
+        }
+        break;
+
+      case 'ERROR':
+        console.error('❌ WebGPU error:', error);
+        this.useWebGPU = false;
+        break;
+    }
   }
 
   // Check if Ollama is running
@@ -576,20 +662,69 @@ Generate the complete scraper code now:`;
     });
   }
 
-  // Query local LLM
+  // Query LLM - uses WebGPU if available, falls back to Ollama
   async queryLLM(prompt, options = {}) {
+    // Try WebGPU first if available
+    if (this.useWebGPU && this.webgpuReady) {
+      try {
+        console.log('🎮 Using WebGPU inference (local, fast)');
+        return await this.queryWebGPU(prompt, options);
+      } catch (error) {
+        console.warn('⚠️ WebGPU failed, falling back to Ollama:', error);
+        this.useWebGPU = false;
+      }
+    }
+
+    // Fallback to Ollama
+    return await this.queryOllama(prompt, options);
+  }
+
+  // Query WebGPU inference iframe
+  async queryWebGPU(prompt, options = {}) {
+    return new Promise((resolve, reject) => {
+      if (!this.webgpuInitialized) {
+        reject(new Error('WebGPU engine not initialized yet'));
+        return;
+      }
+
+      this.currentGenerationResolve = resolve;
+      this.currentGenerationReject = reject;
+
+      // Send generation request to iframe
+      this.webgpuIframe.contentWindow.postMessage({
+        type: 'GENERATE',
+        data: {
+          prompt: prompt,
+          options: {
+            temperature: options.temperature || 0.1,
+            max_tokens: options.max_tokens || 4000
+          }
+        }
+      }, '*');
+
+      // Timeout after 2 minutes
+      setTimeout(() => {
+        if (this.currentGenerationResolve) {
+          reject(new Error('WebGPU generation timeout'));
+          this.currentGenerationResolve = null;
+          this.currentGenerationReject = null;
+        }
+      }, 120000);
+    });
+  }
+
+  // Query Ollama (fallback)
+  async queryOllama(prompt, options = {}) {
     try {
       console.log('📤 Sending to Ollama:', {
         model: options.model || this.model,
         promptLength: prompt.length,
-        promptPreview: prompt.substring(0, 300) + '...',
         maxTokens: options.max_tokens || 500
       });
       
       // Add system prefix for code generation tasks
       let finalPrompt = prompt;
       if (options.isCodeGeneration) {
-        // Simplified prefix to avoid triggering safety filters
         finalPrompt = `Task: Generate JavaScript code for web data extraction.\n\n${prompt}`;
       }
       

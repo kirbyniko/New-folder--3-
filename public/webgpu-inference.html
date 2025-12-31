@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>WebGPU Inference Worker</title>
+  <script type="module">
+    // WebLLM - runs LLMs using WebGPU in browser
+    import { CreateMLCEngine } from "https://esm.run/@mlc-ai/web-llm";
+
+    let engine = null;
+    let isInitialized = false;
+
+    // Initialize the engine with a small code-focused model
+    async function initializeEngine() {
+      if (isInitialized) return;
+      
+      console.log('🚀 Initializing WebGPU inference engine...');
+      
+      try {
+        // Use CodeQwen - small, fast, code-focused model (~1.5GB)
+        engine = await CreateMLCEngine("Qwen2.5-Coder-1.5B-Instruct-q4f16_1-MLC", {
+          initProgressCallback: (progress) => {
+            window.parent.postMessage({
+              type: 'INIT_PROGRESS',
+              progress: progress.progress,
+              text: progress.text
+            }, '*');
+          }
+        });
+        
+        isInitialized = true;
+        console.log('✅ Engine initialized');
+        
+        window.parent.postMessage({
+          type: 'INIT_COMPLETE',
+          success: true
+        }, '*');
+        
+      } catch (error) {
+        console.error('❌ Engine initialization failed:', error);
+        window.parent.postMessage({
+          type: 'INIT_COMPLETE',
+          success: false,
+          error: error.message
+        }, '*');
+      }
+    }
+
+    // Generate code based on prompt
+    async function generateCode(prompt, options = {}) {
+      if (!isInitialized) {
+        await initializeEngine();
+      }
+
+      try {
+        const messages = [
+          {
+            role: 'system',
+            content: 'You are a code generation assistant. Output ONLY valid JavaScript code. No explanations, no markdown, no comments outside the code.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ];
+
+        let fullResponse = '';
+        
+        const response = await engine.chat.completions.create({
+          messages: messages,
+          temperature: options.temperature || 0.1,
+          max_tokens: options.max_tokens || 4000,
+          stream: true,
+        });
+
+        for await (const chunk of response) {
+          const delta = chunk.choices[0]?.delta?.content || '';
+          fullResponse += delta;
+          
+          // Send progress updates
+          window.parent.postMessage({
+            type: 'GENERATION_PROGRESS',
+            text: fullResponse
+          }, '*');
+        }
+
+        window.parent.postMessage({
+          type: 'GENERATION_COMPLETE',
+          text: fullResponse,
+          success: true
+        }, '*');
+
+      } catch (error) {
+        console.error('❌ Generation failed:', error);
+        window.parent.postMessage({
+          type: 'GENERATION_COMPLETE',
+          success: false,
+          error: error.message
+        }, '*');
+      }
+    }
+
+    // Listen for messages from extension
+    window.addEventListener('message', async (event) => {
+      const { type, data } = event.data;
+
+      switch (type) {
+        case 'INIT_ENGINE':
+          await initializeEngine();
+          break;
+
+        case 'GENERATE':
+          await generateCode(data.prompt, data.options);
+          break;
+
+        case 'CHECK_STATUS':
+          window.parent.postMessage({
+            type: 'STATUS',
+            isInitialized,
+            hasWebGPU: !!navigator.gpu
+          }, '*');
+          break;
+      }
+    });
+
+    // Check WebGPU availability on load
+    if (!navigator.gpu) {
+      window.parent.postMessage({
+        type: 'ERROR',
+        error: 'WebGPU not available in this browser. Please use Chrome/Edge 113+ with WebGPU enabled.'
+      }, '*');
+    } else {
+      window.parent.postMessage({
+        type: 'READY',
+        hasWebGPU: true
+      }, '*');
+    }
+  </script>
+</head>
+<body>
+  <div style="font-family: monospace; padding: 20px;">
+    <h3>WebGPU Inference Worker</h3>
+    <p>Status: <span id="status">Waiting...</span></p>
+    <p><small>This page uses WebGPU to run AI models locally in your browser.</small></p>
+  </div>
+</body>
+</html>
