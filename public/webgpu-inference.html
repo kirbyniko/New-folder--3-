@@ -18,9 +18,9 @@
       console.log('📦 Model will be cached in browser storage after first download');
       
       try {
-        // Use CodeQwen - small, fast, code-focused model (~1.5GB)
+        // Use Qwen2.5-Coder-7B - larger, more capable model for complex code (~4GB)
         // Model is cached in browser Cache Storage API - persists across sessions
-        engine = await CreateMLCEngine("Qwen2.5-Coder-1.5B-Instruct-q4f16_1-MLC", {
+        engine = await CreateMLCEngine("Qwen2.5-Coder-7B-Instruct-q4f16_1-MLC", {
           initProgressCallback: (progress) => {
             const progressText = progress.text.includes('Fetching') 
               ? `${progress.text} (will be cached)`
