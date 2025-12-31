@@ -33,7 +33,8 @@ class ScraperAIAgent {
       // Create hidden iframe pointing to our webapp
       this.webgpuIframe = document.createElement('iframe');
       this.webgpuIframe.style.display = 'none';
-      this.webgpuIframe.src = 'https://your-domain.pages.dev/webgpu-inference.html'; // TODO: Update with your domain
+      // Use deployed Cloudflare Pages domain
+      this.webgpuIframe.src = 'https://civitracker.pages.dev/webgpu-inference.html';
       
       // Listen for messages from iframe
       window.addEventListener('message', (event) => {
