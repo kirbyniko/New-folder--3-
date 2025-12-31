@@ -645,11 +645,19 @@ Generate the complete scraper code now:`;
     const hasHTML = code.includes('<!DOCTYPE') || 
                    code.includes('<html') ||
                    code.includes('<body') ||
-                   (code.includes('<') && code.includes('</'));
+                   (code.includes('<') && code.includes('</') && !code.includes('${'));
+    
+    const hasJSON = code.trim().startsWith('{') && code.includes('"problems"');
     
     if (!hasCode) {
       console.error('⚠️ Extracted code does not contain expected patterns');
-      console.log('First 200 chars:', code.substring(0, 200));
+      console.log('First 500 chars:', code.substring(0, 500));
+      throw new Error('LLM response does not contain valid JavaScript code');
+    }
+    
+    if (hasJSON) {
+      console.error('❌ JSON detected in response! LLM returned explanation instead of code');
+      throw new Error('LLM returned JSON explanation instead of code');
     }
     
     if (hasHTML) {
@@ -662,6 +670,13 @@ Generate the complete scraper code now:`;
       } else {
         throw new Error('LLM returned HTML instead of code. Cannot extract valid JavaScript.');
       }
+    }
+    
+    // 8. One final check - remove any trailing JSON
+    const jsonStartIndex = code.indexOf('\n{');
+    if (jsonStartIndex > 100 && code.substring(jsonStartIndex).includes('"problems"')) {
+      console.log('✂️ Removing trailing JSON explanation');
+      code = code.substring(0, jsonStartIndex);
     }
     
     console.log('✅ Code extracted (length:', code.length, ')');
@@ -720,11 +735,45 @@ Generate the complete scraper code now:`;
     if (usePuppeteer) {
       updateProgress(`🎭 Using Puppeteer mode: ${reason}`);
     }
-    let rawScript = await this.generateScraperScript(scraperConfig, analysisContext, template, options);
     
-    // Extract and clean the code
-    let script = this.extractCode(rawScript);
-    script = this.cleanGeneratedCode(script);
+    let script;
+    let scriptGenerationAttempts = 0;
+    const maxScriptAttempts = 3;
+    
+    while (scriptGenerationAttempts < maxScriptAttempts) {
+      scriptGenerationAttempts++;
+      
+      try {
+        const rawScript = await this.generateScraperScript(scraperConfig, analysisContext, template, options);
+        
+        // Extract and clean the code
+        script = this.extractCode(rawScript);
+        script = this.cleanGeneratedCode(script);
+        
+        // Basic validation
+        if (script.length < 100) {
+          throw new Error('Generated script too short');
+        }
+        
+        if (!script.includes('module.exports')) {
+          throw new Error('Script missing module.exports');
+        }
+        
+        // Success!
+        break;
+        
+      } catch (extractError) {
+        updateProgress(`⚠️ Script extraction failed (attempt ${scriptGenerationAttempts}/${maxScriptAttempts}): ${extractError.message}`);
+        
+        if (scriptGenerationAttempts >= maxScriptAttempts) {
+          throw new Error(`Failed to generate valid script after ${maxScriptAttempts} attempts. Last error: ${extractError.message}`);
+        }
+        
+        // Wait a bit before retry
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+    
     updateProgress('✅ Initial script generated');
     
     // Stage 2: Agentic testing and refinement loop
@@ -785,10 +834,23 @@ Generate the complete scraper code now:`;
       
       if (iteration < maxIterations) {
         updateProgress('🔧 Attempting to fix script...');
-        const rawFix = await this.fixScript(script, lastDiagnosis, testResult, scraperConfig, relevantContext);
-        script = this.extractCode(rawFix);
-        script = this.cleanGeneratedCode(script);
-        updateProgress('✅ Script updated');
+        
+        try {
+          const rawFix = await this.fixScript(script, lastDiagnosis, testResult, scraperConfig, relevantContext);
+          const fixedScript = this.extractCode(rawFix);
+          const cleanedScript = this.cleanGeneratedCode(fixedScript);
+          
+          // Validate the fix
+          if (cleanedScript.length < 100 || !cleanedScript.includes('module.exports')) {
+            updateProgress('⚠️ Fix extraction produced invalid code, keeping original');
+          } else {
+            script = cleanedScript;
+            updateProgress('✅ Script updated');
+          }
+        } catch (fixError) {
+          updateProgress(`⚠️ Fix extraction failed: ${fixError.message}, keeping original script`);
+          // Don't throw - keep original script and continue
+        }
       }
     }
     
