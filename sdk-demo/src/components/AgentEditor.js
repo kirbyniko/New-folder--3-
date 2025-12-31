@@ -9,6 +9,9 @@
  * - Save/load/export functionality
  */
 
+import AgentTemplates from '../lib/AgentTemplates.js';
+import MetricsService from '../services/MetricsService.js';
+
 import * as monaco from 'monaco-editor';
 
 export class AgentEditor {
@@ -56,6 +59,9 @@ export class AgentEditor {
           <input type="text" id="agent-name" class="agent-name-input" 
                  value="${this.config.name}" placeholder="Agent Name">
           <div class="editor-actions">
+            <button id="template-btn" class="btn btn-secondary">
+              📋 Templates
+            </button>
             <button id="save-agent" class="btn btn-primary">
               💾 Save
             </button>
@@ -242,6 +248,9 @@ export class AgentEditor {
   }
 
   attachEventListeners() {
+    // Templates
+    document.getElementById('template-btn').addEventListener('click', () => this.showTemplates());
+    
     // Agent name
     document.getElementById('agent-name').addEventListener('input', (e) => {
       this.config.name = e.target.value;
@@ -456,6 +465,8 @@ Style:
     const output = document.getElementById('test-result');
     output.innerHTML = '<div class="loading">🔄 Testing agent...</div>';
     
+    const startTime = Date.now();
+    
     try {
       const response = await fetch('http://localhost:3002/execute', {
         method: 'POST',
@@ -482,6 +493,7 @@ return data.response;`
       });
       
       const result = await response.json();
+      const duration = Date.now() - startTime;
       
       if (result.success) {
         output.innerHTML = `
@@ -490,6 +502,13 @@ return data.response;`
             <div class="test-response">${result.output}</div>
           </div>
         `;
+        
+        // Track successful agent execution
+        MetricsService.trackAgentExecution(
+          this.config.name || 'Unnamed Agent',
+          true,
+          duration
+        );
       } else {
         output.innerHTML = `
           <div class="test-error">
@@ -497,15 +516,236 @@ return data.response;`
             <pre>${result.error}</pre>
           </div>
         `;
+        
+        // Track failed agent execution
+        MetricsService.trackAgentExecution(
+          this.config.name || 'Unnamed Agent',
+          false,
+          duration,
+          result.error
+        );
       }
     } catch (error) {
+      const duration = Date.now() - startTime;
       output.innerHTML = `
         <div class="test-error">
           <h4>❌ Connection Error</h4>
           <pre>${error.message}</pre>
         </div>
       `;
+      
+      // Track failed agent execution
+      MetricsService.trackAgentExecution(
+        this.config.name || 'Unnamed Agent',
+        false,
+        duration,
+        error
+      );
     }
+  }
+
+  showTemplates() {
+    // Remove existing modal if any
+    const existingModal = document.querySelector('.template-modal');
+    if (existingModal) {
+      existingModal.remove();
+    }
+
+    // Create modal
+    const modal = document.createElement('div');
+    modal.className = 'template-modal';
+    modal.innerHTML = `
+      <div class="template-modal-content">
+        <div class="template-modal-header">
+          <h2>📋 Agent Templates</h2>
+          <button class="template-close-btn">✖</button>
+        </div>
+        <div class="template-modal-body">
+          <div class="template-grid" id="template-grid"></div>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Close handlers
+    const closeBtn = modal.querySelector('.template-close-btn');
+    closeBtn.addEventListener('click', () => modal.remove());
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.remove();
+    });
+
+    // Render templates
+    this.renderTemplates();
+  }
+
+  renderTemplates() {
+    const grid = document.getElementById('template-grid');
+    const templates = AgentTemplates.getAllTemplates();
+
+    grid.innerHTML = templates.map(({id, name, mode}) => {
+      const template = AgentTemplates.getTemplate(id);
+      const icon = this.getTemplateIcon(mode);
+      return `
+        <div class="template-card" data-template-id="${id}">
+          <div class="template-card-header">
+            <span class="template-icon">${icon}</span>
+            <h3>${name}</h3>
+          </div>
+          <div class="template-card-body">
+            <div class="template-mode-badge">${mode.replace('-', ' ')}</div>
+            <p class="template-description">${template.systemPrompt.substring(0, 120)}...</p>
+            <div class="template-specs">
+              <span>🔥 ${template.temperature}</span>
+              <span>🎯 ${template.maxTokens}</span>
+              <span>📦 ${(template.contextWindow/1024).toFixed(0)}K</span>
+            </div>
+          </div>
+          <div class="template-card-footer">
+            <button class="btn btn-sm btn-primary template-use-btn" data-template-id="${id}">
+              Use Template
+            </button>
+            <button class="btn btn-sm btn-secondary template-preview-btn" data-template-id="${id}">
+              Preview
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Attach event listeners
+    grid.querySelectorAll('.template-use-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const templateId = e.target.dataset.templateId;
+        this.applyTemplate(templateId);
+      });
+    });
+
+    grid.querySelectorAll('.template-preview-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const templateId = e.target.dataset.templateId;
+        this.previewTemplate(templateId);
+      });
+    });
+  }
+
+  getTemplateIcon(mode) {
+    const icons = {
+      'web-scraper': '🕷️',
+      'code-generator': '💻',
+      'data-analyst': '📊',
+      'content-writer': '✍️',
+      'research-assistant': '🔬',
+      'api-tester': '🔌',
+      'bug-finder': '🐛',
+      'documentation-writer': '📚',
+      'general': '🤖'
+    };
+    return icons[mode] || '🤖';
+  }
+
+  applyTemplate(templateId) {
+    const template = AgentTemplates.getTemplate(templateId);
+    
+    // Update config
+    this.config = {...template};
+    
+    // Update UI
+    document.getElementById('agent-name').value = template.name;
+    document.getElementById('agent-mode').value = template.mode;
+    document.getElementById('model-select').value = template.model;
+    document.getElementById('temperature-slider').value = template.temperature;
+    document.getElementById('temperature-value').textContent = template.temperature.toFixed(2);
+    document.getElementById('top-p-slider').value = template.topP;
+    document.getElementById('top-p-value').textContent = template.topP.toFixed(2);
+    document.getElementById('max-tokens-slider').value = template.maxTokens;
+    document.getElementById('max-tokens-value').textContent = template.maxTokens;
+    document.getElementById('context-window-slider').value = template.contextWindow;
+    document.getElementById('context-window-value').textContent = `${(template.contextWindow/1024).toFixed(0)}K`;
+    document.getElementById('rag-episodes-slider').value = template.ragEpisodes;
+    document.getElementById('rag-episodes-value').textContent = template.ragEpisodes;
+    document.getElementById('use-rag').checked = template.useRAG;
+    document.getElementById('use-knowledge').checked = template.useKnowledge;
+    
+    // Update Monaco editor
+    if (this.editor) {
+      this.editor.setValue(template.systemPrompt);
+    }
+    
+    // Update token estimation
+    this.updateTokenEstimation();
+    
+    // Close modal
+    document.querySelector('.template-modal').remove();
+    
+    // Show success message
+    const message = document.createElement('div');
+    message.className = 'template-applied-message';
+    message.textContent = `✅ Applied template: ${template.name}`;
+    document.body.appendChild(message);
+    setTimeout(() => message.remove(), 3000);
+  }
+
+  previewTemplate(templateId) {
+    const template = AgentTemplates.getTemplate(templateId);
+    
+    const preview = document.createElement('div');
+    preview.className = 'template-preview-modal';
+    preview.innerHTML = `
+      <div class="template-preview-content">
+        <div class="template-preview-header">
+          <h2>${this.getTemplateIcon(template.mode)} ${template.name}</h2>
+          <button class="template-preview-close">✖</button>
+        </div>
+        <div class="template-preview-body">
+          <div class="template-preview-section">
+            <h3>📝 System Prompt</h3>
+            <pre class="template-preview-prompt">${template.systemPrompt}</pre>
+          </div>
+          <div class="template-preview-section">
+            <h3>⚙️ Configuration</h3>
+            <div class="template-preview-grid">
+              <div><strong>Mode:</strong> ${template.mode}</div>
+              <div><strong>Model:</strong> ${template.model}</div>
+              <div><strong>Temperature:</strong> ${template.temperature}</div>
+              <div><strong>Top-P:</strong> ${template.topP}</div>
+              <div><strong>Max Tokens:</strong> ${template.maxTokens}</div>
+              <div><strong>Context Window:</strong> ${(template.contextWindow/1024).toFixed(0)}K</div>
+              <div><strong>RAG Enabled:</strong> ${template.useRAG ? '✅' : '❌'}</div>
+              <div><strong>RAG Episodes:</strong> ${template.ragEpisodes}</div>
+            </div>
+          </div>
+          <div class="template-preview-section">
+            <h3>📚 Enabled Guides</h3>
+            <div class="template-preview-guides">
+              ${template.enabledGuides.map(guide => `<span class="guide-badge">${guide}</span>`).join('')}
+            </div>
+          </div>
+        </div>
+        <div class="template-preview-footer">
+          <button class="btn btn-primary template-preview-use" data-template-id="${templateId}">
+            Use This Template
+          </button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(preview);
+    
+    // Close handler
+    preview.querySelector('.template-preview-close').addEventListener('click', () => {
+      preview.remove();
+    });
+    
+    preview.addEventListener('click', (e) => {
+      if (e.target === preview) preview.remove();
+    });
+    
+    // Use button handler
+    preview.querySelector('.template-preview-use').addEventListener('click', () => {
+      preview.remove();
+      this.applyTemplate(templateId);
+    });
   }
 
   getConfig() {

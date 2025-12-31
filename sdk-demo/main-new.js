@@ -9,12 +9,14 @@ import { AgentEditor } from './src/components/AgentEditor.js';
 import { ChatInterface } from './src/components/ChatInterface.js';
 import { FileManager } from './src/components/FileManager.js';
 import { ScraperBuilder } from './src/components/ScraperBuilder.js';
+import { MetricsDashboard } from './src/components/MetricsDashboard.js';
 
 // Global instances
 let agentEditor = null;
 let chatInterface = null;
 let fileManager = null;
 let scraperBuilder = null;
+let metricsDashboard = null;
 let currentAgentConfig = null;
 
 // Initialize on DOM load
@@ -52,6 +54,9 @@ function initializeNavigation() {
             break;
           case 'scraper':
             if (!scraperBuilder) initScraperBuilder();
+            break;
+          case 'metrics':
+            if (!metricsDashboard) initMetricsDashboard();
             break;
         }
       }
@@ -97,6 +102,13 @@ function initFileManager() {
   console.log('Initializing File Manager...');
   fileManager = new FileManager('file-manager-container');
   window.fileManager = fileManager; // Expose for onclick handlers
+}
+
+function initMetricsDashboard() {
+  console.log('Initializing Metrics Dashboard...');
+  metricsDashboard = new MetricsDashboard('metrics-dashboard-container');
+  metricsDashboard.render();
+  window.metricsDashboard = metricsDashboard; // Expose globally
 }
 
 function initScraperBuilder() {

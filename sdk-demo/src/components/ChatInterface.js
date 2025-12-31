@@ -9,6 +9,8 @@
  * - Save conversation threads
  */
 
+import MetricsService from '../services/MetricsService.js';
+
 export class ChatInterface {
   constructor(containerId, agentConfig) {
     this.container = document.getElementById(containerId);
@@ -18,6 +20,8 @@ export class ChatInterface {
     this.isStreaming = false;
     this.isPaused = false;
     this.conversationId = Date.now();
+    this.responseStartTime = null;
+    this.totalTokens = 0;
     
     this.init();
   }
@@ -134,6 +138,9 @@ export class ChatInterface {
     document.getElementById('pause-btn').disabled = false;
     document.getElementById('stop-btn').disabled = false;
     
+    // Track response start time
+    this.responseStartTime = Date.now();
+    
     const assistantDiv = this.addMessage('assistant', '');
     const contentDiv = assistantDiv.querySelector('.message-content');
     let fullResponse = '';
@@ -188,8 +195,22 @@ export class ChatInterface {
       }
       
       this.messages[this.messages.length - 1].content = fullResponse;
+      
+      // Track metrics on success
+      const duration = Date.now() - this.responseStartTime;
+      const tokens = Math.ceil(fullResponse.split(/\s+/).length * 1.3); // Rough estimate
+      this.totalTokens += tokens;
+      
+      MetricsService.trackTokens(tokens, this.agentConfig.model);
+      MetricsService.trackResponseTime(duration, this.agentConfig.model);
+      MetricsService.trackConversation('success');
+      MetricsService.trackModelUsage(this.agentConfig.model);
+      
     } catch (error) {
       contentDiv.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+      
+      // Track failed conversation
+      MetricsService.trackConversation('failed');
     }
     
     this.isStreaming = false;
@@ -201,6 +222,11 @@ export class ChatInterface {
     this.isPaused = !this.isPaused;
     const btn = document.getElementById('pause-btn');
     btn.textContent = this.isPaused ? '▶️' : '⏸️';
+    
+    // Track pause event
+    if (this.isPaused) {
+      MetricsService.trackConversation('paused');
+    }
   }
 
   stopGeneration() {
@@ -216,6 +242,9 @@ export class ChatInterface {
     this.messages.pop();
     const container = document.getElementById('messages-container');
     container.lastChild.remove();
+    
+    // Track regeneration
+    MetricsService.trackConversation('regenerated');
     
     // Re-send last user message
     const lastUserMsg = this.messages[this.messages.length - 1];
