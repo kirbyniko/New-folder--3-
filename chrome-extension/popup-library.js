@@ -3306,6 +3306,7 @@ async function generateScriptForScraper(scraper, existingScraperId = null, optio
       code: cleanCode,
       generatedAt: new Date().toISOString(),
       aiFieldsCount: aiFieldsCount,
+      requiresPuppeteer: options.usePuppeteer || false,
       agenticResult: {
         iterations: agenticResult.iterations,
         success: agenticResult.success,
@@ -4023,115 +4024,17 @@ async function showJavaScriptDetectionModal(result, scriptData) {
     document.body.appendChild(modal);
   });
 }
-
 async function regenerateScriptWithPuppeteer(scriptData) {
-  try {
-    // Use the existing progress log system
-    const progressLog = document.createElement('div');
-    progressLog.className = 'progress-log';
-    progressLog.innerHTML = '<h3>🔄 Regenerating with Puppeteer</h3><div class="progress-messages"></div>';
-    document.body.appendChild(progressLog);
-    
-    const messagesDiv = progressLog.querySelector('.progress-messages');
-    const addMessage = (msg) => {
-      const p = document.createElement('p');
-      p.textContent = msg;
-      messagesDiv.appendChild(p);
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    };
-    
-    addMessage('🎭 Adding Puppeteer support for JavaScript rendering');
-    addMessage('📝 Preparing enhanced configuration...');
-    
-    // Get the AI agent
-    const agent = new ScraperAIAgent();
-    
-    // Add Puppeteer requirement to scraper config
-    const enhancedConfig = {
-      ...scriptData.scraperConfig,
-      requiresPuppeteer: true,
-      fields: {
-        ...scriptData.scraperConfig.fields,
-        'puppeteer-enabled': true,
-        'puppeteer-reason': 'Page requires JavaScript rendering'
-      }
-    };
-    
-    addMessage('🤖 Starting AI generation with Puppeteer mode...');
-    
-    // Generate new script with Puppeteer support using progress callback
-    const newScriptCode = await agent.generateScraperWithAI(
-      enhancedConfig, 
-      null, 
-      (progress) => {
-        addMessage(progress);
-      }, 
-      {
-        usePuppeteer: true,
-        reason: 'Original script failed due to dynamic JavaScript content'
-      }
-    );
-    
-    addMessage('💾 Saving updated script...');
-    
-    // Save updated script (use Promise-based approach)
-    const storageResult = await new Promise((resolve) => {
-      chrome.storage.local.get(['generatedScripts'], (result) => resolve(result));
-    });
-    
-    const scripts = storageResult.generatedScripts || [];
-    const scriptIndex = scripts.findIndex(s => s.scraperId === scriptData.scraperId);
-    
-    if (scriptIndex !== -1) {
-      scripts[scriptIndex] = {
-        ...scripts[scriptIndex],
-        code: newScriptCode,
-        requiresPuppeteer: true,
-        regeneratedAt: new Date().toISOString(),
-        regenerationReason: 'JavaScript rendering required'
-      };
-      
-      await new Promise((resolve) => {
-        chrome.storage.local.set({ generatedScripts: scripts }, resolve);
-      });
-      
-      addMessage('✅ Script saved successfully!');
-    } else {
-      throw new Error('Script not found in storage');
+  // Simply call the normal generation function with Puppeteer options
+  await generateScriptForScraper(
+    scriptData.scraperConfig, 
+    scriptData.scraperId, 
+    {
+      usePuppeteer: true,
+      reason: 'Page requires JavaScript rendering'
     }
-    
-    // Success!
-    const successLine = document.createElement('p');
-    successLine.textContent = '🎉 Regeneration complete! Reload to see changes.';
-    successLine.style.color = '#059669';
-    successLine.style.fontWeight = 'bold';
-    messagesDiv.appendChild(successLine);
-    
-    // Auto-remove after 3 seconds
-    setTimeout(() => {
-      progressLog.remove();
-      // Reload the scripts list to show updated script
-      loadScriptsList();
-    }, 3000);
-    
-  } catch (error) {
-    console.error('Regeneration error:', error);
-    
-    // Show error in progress log if it exists
-    const progressLog = document.querySelector('.progress-log');
-    if (progressLog) {
-      const messagesDiv = progressLog.querySelector('.progress-messages');
-      const errorLine = document.createElement('p');
-      errorLine.textContent = '❌ Error: ' + error.message;
-      errorLine.style.color = '#dc2626';
-      errorLine.style.fontWeight = 'bold';
-      messagesDiv.appendChild(errorLine);
-      
-      setTimeout(() => progressLog.remove(), 5000);
-    } else {
-      alert('❌ Failed to regenerate script:\n\n' + error.message);
-    }
-  }
+  );
+} }
 }
 
 async function runScriptTest(scriptData) {
