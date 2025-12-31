@@ -627,9 +627,14 @@ module.exports = async function scrape(url = '${targetUrl}') {
     const $ = cheerio.load(response.data);
     const data = {};
     
-    // Extract each field properly
-    const exampleElement = $('.selector');
-    data.fieldId = exampleElement.length ? exampleElement.first().text().trim() : null;
+    // Extract each field with try-catch to prevent undefined errors
+    try {
+      const exampleElement = $('.selector');
+      data.fieldId = exampleElement.length ? exampleElement.first().text().trim() : null;
+    } catch (e) {
+      console.log('Field extraction failed:', e.message);
+      data.fieldId = null;
+    }
     
     // For AI fields
     if (data.fieldId) {
@@ -1079,7 +1084,7 @@ Generate the complete scraper code now:`;
       // Diagnose and fix
       updateProgress(`❌ Test failed: ${testResult.error || 'No fields extracted'}`);
       updateProgress('🔍 Diagnosing issues...');
-      lastDiagnosis = await this.diagnoseScriptFailure(script, testResult, scraperConfig, relevantContext);
+      lastDiagnosis = this.diagnoseScriptWithHeuristics(script, testResult, scraperConfig);
       updateProgress(`💡 Diagnosis: ${lastDiagnosis.rootCause}`);
       
       // Record failure for learning
@@ -1330,6 +1335,47 @@ Generate the complete scraper code now:`;
       if (pastError.rootCause) {
         problems.unshift(`Past similar error: ${pastError.rootCause}`);
       }
+    }
+    
+    return {
+      problems: problems.slice(0, 3),
+      rootCause,
+      recommendation
+    };
+  }
+  
+  // Synchronous heuristic-based diagnosis (instant, no LLM)
+  diagnoseScriptWithHeuristics(script, testResult, scraperConfig = null) {
+    const errorString = testResult.error?.toLowerCase() || '';
+    const isSyntaxError = errorString.includes('syntaxerror') || 
+                         errorString.includes('unexpected') ||
+                         errorString.includes('missing') ||
+                         errorString.includes('invalid or unexpected token');
+    
+    const isRuntimeError = errorString.includes('is not defined') ||
+                          errorString.includes('cannot read') ||
+                          errorString.includes('undefined');
+    
+    let rootCause = 'Unknown issue';
+    let problems = [];
+    let recommendation = 'Check selectors and page structure';
+    
+    if (isSyntaxError) {
+      rootCause = 'Syntax error in generated code';
+      problems = ['Code has syntax errors', 'Cannot be parsed by Node.js'];
+      recommendation = 'Regenerate with proper syntax';
+    } else if (isRuntimeError) {
+      rootCause = 'Runtime error - undefined variable or missing declaration';
+      problems = ['Variable not defined', 'Missing import', 'Incorrect variable reference'];
+      recommendation = 'Add missing declarations and imports';
+    } else if (testResult.fieldsExtracted === 0 || !testResult.data || Object.keys(testResult.data).length === 0) {
+      rootCause = 'Selectors not finding elements on page';
+      problems = ['Wrong CSS selectors', 'Page structure different than expected'];
+      recommendation = 'Update selectors to match actual page structure';
+    } else {
+      rootCause = 'Incomplete data extraction';
+      problems = ['Some fields not extracted', 'Partial success'];
+      recommendation = 'Add extraction for missing fields';
     }
     
     return {

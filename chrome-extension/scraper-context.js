@@ -99,6 +99,83 @@ const SCRAPER_CONTEXTS = {
 `
   },
 
+  'error-handling': {
+    name: 'Error Handling & Null Safety',
+    size: '~600 tokens',
+    content: `
+**ALWAYS USE TRY-CATCH FOR EACH FIELD:**
+
+1. **Cheerio Field Extraction Pattern**:
+   \`\`\`javascript
+   // GOOD - Safe extraction with null checks
+   try {
+     const titleElement = $('.event-title, .title, h3').first();
+     data.title = titleElement.length ? titleElement.text().trim() : null;
+   } catch (e) {
+     console.log('Title extraction failed:', e.message);
+     data.title = null;
+   }
+   
+   // BAD - Can throw undefined errors
+   data.title = $('.event-title').first().text().trim();
+   \`\`\`
+
+2. **Puppeteer Field Extraction Pattern**:
+   \`\`\`javascript
+   // GOOD - Safe page.evaluate with fallback
+   try {
+     data.date = await page.evaluate(() => {
+       const el = document.querySelector('.event-date, .date, time');
+       return el ? el.textContent.trim() : null;
+     });
+   } catch (e) {
+     console.log('Date extraction failed:', e.message);
+     data.date = null;
+   }
+   
+   // BAD - Can crash if selector not found
+   data.date = await page.$eval('.event-date', el => el.textContent.trim());
+   \`\`\`
+
+3. **Multiple Fallback Pattern**:
+   \`\`\`javascript
+   try {
+     // Try 3-4 different selectors
+     let title = null;
+     for (const selector of ['.event-title', '.title', 'h3.name', '[data-title]']) {
+       const el = $(selector).first();
+       if (el.length) {
+         title = el.text().trim();
+         break;
+       }
+     }
+     data.title = title;
+   } catch (e) {
+     data.title = null;
+   }
+   \`\`\`
+
+4. **Array Extraction Safety**:
+   \`\`\`javascript
+   try {
+     const events = $('.event').toArray().map(el => {
+       const $el = $(el);
+       return {
+         title: $el.find('.title').first().text().trim() || 'Untitled',
+         date: $el.find('.date').first().text().trim() || null
+       };
+     }).filter(e => e.title && e.date); // Remove incomplete items
+     
+     data.events = events.length > 0 ? events : [];
+   } catch (e) {
+     data.events = [];
+   }
+   \`\`\`
+
+**RULE:** Every field extraction = one try-catch block. Never let undefined crash the script!
+`
+  },
+
   'date-parsing': {
     name: 'Date & Time Parsing',
     size: '~400 tokens',
