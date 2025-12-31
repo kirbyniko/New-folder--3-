@@ -65,6 +65,8 @@
         ];
 
         let fullResponse = '';
+        let lastUpdateTime = Date.now();
+        let stallCheckInterval;
         
         const response = await engine.chat.completions.create({
           messages: messages,
@@ -73,16 +75,35 @@
           stream: true,
         });
 
+        // Check for stalls (no new tokens for 5 seconds)
+        stallCheckInterval = setInterval(() => {
+          const timeSinceLastUpdate = Date.now() - lastUpdateTime;
+          if (timeSinceLastUpdate > 5000) {
+            console.warn('⚠️ Generation stalled, completing with current output');
+            clearInterval(stallCheckInterval);
+            window.parent.postMessage({
+              type: 'GENERATION_COMPLETE',
+              text: fullResponse,
+              success: true
+            }, '*');
+          }
+        }, 1000);
+
         for await (const chunk of response) {
           const delta = chunk.choices[0]?.delta?.content || '';
-          fullResponse += delta;
-          
-          // Send progress updates
-          window.parent.postMessage({
-            type: 'GENERATION_PROGRESS',
-            text: fullResponse
-          }, '*');
+          if (delta) {
+            fullResponse += delta;
+            lastUpdateTime = Date.now();
+            
+            // Send progress updates
+            window.parent.postMessage({
+              type: 'GENERATION_PROGRESS',
+              text: fullResponse
+            }, '*');
+          }
         }
+
+        clearInterval(stallCheckInterval);
 
         window.parent.postMessage({
           type: 'GENERATION_COMPLETE',
