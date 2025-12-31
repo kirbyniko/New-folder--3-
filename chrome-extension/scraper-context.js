@@ -400,3 +400,10 @@ function getContextInfo() {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { SCRAPER_CONTEXTS, getSelectedContexts, getContextInfo };
 }
+
+// Also export to window for browser extension use
+if (typeof window !== 'undefined') {
+  window.SCRAPER_CONTEXTS = SCRAPER_CONTEXTS;
+  window.getSelectedContexts = getSelectedContexts;
+  window.getContextInfo = getContextInfo;
+}
