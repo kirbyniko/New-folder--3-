@@ -1256,27 +1256,42 @@ Generate the complete scraper code now:`;
         
         console.log('📦 Backend response:', result);
         
+        // The script returns { success, data, metadata } but we need the inner data
+        // Check if result.data is the nested response
+        let scriptResult = result;
+        if (result.success && result.data && result.data.success !== undefined) {
+          // Nested structure: { success: true, data: { success: true, data: {...}, metadata: {...} } }
+          console.log('📦 Unwrapping nested response structure');
+          scriptResult = result.data;
+        }
+        
         // Map backend response to expected format
-        if (result.error) {
+        if (scriptResult.error) {
           return {
             success: false,
-            error: result.error,
-            stack: result.stack,
+            error: scriptResult.error,
+            stack: scriptResult.stack,
             fieldsExtracted: 0,
             url: targetUrl,
             logs: result.logs || []
           };
         }
         
-        const fieldsFound = result.metadata?.fieldsFound || 0;
-        const hasData = result.data && Object.keys(result.data).length > 0;
+        const fieldsFound = scriptResult.metadata?.fieldsFound || 0;
+        const hasData = scriptResult.data && Object.keys(scriptResult.data).length > 0;
         
         // Log what data was actually extracted
         if (hasData) {
-          console.log('📊 Extracted data:', result.data);
+          console.log('📊 Extracted data:', scriptResult.data);
           console.log('📈 Fields found:', fieldsFound);
+          
+          // Log individual field values
+          for (const [key, value] of Object.entries(scriptResult.data)) {
+            console.log(`  - ${key}: ${value === null ? 'NULL' : value === undefined ? 'UNDEFINED' : value === '' ? 'EMPTY' : typeof value === 'object' ? JSON.stringify(value).substring(0, 100) : value}`);
+          }
         } else {
           console.warn('⚠️ No data extracted from page');
+          console.log('📋 Metadata:', scriptResult.metadata);
           if (result.logs && result.logs.length > 0) {
             console.log('📜 Script logs:', result.logs.join('\n'));
           }
@@ -1284,12 +1299,13 @@ Generate the complete scraper code now:`;
         
         return {
           success: hasData && fieldsFound > 0,
-          data: result.data,
-          metadata: result.metadata,
+          data: scriptResult.data,
+          metadata: scriptResult.metadata,
           fieldsExtracted: fieldsFound,
           url: targetUrl,
           requiresJavaScript: result.requiresJavaScript,
-          jsDetectionReason: result.jsDetectionReason
+          jsDetectionReason: result.jsDetectionReason,
+          logs: result.logs || []
         };
         
       } catch (fetchError) {

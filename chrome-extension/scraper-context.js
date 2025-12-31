@@ -2,6 +2,100 @@
 // Based on SCRAPER_GUIDE_SHORT.md patterns
 
 const SCRAPER_CONTEXTS = {
+  'scraper-guide': {
+    name: 'Full Scraper Guide (agendas, PDFs, APIs)',
+    size: '~2000 tokens',
+    content: `
+**COMPLETE SCRAPER GUIDE - ALL PATTERNS**
+
+This guide includes strategies for:
+- Static HTML calendar scraping
+- PDF agenda parsing
+- API endpoint discovery
+- JavaScript-heavy sites (Puppeteer)
+- Date range handling
+- Multi-page pagination
+- Error recovery
+
+### Finding Calendar URLs:
+1. Google "[state/city] legislature committee meetings"
+2. Check official government sites (.gov domains)
+3. Look for "Calendar", "Meetings", "Agendas" sections
+4. Common patterns:
+   - /calendar
+   - /meetings
+   - /committees/meetings
+   - /clerk/agendas
+
+### PDF Agenda Detection:
+Many government sites link to PDF agendas. Look for:
+- Links with .pdf extension
+- "Agenda" or "Meeting Materials" text
+- Download/document icons
+
+**Pattern for extracting PDF URLs:**
+\`\`\`javascript
+const pdfLinks = [];
+$('a[href$=".pdf"], a:contains("Agenda"), a:contains("agenda")').each((i, el) => {
+  const href = $(el).attr('href');
+  if (href && (href.includes('agenda') || href.endsWith('.pdf'))) {
+    pdfLinks.push({
+      url: href.startsWith('http') ? href : new URL(href, baseUrl).href,
+      text: $(el).text().trim()
+    });
+  }
+});
+\`\`\`
+
+### State Legislature Patterns:
+Most states have similar structures:
+- House committees
+- Senate committees
+- Joint committees
+- Public hearings
+- Bill readings
+
+Common field names:
+- Committee Name
+- Meeting Date/Time
+- Location/Room
+- Agenda URL (PDF)
+- Bill Numbers
+- Video/Audio Stream
+
+### API Detection:
+1. Open browser DevTools → Network tab
+2. Look for XHR/Fetch requests
+3. Common API patterns:
+   - /api/events
+   - /api/meetings
+   - /api/calendar
+   - GraphQL endpoints
+
+### Date Handling:
+**Always try to extract:**
+- ISO format: 2025-12-30T10:00:00Z
+- If not available, parse: "December 30, 2025"
+- Time zones matter for government meetings!
+
+\`\`\`javascript
+function parseGovernmentDate(dateStr) {
+  // Try various formats
+  const formats = [
+    /\d{4}-\d{2}-\d{2}/, // ISO
+    /\d{1,2}\/\d{1,2}\/\d{4}/, // MM/DD/YYYY
+    /[A-Z][a-z]+ \d{1,2}, \d{4}/ // Month DD, YYYY
+  ];
+  
+  for (const format of formats) {
+    const match = dateStr.match(format);
+    if (match) return new Date(match[0]).toISOString();
+  }
+  return dateStr; // Fallback
+}
+\`\`\`
+`
+  },
   'basic-selectors': {
     name: 'Basic Selector Patterns',
     size: '~500 tokens',

@@ -89,10 +89,63 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
   
+  // Initialize context guides checkboxes
+  initializeContextGuides();
+  
   await loadTemplates();
   loadScraperLibrary();
   restoreActiveTemplate();
 });
+// Initialize context guides checkboxes
+function initializeContextGuides() {
+  const container = document.getElementById('context-guides-container');
+  if (!container || !window.SCRAPER_CONTEXTS) return;
+  
+  // Get saved selections from localStorage (default: scraper-guide + basic-selectors + error-handling)
+  const savedSelections = JSON.parse(localStorage.getItem('agentContextGuides') || '["scraper-guide", "basic-selectors", "error-handling"]');
+  
+  // Get all available contexts
+  const contexts = window.getContextInfo ? window.getContextInfo() : [];
+  
+  if (contexts.length === 0) {
+    container.innerHTML = '<p style="color: #999; font-size: 11px; margin: 0;">No context guides available</p>';
+    return;
+  }
+  
+  // Create checkbox for each context
+  container.innerHTML = contexts.map(ctx => `
+    <label style="display: flex; align-items: start; gap: 6px; cursor: pointer;">
+      <input type="checkbox" 
+             data-context-key="${ctx.key}" 
+             class="context-guide-checkbox"
+             ${savedSelections.includes(ctx.key) ? 'checked' : ''}
+             style="cursor: pointer; margin-top: 2px;">
+      <span style="flex: 1;">
+        <strong>${ctx.name}</strong><br>
+        <span style="font-size: 10px; color: #666;">${ctx.size}</span>
+      </span>
+    </label>
+  `).join('');
+  
+  // Add change listeners to save selections
+  container.querySelectorAll('.context-guide-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', () => {
+      const selected = Array.from(container.querySelectorAll('.context-guide-checkbox:checked'))
+        .map(cb => cb.dataset.contextKey);
+      localStorage.setItem('agentContextGuides', JSON.stringify(selected));
+      console.log('📚 Context guides updated:', selected);
+      
+      // Update agent's selected contexts if it exists
+      if (window.ScraperAIAgent && window.agentInstance) {
+        window.agentInstance.selectedContexts = selected;
+        console.log('✅ Agent contexts updated');
+      }
+    });
+  });
+  
+  console.log('📚 Initialized context guides:', savedSelections);
+}
+
 // SCRAPER LIBRARY (localStorage)
 // ========================================
 
@@ -2386,6 +2439,11 @@ async function checkOllamaAndEnableAI() {
 async function generateAIScript(config) {
   const agent = new window.ScraperAIAgent();
   
+  // Load selected context guides from localStorage
+  const selectedContexts = JSON.parse(localStorage.getItem('agentContextGuides') || '["scraper-guide", "basic-selectors", "error-handling"]');
+  agent.selectedContexts = selectedContexts;
+  console.log('📚 Context guides:', selectedContexts);
+  
   // Get the template
   chrome.storage.local.get(['activeBuilderTemplate'], async (result) => {
     const template = result.activeBuilderTemplate;
@@ -3419,6 +3477,15 @@ async function generateScriptForScraper(scraper, existingScraperId = null, optio
     
     // Check Ollama
     const agent = new window.ScraperAIAgent();
+    
+    // Load selected context guides from localStorage
+    const selectedContexts = JSON.parse(localStorage.getItem('agentContextGuides') || '["scraper-guide", "basic-selectors", "error-handling"]');
+    agent.selectedContexts = selectedContexts;
+    addMessage(`📚 Loaded ${selectedContexts.length} context guide(s)`);
+    
+    // Store agent globally so checkbox changes can update it
+    window.agentInstance = agent;
+    
     const status = await agent.checkOllamaStatus();
     
     if (!status.available) {
