@@ -4034,7 +4034,6 @@ async function regenerateScriptWithPuppeteer(scriptData) {
       reason: 'Page requires JavaScript rendering'
     }
   );
-} }
 }
 
 async function runScriptTest(scriptData) {
