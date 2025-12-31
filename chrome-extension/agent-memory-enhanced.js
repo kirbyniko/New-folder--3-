@@ -17,16 +17,18 @@ class EnhancedAgentMemory {
       // Load TensorFlow.js and Universal Sentence Encoder
       // This is a 25MB model that runs in browser for semantic embeddings
       if (typeof tf === 'undefined') {
-        await this.loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs');
-        await this.loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/universal-sentence-encoder');
+        console.log('📦 Loading TensorFlow.js for semantic search...');
+        await this.loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.11.0/dist/tf.min.js');
+        await this.loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/universal-sentence-encoder@2.3.3/dist/universal-sentence-encoder.min.js');
       }
       
-      console.log('📦 Loading Universal Sentence Encoder for semantic search...');
+      console.log('📦 Loading Universal Sentence Encoder model...');
       this.encoder = await use.load();
       this.encoderReady = true;
       console.log('✅ Semantic search ready');
     } catch (error) {
       console.warn('⚠️ Semantic encoder failed to load, using fallback keyword search:', error);
+      console.warn('   This is normal - extension still works with keyword-based search');
       this.encoderReady = false;
     }
   }

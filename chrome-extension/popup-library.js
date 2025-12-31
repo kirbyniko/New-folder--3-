@@ -291,7 +291,8 @@ async function loadTemplates() {
       }
     }
   } catch (error) {
-    console.warn('⚠️ Could not load templates from database:', error.message);
+    console.log('ℹ️  Backend server not running - using example templates only');
+    console.log('   To enable database templates, run: npm run execute');
   }
   
   // Load example templates from files
