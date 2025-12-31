@@ -1516,7 +1516,7 @@ module.exports = async function scrape(url) {
       }
       
       // Step 2: Condense CRITICAL REQUIREMENTS section (remove verbose explanations)
-      const requirementsPattern = /CRITICAL REQUIREMENTS:([\s\S]*?)(?=CRITICAL OUTPUT INSTRUCTIONS|===CODE_START===|$)/i;
+      const requirementsPattern = /CRITICAL REQUIREMENTS:([\s\S]*?)(?=\n\n(?:CRITICAL OUTPUT INSTRUCTIONS|MINIMAL EXAMPLE|FIELDS TO EXTRACT))/i;
       const requirementsMatch = reducedPrompt.match(requirementsPattern);
       if (requirementsMatch) {
         const condensedRequirements = `CRITICAL REQUIREMENTS:
