@@ -780,15 +780,23 @@ Generate the complete scraper code now:`;
         console.log('🎮 Using WebGPU inference (local, fast)');
         return await this.queryWebGPU(prompt, options);
       } catch (error) {
-        console.error('❌ WebGPU failed:', error);
-        console.warn('↩️  Falling back to Ollama');
-        this.useWebGPU = false;
+        const errorMsg = error.message || error.toString();
+        
+        // Check if context window exceeded
+        if (errorMsg.includes('context window size')) {
+          console.warn('⚠️ Prompt too long for WebGPU (4096 token limit)');
+          console.log('↩️  Falling back to Ollama for larger context');
+        } else {
+          console.error('❌ WebGPU failed:', errorMsg);
+          console.warn('↩️  Falling back to Ollama');
+        }
+        // Continue to Ollama fallback below
       }
     }
 
-    // Fallback to Ollama (disable this if you want WebGPU-only)
-    if (!this.useWebGPU) {
-      throw new Error('WebGPU is still initializing. Please wait and try again in a moment.');
+    // Fallback to Ollama (or if WebGPU not ready)
+    if (!this.webgpuReady || !this.webgpuInitialized) {
+      console.log('⏳ WebGPU not ready, using Ollama');
     }
     
     return await this.queryOllama(prompt, options);
@@ -871,6 +879,12 @@ Generate the complete scraper code now:`;
       console.log('🤖 Ollama response:', data);
       console.log('🤖 Response text length:', data.response?.length);
       console.log('🤖 Response preview:', data.response?.substring(0, 200));
+      
+      // Check for Ollama error field
+      if (data.error) {
+        console.error('❌ Ollama error:', data.error);
+        throw new Error(`Ollama error: ${data.error}`);
+      }
       
       if (!data.response || data.response.trim().length === 0) {
         console.error('❌ Ollama returned empty response. Full data:', data);
