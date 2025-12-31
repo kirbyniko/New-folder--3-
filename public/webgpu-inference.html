@@ -15,15 +15,21 @@
       if (isInitialized) return;
       
       console.log('🚀 Initializing WebGPU inference engine...');
+      console.log('📦 Model will be cached in browser storage after first download');
       
       try {
         // Use CodeQwen - small, fast, code-focused model (~1.5GB)
+        // Model is cached in browser Cache Storage API - persists across sessions
         engine = await CreateMLCEngine("Qwen2.5-Coder-1.5B-Instruct-q4f16_1-MLC", {
           initProgressCallback: (progress) => {
+            const progressText = progress.text.includes('Fetching') 
+              ? `${progress.text} (will be cached)`
+              : progress.text;
+            
             window.parent.postMessage({
               type: 'INIT_PROGRESS',
               progress: progress.progress,
-              text: progress.text
+              text: progressText
             }, '*');
           }
         });
@@ -67,6 +73,22 @@
         let fullResponse = '';
         let lastUpdateTime = Date.now();
         let stallCheckInterval;
+        let completed = false;
+        
+        const completeGeneration = () => {
+          if (completed) return;
+          completed = true;
+          
+          if (stallCheckInterval) {
+            clearInterval(stallCheckInterval);
+          }
+          
+          window.parent.postMessage({
+            type: 'GENERATION_COMPLETE',
+            text: fullResponse,
+            success: true
+          }, '*');
+        };
         
         const response = await engine.chat.completions.create({
           messages: messages,
@@ -77,19 +99,21 @@
 
         // Check for stalls (no new tokens for 5 seconds)
         stallCheckInterval = setInterval(() => {
+          if (completed) {
+            clearInterval(stallCheckInterval);
+            return;
+          }
+          
           const timeSinceLastUpdate = Date.now() - lastUpdateTime;
           if (timeSinceLastUpdate > 5000) {
             console.warn('⚠️ Generation stalled, completing with current output');
-            clearInterval(stallCheckInterval);
-            window.parent.postMessage({
-              type: 'GENERATION_COMPLETE',
-              text: fullResponse,
-              success: true
-            }, '*');
+            completeGeneration();
           }
         }, 1000);
 
         for await (const chunk of response) {
+          if (completed) break;
+          
           const delta = chunk.choices[0]?.delta?.content || '';
           if (delta) {
             fullResponse += delta;
@@ -103,13 +127,7 @@
           }
         }
 
-        clearInterval(stallCheckInterval);
-
-        window.parent.postMessage({
-          type: 'GENERATION_COMPLETE',
-          text: fullResponse,
-          success: true
-        }, '*');
+        completeGeneration();
 
       } catch (error) {
         console.error('❌ Generation failed:', error);
