@@ -76,6 +76,7 @@
         let stallCheckInterval;
         let completed = false;
         let tokenCount = 0;
+        let firstTokenReceived = false;
         
         const completeGeneration = () => {
           if (completed) return;
@@ -99,7 +100,8 @@
           stream: true,
         });
 
-        // Check for stalls and timeout (no new tokens for 5 seconds OR total time > 2 minutes OR < 5 tokens/sec average)
+        // Check for stalls and timeout
+        // Don't start checking for stalls until first token is received (model needs time to process prompt)
         stallCheckInterval = setInterval(() => {
           if (completed) {
             clearInterval(stallCheckInterval);
@@ -110,7 +112,16 @@
           const totalTime = (Date.now() - startTime) / 1000;
           const charsPerSecond = tokenCount / totalTime;
           
-          // Stall: no new tokens for 5 seconds
+          // If no tokens yet, allow up to 30 seconds for model to start
+          if (!firstTokenReceived) {
+            if (totalTime > 30) {
+              console.warn('⚠️ Model failed to start generating (30s timeout)');
+              completeGeneration();
+            }
+            return;
+          }
+          
+          // Stall: no new tokens for 5 seconds (only after first token)
           if (timeSinceLastUpdate > 5000) {
             console.warn('⚠️ Generation stalled (no tokens for 5s), completing with current output');
             completeGeneration();
@@ -132,6 +143,11 @@
           
           const delta = chunk.choices[0]?.delta?.content || '';
           if (delta) {
+            if (!firstTokenReceived) {
+              firstTokenReceived = true;
+              console.log('🎯 First token received, generation active');
+            }
+            
             fullResponse += delta;
             tokenCount += delta.length;
             lastUpdateTime = Date.now();
