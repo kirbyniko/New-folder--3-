@@ -1540,7 +1540,7 @@ Return ONLY the compressed prompt, no explanations.`;
       
       // Step 6: Remove context guides if STILL too large
       if (Math.ceil(reducedPrompt.length / 3.3) > viability.safeLimit) {
-        const contextGuidesPattern = /=== REUSABLE PATTERNS ===[\s\S]*?=== END PATTERNS ===/i;
+        const contextGuidesPattern = /=== PROVEN PATTERNS & TACTICS ===[\s\S]*?=== END PATTERNS ===/i;
         const beforeGuides = reducedPrompt.length;
         reducedPrompt = reducedPrompt.replace(contextGuidesPattern, '');
         if (reducedPrompt.length < beforeGuides) {
