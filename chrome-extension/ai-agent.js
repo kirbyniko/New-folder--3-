@@ -1484,12 +1484,35 @@ Return ONLY the compressed prompt, no explanations.`;
       let reducedPrompt = realPrompt;
       const originalLength = reducedPrompt.length;
       
-      // Step 1: Remove ALL example code blocks (most bloated part)
+      // Step 1: Replace verbose examples with minimal working example (~300 tokens)
       const exampleCodePattern = /(EXAMPLE|Example:|PUPPETEER EXAMPLE:|EXAMPLE STRUCTURE:)[\s\S]*?```javascript[\s\S]*?```/gi;
-      reducedPrompt = reducedPrompt.replace(exampleCodePattern, '');
+      const minimalExample = realPrompt.includes('Puppeteer') ? `
+MINIMAL EXAMPLE:
+\`\`\`javascript
+const puppeteer = require('puppeteer');
+module.exports = async function scrape(url) {
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+  await page.goto(url, {waitUntil: 'networkidle0'});
+  
+  const data = await page.evaluate(() => ({
+    title: document.querySelector('h1')?.textContent?.trim() || null,
+    items: Array.from(document.querySelectorAll('.item')).map(el => ({
+      name: el.querySelector('.name')?.textContent?.trim() || null,
+      date: el.querySelector('.date')?.textContent?.trim() || null
+    }))
+  }));
+  
+  await browser.close();
+  return {success: true, data, metadata: {fieldsFound: Object.keys(data).length}};
+};
+\`\`\`
+` : '';
+      
+      reducedPrompt = reducedPrompt.replace(exampleCodePattern, minimalExample);
       const afterExamples = reducedPrompt.length;
       if (afterExamples < originalLength) {
-        updateProgress(`   ✂️ Removed example code: ${originalLength - afterExamples} chars saved`);
+        updateProgress(`   ✂️ Replaced verbose examples with minimal: ${originalLength - afterExamples} chars saved`);
       }
       
       // Step 2: Condense CRITICAL REQUIREMENTS section (remove verbose explanations)
@@ -1499,12 +1522,13 @@ Return ONLY the compressed prompt, no explanations.`;
         const condensedRequirements = `CRITICAL REQUIREMENTS:
 1. Use TARGET URL
 2. ${realPrompt.includes('Puppeteer') ? 'Use Puppeteer: await page.goto(url, {waitUntil: "networkidle0"}). NO page.waitForTimeout!' : 'Use axios + cheerio'}
-3. Extract ACTUAL VALUES (text/href/dates)
-4. For AI fields: call analyzeWithAI(content, prompt, model, contexts)
-5. Try fallback selectors if exact fails
+3. Extract ACTUAL VALUES (text/href/dates) - use .textContent.trim(), .getAttribute('href'), etc.
+4. SELECTOR FALLBACKS: If selector fails, try: a) partial class match, b) text content search, c) parent/child elements, d) data-* attributes
+5. For AI fields: call analyzeWithAI(content, prompt, model, contexts)
 6. Return {success, data, metadata: {fieldsFound, notes}}
-7. Count only non-null fields
-8. Log detailed debug if no fields found
+7. Count only non-null fields in fieldsFound
+8. Add notes array with fallback info: ["field: tried X, used Y"]
+9. If NO fields extracted, log: selectors tried, page HTML snippet
 
 `;
         reducedPrompt = reducedPrompt.replace(requirementsMatch[0], condensedRequirements);
