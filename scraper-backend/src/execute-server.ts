@@ -51,10 +51,11 @@ async function executeScript(req: ExecuteRequest): Promise<ExecuteResponse> {
     const module = { exports: null as any };
     const exports = {};
     
-    // Create require function with cheerio and axios
+    // Create require function with cheerio, axios, and puppeteer
     const require = (moduleName: string) => {
       if (moduleName === 'cheerio') return cheerio;
       if (moduleName === 'axios') return axios;
+      if (moduleName === 'puppeteer') return puppeteer;
       throw new Error(`Module '${moduleName}' not available`);
     };
     
@@ -96,8 +97,8 @@ async function executeScript(req: ExecuteRequest): Promise<ExecuteResponse> {
       throw new Error('Script must export a function via module.exports');
     }
     
-    // Execute with timeout
-    const timeout = req.timeout || 30000;
+    // Execute with timeout (90 seconds for Puppeteer scripts)
+    const timeout = req.timeout || 90000;
     const result = await Promise.race([
       scraperFunc(req.targetUrl),
       new Promise((_, reject) => 
