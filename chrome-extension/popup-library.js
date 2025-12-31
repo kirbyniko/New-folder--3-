@@ -92,10 +92,64 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Initialize context guides checkboxes
   initializeContextGuides();
   
+  // Initialize model selector
+  await initializeModelSelector();
+  
   await loadTemplates();
   loadScraperLibrary();
   restoreActiveTemplate();
 });
+// Initialize model selector
+async function initializeModelSelector() {
+  const selector = document.getElementById('agent-model-selector');
+  const statusDiv = document.getElementById('model-status');
+  
+  if (!selector) return;
+  
+  try {
+    // Load saved model preference
+    const savedModel = localStorage.getItem('agentDefaultModel') || 'qwen2.5-coder:32b';
+    selector.value = savedModel;
+    
+    // Check which models are actually available
+    const agent = new window.ScraperAIAgent();
+    const status = await agent.checkOllamaStatus();
+    
+    if (status.available && status.models.length > 0) {
+      const availableNames = status.models.map(m => m.name);
+      statusDiv.innerHTML = `✅ <strong>${status.models.length} models available</strong>`;
+      statusDiv.style.color = '#10b981';
+      
+      // Disable options for models that aren't installed
+      Array.from(selector.options).forEach(option => {
+        if (option.value && !availableNames.includes(option.value)) {
+          option.disabled = true;
+          option.text += ' (not installed)';
+          option.style.color = '#999';
+        }
+      });
+      
+      // If saved model isn't available, select first available
+      if (!availableNames.includes(savedModel) && availableNames.length > 0) {
+        selector.value = availableNames[0];
+        localStorage.setItem('agentDefaultModel', availableNames[0]);
+      }
+    } else {
+      statusDiv.innerHTML = '⚠️ Ollama not running - <a href="https://ollama.ai/download" target="_blank" style="color: #6366f1;">Install</a>';
+      statusDiv.style.color = '#f59e0b';
+    }
+  } catch (error) {
+    statusDiv.innerHTML = '❌ Error checking models';
+    statusDiv.style.color = '#ef4444';
+  }
+  
+  // Save model selection on change
+  selector.addEventListener('change', () => {
+    localStorage.setItem('agentDefaultModel', selector.value);
+    console.log('🤖 Default model updated:', selector.value);
+  });
+}
+
 // Initialize context guides checkboxes
 function initializeContextGuides() {
   const container = document.getElementById('context-guides-container');
@@ -1433,6 +1487,17 @@ function renderFields(fields, stepNum, groupName = '') {
                 <span>🤖 Uses AI Analysis</span>
               </label>
               <div id="${fieldId}-ai-config" style="display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.3);">
+                <label style="display: block; color: white; font-size: 11px; margin-bottom: 4px;">AI Model:</label>
+                <select id="${fieldId}-ai-model" class="ai-model-selector" style="width: 100%; padding: 6px; border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; font-size: 11px; background: rgba(255,255,255,0.95); margin-bottom: 8px;">
+                  <option value="">Use Default Model</option>
+                  <option value="qwen2.5-coder:32b">Qwen2.5-Coder 32B (32K)</option>
+                  <option value="qwen2.5-coder:14b">Qwen2.5-Coder 14B (32K)</option>
+                  <option value="qwen2.5-coder:7b">Qwen2.5-Coder 7B (32K)</option>
+                  <option value="deepseek-coder-v2:16b">DeepSeek V2 16B (64K)</option>
+                  <option value="qwen2.5-coder:72b">Qwen2.5-Coder 72B (128K)</option>
+                  <option value="deepseek-coder:33b">DeepSeek 33B (16K)</option>
+                  <option value="codellama:13b">CodeLlama 13B (16K)</option>
+                </select>
                 <label style="display: block; color: white; font-size: 11px; margin-bottom: 4px;">AI Prompt Template:</label>
                 <textarea id="${fieldId}-ai-prompt" placeholder="e.g., Extract all dates from this PDF content in YYYY-MM-DD format" style="width: 100%; padding: 6px; border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; font-size: 11px; resize: vertical; min-height: 60px; font-family: inherit; background: rgba(255,255,255,0.95);"></textarea>
                 <small style="color: rgba(255,255,255,0.9); font-size: 10px; display: block; margin-top: 4px;">💡 Tip: This prompt will be sent to AI with the scraped content at runtime</small>
@@ -1501,7 +1566,7 @@ function restoreActiveTemplate() {
 
 // Restore saved field values
 function restoreFieldValues() {
-  chrome.storage.local.get(['builderFieldValues', 'builderStepValues', 'builderFieldNotes'], (result) => {
+  chrome.storage.local.get(['builderFieldValues', 'builderStepValues', 'builderFieldNotes', 'builderAISettings'], (result) => {
     if (result.builderFieldValues) {
       const values = result.builderFieldValues;
       console.log('🔄 Restoring field values:', Object.keys(values).length, 'fields');
@@ -1531,6 +1596,32 @@ function restoreFieldValues() {
         const noteElement = document.getElementById(`${fieldId}-note`);
         if (noteElement) {
           noteElement.value = note;
+        }
+      });
+    }
+    
+    // Restore AI settings
+    if (result.builderAISettings) {
+      const aiSettings = result.builderAISettings;
+      console.log('🔄 Restoring AI settings:', Object.keys(aiSettings).length, 'fields');
+      
+      Object.entries(aiSettings).forEach(([fieldId, settings]) => {
+        const enabledCheckbox = document.getElementById(`${fieldId}-ai-enabled`);
+        const promptTextarea = document.getElementById(`${fieldId}-ai-prompt`);
+        const modelSelector = document.getElementById(`${fieldId}-ai-model`);
+        const configDiv = document.getElementById(`${fieldId}-ai-config`);
+        
+        if (enabledCheckbox && settings.enabled) {
+          enabledCheckbox.checked = true;
+          if (configDiv) configDiv.style.display = 'block';
+        }
+        
+        if (promptTextarea && settings.prompt) {
+          promptTextarea.value = settings.prompt;
+        }
+        
+        if (modelSelector && settings.model !== undefined) {
+          modelSelector.value = settings.model; // Empty string = use default
         }
       });
     }
@@ -1597,15 +1688,21 @@ function saveFieldNote(element) {
 }
 
 function saveAIPrompt(element) {
-  const fieldId = element.id.replace('-ai-prompt', '');
+  const fieldId = element.id.replace('-ai-prompt', '').replace('-ai-model', '');
   
   chrome.storage.local.get(['builderAISettings'], (result) => {
     const aiSettings = result.builderAISettings || {};
     if (!aiSettings[fieldId]) aiSettings[fieldId] = {};
-    aiSettings[fieldId].prompt = element.value;
+    
+    if (element.id.endsWith('-ai-prompt')) {
+      aiSettings[fieldId].prompt = element.value;
+      console.log('💾 Saved AI prompt:', fieldId);
+    } else if (element.id.endsWith('-ai-model')) {
+      aiSettings[fieldId].model = element.value;
+      console.log('💾 Saved AI model:', fieldId, element.value || 'default');
+    }
     
     chrome.storage.local.set({ builderAISettings: aiSettings });
-    console.log('💾 Saved AI prompt:', fieldId);
   });
 }
 
@@ -1685,6 +1782,18 @@ function setupAutoSave() {
     // Handle AI analysis toggle
     if (element.classList.contains('ai-analysis-toggle')) {
       handleAIToggle(element);
+    }
+    // Handle AI model selector
+    if (element.classList.contains('ai-model-selector')) {
+      saveAIPrompt(element);
+    }
+  });
+  
+  // Handle textarea input for AI prompts
+  container.addEventListener('input', (e) => {
+    const element = e.target;
+    if (element.id && element.id.endsWith('-ai-prompt')) {
+      saveAIPrompt(element);
     }
   });
   

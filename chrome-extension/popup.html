@@ -744,6 +744,24 @@
     <!-- Agent Settings -->
     <div style="margin: 16px 0; padding: 12px; background: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
       <h4 style="margin: 0 0 8px 0; font-size: 13px;">🤖 Agent Settings</h4>
+      
+      <!-- Model Selector -->
+      <div style="margin-bottom: 12px;">
+        <label style="display: block; font-size: 12px; font-weight: 500; margin-bottom: 4px;">Default AI Model:</label>
+        <select id="agent-model-selector" class="form-control" style="width: 100%; font-size: 12px; padding: 6px;">
+          <option value="qwen2.5-coder:32b">Qwen2.5-Coder 32B (32K context)</option>
+          <option value="qwen2.5-coder:14b">Qwen2.5-Coder 14B (32K context)</option>
+          <option value="qwen2.5-coder:7b">Qwen2.5-Coder 7B (32K context)</option>
+          <option value="deepseek-coder-v2:16b">DeepSeek-Coder V2 16B (64K context)</option>
+          <option value="qwen2.5-coder:72b">Qwen2.5-Coder 72B (128K context)</option>
+          <option value="deepseek-coder:33b">DeepSeek-Coder 33B (16K context)</option>
+          <option value="deepseek-coder:6.7b">DeepSeek-Coder 6.7B (16K context)</option>
+          <option value="codellama:13b">CodeLlama 13B (16K context)</option>
+          <option value="codellama:7b">CodeLlama 7B (16K context)</option>
+        </select>
+        <div id="model-status" style="font-size: 10px; color: #666; margin-top: 4px;">Checking available models...</div>
+      </div>
+      
       <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12px; margin-bottom: 8px;">
         <input type="checkbox" id="interactive-mode-toggle" style="cursor: pointer;">
         <span>Interactive Mode (ask for feedback during generation)</span>

@@ -12,7 +12,8 @@ class ScraperAIAgent {
     
     // Fallback to Ollama if WebGPU unavailable
     this.ollamaEndpoint = 'http://127.0.0.1:11434/api/generate';
-    this.model = 'qwen2.5-coder:32b';
+    // Load model from localStorage (set by user in UI)
+    this.model = localStorage.getItem('agentDefaultModel') || 'qwen2.5-coder:32b';
     this.useWebGPU = true; // Prefer WebGPU
     
     this.contextFiles = {};
@@ -476,33 +477,45 @@ Consider: cheerio, axios, puppeteer, dayjs, pdf-parse`;
         
         const aiConfig = scraperConfig.aiFields?.[id];
         const aiPrompt = aiConfig?.enabled ? aiConfig.prompt : null;
+        const aiModel = aiConfig?.enabled ? (aiConfig.model || null) : null; // null = use default
         
         fieldGroups[step].push({
           id,
           selector,
           extractType,
-          aiPrompt
+          aiPrompt,
+          aiModel
         });
       });
 
     const fieldsDescription = Object.entries(fieldGroups)
       .map(([step, fields]) => {
-        return `${step}:\n${fields.map(f => 
-          `  - ${f.id}: selector="${f.selector}" extract=${f.extractType}${f.aiPrompt ? ' AI_ANALYZE="' + f.aiPrompt + '"' : ''}`
-        ).join('\n')}`;
+        return `${step}:\n${fields.map(f => {
+          let desc = `  - ${f.id}: selector="${f.selector}" extract=${f.extractType}`;
+          if (f.aiPrompt) {
+            desc += ` AI_ANALYZE="${f.aiPrompt}"`;
+            if (f.aiModel) {
+              desc += ` AI_MODEL="${f.aiModel}"`;
+            }
+          }
+          return desc;
+        }).join('\n')}`;
       })
       .join('\n\n');
 
     const aiHelperCode = hasAIFields ? `
 
 // AI Analysis Helper
-async function analyzeWithAI(content, prompt) {
+async function analyzeWithAI(content, prompt, model = null) {
   try {
+    // Use specified model or default from localStorage
+    const selectedModel = model || localStorage.getItem('agentDefaultModel') || 'qwen2.5-coder:32b';
+    
     const response = await fetch('http://localhost:11434/api/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'deepseek-coder:6.7b',
+        model: selectedModel,
         prompt: prompt + '\\n\\nContent:\\n' + content,
         stream: false,
         options: { temperature: 0.3, num_predict: 500 }
@@ -555,7 +568,9 @@ CRITICAL REQUIREMENTS:
    - For href: use .attr('href')${usePuppeteer ? ' or getAttribute("href")' : ''}
    - For dates/times: extract text then parse to ISO format
    - For containers: find all matching elements
-5. FOR AI_ANALYZE fields: After extracting content, call analyzeWithAI(content, prompt) and use AI response
+5. FOR AI_ANALYZE fields: After extracting content, call analyzeWithAI(content, prompt, model) where model is from AI_MODEL (or null for default)
+   Example: If field has AI_ANALYZE="Extract dates" AI_MODEL="qwen2.5-coder:14b", call:
+   const analyzed = await analyzeWithAI(rawContent, "Extract dates", "qwen2.5-coder:14b");
 6. **FALLBACK BEHAVIOR**: If exact selector fails, try alternatives:
    - Try removing class prefixes/suffixes
    - Try finding by text content (contains, starts-with)
