@@ -108,7 +108,7 @@
           
           const timeSinceLastUpdate = Date.now() - lastUpdateTime;
           const totalTime = (Date.now() - startTime) / 1000;
-          const tokensPerSecond = tokenCount / totalTime;
+          const charsPerSecond = tokenCount / totalTime;
           
           // Stall: no new tokens for 5 seconds
           if (timeSinceLastUpdate > 5000) {
@@ -120,9 +120,9 @@
             console.warn('⚠️ Generation timeout (2 minutes), completing with current output');
             completeGeneration();
           }
-          // Too slow: degraded performance
-          else if (totalTime > 10 && tokensPerSecond < 5) {
-            console.warn(`⚠️ Generation too slow (${tokensPerSecond.toFixed(1)} tokens/sec), completing with current output`);
+          // Too slow: degraded performance (< 10 chars/sec is abnormally slow)
+          else if (totalTime > 10 && charsPerSecond < 10) {
+            console.warn(`⚠️ Generation too slow (${charsPerSecond.toFixed(1)} chars/sec), completing with current output`);
             completeGeneration();
           }
         }, 1000);

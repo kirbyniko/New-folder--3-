@@ -540,10 +540,17 @@ CRITICAL REQUIREMENTS:
    - For dates/times: extract text then parse to ISO format
    - For containers: find all matching elements
 5. FOR AI_ANALYZE fields: After extracting content, call analyzeWithAI(content, prompt) and use AI response
-6. Handle missing elements gracefully (return null, not crash)
-7. Return format: { success: true, data: { fieldId: value, ... }, metadata: { scrapedAt, url, fieldsFound: X } }
-8. NEVER use eval(), Function(), or any dynamic code execution
-9. Count how many fields have non-null values and set metadata.fieldsFound
+6. **FALLBACK BEHAVIOR**: If exact selector fails, try alternatives:
+   - Try removing class prefixes/suffixes
+   - Try finding by text content (contains, starts-with)
+   - Try parent/sibling elements
+   - Look for similar attribute names (data-*, aria-*)
+   - Log what you tried: "Selector X failed, tried Y and Z, got: ..."
+7. Handle missing elements gracefully (return null with note, not crash)
+8. Return format: { success: true, data: { fieldId: value, ... }, metadata: { scrapedAt, url, fieldsFound: X, notes: [] } }
+9. Add notes to metadata.notes for each fallback/issue: ["field_x: selector failed, used fallback", ...]
+10. NEVER use eval(), Function(), or any dynamic code execution
+11. Count how many fields have non-null values and set metadata.fieldsFound
 
 ${usePuppeteer ? `PUPPETEER EXAMPLE:
 \`\`\`javascript

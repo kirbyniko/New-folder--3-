@@ -1,0 +1,141 @@
+{
+  "routes": [
+    {
+      "routePath": "/api/admin-events",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/admin-events.ts:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/admin-events-backup",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/admin-events-backup.ts:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/admin-events-simple",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/admin-events-simple.ts:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/agenda-summaries",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/agenda-summaries.ts:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/cache-info",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/cache-info.ts:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/congress-meetings",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/congress-meetings.ts:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/db-maintenance",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/db-maintenance.ts:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/invalidate-cache",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/invalidate-cache.ts:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/local-meetings",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/local-meetings.ts:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/state-events",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/state-events.ts:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/state-events-backup2",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/state-events-backup2.ts:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/state-events-simple",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/state-events-simple.ts:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/test",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/test.ts:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/test-db",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/test-db.ts:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/test-simple",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/test-simple.ts:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/top-events",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/top-events.ts:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/update-tags",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/update-tags.ts:onRequest"
+      ]
+    }
+  ],
+  "baseURL": "/"
+}
