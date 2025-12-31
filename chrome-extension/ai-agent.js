@@ -486,13 +486,15 @@ Consider: cheerio, axios, puppeteer, dayjs, pdf-parse`;
         const aiConfig = scraperConfig.aiFields?.[id];
         const aiPrompt = aiConfig?.enabled ? aiConfig.prompt : null;
         const aiModel = aiConfig?.enabled ? (aiConfig.model || null) : null; // null = use default
+        const aiContexts = aiConfig?.enabled ? aiConfig.contexts : null; // Field-specific contexts
         
         fieldGroups[step].push({
           id,
           selector,
           extractType,
           aiPrompt,
-          aiModel
+          aiModel,
+          aiContexts
         });
       });
 
@@ -505,6 +507,9 @@ Consider: cheerio, axios, puppeteer, dayjs, pdf-parse`;
             if (f.aiModel) {
               desc += ` AI_MODEL="${f.aiModel}"`;
             }
+            if (f.aiContexts && f.aiContexts.length > 0) {
+              desc += ` AI_CONTEXTS=${JSON.stringify(f.aiContexts)}`;
+            }
           }
           return desc;
         }).join('\n')}`;
@@ -514,17 +519,30 @@ Consider: cheerio, axios, puppeteer, dayjs, pdf-parse`;
     const aiHelperCode = hasAIFields ? `
 
 // AI Analysis Helper
-async function analyzeWithAI(content, prompt, model = null) {
+async function analyzeWithAI(content, prompt, model = null, contexts = null) {
   try {
     // Use specified model or default from localStorage
     const selectedModel = model || localStorage.getItem('agentDefaultModel') || 'qwen2.5-coder:32b';
+    
+    // Build context guidance if provided
+    let contextGuidance = '';
+    if (contexts && contexts.length > 0 && typeof window !== 'undefined' && window.SCRAPER_CONTEXTS) {
+      contextGuidance = '\\n\\n=== CONTEXT GUIDES ===\\n';
+      for (const ctxKey of contexts) {
+        const ctx = window.SCRAPER_CONTEXTS[ctxKey];
+        if (ctx) {
+          contextGuidance += ctx.content + '\\n';
+        }
+      }
+      contextGuidance += '=== END GUIDES ===\\n\\n';
+    }
     
     const response = await fetch('http://localhost:11434/api/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: selectedModel,
-        prompt: prompt + '\\n\\nContent:\\n' + content,
+        prompt: contextGuidance + prompt + '\\n\\nContent:\\n' + content,
         stream: false,
         options: { temperature: 0.3, num_predict: 500 }
       })
@@ -576,9 +594,11 @@ CRITICAL REQUIREMENTS:
    - For href: use .attr('href')${usePuppeteer ? ' or getAttribute("href")' : ''}
    - For dates/times: extract text then parse to ISO format
    - For containers: find all matching elements
-5. FOR AI_ANALYZE fields: After extracting content, call analyzeWithAI(content, prompt, model) where model is from AI_MODEL (or null for default)
-   Example: If field has AI_ANALYZE="Extract dates" AI_MODEL="qwen2.5-coder:14b", call:
-   const analyzed = await analyzeWithAI(rawContent, "Extract dates", "qwen2.5-coder:14b");
+5. FOR AI_ANALYZE fields: After extracting content, call analyzeWithAI(content, prompt, model, contexts):
+   - model: from AI_MODEL (or null for default)
+   - contexts: from AI_CONTEXTS array (or null if not specified)
+   Example: If field has AI_ANALYZE="Extract dates" AI_MODEL="qwen2.5-coder:14b" AI_CONTEXTS=["date-parsing","basic-selectors"]:
+   const analyzed = await analyzeWithAI(rawContent, "Extract dates", "qwen2.5-coder:14b", ["date-parsing","basic-selectors"]);
 6. **FALLBACK BEHAVIOR**: If exact selector fails, try alternatives:
    - Try removing class prefixes/suffixes
    - Try finding by text content (contains, starts-with)
@@ -1537,6 +1557,18 @@ Generate the complete scraper code now:`;
     
     // Build enhanced context
     let enhancedContext = '';
+    
+    // CRITICAL: Include selected context guides on EVERY fix attempt
+    if (this.selectedContexts && this.selectedContexts.length > 0 && window.SCRAPER_CONTEXTS) {
+      enhancedContext += '\n\n=== PROVEN PATTERNS & TACTICS ===\n';
+      for (const contextKey of this.selectedContexts) {
+        const ctx = window.SCRAPER_CONTEXTS[contextKey];
+        if (ctx) {
+          enhancedContext += `\n${ctx.content}\n`;
+        }
+      }
+      enhancedContext += '\n=== END PATTERNS ===\n\n';
+    }
     
     if (relevantContext?.contextTemplate) {
       const ctx = relevantContext.contextTemplate;

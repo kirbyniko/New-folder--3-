@@ -200,6 +200,65 @@ function initializeContextGuides() {
   console.log('📚 Initialized context guides:', savedSelections);
 }
 
+// Initialize context guides for a specific AI field
+function initializeFieldContexts(fieldId) {
+  const container = document.getElementById(`${fieldId}-ai-contexts`);
+  if (!container || !window.SCRAPER_CONTEXTS) return;
+  
+  // Get field-specific contexts from AI settings
+  chrome.storage.local.get(['builderAISettings'], (result) => {
+    const aiSettings = result.builderAISettings || {};
+    const fieldSettings = aiSettings[fieldId] || {};
+    
+    // Use field-specific contexts, or fall back to global defaults
+    const defaultContexts = JSON.parse(localStorage.getItem('agentContextGuides') || '["scraper-guide", "basic-selectors", "error-handling"]');
+    const fieldContexts = fieldSettings.contexts || defaultContexts;
+    
+    // Get all available contexts
+    const contexts = window.getContextInfo ? window.getContextInfo() : [];
+    
+    if (contexts.length === 0) {
+      container.innerHTML = '<small style="color: #999;">No guides available</small>';
+      return;
+    }
+    
+    // Create checkbox for each context
+    const checkboxesHTML = contexts.map(ctx => `
+      <label style="display: flex; align-items: start; gap: 4px; cursor: pointer; margin-bottom: 4px;">
+        <input type="checkbox" 
+               data-context-key="${ctx.key}" 
+               class="field-context-checkbox"
+               ${fieldContexts.includes(ctx.key) ? 'checked' : ''}
+               style="cursor: pointer; margin-top: 2px;">
+        <span style="flex: 1; font-size: 10px; color: #374151;">
+          <strong>${ctx.name}</strong> <span style="color: #9ca3af;">(${ctx.size})</span>
+        </span>
+      </label>
+    `).join('');
+    
+    container.innerHTML = checkboxesHTML;
+    
+    // Add change listeners
+    container.querySelectorAll('.field-context-checkbox').forEach(checkbox => {
+      checkbox.addEventListener('change', () => {
+        const selected = Array.from(container.querySelectorAll('.field-context-checkbox:checked'))
+          .map(cb => cb.dataset.contextKey);
+        
+        // Save to field settings
+        chrome.storage.local.get(['builderAISettings'], (result) => {
+          const aiSettings = result.builderAISettings || {};
+          if (!aiSettings[fieldId]) aiSettings[fieldId] = {};
+          aiSettings[fieldId].contexts = selected;
+          
+          chrome.storage.local.set({ builderAISettings: aiSettings }, () => {
+            console.log(`📚 Field ${fieldId} contexts updated:`, selected);
+          });
+        });
+      });
+    });
+  });
+}
+
 // SCRAPER LIBRARY (localStorage)
 // ========================================
 
@@ -1498,6 +1557,13 @@ function renderFields(fields, stepNum, groupName = '') {
                   <option value="deepseek-coder:33b">DeepSeek 33B (16K)</option>
                   <option value="codellama:13b">CodeLlama 13B (16K)</option>
                 </select>
+                
+                <label style="display: block; color: white; font-size: 11px; margin-bottom: 4px;">Context Guides:</label>
+                <div id="${fieldId}-ai-contexts" style="background: rgba(255,255,255,0.95); padding: 8px; border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; margin-bottom: 8px; max-height: 120px; overflow-y: auto;">
+                  <small style="color: #6b7280; font-size: 10px; display: block; margin-bottom: 6px;">Select guides for this field's AI analysis:</small>
+                  <!-- Context checkboxes will be populated by initializeFieldContexts() -->
+                </div>
+                
                 <label style="display: block; color: white; font-size: 11px; margin-bottom: 4px;">AI Prompt Template:</label>
                 <textarea id="${fieldId}-ai-prompt" placeholder="e.g., Extract all dates from this PDF content in YYYY-MM-DD format" style="width: 100%; padding: 6px; border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; font-size: 11px; resize: vertical; min-height: 60px; font-family: inherit; background: rgba(255,255,255,0.95);"></textarea>
                 <small style="color: rgba(255,255,255,0.9); font-size: 10px; display: block; margin-top: 4px;">💡 Tip: This prompt will be sent to AI with the scraped content at runtime</small>
@@ -1614,6 +1680,9 @@ function restoreFieldValues() {
         if (enabledCheckbox && settings.enabled) {
           enabledCheckbox.checked = true;
           if (configDiv) configDiv.style.display = 'block';
+          
+          // Initialize context guides for this field
+          initializeFieldContexts(fieldId);
         }
         
         if (promptTextarea && settings.prompt) {
@@ -1712,6 +1781,11 @@ function handleAIToggle(element) {
   
   if (configDiv) {
     configDiv.style.display = element.checked ? 'block' : 'none';
+    
+    // Initialize context guides when enabled
+    if (element.checked) {
+      initializeFieldContexts(fieldId);
+    }
     
     chrome.storage.local.get(['builderAISettings'], (result) => {
       const aiSettings = result.builderAISettings || {};
