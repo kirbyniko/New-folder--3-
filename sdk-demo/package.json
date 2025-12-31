@@ -1,0 +1,17 @@
+{
+  "name": "universal-agent-sdk-demo",
+  "version": "1.0.0",
+  "description": "Interactive demo platform for Universal Agent SDK",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "universal-agent-sdk": "file:../universal-agent-sdk"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}
