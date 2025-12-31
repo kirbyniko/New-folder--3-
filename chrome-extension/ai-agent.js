@@ -472,7 +472,14 @@ Consider: cheerio, axios, puppeteer, dayjs, pdf-parse`;
     // CRITICAL: Use compressed prompt if pre-check generated one
     if (analysisContext.compressedPromptOverride) {
       console.log('🎯 Using pre-compressed prompt for 0% CPU generation');
+      // The compressed prompt is the full generation request, send it directly
       return await this.queryOllama(analysisContext.compressedPromptOverride, options);
+    }
+    
+    // CRITICAL: If generationPromptCache exists, use it (already built and validated)
+    if (analysisContext.generationPromptCache) {
+      console.log('🎯 Using cached generation prompt (already validated for GPU)');
+      return await this.queryOllama(analysisContext.generationPromptCache, options);
     }
     
     const { fieldAnalysis, stepAnalysis, requiredTools } = analysisContext;
@@ -769,6 +776,12 @@ RULES:
 5. Do NOT include any text after ===CODE_END===
 
 Generate the complete scraper code now:`;
+
+    // If buildOnly mode, return the prompt instead of sending to LLM
+    if (options.buildOnly) {
+      console.log('🔍 BuildOnly mode: Returning prompt for viability check');
+      return prompt;
+    }
 
     console.log('📝 Generating script with prompt length:', prompt.length, usePuppeteer ? '(Puppeteer mode)' : '(Cheerio mode)');
 
@@ -1404,13 +1417,16 @@ Return ONLY the compressed prompt, no explanations.`;
     // ⚡ GPU VIABILITY PRE-CHECK
     updateProgress('🔍 Checking GPU compatibility...');
     
-    // Build the full prompt to measure its size
-    const testPrompt = this.buildGenerationPrompt(scraperConfig, analysisContext, template, { 
+    // Build the ACTUAL prompt that will be used for generation
+    // Temporarily disable caching to build the real prompt
+    const buildOnlyMode = { ...options, buildOnly: true };
+    const realPrompt = await this.generateScraperScript(scraperConfig, analysisContext, template, { 
       usePuppeteer: finalUsePuppeteer, 
-      reason: finalReason 
+      reason: finalReason,
+      buildOnly: true  // Just build the prompt, don't send to LLM
     });
     
-    const viability = await this.checkGPUViability(testPrompt.length, this.model);
+    const viability = await this.checkGPUViability(realPrompt.length, this.model);
     updateProgress(`📊 Prompt: ${viability.estimatedTokens} tokens, Response: ${viability.responseTokens} tokens, Total: ${viability.totalTokens} tokens`);
     updateProgress(`💾 GPU safe limit: ${viability.safeLimit} tokens (model: ${this.model})`);
     
@@ -1427,7 +1443,7 @@ Return ONLY the compressed prompt, no explanations.`;
         
         updateProgress(`📉 Target reduction: ${Math.round(reductionNeeded * 100)}% (from ${viability.estimatedTokens} to ${targetTokens} tokens)`);
         
-        const compressedPrompt = await this.compressPrompt(testPrompt, reductionNeeded);
+        const compressedPrompt = await this.compressPrompt(realPrompt, reductionNeeded);
         const newViability = await this.checkGPUViability(compressedPrompt.length, this.model);
         
         updateProgress(`✅ Compressed: ${newViability.estimatedTokens} tokens (total: ${newViability.totalTokens})`);
@@ -1445,14 +1461,16 @@ Return ONLY the compressed prompt, no explanations.`;
         // Store compressed prompt - will be used in generateScraperScript
         analysisContext.compressedPromptOverride = compressedPrompt;
       } else {
-        updateProgress(`❌ Prompt too small to compress effectively (${testPrompt.length} chars)`);
+        updateProgress(`❌ Prompt too small to compress effectively (${realPrompt.length} chars)`);
         updateProgress(`💡 Suggestions:`);
         updateProgress(`   • Use smaller model: deepseek-coder:6.7b`);
         updateProgress(`   • Reduce number of fields in scraper`);
         throw new Error(`Cannot generate scraper: ${viability.totalTokens} tokens exceeds ${viability.safeLimit} token GPU limit. CPU fallback forbidden.`);
       }
     } else {
-      updateProgress(`✅ GPU check passed: Will use 100% GPU (0% CPU)`);
+      updateProgress(`✅ GPU check passed: Will use 0% CPU`);
+      // Cache the validated prompt so we don't rebuild it
+      analysisContext.generationPromptCache = realPrompt;
     }
     
     let script;
