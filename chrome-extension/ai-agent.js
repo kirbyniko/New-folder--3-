@@ -1478,28 +1478,49 @@ Return ONLY the compressed prompt, no explanations.`;
     
     if (viability.willUseCPU) {
       updateProgress(`⚠️ WARNING: Prompt exceeds limit, will cause ${viability.cpuPercentage}% CPU usage!`);
-      updateProgress(`🔧 Attempting automatic optimization...`);
+      updateProgress(`🔧 Attempting aggressive optimization...`);
       
       // AUTOMATIC OPTIMIZATION: Remove verbose parts
       let reducedPrompt = realPrompt;
+      const originalLength = reducedPrompt.length;
       
-      // Step 1: Remove example code blocks (keep patterns but remove verbose examples)
-      const examplePattern = /Example:\s*```[\s\S]*?```/gi;
-      const beforeExamples = reducedPrompt.length;
-      reducedPrompt = reducedPrompt.replace(examplePattern, '');
-      if (reducedPrompt.length < beforeExamples) {
-        updateProgress(`   ✂️ Removed verbose examples: ${beforeExamples - reducedPrompt.length} chars saved`);
+      // Step 1: Remove ALL example code blocks (most bloated part)
+      const exampleCodePattern = /(EXAMPLE|Example:|PUPPETEER EXAMPLE:|EXAMPLE STRUCTURE:)[\s\S]*?```javascript[\s\S]*?```/gi;
+      reducedPrompt = reducedPrompt.replace(exampleCodePattern, '');
+      const afterExamples = reducedPrompt.length;
+      if (afterExamples < originalLength) {
+        updateProgress(`   ✂️ Removed example code: ${originalLength - afterExamples} chars saved`);
       }
       
-      // Step 2: Remove repeated instructions
-      const instructionPattern = /(Remember:|Note:|Important:)[^\n]*\n/gi;
+      // Step 2: Condense CRITICAL REQUIREMENTS section (remove verbose explanations)
+      const requirementsPattern = /CRITICAL REQUIREMENTS:([\s\S]*?)(?=CRITICAL OUTPUT INSTRUCTIONS|===CODE_START===|$)/i;
+      const requirementsMatch = reducedPrompt.match(requirementsPattern);
+      if (requirementsMatch) {
+        const condensedRequirements = `CRITICAL REQUIREMENTS:
+1. Use TARGET URL
+2. ${realPrompt.includes('Puppeteer') ? 'Use Puppeteer, wait 3s for JS' : 'Use axios + cheerio'}
+3. Extract ACTUAL VALUES (text/href/dates)
+4. For AI fields: call analyzeWithAI(content, prompt, model, contexts)
+5. Try fallback selectors if exact fails
+6. Return {success, data, metadata: {fieldsFound, notes}}
+7. Count only non-null fields
+8. Log detailed debug if no fields found
+
+`;
+        reducedPrompt = reducedPrompt.replace(requirementsMatch[0], condensedRequirements);
+        const afterRequirements = reducedPrompt.length;
+        updateProgress(`   ✂️ Condensed requirements: ${afterExamples - afterRequirements} chars saved`);
+      }
+      
+      // Step 3: Remove repeated instructions/notes
+      const instructionPattern = /(Remember:|Note:|Important:|RULES:)[^\n]*\n/gi;
       const beforeInstructions = reducedPrompt.length;
       reducedPrompt = reducedPrompt.replace(instructionPattern, '');
       if (reducedPrompt.length < beforeInstructions) {
         updateProgress(`   ✂️ Removed repeated instructions: ${beforeInstructions - reducedPrompt.length} chars saved`);
       }
       
-      // Step 3: Compress whitespace
+      // Step 4: Compress whitespace
       const beforeWhitespace = reducedPrompt.length;
       reducedPrompt = reducedPrompt.replace(/\n{3,}/g, '\n\n'); // Max 2 consecutive newlines
       reducedPrompt = reducedPrompt.replace(/[ \t]{2,}/g, ' '); // Single spaces
@@ -1507,13 +1528,23 @@ Return ONLY the compressed prompt, no explanations.`;
         updateProgress(`   ✂️ Compressed whitespace: ${beforeWhitespace - reducedPrompt.length} chars saved`);
       }
       
-      // Step 4: Remove redundant context if still too large
+      // Step 5: Remove PAGE STRUCTURE ANALYSIS if still too large
       if (Math.ceil(reducedPrompt.length / 3.3) > viability.safeLimit) {
-        const contextPattern = /ADDITIONAL CONTEXT[\s\S]*?(?=FIELD ANALYSIS|$)/i;
-        const beforeContext = reducedPrompt.length;
-        reducedPrompt = reducedPrompt.replace(contextPattern, '');
-        if (reducedPrompt.length < beforeContext) {
-          updateProgress(`   ✂️ Removed redundant context: ${beforeContext - reducedPrompt.length} chars saved`);
+        const pageStructurePattern = /PAGE STRUCTURE ANALYSIS:[\s\S]*?(?=FIELDS TO EXTRACT:|$)/i;
+        const beforeStructure = reducedPrompt.length;
+        reducedPrompt = reducedPrompt.replace(pageStructurePattern, '');
+        if (reducedPrompt.length < beforeStructure) {
+          updateProgress(`   ✂️ Removed page structure: ${beforeStructure - reducedPrompt.length} chars saved`);
+        }
+      }
+      
+      // Step 6: Remove RAG context if STILL too large
+      if (Math.ceil(reducedPrompt.length / 3.3) > viability.safeLimit) {
+        const ragPattern = /KNOWLEDGE BASE CONTEXT:[\s\S]*?(?=FIELDS TO EXTRACT:|$)/i;
+        const beforeRAG = reducedPrompt.length;
+        reducedPrompt = reducedPrompt.replace(ragPattern, '');
+        if (reducedPrompt.length < beforeRAG) {
+          updateProgress(`   ✂️ Removed RAG context: ${beforeRAG - reducedPrompt.length} chars saved`);
         }
       }
       
@@ -1527,12 +1558,12 @@ Return ONLY the compressed prompt, no explanations.`;
       if (viability.willUseCPU) {
         updateProgress(`❌ FAILED: Even after optimization, prompt still causes ${viability.cpuPercentage}% CPU!`);
         updateProgress(`💡 SOLUTIONS:`);
-        updateProgress(`   1. Uncheck some context guides in Agent Settings`);
+        updateProgress(`   1. Uncheck ALL context guides in Agent Settings`);
         updateProgress(`   2. Reduce number of fields in scraper config`);
-        updateProgress(`   3. Use a smaller model (qwen2.5-coder:7b)`);
+        updateProgress(`   3. Switch to qwen2.5-coder:7b (downloading now, will have 4096 limit)`);
         throw new Error(
           `Cannot proceed: Even after optimization, prompt requires ${viability.totalTokens} tokens (limit: ${viability.safeLimit}).\n\n` +
-          `Manually reduce context or use smaller model.`
+          `Manually reduce context or wait for qwen2.5-coder:7b to finish downloading.`
         );
       }
       
