@@ -309,6 +309,52 @@ Consider: cheerio, axios, puppeteer, dayjs, pdf-parse`;
     }
   }
 
+  // Stage 3.5: Analyze actual page structure
+  async analyzePageStructure(url) {
+    try {
+      console.log('🔍 Fetching and analyzing page:', url);
+      const response = await fetch(url);
+      const html = await response.text();
+      
+      // Basic structure analysis
+      const hasReact = html.includes('react') || html.includes('__REACT') || html.includes('_next');
+      const hasVue = html.includes('vue') || html.includes('__VUE__');
+      const hasAngular = html.includes('ng-') || html.includes('angular');
+      const isEmptyBody = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i)?.[1]?.trim().length < 200;
+      const needsPuppeteer = (hasReact || hasVue || hasAngular || isEmptyBody);
+      
+      // Find common container patterns
+      const containers = [];
+      const containerPatterns = [
+        /<div[^>]*class="[^"]*(?:calendar|event|meeting|agenda|list)[^"]*"[^>]*>/gi,
+        /<table[^>]*class="[^"]*(?:calendar|event|meeting)[^"]*"[^>]*>/gi,
+        /<ul[^>]*class="[^"]*(?:calendar|event|meeting|list)[^"]*"[^>]*>/gi
+      ];
+      
+      for (const pattern of containerPatterns) {
+        const matches = html.match(pattern) || [];
+        containers.push(...matches);
+      }
+      
+      // Extract sample IDs and classes
+      const ids = Array.from(new Set((html.match(/id="([^"]+)"/g) || []).map(m => m.match(/id="([^"]+)"/)?.[1])));
+      const classes = Array.from(new Set((html.match(/class="([^"]+)"/g) || []).slice(0, 50).map(m => m.match(/class="([^"]+)"/)?.[1])));
+      
+      return {
+        needsPuppeteer,
+        framework: hasReact ? 'React' : hasVue ? 'Vue' : hasAngular ? 'Angular' : 'None',
+        htmlLength: html.length,
+        bodyLength: html.match(/<body[^>]*>([\s\S]*?)<\/body>/i)?.[1]?.trim().length || 0,
+        containerSamples: containers.slice(0, 5),
+        commonIds: ids.filter(id => id.includes('calendar') || id.includes('event') || id.includes('meeting')).slice(0, 10),
+        commonClasses: classes.filter(c => c.includes('calendar') || c.includes('event') || c.includes('meeting')).slice(0, 10)
+      };
+    } catch (error) {
+      console.warn('Page analysis failed:', error.message);
+      return { needsPuppeteer: false, error: error.message };
+    }
+  }
+
   // Stage 4: Generate scraper script
   async generateScraperScript(scraperConfig, analysisContext, template, options = {}) {
     const { fieldAnalysis, stepAnalysis, requiredTools } = analysisContext;
@@ -387,21 +433,30 @@ TARGET URL: ${targetUrl || 'url parameter'}
 PACKAGES: ${usePuppeteer ? 'puppeteer' : 'cheerio, axios'}${hasAIFields ? ', node-fetch' : ''}
 ${usePuppeteer ? `\nREQUIRES PUPPETEER: ${reason}` : ''}
 
+PAGE STRUCTURE ANALYSIS:
+- Framework: ${analysisContext.pageStructure?.framework || 'None'}
+- HTML Size: ${analysisContext.pageStructure?.htmlLength || 'Unknown'} bytes
+- Body Content: ${analysisContext.pageStructure?.bodyLength || 'Unknown'} bytes
+${analysisContext.pageStructure?.commonIds?.length ? `- Relevant IDs: ${analysisContext.pageStructure.commonIds.join(', ')}` : ''}
+${analysisContext.pageStructure?.commonClasses?.length ? `- Relevant Classes: ${analysisContext.pageStructure.commonClasses.join(', ')}` : ''}
+
 FIELDS TO EXTRACT:
 ${fieldsDescription}
 
 CRITICAL REQUIREMENTS:
 1. Use the TARGET URL above - hardcode it or use as default parameter
-2. ${usePuppeteer ? 'Use Puppeteer to render JavaScript before extracting data' : 'Use axios to fetch HTML'}
-3. Extract ACTUAL VALUES not HTML:
+2. ${usePuppeteer ? 'Use Puppeteer to render JavaScript, wait 3-5 seconds for content' : 'Use axios to fetch HTML'}
+3. Look at PAGE STRUCTURE ANALYSIS above to find IDs/classes that match field descriptions
+4. Extract ACTUAL VALUES not HTML:
    - For text: use .text().trim()${usePuppeteer ? ' or textContent' : ''}
    - For href: use .attr('href')${usePuppeteer ? ' or getAttribute("href")' : ''}
    - For dates/times: extract text then parse to ISO format
    - For containers: find all matching elements
-4. FOR AI_ANALYZE fields: After extracting content, call analyzeWithAI(content, prompt) and use AI response
-5. Handle missing elements gracefully (return null, not crash)
-6. Return format: { success: true, data: { fieldId: value, ... }, metadata: { scrapedAt, url } }
-7. NEVER use eval(), Function(), or any dynamic code execution
+5. FOR AI_ANALYZE fields: After extracting content, call analyzeWithAI(content, prompt) and use AI response
+6. Handle missing elements gracefully (return null, not crash)
+7. Return format: { success: true, data: { fieldId: value, ... }, metadata: { scrapedAt, url, fieldsFound: X } }
+8. NEVER use eval(), Function(), or any dynamic code execution
+9. Count how many fields have non-null values and set metadata.fieldsFound
 
 ${usePuppeteer ? `PUPPETEER EXAMPLE:
 \`\`\`javascript
@@ -724,8 +779,25 @@ Generate the complete scraper code now:`;
     // Stage 1: Initialize and analyze
     this.loadContextFiles();
     
+    // Get target URL for page analysis
+    const targetUrl = scraperConfig.fields['step1-calendar_url'] || 
+                     scraperConfig.fields['step1-court_url'] || 
+                     scraperConfig.fields['step1-listing_url'];
+    
+    // NEW: Analyze actual page structure first
+    updateProgress('🔍 Analyzing page structure...');
+    const pageStructure = await this.analyzePageStructure(targetUrl);
+    updateProgress(`📊 Page analysis: ${pageStructure.framework || 'Static HTML'}, ${pageStructure.htmlLength} bytes`);
+    
+    if (pageStructure.needsPuppeteer && !usePuppeteer) {
+      updateProgress(`⚠️ Page appears to need Puppeteer (${pageStructure.framework} detected)`);
+    }
+    
     updateProgress('📊 Analyzing scraper configuration...');
     const analysisContext = await this.analyzeScraperConfig(scraperConfig, template);
+    
+    // Add page structure to analysis context
+    analysisContext.pageStructure = pageStructure;
     
     // Enhance analysis with knowledge
     analysisContext.relevantContext = relevantContext;
