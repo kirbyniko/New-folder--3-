@@ -1470,52 +1470,80 @@ Return ONLY the compressed prompt, no explanations.`;
       buildOnly: true  // Just build the prompt, don't send to LLM
     });
     
-    const viability = await this.checkGPUViability(realPrompt.length, this.model);
+    let viability = await this.checkGPUViability(realPrompt.length, this.model);
     updateProgress(`📊 Prompt: ${viability.estimatedTokens} tokens, Response: ${viability.responseTokens} tokens, Total: ${viability.totalTokens} tokens`);
     updateProgress(`💾 GPU safe limit: ${viability.safeLimit} tokens (model: ${this.model})`);
     
+    let optimizedPrompt = realPrompt;
+    
     if (viability.willUseCPU) {
-      updateProgress(`⚠️ WARNING: This prompt will cause ${viability.cpuPercentage}% CPU usage!`);
-      updateProgress(`🚫 ANY CPU usage is considered a failure. Generation cannot proceed.`);
+      updateProgress(`⚠️ WARNING: Prompt exceeds limit, will cause ${viability.cpuPercentage}% CPU usage!`);
+      updateProgress(`🔧 Attempting automatic optimization...`);
       
-      if (viability.canCompress) {
-        updateProgress(`🤔 Attempting AI-powered prompt compression...`);
-        
-        // Calculate how much we need to reduce
-        const targetTokens = Math.floor(viability.safeLimit * 0.7); // 70% of safe limit for headroom
-        const reductionNeeded = 1 - (targetTokens / viability.estimatedTokens);
-        
-        updateProgress(`📉 Target reduction: ${Math.round(reductionNeeded * 100)}% (from ${viability.estimatedTokens} to ${targetTokens} tokens)`);
-        
-        const compressedPrompt = await this.compressPrompt(realPrompt, reductionNeeded);
-        const newViability = await this.checkGPUViability(compressedPrompt.length, this.model);
-        
-        updateProgress(`✅ Compressed: ${newViability.estimatedTokens} tokens (total: ${newViability.totalTokens})`);
-        
-        if (newViability.willUseCPU) {
-          updateProgress(`❌ FAILURE: Even after compression, ${newViability.cpuPercentage}% CPU`);
-          updateProgress(`💡 Suggestions:`);
-          updateProgress(`   • Use deepseek-coder:6.7b (8192 token limit)`);
-          updateProgress(`   • Reduce number of fields`);
-          updateProgress(`   • Disable RAG contexts`);
-          throw new Error(`Cannot achieve 0% CPU: ${newViability.totalTokens} tokens exceeds ${newViability.safeLimit} token limit`);
-        }
-        
-        updateProgress(`✅ SUCCESS: Compressed prompt achieves 0% CPU`);
-        // Store compressed prompt - will be used in generateScraperScript
-        analysisContext.compressedPromptOverride = compressedPrompt;
-      } else {
-        updateProgress(`❌ Prompt too small to compress effectively (${realPrompt.length} chars)`);
-        updateProgress(`💡 Suggestions:`);
-        updateProgress(`   • Use smaller model: deepseek-coder:6.7b`);
-        updateProgress(`   • Reduce number of fields in scraper`);
-        throw new Error(`Cannot generate scraper: ${viability.totalTokens} tokens exceeds ${viability.safeLimit} token GPU limit. CPU fallback forbidden.`);
+      // AUTOMATIC OPTIMIZATION: Remove verbose parts
+      let reducedPrompt = realPrompt;
+      
+      // Step 1: Remove example code blocks (keep patterns but remove verbose examples)
+      const examplePattern = /Example:\s*```[\s\S]*?```/gi;
+      const beforeExamples = reducedPrompt.length;
+      reducedPrompt = reducedPrompt.replace(examplePattern, '');
+      if (reducedPrompt.length < beforeExamples) {
+        updateProgress(`   ✂️ Removed verbose examples: ${beforeExamples - reducedPrompt.length} chars saved`);
       }
+      
+      // Step 2: Remove repeated instructions
+      const instructionPattern = /(Remember:|Note:|Important:)[^\n]*\n/gi;
+      const beforeInstructions = reducedPrompt.length;
+      reducedPrompt = reducedPrompt.replace(instructionPattern, '');
+      if (reducedPrompt.length < beforeInstructions) {
+        updateProgress(`   ✂️ Removed repeated instructions: ${beforeInstructions - reducedPrompt.length} chars saved`);
+      }
+      
+      // Step 3: Compress whitespace
+      const beforeWhitespace = reducedPrompt.length;
+      reducedPrompt = reducedPrompt.replace(/\n{3,}/g, '\n\n'); // Max 2 consecutive newlines
+      reducedPrompt = reducedPrompt.replace(/[ \t]{2,}/g, ' '); // Single spaces
+      if (reducedPrompt.length < beforeWhitespace) {
+        updateProgress(`   ✂️ Compressed whitespace: ${beforeWhitespace - reducedPrompt.length} chars saved`);
+      }
+      
+      // Step 4: Remove redundant context if still too large
+      if (Math.ceil(reducedPrompt.length / 3.3) > viability.safeLimit) {
+        const contextPattern = /ADDITIONAL CONTEXT[\s\S]*?(?=FIELD ANALYSIS|$)/i;
+        const beforeContext = reducedPrompt.length;
+        reducedPrompt = reducedPrompt.replace(contextPattern, '');
+        if (reducedPrompt.length < beforeContext) {
+          updateProgress(`   ✂️ Removed redundant context: ${beforeContext - reducedPrompt.length} chars saved`);
+        }
+      }
+      
+      // Check if optimization worked
+      const totalSaved = realPrompt.length - reducedPrompt.length;
+      updateProgress(`✅ Optimization complete: ${totalSaved} chars saved (${Math.round(totalSaved / realPrompt.length * 100)}% reduction)`);
+      
+      viability = await this.checkGPUViability(reducedPrompt.length, this.model);
+      updateProgress(`📊 Optimized: ${viability.estimatedTokens} tokens, Total: ${viability.totalTokens} tokens`);
+      
+      if (viability.willUseCPU) {
+        updateProgress(`❌ FAILED: Even after optimization, prompt still causes ${viability.cpuPercentage}% CPU!`);
+        updateProgress(`💡 SOLUTIONS:`);
+        updateProgress(`   1. Uncheck some context guides in Agent Settings`);
+        updateProgress(`   2. Reduce number of fields in scraper config`);
+        updateProgress(`   3. Use a smaller model (qwen2.5-coder:7b)`);
+        throw new Error(
+          `Cannot proceed: Even after optimization, prompt requires ${viability.totalTokens} tokens (limit: ${viability.safeLimit}).\n\n` +
+          `Manually reduce context or use smaller model.`
+        );
+      }
+      
+      optimizedPrompt = reducedPrompt;
+      updateProgress(`✅ SUCCESS: Optimized prompt fits in GPU limit!`);
     } else {
-      updateProgress(`✅ GPU check passed: Will use 0% CPU`);
-      // Cache the validated prompt so we don't rebuild it
-      analysisContext.generationPromptCache = realPrompt;
+      updateProgress(`✅ GPU check passed: Prompt fits in ${viability.safeLimit} token limit`);
     }
+    
+    // Cache the optimized prompt
+    analysisContext.generationPromptCache = optimizedPrompt;
     
     // ⚡ CRITICAL: Verify actual Ollama CPU usage before proceeding
     updateProgress('🔍 Verifying actual GPU usage with Ollama...');
