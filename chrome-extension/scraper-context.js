@@ -8,13 +8,31 @@ const SCRAPER_CONTEXTS = {
     content: `
 **SELECTOR STRATEGIES THAT WORK:**
 
-1. **Multiple Fallbacks** (always try 3+ options):
+1. **Multiple Fallbacks** (always try 5+ options):
    \`\`\`javascript
-   // Good: Try multiple selectors
-   let title = $('.event-title').first().text().trim() ||
-               $('[data-title]').first().text().trim() ||
-               $('h3.title').first().text().trim() ||
-               $('div.name').first().text().trim();
+   // BEST PRACTICE - Aggressive fallback chain
+   let title = null;
+   const titleSelectors = [
+     '.event-title',           // Exact match
+     '[class*="title"]',       // Partial match
+     '[data-title]',           // Data attribute
+     'h1, h2, h3',             // Heading tags
+     '.name, .heading',        // Common alternatives
+     '*[title]'                // Any element with title attr
+   ];
+   
+   for (const selector of titleSelectors) {
+     const el = $(selector).first();
+     if (el.length && el.text().trim()) {
+       title = el.text().trim();
+       console.log(\`Found title with: \${selector}\`);
+       break;
+     }
+   }
+   
+   if (!title) {
+     console.log('Title not found, tried:', titleSelectors.join(', '));
+   }
    \`\`\`
 
 2. **Text Content Matching** (when exact selector fails):

@@ -566,7 +566,14 @@ CRITICAL REQUIREMENTS:
 8. Return format: { success: true, data: { fieldId: value, ... }, metadata: { scrapedAt, url, fieldsFound: X, notes: [] } }
 9. Add notes to metadata.notes for each fallback/issue: ["field_x: selector failed, used fallback", ...]
 10. NEVER use eval(), Function(), or any dynamic code execution
-11. Count how many fields have non-null values and set metadata.fieldsFound
+11. **IMPORTANT**: Count ONLY non-null fields in metadata.fieldsFound:
+    \`\`\`javascript
+    const fieldsFound = Object.values(data).filter(v => v !== null && v !== undefined && v !== '').length;
+    \`\`\`
+12. **CRITICAL**: If NO fields are found, log detailed debugging info:
+    - What selectors were tried
+    - What the page HTML actually contains (first 500 chars of body)
+    - Any errors encountered
 
 ${usePuppeteer ? `PUPPETEER EXAMPLE:
 \`\`\`javascript
@@ -596,13 +603,17 @@ module.exports = async function scrape(url = '${targetUrl}') {
       }
     }
     
+    // Count only non-null fields
+    const fieldsFound = Object.values(data).filter(v => v !== null && v !== undefined && v !== '').length;
+    
     return {
       success: true,
       data,
       metadata: {
         scrapedAt: new Date().toISOString(),
         url,
-        fieldsFound: Object.keys(data).length
+        fieldsFound,
+        notes: [] // Add any fallback notes here
       }
     };
   } catch (error) {
@@ -641,13 +652,17 @@ module.exports = async function scrape(url = '${targetUrl}') {
       data.fieldId_analyzed = await analyzeWithAI(data.fieldId, 'your prompt');
     }
     
+    // Count only non-null fields
+    const fieldsFound = Object.values(data).filter(v => v !== null && v !== undefined && v !== '').length;
+    
     return {
       success: true,
       data,
       metadata: {
         scrapedAt: new Date().toISOString(),
         url,
-        fieldsFound: Object.keys(data).length
+        fieldsFound,
+        notes: [] // Add any fallback notes here
       }
     };
   } catch (error) {
