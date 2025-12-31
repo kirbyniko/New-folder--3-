@@ -72,8 +72,10 @@
 
         let fullResponse = '';
         let lastUpdateTime = Date.now();
+        const startTime = Date.now();
         let stallCheckInterval;
         let completed = false;
+        let tokenCount = 0;
         
         const completeGeneration = () => {
           if (completed) return;
@@ -97,7 +99,7 @@
           stream: true,
         });
 
-        // Check for stalls (no new tokens for 5 seconds)
+        // Check for stalls and timeout (no new tokens for 5 seconds OR total time > 2 minutes OR < 5 tokens/sec average)
         stallCheckInterval = setInterval(() => {
           if (completed) {
             clearInterval(stallCheckInterval);
@@ -105,8 +107,22 @@
           }
           
           const timeSinceLastUpdate = Date.now() - lastUpdateTime;
+          const totalTime = (Date.now() - startTime) / 1000;
+          const tokensPerSecond = tokenCount / totalTime;
+          
+          // Stall: no new tokens for 5 seconds
           if (timeSinceLastUpdate > 5000) {
-            console.warn('⚠️ Generation stalled, completing with current output');
+            console.warn('⚠️ Generation stalled (no tokens for 5s), completing with current output');
+            completeGeneration();
+          }
+          // Timeout: taking too long overall
+          else if (totalTime > 120) {
+            console.warn('⚠️ Generation timeout (2 minutes), completing with current output');
+            completeGeneration();
+          }
+          // Too slow: degraded performance
+          else if (totalTime > 10 && tokensPerSecond < 5) {
+            console.warn(`⚠️ Generation too slow (${tokensPerSecond.toFixed(1)} tokens/sec), completing with current output`);
             completeGeneration();
           }
         }, 1000);
@@ -117,6 +133,7 @@
           const delta = chunk.choices[0]?.delta?.content || '';
           if (delta) {
             fullResponse += delta;
+            tokenCount += delta.length;
             lastUpdateTime = Date.now();
             
             // Send progress updates
