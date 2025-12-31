@@ -3,7 +3,7 @@
  * Allows Chrome extension to save/load scraper definitions to/from PostgreSQL
  */
 
-import { getDbPool } from '../utils/db/index.js';
+import pg from 'pg';
 
 interface ScraperConfig {
   id?: string;
@@ -35,12 +35,17 @@ export async function onRequest(context: any) {
     return new Response(null, { headers: corsHeaders });
   }
 
+  let client: pg.Client | null = null;
+  
   try {
-    const db = getDbPool(env);
+    client = new pg.Client({
+      connectionString: env.DATABASE_URL
+    });
+    await client.connect();
     
     // GET - List all scraper configs
     if (request.method === 'GET') {
-      const result = await db.query(`
+      const result = await client.query(`
         SELECT id, name, description, start_url, fields, ai_fields, storage, created_at, updated_at
         FROM scraper_configs
         ORDER BY updated_at DESC
@@ -67,7 +72,7 @@ export async function onRequest(context: any) {
     if (request.method === 'POST') {
       const config: ScraperConfig = await request.json();
       
-      const result = await db.query(`
+      const result = await client.query(`
         INSERT INTO scraper_configs (name, description, start_url, fields, ai_fields, storage)
         VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING id, name, description, start_url, fields, ai_fields, storage, created_at, updated_at
@@ -111,7 +116,7 @@ export async function onRequest(context: any) {
         });
       }
       
-      const result = await db.query(`
+      const result = await client.query(`
         UPDATE scraper_configs
         SET name = $1, description = $2, start_url = $3, fields = $4, ai_fields = $5, storage = $6, updated_at = NOW()
         WHERE id = $7
@@ -164,7 +169,7 @@ export async function onRequest(context: any) {
         });
       }
       
-      await db.query('DELETE FROM scraper_configs WHERE id = $1', [id]);
+      await client.query('DELETE FROM scraper_configs WHERE id = $1', [id]);
       
       return new Response(JSON.stringify({ success: true }), {
         headers: { 'Content-Type': 'application/json', ...corsHeaders }
@@ -184,5 +189,9 @@ export async function onRequest(context: any) {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...corsHeaders }
     });
+  } finally {
+    if (client) {
+      await client.end();
+    }
   }
 }
