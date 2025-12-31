@@ -665,18 +665,38 @@ Generate the complete scraper code now:`;
 
   // Query LLM - uses WebGPU if available, falls back to Ollama
   async queryLLM(prompt, options = {}) {
-    // Try WebGPU first if available
-    if (this.useWebGPU && this.webgpuReady) {
-      try {
-        console.log('🎮 Using WebGPU inference (local, fast)');
-        return await this.queryWebGPU(prompt, options);
-      } catch (error) {
-        console.warn('⚠️ WebGPU failed, falling back to Ollama:', error);
+    // Wait for WebGPU initialization if it's still loading
+    if (this.useWebGPU && this.webgpuReady && !this.webgpuInitialized) {
+      console.log('⏳ Waiting for WebGPU engine to initialize...');
+      // Wait up to 60 seconds for initialization
+      const startTime = Date.now();
+      while (!this.webgpuInitialized && (Date.now() - startTime) < 60000) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+      
+      if (!this.webgpuInitialized) {
+        console.warn('⚠️ WebGPU initialization timeout, falling back to Ollama');
         this.useWebGPU = false;
       }
     }
 
-    // Fallback to Ollama
+    // Try WebGPU first if available and initialized
+    if (this.useWebGPU && this.webgpuReady && this.webgpuInitialized) {
+      try {
+        console.log('🎮 Using WebGPU inference (local, fast)');
+        return await this.queryWebGPU(prompt, options);
+      } catch (error) {
+        console.error('❌ WebGPU failed:', error);
+        console.warn('↩️  Falling back to Ollama');
+        this.useWebGPU = false;
+      }
+    }
+
+    // Fallback to Ollama (disable this if you want WebGPU-only)
+    if (!this.useWebGPU) {
+      throw new Error('WebGPU is still initializing. Please wait and try again in a moment.');
+    }
+    
     return await this.queryOllama(prompt, options);
   }
 
