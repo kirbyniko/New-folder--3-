@@ -1,0 +1,57 @@
+{
+  "name": "universal-agent-sdk",
+  "version": "1.0.0",
+  "description": "Browser-native AI agent framework with hardware-aware RAG and multi-model support",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "rollup -c -w",
+    "test": "jest",
+    "lint": "eslint src/**/*.ts",
+    "docs": "typedoc src/index.ts"
+  },
+  "keywords": [
+    "ai",
+    "agent",
+    "rag",
+    "llm",
+    "ollama",
+    "webgpu",
+    "browser",
+    "ml",
+    "local-ai",
+    "privacy"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/universal-agent-sdk"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/universal-agent-sdk/issues"
+  },
+  "homepage": "https://universal-agent-sdk.dev",
+  "peerDependencies": {
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "jest": "^29.0.0",
+    "rollup": "^3.0.0",
+    "rollup-plugin-typescript2": "^0.35.0",
+    "typedoc": "^0.25.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+  }
+}
