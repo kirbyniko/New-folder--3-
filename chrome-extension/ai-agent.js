@@ -1058,6 +1058,9 @@ Generate the complete scraper code now:`;
       try {
         const rawScript = await this.generateScraperScript(scraperConfig, analysisContext, template, options);
         
+        // Store for potential partial save
+        window.lastGeneratedScript = rawScript;
+        
         // Extract and clean the code
         script = this.extractCode(rawScript);
         script = this.cleanGeneratedCode(script);
@@ -1067,8 +1070,21 @@ Generate the complete scraper code now:`;
           throw new Error('Generated script too short');
         }
         
-        if (!script.includes('module.exports')) {
-          throw new Error('Script missing module.exports');
+        // More lenient validation - check for any export syntax
+        const hasExport = script.includes('module.exports') || 
+                         script.includes('exports.') ||
+                         script.includes('export default') ||
+                         script.includes('export {');
+        
+        if (!hasExport) {
+          // Try to auto-fix by adding module.exports if we detect a scraper function
+          const hasScrapeFunction = script.match(/(?:async\s+)?function\s+\w+\s*\(/);
+          if (hasScrapeFunction) {
+            console.log('⚙️ Auto-fixing: Adding module.exports wrapper');
+            script = script + '\n\nmodule.exports = scrape;';
+            break; // Success after auto-fix
+          }
+          throw new Error('Script missing export statement');
         }
         
         // Success!
@@ -1078,7 +1094,9 @@ Generate the complete scraper code now:`;
         updateProgress(`⚠️ Script extraction failed (attempt ${scriptGenerationAttempts}/${maxScriptAttempts}): ${extractError.message}`);
         
         if (scriptGenerationAttempts >= maxScriptAttempts) {
-          throw new Error(`Failed to generate valid script after ${maxScriptAttempts} attempts. Last error: ${extractError.message}`);
+          const err = new Error(`Failed to generate valid script after ${maxScriptAttempts} attempts. Last error: ${extractError.message}`);
+          err.partialScript = window.lastGeneratedScript || script;
+          throw err;
         }
         
         // Wait a bit before retry

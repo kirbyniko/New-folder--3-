@@ -3672,6 +3672,14 @@ async function generateScriptForScraper(scraper, existingScraperId = null, optio
   } catch (error) {
     console.error('Script generation error:', error);
     
+    // Try to save partial script if available
+    let partialScript = null;
+    if (error.partialScript) {
+      partialScript = error.partialScript;
+    } else if (window.lastGeneratedScript) {
+      partialScript = window.lastGeneratedScript;
+    }
+    
     if (progressLog) {
       const messagesDiv = progressLog.querySelector('#progress-messages');
       if (messagesDiv) {
@@ -3680,9 +3688,48 @@ async function generateScriptForScraper(scraper, existingScraperId = null, optio
         errorLine.style.color = '#dc2626';
         errorLine.style.fontWeight = 'bold';
         messagesDiv.appendChild(errorLine);
+        
+        // If we have a partial script, offer to save it
+        if (partialScript) {
+          const partialLine = document.createElement('div');
+          partialLine.textContent = '💾 Partial script generated - saving for manual editing';
+          partialLine.style.color = '#f59e0b';
+          partialLine.style.marginTop = '8px';
+          messagesDiv.appendChild(partialLine);
+        }
+        
+        // Add retry button
+        const retryBtn = document.createElement('button');
+        retryBtn.textContent = '🔄 Retry Generation';
+        retryBtn.style.cssText = 'margin-top: 12px; padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;';
+        retryBtn.onclick = () => {
+          progressLog.remove();
+          document.querySelector('#generate-script-btn').click();
+        };
+        messagesDiv.appendChild(retryBtn);
       }
       
-      setTimeout(() => progressLog.remove(), 5000);
+      // Don't auto-close on error - let user read and retry
+      // setTimeout(() => progressLog.remove(), 5000);
+    }
+    
+    // Save partial script if available
+    if (partialScript) {
+      const scriptName = `${category.toLowerCase()}_${state.toLowerCase()}_${source.toLowerCase()}_partial`.replace(/[^a-z0-9_]/g, '_');
+      window.savedScripts = window.savedScripts || {};
+      window.savedScripts[scriptName] = {
+        code: partialScript,
+        config: scraperConfig,
+        timestamp: Date.now(),
+        partial: true
+      };
+      localStorage.setItem('scraperScripts', JSON.stringify(window.savedScripts));
+      refreshScriptsList();
+      
+      // Switch to Scripts tab to show the partial script
+      setTimeout(() => {
+        document.querySelector('.tab-button[data-tab="scripts"]').click();
+      }, 1000);
     }
     
     let errorMessage = error.message;
