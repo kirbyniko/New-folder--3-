@@ -3584,16 +3584,17 @@ async function generateScriptForScraper(scraper, existingScraperId = null, optio
     
     addMessage('⏳ Initializing AI agent...');
     
-    // Check Ollama
-    const agent = new window.ScraperAIAgent();
+    // Use singleton pattern - reuse existing agent instance
+    let agent = window.agentInstance;
+    if (!agent) {
+      agent = new window.ScraperAIAgent();
+      window.agentInstance = agent;
+    }
     
     // Load selected context guides from localStorage
     const selectedContexts = JSON.parse(localStorage.getItem('agentContextGuides') || '["scraper-guide", "basic-selectors", "error-handling"]');
     agent.selectedContexts = selectedContexts;
     addMessage(`📚 Loaded ${selectedContexts.length} context guide(s)`);
-    
-    // Store agent globally so checkbox changes can update it
-    window.agentInstance = agent;
     
     const status = await agent.checkOllamaStatus();
     
