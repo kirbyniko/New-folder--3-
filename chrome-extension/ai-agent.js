@@ -493,7 +493,7 @@ module.exports = async function scrape(url = '${targetUrl}') {
 
 CRITICAL INSTRUCTIONS:
 1. Output ONLY the JavaScript code - no markdown, no explanations, no notes
-2. Do NOT include ```javascript or ``` markers
+2. Do NOT include triple backticks or code block markers
 3. Do NOT add "Here's the code:" or any introductory text
 4. Start directly with: const puppeteer = require('puppeteer');
 5. End with the closing }; of module.exports
