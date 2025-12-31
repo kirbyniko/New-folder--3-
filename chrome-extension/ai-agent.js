@@ -505,7 +505,8 @@ Generate the complete scraper code now:`;
     return await this.queryLLM(prompt, { 
       temperature: 0.1,  // Lower temperature for more consistent output
       max_tokens: 4000,   // Increased for longer scripts
-      stop: [] 
+      stop: [],
+      isCodeGeneration: true
     });
   }
 
@@ -519,6 +520,12 @@ Generate the complete scraper code now:`;
         maxTokens: options.max_tokens || 500
       });
       
+      // Add system prefix for code generation tasks
+      let finalPrompt = prompt;
+      if (options.isCodeGeneration) {
+        finalPrompt = `You are a code generation assistant. You MUST output ONLY valid JavaScript code with NO explanations, NO markdown, NO HTML, NO commentary. Start your response with the first line of code.\n\n${prompt}`;
+      }
+      
       const response = await fetch(this.ollamaEndpoint, {
         method: 'POST',
         headers: { 
@@ -527,7 +534,7 @@ Generate the complete scraper code now:`;
         },
         body: JSON.stringify({
           model: options.model || this.model,
-          prompt: prompt,
+          prompt: finalPrompt,
           stream: false,
           options: {
             temperature: options.temperature || 0.7,
@@ -626,14 +633,35 @@ Generate the complete scraper code now:`;
     
     code = code.trim();
     
-    // 6. Validate it looks like code
+    // 6. Remove any leading/trailing HTML
+    code = code.replace(/^<!DOCTYPE[\s\S]*?<\/html>\s*/i, '');
+    code = code.replace(/^<\?xml[\s\S]*?>\s*/i, '');
+    
+    // 7. Validate it looks like code
     const hasCode = code.includes('module.exports') || 
                    code.includes('const ') || 
                    code.includes('function ');
     
+    const hasHTML = code.includes('<!DOCTYPE') || 
+                   code.includes('<html') ||
+                   code.includes('<body') ||
+                   (code.includes('<') && code.includes('</'));
+    
     if (!hasCode) {
       console.error('⚠️ Extracted code does not contain expected patterns');
       console.log('First 200 chars:', code.substring(0, 200));
+    }
+    
+    if (hasHTML) {
+      console.error('❌ HTML detected in extracted code! Attempting aggressive extraction...');
+      // Last resort: find anything that looks like JavaScript
+      const jsMatch = code.match(/(const|module\.exports|async function)[\s\S]+$/);
+      if (jsMatch) {
+        code = jsMatch[0];
+        console.log('🔧 Recovered code from mixed content');
+      } else {
+        throw new Error('LLM returned HTML instead of code. Cannot extract valid JavaScript.');
+      }
     }
     
     console.log('✅ Code extracted (length:', code.length, ')');
@@ -1050,7 +1078,11 @@ OUTPUT INSTRUCTIONS:
 
 Generate the FIXED complete script now:`;
 
-    return await this.queryLLM(prompt, { temperature: 0.2, max_tokens: 4000 });
+    return await this.queryLLM(prompt, { 
+      temperature: 0.2, 
+      max_tokens: 4000,
+      isCodeGeneration: true
+    });
   }
   
   // Clean generated code
