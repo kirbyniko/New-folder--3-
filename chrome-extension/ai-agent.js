@@ -16,6 +16,10 @@ class ScraperAIAgent {
     this.model = localStorage.getItem('agentDefaultModel') || 'qwen2.5-coder:32b';
     this.useWebGPU = true; // Prefer WebGPU
     
+    // Iterative Learning Mode (recommended for small context windows)
+    this.useIterativeLearning = localStorage.getItem('useIterativeLearning') === 'true';
+    this.iterativeAgent = null; // Lazy init when needed
+    
     this.contextFiles = {};
     this.analysisResults = {};
     
@@ -2433,6 +2437,39 @@ Generate the FIXED complete script now:`;
     } catch (error) {
       console.warn('Failed to record episode:', error);
     }
+  }
+
+  // Iterative Learning: Process fields in small batches
+  async generateWithIterativeLearning(scraperConfig, url, pageStructure) {
+    console.log('🔄 Using Iterative Learning Mode');
+    
+    // Lazy initialize iterative agent
+    if (!this.iterativeAgent) {
+      this.iterativeAgent = new window.IterativeLearningAgent(this);
+    }
+
+    try {
+      const result = await this.iterativeAgent.extractWithIterativeLearning(
+        scraperConfig,
+        url,
+        pageStructure
+      );
+
+      console.log(`✅ Iterative learning complete: ${result.metadata.iterations} total iterations`);
+      console.log(`📊 Batches processed:`, result.metadata.batchResults);
+
+      return result;
+    } catch (error) {
+      console.error('❌ Iterative learning failed:', error);
+      throw error;
+    }
+  }
+
+  // Toggle iterative learning mode
+  setIterativeLearningMode(enabled) {
+    this.useIterativeLearning = enabled;
+    localStorage.setItem('useIterativeLearning', enabled.toString());
+    console.log(`🔄 Iterative Learning Mode: ${enabled ? 'ENABLED' : 'DISABLED'}`);
   }
 }
 

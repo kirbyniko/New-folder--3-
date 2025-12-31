@@ -745,6 +745,21 @@
     <div style="margin: 16px 0; padding: 12px; background: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
       <h4 style="margin: 0 0 8px 0; font-size: 13px;">🤖 Agent Settings</h4>
       
+      <!-- Iterative Learning Toggle -->
+      <div style="margin-bottom: 12px; padding: 8px; background: #fff; border-radius: 6px; border: 1px solid #e5e7eb;">
+        <label style="display: flex; align-items: center; cursor: pointer;">
+          <input type="checkbox" id="iterative-learning-toggle" style="margin-right: 8px;">
+          <div>
+            <div style="font-size: 12px; font-weight: 600; color: #10b981;">
+              🔄 Iterative Learning Mode (Recommended)
+            </div>
+            <div style="font-size: 11px; color: #666; margin-top: 2px;">
+              Process 72 fields in small batches (12 at a time). Fast iterations, learns from failures. Perfect for small context windows.
+            </div>
+          </div>
+        </label>
+      </div>
+      
       <!-- Model Selector -->
       <div style="margin-bottom: 12px;">
         <label style="display: block; font-size: 12px; font-weight: 500; margin-bottom: 4px;">Default AI Model:</label>
@@ -860,6 +875,10 @@
   <script src="agent-memory-enhanced.js"></script>
   <script src="agent-conversation-memory.js"></script>
   <script src="agent-prompt-optimizer.js"></script>
+  
+  <!-- Iterative Learning Agent -->
+  <script src="iterative-agent.js"></script>
+  <script src="iterative-learning-ui.js"></script>
   
   <!-- Core Agent System -->
   <script src="agent-knowledge.js"></script>
