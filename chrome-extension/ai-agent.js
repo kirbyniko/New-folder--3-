@@ -1390,26 +1390,40 @@ Return ONLY the compressed prompt, no explanations.`;
     // ⚡ ITERATIVE LEARNING MODE CHECK
     // If enabled and we have many fields (30+), use batch processing
     const fieldCount = Object.keys(scraperConfig.fields || {}).filter(k => !k.startsWith('step1-')).length;
+    
+    // Debug: Log config structure
+    console.log('🔍 Scraper config structure:', {
+      hasFields: !!scraperConfig.fields,
+      fieldKeys: Object.keys(scraperConfig.fields || {}).slice(0, 5),
+      totalFields: Object.keys(scraperConfig.fields || {}).length,
+      hasUrl: !!scraperConfig.url,
+      hasTargetUrl: !!scraperConfig.targetUrl
+    });
+    
     if (this.useIterativeLearning && fieldCount >= 30) {
       updateProgress(`🔄 Iterative Learning Mode: Processing ${fieldCount} fields in batches`);
       
-      // Get URL and page structure for iterative processing
-      const targetUrl = scraperConfig.fields['step1-calendar_url'] || 
-                       scraperConfig.fields['step1-court_url'] || 
-                       scraperConfig.fields['step1-listing_url'] ||
-                       scraperConfig.fields['step1-agenda_url'];
+      // Get URL - try multiple possible locations
+      const targetUrl = scraperConfig.fields?.['step1-calendar_url'] || 
+                       scraperConfig.fields?.['step1-court_url'] || 
+                       scraperConfig.fields?.['step1-listing_url'] ||
+                       scraperConfig.fields?.['step1-agenda_url'] ||
+                       scraperConfig.url ||
+                       scraperConfig.targetUrl;
       
       if (!targetUrl) {
-        updateProgress('❌ No target URL found in config');
-        throw new Error('Target URL required for iterative learning');
+        updateProgress('⚠️ No target URL found, falling back to standard generation');
+        updateProgress(`   (looked in: fields['step1-*'], url, targetUrl)`);
+        // Fall through to standard generation
+      } else {
+        // Get page structure (reuse existing analysis if available)
+        updateProgress('📊 Analyzing page structure...');
+        const pageStructure = await this.analyzePageStructure(targetUrl);
+        
+        // Use iterative learning agent
+        updateProgress(`🎯 Using iterative batching for ${fieldCount} fields`);
+        return await this.generateWithIterativeLearning(scraperConfig, targetUrl, pageStructure);
       }
-      
-      // Get page structure (reuse existing analysis if available)
-      updateProgress('📊 Analyzing page structure...');
-      const pageStructure = await this.analyzePageStructure(targetUrl);
-      
-      // Use iterative learning agent
-      return await this.generateWithIterativeLearning(scraperConfig, targetUrl, pageStructure);
     }
     
     updateProgress('🤖 Starting AI scraper generation...');
