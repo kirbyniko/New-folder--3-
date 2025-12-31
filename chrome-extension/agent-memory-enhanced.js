@@ -74,6 +74,26 @@ class EnhancedAgentMemory {
 
   saveMemory() {
     localStorage.setItem(this.memoryKey, JSON.stringify(this.memory));
+    // Also save to database
+    this.syncToDatabase().catch(err => console.warn('DB sync failed:', err));
+  }
+
+  async syncToDatabase() {
+    try {
+      const response = await fetch('http://localhost:3001/api/rag/episode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          episodes: this.memory.episodes,
+          concepts: this.memory.concepts
+        })
+      });
+      if (response.ok) {
+        console.log('✅ RAG memory synced to database');
+      }
+    } catch (error) {
+      // Silent fail - localStorage backup still works
+    }
   }
 
   // Record a complete generation episode

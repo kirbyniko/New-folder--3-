@@ -366,22 +366,22 @@ function populateBuildTemplateSelector() {
 }
 
 async function loadScraperLibrary() {
-  const syncEnabled = localStorage.getItem('dbSyncEnabled') === 'true';
-  
-  // Try to load from database first if sync is enabled
-  if (syncEnabled) {
-    const dbScrapers = await loadScrapersFromDatabase();
-    if (dbScrapers.length > 0) {
-      scrapers = dbScrapers;
-      localStorage.setItem('scrapers', JSON.stringify(scrapers)); // Backup to localStorage
-      displayTemplates();
-      return;
-    }
+  // Always try database first
+  const dbScrapers = await loadScrapersFromDatabase();
+  if (dbScrapers.length > 0) {
+    scrapers = dbScrapers;
+    localStorage.setItem('scrapers', JSON.stringify(scrapers)); // Backup to localStorage
+    console.log(`✅ Loaded ${dbScrapers.length} scrapers from database`);
+    displayTemplates();
+    return;
   }
   
   // Fallback to localStorage
   const stored = localStorage.getItem('scrapers');
   scrapers = stored ? JSON.parse(stored) : [];
+  if (scrapers.length > 0) {
+    console.log(`✅ Loaded ${scrapers.length} scrapers from localStorage (database offline)`);
+  }
   displayTemplates();
 }
 
@@ -476,32 +476,30 @@ function displayTemplates() {
 }
 
 async function saveScrapers() {
+  // Always save to localStorage as backup
   localStorage.setItem('scrapers', JSON.stringify(scrapers));
   displayTemplates();
   
-  // Sync to database if enabled
-  const syncEnabled = localStorage.getItem('dbSyncEnabled') === 'true';
-  if (syncEnabled) {
-    await syncScrapersToDatabase();
-  }
+  // Always try to sync to database
+  await syncScrapersToDatabase();
 }
 
 // Sync scrapers to PostgreSQL database
 async function syncScrapersToDatabase() {
-  const apiUrl = localStorage.getItem('apiUrl') || 'https://civitracker.pages.dev';
+  const apiUrl = 'http://localhost:3001';
   
   try {
     for (const scraper of scrapers) {
       if (scraper.id) {
         // Update existing
-        await fetch(`${apiUrl}/api/scraper-configs`, {
+        await fetch(`${apiUrl}/api/scrapers/${scraper.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(scraper)
         });
       } else {
         // Create new
-        const response = await fetch(`${apiUrl}/api/scraper-configs`, {
+        const response = await fetch(`${apiUrl}/api/scrapers`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(scraper)
@@ -520,17 +518,19 @@ async function syncScrapersToDatabase() {
 
 // Load scrapers from database
 async function loadScrapersFromDatabase() {
-  const apiUrl = localStorage.getItem('apiUrl') || 'https://civitracker.pages.dev';
+  const apiUrl = 'http://localhost:3001';
   
   try {
-    const response = await fetch(`${apiUrl}/api/scraper-configs`);
+    const response = await fetch(`${apiUrl}/api/scrapers/list`);
+    if (!response.ok) throw new Error('API not available');
     const data = await response.json();
     
-    if (data.configs && Array.isArray(data.configs)) {
-      return data.configs;
+    if (data.scrapers && Array.isArray(data.scrapers)) {
+      console.log(`✅ Loaded ${data.scrapers.length} scrapers from database`);
+      return data.scrapers;
     }
   } catch (error) {
-    console.warn('⚠️ Failed to load from database:', error);
+    console.log('ℹ️  Database not available - using localStorage');
   }
   
   return [];
