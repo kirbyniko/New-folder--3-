@@ -1389,31 +1389,47 @@ Return ONLY the compressed prompt, no explanations.`;
     
     // ⚡ ITERATIVE LEARNING MODE CHECK
     // If enabled and we have many fields (30+), use batch processing
-    const fieldCount = Object.keys(scraperConfig.fields || {}).filter(k => !k.startsWith('step1-')).length;
+    
+    // Parse fields if they're a JSON string (from database)
+    let fields = scraperConfig.fields;
+    if (typeof fields === 'string') {
+      try {
+        fields = JSON.parse(fields);
+      } catch (e) {
+        console.warn('Failed to parse fields JSON:', e);
+        fields = {};
+      }
+    }
+    
+    const fieldCount = Object.keys(fields || {}).filter(k => !k.startsWith('step1-')).length;
     
     // Debug: Log config structure
     console.log('🔍 Scraper config structure:', {
-      hasFields: !!scraperConfig.fields,
-      fieldKeys: Object.keys(scraperConfig.fields || {}).slice(0, 5),
-      totalFields: Object.keys(scraperConfig.fields || {}).length,
+      fieldsType: typeof scraperConfig.fields,
+      fieldsIsParsed: typeof fields === 'object',
+      fieldKeys: Object.keys(fields || {}).slice(0, 5),
+      totalFields: Object.keys(fields || {}).length,
+      nonStep1Fields: fieldCount,
       hasUrl: !!scraperConfig.url,
-      hasTargetUrl: !!scraperConfig.targetUrl
+      hasTargetUrl: !!scraperConfig.targetUrl,
+      hasStartUrl: !!scraperConfig.startUrl
     });
     
     if (this.useIterativeLearning && fieldCount >= 30) {
       updateProgress(`🔄 Iterative Learning Mode: Processing ${fieldCount} fields in batches`);
       
       // Get URL - try multiple possible locations
-      const targetUrl = scraperConfig.fields?.['step1-calendar_url'] || 
-                       scraperConfig.fields?.['step1-court_url'] || 
-                       scraperConfig.fields?.['step1-listing_url'] ||
-                       scraperConfig.fields?.['step1-agenda_url'] ||
+      const targetUrl = fields?.['step1-calendar_url'] || 
+                       fields?.['step1-court_url'] || 
+                       fields?.['step1-listing_url'] ||
+                       fields?.['step1-agenda_url'] ||
+                       scraperConfig.startUrl ||  // Database format
                        scraperConfig.url ||
                        scraperConfig.targetUrl;
       
       if (!targetUrl) {
         updateProgress('⚠️ No target URL found, falling back to standard generation');
-        updateProgress(`   (looked in: fields['step1-*'], url, targetUrl)`);
+        updateProgress(`   (looked in: fields['step1-*'], startUrl, url, targetUrl)`);
         // Fall through to standard generation
       } else {
         // Get page structure (reuse existing analysis if available)

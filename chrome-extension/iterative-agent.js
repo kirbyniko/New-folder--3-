@@ -199,7 +199,18 @@ Return: {success: true, data: {...}, metadata: {fieldsFound: N}}
    * Create field batches - group related fields together
    */
   createFieldBatches(scraperConfig, batchSize = 12) {
-    const allFields = Object.entries(scraperConfig.fields)
+    // Parse fields if they're a JSON string (from database)
+    let fields = scraperConfig.fields;
+    if (typeof fields === 'string') {
+      try {
+        fields = JSON.parse(fields);
+      } catch (e) {
+        console.warn('Failed to parse fields JSON:', e);
+        fields = {};
+      }
+    }
+    
+    const allFields = Object.entries(fields)
       .filter(([id]) => !id.startsWith('step1-'))
       .map(([id, selector]) => ({
         name: id,
