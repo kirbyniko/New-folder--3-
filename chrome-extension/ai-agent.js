@@ -1528,8 +1528,11 @@ Return ONLY the compressed prompt, no explanations.`;
         updateProgress(`   ✂️ Compressed whitespace: ${beforeWhitespace - reducedPrompt.length} chars saved`);
       }
       
+      // For Steps 5-7, check against PROMPT limit (safeLimit - responseTokens)
+      const maxPromptTokens = viability.safeLimit - viability.responseTokens;
+      
       // Step 5: Remove PAGE STRUCTURE ANALYSIS if still too large
-      if (Math.ceil(reducedPrompt.length / 3.3) > viability.safeLimit) {
+      if (Math.ceil(reducedPrompt.length / 3.3) > maxPromptTokens) {
         const pageStructurePattern = /PAGE STRUCTURE ANALYSIS:[\s\S]*?(?=FIELDS TO EXTRACT:|$)/i;
         const beforeStructure = reducedPrompt.length;
         reducedPrompt = reducedPrompt.replace(pageStructurePattern, '');
@@ -1539,7 +1542,7 @@ Return ONLY the compressed prompt, no explanations.`;
       }
       
       // Step 6: Remove context guides if STILL too large
-      if (Math.ceil(reducedPrompt.length / 3.3) > viability.safeLimit) {
+      if (Math.ceil(reducedPrompt.length / 3.3) > maxPromptTokens) {
         const contextGuidesPattern = /=== PROVEN PATTERNS & TACTICS ===[\s\S]*?=== END PATTERNS ===/i;
         const beforeGuides = reducedPrompt.length;
         reducedPrompt = reducedPrompt.replace(contextGuidesPattern, '');
@@ -1549,7 +1552,7 @@ Return ONLY the compressed prompt, no explanations.`;
       }
       
       // Step 7: Remove RAG context if STILL too large
-      if (Math.ceil(reducedPrompt.length / 3.3) > viability.safeLimit) {
+      if (Math.ceil(reducedPrompt.length / 3.3) > maxPromptTokens) {
         const ragPattern = /KNOWLEDGE BASE CONTEXT:[\s\S]*?(?=FIELDS TO EXTRACT:|$)/i;
         const beforeRAG = reducedPrompt.length;
         reducedPrompt = reducedPrompt.replace(ragPattern, '');
