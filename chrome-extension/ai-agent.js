@@ -1139,11 +1139,12 @@ Generate the complete scraper code now:`;
     this.loadContextFiles();
     
     // Get target URL for page analysis
-    const targetUrl = scraperConfig.fields?.['step1-calendar_url'] || 
+    const targetUrl = scraperConfig.url ||           // Direct url property
+                     scraperConfig.startUrl ||        // startUrl property (from database)
+                     scraperConfig.fields?.['step1-calendar_url'] || 
                      scraperConfig.fields?.['step1-court_url'] || 
                      scraperConfig.fields?.['step1-listing_url'] ||
                      scraperConfig.fields?.['step1-url'] ||
-                     scraperConfig.url ||  // Direct URL property
                      // Fallback: find any field with 'url' in the key
                      Object.entries(scraperConfig.fields || {})
                        .find(([key]) => key.toLowerCase().includes('url'))?.[1];
@@ -1395,11 +1396,12 @@ Generate the complete scraper code now:`;
   async testScriptAgentically(scriptCode, scraperConfig) {
     try {
       // Extract target URL from various possible sources
-      const targetUrl = scraperConfig.fields?.['step1-calendar_url'] || 
+      const targetUrl = scraperConfig.url ||           // Direct url property
+                       scraperConfig.startUrl ||        // startUrl property (from database)
+                       scraperConfig.fields?.['step1-calendar_url'] || 
                        scraperConfig.fields?.['step1-court_url'] || 
                        scraperConfig.fields?.['step1-listing_url'] ||
                        scraperConfig.fields?.['step1-url'] ||
-                       scraperConfig.url ||  // Direct URL property
                        // Fallback: find any field with 'url' in the key
                        Object.entries(scraperConfig.fields || {})
                          .find(([key]) => key.toLowerCase().includes('url'))?.[1];
