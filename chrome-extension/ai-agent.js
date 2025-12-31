@@ -1283,11 +1283,11 @@ Your response MUST follow this EXACT format...`;
     const totalTokens = estimatedTokens + responseTokens;
     
     // GPU capacity thresholds (empirically determined for 16GB VRAM)
-    // Based on testing: 2048=6% CPU, 6144=8% CPU, 8192=19% CPU
+    // CRITICAL: Only 2048 achieves TRUE 0% CPU for 14B model (verified empirically)
     const GPU_SAFE_LIMITS = {
-      'qwen2.5-coder:14b': 6144,   // 8% CPU (acceptable)
-      'qwen2.5-coder:7b': 8192,    // Should be better
-      'deepseek-coder:6.7b': 12000, // Much smaller model
+      'qwen2.5-coder:14b': 2048,   // 0% CPU (ONLY acceptable value)
+      'qwen2.5-coder:7b': 4096,    // Smaller model
+      'deepseek-coder:6.7b': 8192, // Much smaller model
       'qwen2.5-coder:32b': 1024    // Won't fit in 16GB
     };
     
