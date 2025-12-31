@@ -13,7 +13,6 @@ import MetricsService from './src/services/MetricsService.js';
 
 class AgentStudio {
   constructor() {
-    this.agent = new UniversalAgent();
     this.currentConversation = null;
     this.contextFiles = [];
     this.messages = [];
@@ -27,6 +26,23 @@ class AgentStudio {
       mode: 'general',
       systemPrompt: this.getSystemPrompt('general')
     };
+    
+    // Initialize UniversalAgent with proper config
+    this.agent = new UniversalAgent({
+      mode: 'chat',
+      name: 'AgentStudio',
+      preset: 'balanced',
+      streaming: true,
+      modelPreferences: {
+        primary: 'ollama',
+        fallback: 'webgpu'
+      },
+      modelConfig: {
+        models: {
+          primary: this.config.model
+        }
+      }
+    });
 
     this.init();
   }
