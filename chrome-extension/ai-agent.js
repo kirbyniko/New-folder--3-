@@ -552,6 +552,42 @@ Generate the complete scraper code following this pattern. Use EXACT selectors p
     }
   }
 
+  // Extract clean JavaScript code from LLM response
+  extractCode(response) {
+    // Remove markdown code blocks
+    let code = response.replace(/```(?:javascript|js)?\n?([\s\S]*?)```/g, '$1');
+    
+    // If no markdown blocks, try to find code between explanatory text
+    if (code === response) {
+      // Look for code starting with common patterns
+      const codePatterns = [
+        /(?:^|\n)(const|module\.exports|async function)/,
+        /(?:^|\n)(\/\/ .*\n)?const puppeteer/,
+        /(?:^|\n)(\/\/ .*\n)?const cheerio/
+      ];
+      
+      for (const pattern of codePatterns) {
+        const match = code.match(pattern);
+        if (match) {
+          code = code.substring(match.index);
+          break;
+        }
+      }
+      
+      // Remove trailing explanatory text after the last closing brace
+      const lastBrace = code.lastIndexOf('};');
+      if (lastBrace !== -1) {
+        code = code.substring(0, lastBrace + 2);
+      }
+    }
+    
+    // Remove common prefixes
+    code = code.replace(/^(?:Here'?s? (?:the|a) (?:fixed|corrected|updated|complete) (?:code|script|version)?:?\s*\n?)+/i, '');
+    code = code.replace(/^(?:Note:|Important:|Explanation:).*?\n/gim, '');
+    
+    return code.trim();
+  }
+
   // Master orchestrator: Run full AI analysis pipeline
   async generateScraperWithAI(scraperConfig, template, progressCallback = null, options = {}) {
     const updateProgress = (message) => {
@@ -604,9 +640,10 @@ Generate the complete scraper code following this pattern. Use EXACT selectors p
     if (usePuppeteer) {
       updateProgress(`🎭 Using Puppeteer mode: ${reason}`);
     }
-    let script = await this.generateScraperScript(scraperConfig, analysisContext, template, options);
+    let rawScript = await this.generateScraperScript(scraperConfig, analysisContext, template, options);
     
-    // Clean up the script
+    // Extract and clean the code
+    let script = this.extractCode(rawScript);
     script = this.cleanGeneratedCode(script);
     updateProgress('✅ Initial script generated');
     
@@ -668,7 +705,8 @@ Generate the complete scraper code following this pattern. Use EXACT selectors p
       
       if (iteration < maxIterations) {
         updateProgress('🔧 Attempting to fix script...');
-        script = await this.fixScript(script, lastDiagnosis, testResult, scraperConfig, relevantContext);
+        const rawFix = await this.fixScript(script, lastDiagnosis, testResult, scraperConfig, relevantContext);
+        script = this.extractCode(rawFix);
         script = this.cleanGeneratedCode(script);
         updateProgress('✅ Script updated');
       }
@@ -733,26 +771,61 @@ Generate the complete scraper code following this pattern. Use EXACT selectors p
         };
       }
       
-      console.log('🌐 Fetching target page:', targetUrl);
+      console.log('🧪 Testing script via backend server:', targetUrl);
       
-      // Fetch the page HTML
-      const response = await fetch(targetUrl);
-      if (!response.ok) {
+      // Execute script via backend server (no CSP restrictions)
+      try {
+        const response = await fetch('http://localhost:3002/execute', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            scriptCode,
+            targetUrl,
+            timeout: 30000
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Backend server error: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        // Map backend response to expected format
+        if (result.error) {
+          return {
+            success: false,
+            error: result.error,
+            stack: result.stack,
+            fieldsExtracted: 0,
+            url: targetUrl
+          };
+        }
+        
+        const fieldsFound = result.metadata?.fieldsFound || 0;
+        const hasData = result.data && Object.keys(result.data).length > 0;
+        
+        return {
+          success: hasData && fieldsFound > 0,
+          data: result.data,
+          metadata: result.metadata,
+          fieldsExtracted: fieldsFound,
+          url: targetUrl,
+          requiresJavaScript: result.requiresJavaScript,
+          jsDetectionReason: result.jsDetectionReason
+        };
+        
+      } catch (fetchError) {
+        // Backend server not running or connection failed
         return {
           success: false,
-          error: `Failed to fetch page: ${response.status}`,
+          error: `Backend execution failed: ${fetchError.message}. Make sure execute server is running (npm run execute in scraper-backend)`,
           fieldsExtracted: 0,
           url: targetUrl
         };
       }
-      
-      const html = await response.text();
-      console.log('📄 Page fetched, HTML length:', html.length);
-      
-      // Execute the script in a simulated environment
-      const result = await this.executeScriptInSandbox(scriptCode, targetUrl, html);
-      
-      return result;
       
     } catch (error) {
       return {
@@ -763,62 +836,6 @@ Generate the complete scraper code following this pattern. Use EXACT selectors p
     }
   }
   
-  // Execute script safely in a CSP-compliant way
-  async executeScriptInSandbox(scriptCode, url, html) {
-    // Note: Due to CSP and cross-origin restrictions in Chrome extensions,
-    // we can't safely execute arbitrary user code in the extension context.
-    // Instead, we'll do a basic static analysis and return a helpful message.
-    
-    try {
-      // Do basic validation
-      const hasModuleExports = scriptCode.includes('module.exports');
-      const hasAsyncFunction = scriptCode.includes('async function') || scriptCode.includes('async (');
-      const hasRequire = scriptCode.includes('require(');
-      
-      // Check for common issues
-      const issues = [];
-      if (!hasModuleExports) {
-        issues.push('Missing module.exports');
-      }
-      if (!hasAsyncFunction) {
-        issues.push('Missing async function');
-      }
-      
-      if (issues.length > 0) {
-        return {
-          success: false,
-          error: `Static analysis found issues: ${issues.join(', ')}`,
-          fieldsExtracted: 0,
-          executionSuccess: false,
-          hint: 'Use the ▶️ Test button to run script in a real tab for accurate testing'
-        };
-      }
-      
-      // Script looks structurally valid, but we can't execute it here
-      // Return a result that indicates the script needs real tab testing
-      return {
-        success: false,
-        error: 'Script validation passed but requires real tab testing due to Chrome extension security restrictions',
-        fieldsExtracted: 0,
-        executionSuccess: false,
-        hint: 'This script cannot be executed in the extension sandbox. Click ▶️ Test to run it in a real browser tab where it will work properly.',
-        staticAnalysis: {
-          hasModuleExports,
-          hasAsyncFunction,
-          hasRequire,
-          looksValid: true
-        }
-      };
-      
-    } catch (error) {
-      return {
-        success: false,
-        error: error.message,
-        fieldsExtracted: 0,
-        executionSuccess: false
-      };
-    }
-  }
   
   // Diagnose why the script failed
   async diagnoseScriptFailure(script, testResult, scraperConfig, relevantContext = null) {
@@ -843,6 +860,28 @@ Generate the complete scraper code following this pattern. Use EXACT selectors p
       }
     }
     
+    // Determine error type from backend response
+    const isSyntaxError = testResult.error && (
+      testResult.error.includes('SyntaxError') ||
+      testResult.error.includes('Unexpected token') ||
+      testResult.error.includes('missing )') ||
+      testResult.error.includes('missing }') ||
+      testResult.error.includes('Unexpected identifier')
+    );
+    
+    const isRuntimeError = testResult.error && !isSyntaxError && (
+      testResult.error.includes('is not defined') ||
+      testResult.error.includes('Cannot read property') ||
+      testResult.error.includes('undefined')
+    );
+    
+    let errorTypeHint = '';
+    if (isSyntaxError) {
+      errorTypeHint = '\n\nIMPORTANT: This is a SYNTAX ERROR. The code is malformed and cannot be parsed. Focus on:\n- Missing or extra parentheses, brackets, or braces\n- Incomplete template literals\n- Invalid arrow function syntax\n- Malformed async/await statements';
+    } else if (isRuntimeError) {
+      errorTypeHint = '\n\nIMPORTANT: This is a RUNTIME ERROR. The code executes but crashes. Focus on:\n- Undefined variables or missing imports\n- Null/undefined checks\n- Incorrect method calls';
+    }
+    
     const prompt = `You are a debugging expert. Analyze this web scraper failure:
 
 SCRIPT:
@@ -854,7 +893,8 @@ TEST RESULT:
 - Success: ${testResult.success}
 - Fields extracted: ${testResult.fieldsExtracted}
 - Error: ${testResult.error || 'None'}
-- Execution success: ${testResult.executionSuccess}
+${testResult.stack ? `- Stack trace: ${testResult.stack.substring(0, 300)}` : ''}
+${errorTypeHint}
 
 EXPECTED FIELDS (from config):
 ${Object.keys(scraperConfig.fields).filter(k => !k.startsWith('step1-')).slice(0, 10).join(', ')}
@@ -862,10 +902,10 @@ ${knowledgeContext}
 
 DIAGNOSIS TASK:
 Identify the TOP 3 most likely problems:
-1. Are selectors wrong/not finding elements?
-2. Is the extraction logic broken (.text() vs .attr())?
-3. Are there syntax errors?
-4. Is the module.exports format wrong?
+1. Syntax errors (missing punctuation, malformed code)?
+2. Wrong selectors/extraction logic?
+3. Module format issues?
+4. Runtime errors (undefined variables)?
 5. Other issues?
 
 Respond with ONLY a JSON object:
@@ -916,6 +956,12 @@ Respond with ONLY a JSON object:
       enhancedContext += `\n\nUSER FEEDBACK: ${diagnosis.userFeedback}\n`;
     }
     
+    // Include stack trace if available for syntax errors
+    let errorDetails = testResult.error || 'No specific error';
+    if (testResult.stack) {
+      errorDetails += `\n\nStack trace:\n${testResult.stack.substring(0, 500)}`;
+    }
+    
     const prompt = `You are a code repair expert. Fix this broken web scraper.
 
 CURRENT SCRIPT:
@@ -930,16 +976,17 @@ Recommendation: ${diagnosis.recommendation}
 ${enhancedContext}
 
 TEST FAILURE:
-${testResult.error || 'No specific error'}
+${errorDetails}
 Fields extracted: ${testResult.fieldsExtracted} (expected more)
 
 TARGET URL: ${targetUrl}
 
 CRITICAL FIXES NEEDED:
-1. Ensure selectors are correct - use .first().text().trim() or .first().attr('href')
-2. Check module.exports format: module.exports = async function scrape(url) { ... }
-3. Return proper format: { success: true, data: {...}, metadata: {...} }
-4. Handle missing elements: check if element exists before extracting
+1. Fix any SYNTAX ERRORS first - check for missing/extra parentheses, brackets, braces
+2. Ensure selectors are correct - use .first().text().trim() or .first().attr('href')
+3. Check module.exports format: module.exports = async function scrape(url) { ... }
+4. Return proper format: { success: true, data: {...}, metadata: {...} }
+5. Handle missing elements: check if element exists before extracting
 
 Generate the FIXED complete script. NO explanations, NO markdown, ONLY code:`;
 
