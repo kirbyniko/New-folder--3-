@@ -689,6 +689,19 @@
     <div id="status-message" style="display: none; padding: 10px; margin-bottom: 12px; border-radius: 4px; font-size: 13px; text-align: center;"></div>
     
     <div class="import-section">
+      <h4 style="margin-top: 0;">Database Sync Settings</h4>
+      <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+        <input type="checkbox" id="db-sync-enabled" style="width: auto;">
+        <span>Enable PostgreSQL sync (saves scrapers to database)</span>
+      </label>
+      <input type="text" id="api-url-input" class="form-control" placeholder="API URL (e.g., https://civitracker.pages.dev)" 
+        style="width: 100%; margin-bottom: 8px;">
+      <button class="btn-secondary" id="save-db-settings-btn" style="width: 100%;">
+        💾 Save Settings
+      </button>
+    </div>
+    
+    <div class="import-section">
       <h4 style="margin-top: 0;">Import Scraper JSON</h4>
       <textarea id="import-json" placeholder='Paste scraper JSON here...'></textarea>
       <button class="btn-primary" id="import-json-btn" style="width: 100%; margin-top: 8px;">

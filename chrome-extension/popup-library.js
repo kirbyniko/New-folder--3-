@@ -499,6 +499,28 @@ document.getElementById('import-json-btn').addEventListener('click', () => {
   }
 });
 
+// Database sync settings
+document.getElementById('save-db-settings-btn').addEventListener('click', () => {
+  const enabled = document.getElementById('db-sync-enabled').checked;
+  const apiUrl = document.getElementById('api-url-input').value.trim();
+  
+  localStorage.setItem('dbSyncEnabled', enabled ? 'true' : 'false');
+  if (apiUrl) {
+    localStorage.setItem('apiUrl', apiUrl);
+  }
+  
+  alert(`✅ Database sync ${enabled ? 'enabled' : 'disabled'}`);
+  
+  // Reload scrapers from DB if just enabled
+  if (enabled) {
+    loadScraperLibrary();
+  }
+});
+
+// Load DB settings on page load
+document.getElementById('db-sync-enabled').checked = localStorage.getItem('dbSyncEnabled') === 'true';
+document.getElementById('api-url-input').value = localStorage.getItem('apiUrl') || 'https://civitracker.pages.dev';
+
 // Export all scrapers button
 document.getElementById('export-all-scrapers-btn').addEventListener('click', exportAllScrapers);
 
