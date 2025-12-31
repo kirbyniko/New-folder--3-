@@ -469,6 +469,12 @@ Consider: cheerio, axios, puppeteer, dayjs, pdf-parse`;
 
   // Stage 4: Generate scraper script
   async generateScraperScript(scraperConfig, analysisContext, template, options = {}) {
+    // CRITICAL: Use compressed prompt if pre-check generated one
+    if (analysisContext.compressedPromptOverride) {
+      console.log('🎯 Using pre-compressed prompt for 0% CPU generation');
+      return await this.queryOllama(analysisContext.compressedPromptOverride, options);
+    }
+    
     const { fieldAnalysis, stepAnalysis, requiredTools } = analysisContext;
     const { usePuppeteer = false, reason = '' } = options;
     
@@ -768,7 +774,7 @@ Generate the complete scraper code now:`;
 
     return await this.queryLLM(prompt, { 
       temperature: 0.1,  // Lower temperature for more consistent output
-      max_tokens: 4000,   // Increased for longer scripts
+      max_tokens: 1500,   // Most scrapers are 500-1000 tokens
       stop: [],
       isCodeGeneration: true
     });
@@ -793,8 +799,8 @@ Generate the complete scraper code now:`;
 
     // Try WebGPU first if available and initialized
     if (this.useWebGPU && this.webgpuReady && this.webgpuInitialized) {
-      // Rough token estimate: ~4 chars per token
-      const estimatedTokens = Math.ceil(prompt.length / 4);
+      // Rough token estimate: ~3.3 chars per token (more conservative)
+      const estimatedTokens = Math.ceil(prompt.length / 3.3);
       const WEBGPU_TOKEN_LIMIT = 4096;
       
       if (estimatedTokens > WEBGPU_TOKEN_LIMIT) {
@@ -865,7 +871,10 @@ Generate the complete scraper code now:`;
   // Query Ollama (fallback)
   async queryOllama(prompt, options = {}) {
     try {
-      const modelName = options.model || this.model;
+      // Use the user's selected model (from dropdown) unless explicitly overridden in options
+      let modelName = options.model || this.model;
+      console.log(`🎯 Using model: ${modelName} (prompt length: ${prompt.length} chars)`);
+      
       console.log('📤 Sending to Ollama:', {
         model: modelName,
         promptLength: prompt.length,
@@ -906,6 +915,9 @@ Generate the complete scraper code now:`;
       
       const startTime = Date.now();
       
+      // Enable streaming for long prompts so user sees progress
+      const useStreaming = finalPrompt.length > 10000;
+      
       const response = await fetch(this.ollamaEndpoint, {
         method: 'POST',
         headers: { 
@@ -916,10 +928,11 @@ Generate the complete scraper code now:`;
         body: JSON.stringify({
           model: modelName,
           prompt: finalPrompt,
-          stream: false,
+          stream: useStreaming,
           options: {
             temperature: options.temperature || 0.7,
-            num_predict: options.max_tokens || 500,
+            num_predict: options.max_tokens || 2000,
+            num_ctx: 6144,  // Empirically determined: 8% CPU acceptable
             stop: options.stop || []
           }
         })
@@ -928,17 +941,56 @@ Generate the complete scraper code now:`;
       clearTimeout(timeoutId);
       clearInterval(progressInterval);
       
-      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-      console.log(`✅ Ollama responded in ${elapsed} seconds`);
-
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Ollama error response:', errorText);
         throw new Error(`LLM request failed: ${response.status} - ${errorText}`);
       }
 
-      const data = await response.json();
-      console.log('🤖 Ollama response:', data);
+      let data;
+      if (useStreaming) {
+        // Handle streaming response
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let fullResponse = '';
+        let tokenCount = 0;
+        
+        console.log('📡 Streaming response...');
+        
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n').filter(line => line.trim());
+          
+          for (const line of lines) {
+            try {
+              const json = JSON.parse(line);
+              if (json.response) {
+                fullResponse += json.response;
+                tokenCount++;
+                if (tokenCount % 10 === 0) {
+                  console.log(`📝 Generated ${tokenCount} tokens... (${fullResponse.length} chars)`);
+                }
+              }
+            } catch (e) {
+              // Skip invalid JSON lines
+            }
+          }
+        }
+        
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+        console.log(`✅ Ollama completed in ${elapsed} seconds (${tokenCount} tokens)`);
+        
+        data = { response: fullResponse };
+      } else {
+        // Handle non-streaming response
+        data = await response.json();
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+        console.log(`✅ Ollama responded in ${elapsed} seconds`);
+      }
+      
       console.log('🤖 Response text length:', data.response?.length);
       console.log('🤖 Response preview:', data.response?.substring(0, 200));
       
@@ -1105,6 +1157,163 @@ Generate the complete scraper code now:`;
     return code;
   }
 
+  // Build the generation prompt for size measurement (mirrors generateScraperScript)
+  buildGenerationPrompt(scraperConfig, analysisContext, template, options = {}) {
+    const { fieldAnalysis, stepAnalysis, requiredTools } = analysisContext;
+    const { usePuppeteer = false, reason = '' } = options;
+    
+    const hasAIFields = scraperConfig.aiFields && Object.values(scraperConfig.aiFields).some(f => f.enabled);
+    const targetUrl = scraperConfig.fields['step1-calendar_url'] || 
+                     scraperConfig.fields['step1-court_url'] || 
+                     scraperConfig.fields['step1-listing_url'] ||
+                     scraperConfig.fields['step1-agenda_url'];
+
+    const fieldGroups = {};
+    Object.entries(scraperConfig.fields)
+      .filter(([id]) => !id.startsWith('step1-'))
+      .forEach(([id, selector]) => {
+        const step = id.split('-')[0];
+        if (!fieldGroups[step]) fieldGroups[step] = [];
+        
+        let extractType = 'text';
+        if (id.includes('url') || id.includes('link')) extractType = 'href';
+        else if (id.includes('date')) extractType = 'text-parsed-date';
+        else if (id.includes('time')) extractType = 'text-parsed-time';
+        else if (id.includes('container')) extractType = 'multiple';
+        
+        const aiConfig = scraperConfig.aiFields?.[id];
+        const aiPrompt = aiConfig?.enabled ? aiConfig.prompt : null;
+        const aiModel = aiConfig?.enabled ? (aiConfig.model || null) : null;
+        const aiContexts = aiConfig?.enabled ? aiConfig.contexts : null;
+        
+        fieldGroups[step].push({ id, selector, extractType, aiPrompt, aiModel, aiContexts });
+      });
+
+    const fieldsDescription = Object.entries(fieldGroups)
+      .map(([step, fields]) => {
+        return `${step}:\n${fields.map(f => {
+          let desc = `  - ${f.id}: selector="${f.selector}" extract=${f.extractType}`;
+          if (f.aiPrompt) {
+            desc += ` AI_ANALYZE="${f.aiPrompt}"`;
+            if (f.aiModel) desc += ` AI_MODEL="${f.aiModel}"`;
+            if (f.aiContexts && f.aiContexts.length > 0) desc += ` AI_CONTEXTS=${JSON.stringify(f.aiContexts)}`;
+          }
+          return desc;
+        }).join('\n')}`;
+      })
+      .join('\n\n');
+
+    // Get RAG context
+    let ragContext = null;
+    if (this.enhancedMemory && this.enhancedMemory.encoderReady) {
+      try {
+        ragContext = this.enhancedMemory.getGenerationContextSync?.(scraperConfig) || null;
+      } catch (error) {
+        // Silent fail for measurement
+      }
+    }
+    
+    let contextGuidance = '';
+    if (this.selectedContexts && this.selectedContexts.length > 0 && window.SCRAPER_CONTEXTS) {
+      contextGuidance = '\n\n=== PROVEN PATTERNS & TACTICS ===\n';
+      for (const contextKey of this.selectedContexts) {
+        const ctx = window.SCRAPER_CONTEXTS[contextKey];
+        if (ctx) contextGuidance += `\n${ctx.content}\n`;
+      }
+      contextGuidance += '\n=== END PATTERNS ===\n\n';
+    }
+
+    // Build full prompt (simplified version for measurement)
+    return `Generate a Node.js data extraction script.
+
+SCRAPER: ${scraperConfig.name}
+TARGET URL: ${targetUrl || 'url parameter'}
+PACKAGES: ${usePuppeteer ? 'puppeteer' : 'cheerio, axios'}${hasAIFields ? ', node-fetch' : ''}
+${usePuppeteer ? `\nREQUIRES PUPPETEER: ${reason}` : ''}
+
+PAGE STRUCTURE ANALYSIS:
+- Framework: ${analysisContext.pageStructure?.framework || 'None'}
+- HTML Size: ${analysisContext.pageStructure?.htmlLength || 'Unknown'} bytes
+- Body Content: ${analysisContext.pageStructure?.bodyLength || 'Unknown'} bytes
+${analysisContext.pageStructure?.commonIds?.length ? `- Relevant IDs: ${analysisContext.pageStructure.commonIds.join(', ')}` : ''}
+${analysisContext.pageStructure?.commonClasses?.length ? `- Relevant Classes: ${analysisContext.pageStructure.commonClasses.join(', ')}` : ''}
+
+${this.formatRAGContext(ragContext)}${contextGuidance}
+
+FIELDS TO EXTRACT:
+${fieldsDescription}
+
+CRITICAL REQUIREMENTS:
+1. Use the TARGET URL above - hardcode it or use as default parameter
+2. ${usePuppeteer ? 'Use Puppeteer to render JavaScript, wait 3-5 seconds for content' : 'Use axios to fetch HTML'}
+3. Look at PAGE STRUCTURE ANALYSIS above to find IDs/classes that match field descriptions
+4. Extract ACTUAL VALUES not HTML
+5. FOR AI_ANALYZE fields: After extracting content, call analyzeWithAI(content, prompt, model, contexts)
+6. FALLBACK BEHAVIOR: If exact selector fails, try alternatives
+7. Handle missing elements gracefully (return null with note, not crash)
+8. Return format: { success: true, data: { fieldId: value, ... }, metadata: { scrapedAt, url, fieldsFound: X, notes: [] } }
+9. Add notes to metadata.notes for each fallback/issue
+10. NEVER use eval(), Function(), or any dynamic code execution
+11. Count ONLY non-null fields in metadata.fieldsFound
+12. If NO fields are found, log detailed debugging info
+
+${usePuppeteer ? 'PUPPETEER EXAMPLE' : 'CHEERIO EXAMPLE'}
+
+CRITICAL OUTPUT INSTRUCTIONS:
+Your response MUST follow this EXACT format...`;
+  }
+
+  // Check if prompt will fit in GPU without CPU fallback
+  async checkGPUViability(promptLength, modelName = 'qwen2.5-coder:14b') {
+    const estimatedTokens = Math.ceil(promptLength / 3.3);
+    const responseTokens = 2000; // Expected response size
+    const totalTokens = estimatedTokens + responseTokens;
+    
+    // GPU capacity thresholds (empirically determined for 16GB VRAM)
+    // Based on testing: 2048=6% CPU, 6144=8% CPU, 8192=19% CPU
+    const GPU_SAFE_LIMITS = {
+      'qwen2.5-coder:14b': 6144,   // 8% CPU (acceptable)
+      'qwen2.5-coder:7b': 8192,    // Should be better
+      'deepseek-coder:6.7b': 12000, // Much smaller model
+      'qwen2.5-coder:32b': 1024    // Won't fit in 16GB
+    };
+    
+    const safeLimit = GPU_SAFE_LIMITS[modelName] || 2048;
+    const willUseCPU = totalTokens > safeLimit;
+    const cpuPercentage = willUseCPU ? Math.round((totalTokens - safeLimit) / totalTokens * 100) : 0;
+    
+    return {
+      estimatedTokens,
+      responseTokens,
+      totalTokens,
+      safeLimit,
+      willUseCPU,
+      cpuPercentage,
+      canCompress: promptLength > 8000 // Only compress if prompt is large enough
+    };
+  }
+
+  // Compress prompt using AI to remove non-essential content
+  async compressPrompt(originalPrompt, targetReduction = 0.3) {
+    const compressionPrompt = `Compress the following prompt by ${Math.round(targetReduction * 100)}% while preserving ALL critical information:
+- Keep all field names, URLs, and technical requirements
+- Keep code examples and patterns
+- Remove verbose explanations and repetitive instructions
+- Keep the output format requirements
+
+Original prompt:
+${originalPrompt}
+
+Return ONLY the compressed prompt, no explanations.`;
+
+    const compressed = await this.queryOllama(compressionPrompt, {
+      temperature: 0.3,
+      max_tokens: Math.ceil(originalPrompt.length * (1 - targetReduction) / 4)
+    });
+    
+    return compressed.trim();
+  }
+
   // Master orchestrator: Run full AI analysis pipeline
   async generateScraperWithAI(scraperConfig, template, progressCallback = null, options = {}) {
     const updateProgress = (message) => {
@@ -1165,7 +1374,15 @@ Generate the complete scraper code now:`;
       : { framework: 'Unknown', htmlLength: 0, bodyLength: 0, needsPuppeteer: false };
     updateProgress(`📊 Page analysis: ${pageStructure.framework || 'Static HTML'}, ${pageStructure.htmlLength} bytes`);
     
-    if (pageStructure.needsPuppeteer && !usePuppeteer) {
+    // Auto-detect if Puppeteer is needed (unless explicitly specified)
+    let finalUsePuppeteer = usePuppeteer;
+    let finalReason = reason;
+    
+    if (!options.hasOwnProperty('usePuppeteer') && pageStructure.needsPuppeteer) {
+      finalUsePuppeteer = true;
+      finalReason = `Page requires JavaScript (${pageStructure.framework} detected)`;
+      updateProgress(`🎭 Auto-detected: ${finalReason}`);
+    } else if (pageStructure.needsPuppeteer && !usePuppeteer) {
       updateProgress(`⚠️ Page appears to need Puppeteer (${pageStructure.framework} detected)`);
     }
     
@@ -1180,8 +1397,62 @@ Generate the complete scraper code now:`;
     analysisContext.contextTemplate = contextTemplate;
     
     updateProgress('✍️ Generating initial script with AI...');
-    if (usePuppeteer) {
-      updateProgress(`🎭 Using Puppeteer mode: ${reason}`);
+    if (finalUsePuppeteer) {
+      updateProgress(`🎭 Using Puppeteer mode: ${finalReason}`);
+    }
+    
+    // ⚡ GPU VIABILITY PRE-CHECK
+    updateProgress('🔍 Checking GPU compatibility...');
+    
+    // Build the full prompt to measure its size
+    const testPrompt = this.buildGenerationPrompt(scraperConfig, analysisContext, template, { 
+      usePuppeteer: finalUsePuppeteer, 
+      reason: finalReason 
+    });
+    
+    const viability = await this.checkGPUViability(testPrompt.length, this.model);
+    updateProgress(`📊 Prompt: ${viability.estimatedTokens} tokens, Response: ${viability.responseTokens} tokens, Total: ${viability.totalTokens} tokens`);
+    updateProgress(`💾 GPU safe limit: ${viability.safeLimit} tokens (model: ${this.model})`);
+    
+    if (viability.willUseCPU) {
+      updateProgress(`⚠️ WARNING: This prompt will cause ${viability.cpuPercentage}% CPU usage!`);
+      updateProgress(`🚫 ANY CPU usage is considered a failure. Generation cannot proceed.`);
+      
+      if (viability.canCompress) {
+        updateProgress(`🤔 Attempting AI-powered prompt compression...`);
+        
+        // Calculate how much we need to reduce
+        const targetTokens = Math.floor(viability.safeLimit * 0.7); // 70% of safe limit for headroom
+        const reductionNeeded = 1 - (targetTokens / viability.estimatedTokens);
+        
+        updateProgress(`📉 Target reduction: ${Math.round(reductionNeeded * 100)}% (from ${viability.estimatedTokens} to ${targetTokens} tokens)`);
+        
+        const compressedPrompt = await this.compressPrompt(testPrompt, reductionNeeded);
+        const newViability = await this.checkGPUViability(compressedPrompt.length, this.model);
+        
+        updateProgress(`✅ Compressed: ${newViability.estimatedTokens} tokens (total: ${newViability.totalTokens})`);
+        
+        if (newViability.willUseCPU) {
+          updateProgress(`❌ FAILURE: Even after compression, ${newViability.cpuPercentage}% CPU`);
+          updateProgress(`💡 Suggestions:`);
+          updateProgress(`   • Use deepseek-coder:6.7b (8192 token limit)`);
+          updateProgress(`   • Reduce number of fields`);
+          updateProgress(`   • Disable RAG contexts`);
+          throw new Error(`Cannot achieve 0% CPU: ${newViability.totalTokens} tokens exceeds ${newViability.safeLimit} token limit`);
+        }
+        
+        updateProgress(`✅ SUCCESS: Compressed prompt achieves 0% CPU`);
+        // Store compressed prompt - will be used in generateScraperScript
+        analysisContext.compressedPromptOverride = compressedPrompt;
+      } else {
+        updateProgress(`❌ Prompt too small to compress effectively (${testPrompt.length} chars)`);
+        updateProgress(`💡 Suggestions:`);
+        updateProgress(`   • Use smaller model: deepseek-coder:6.7b`);
+        updateProgress(`   • Reduce number of fields in scraper`);
+        throw new Error(`Cannot generate scraper: ${viability.totalTokens} tokens exceeds ${viability.safeLimit} token GPU limit. CPU fallback forbidden.`);
+      }
+    } else {
+      updateProgress(`✅ GPU check passed: Will use 100% GPU (0% CPU)`);
     }
     
     let script;
@@ -1192,7 +1463,9 @@ Generate the complete scraper code now:`;
       scriptGenerationAttempts++;
       
       try {
-        const rawScript = await this.generateScraperScript(scraperConfig, analysisContext, template, options);
+        // Pass the final Puppeteer decision to generation
+        const generationOptions = { ...options, usePuppeteer: finalUsePuppeteer, reason: finalReason };
+        const rawScript = await this.generateScraperScript(scraperConfig, analysisContext, template, generationOptions);
         
         // Store for potential partial save
         window.lastGeneratedScript = rawScript;
