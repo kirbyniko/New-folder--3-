@@ -312,9 +312,7 @@ class AgentStudio {
       } else {
         // Standard streaming mode
       // Stream response
-      const assistantMessageEl = this.addMessage('assistant', '');
-      const contentEl = assistantMessageEl.querySelector('.message-content');
-      const assistantMessageEl = this.addMessage('assistant', '');
+      const assistantMessageEl = this.addMessage('assistant', '<div class="loading-dots"><span>●</span><span>●</span><span>●</span></div>');
       const contentEl = assistantMessageEl.querySelector('.message-content');
       
       const response = await fetch('http://localhost:11434/api/generate', {
@@ -333,6 +331,7 @@ class AgentStudio {
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
+      let tokenCount = 0;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -346,6 +345,13 @@ class AgentStudio {
             const data = JSON.parse(line);
             if (data.response) {
               fullResponse += data.response;
+              tokenCount++;
+              
+              // Update status every 10 tokens
+              if (tokenCount % 10 === 0) {
+                this.updateStatus(`Generating... (${tokenCount} tokens)`, 'generating');
+              }
+              
               contentEl.innerHTML = this.formatMessage(fullResponse);
               this.scrollToBottom();
             }
@@ -458,6 +464,16 @@ class AgentStudio {
     document.getElementById('status-text').textContent = text;
     const indicator = document.getElementById('status-indicator');
     indicator.className = `status-indicator status-${state}`;
+    
+    // Add visual feedback to input status
+    const inputStatus = document.querySelector('.input-status');
+    if (inputStatus) {
+      if (state === 'generating') {
+        inputStatus.classList.add('generating');
+      } else {
+        inputStatus.classList.remove('generating');
+      }
+    }
   }
 
   updateStats() {
