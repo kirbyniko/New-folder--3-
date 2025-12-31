@@ -1278,55 +1278,41 @@ Generate the complete scraper code now:`;
       errorTypeHint = '\n\nIMPORTANT: This is a RUNTIME ERROR. The code executes but crashes. Focus on:\n- Undefined variables or missing imports\n- Null/undefined checks\n- Incorrect method calls';
     }
     
-    const prompt = `You are a debugging expert. Analyze this web scraper failure:
-
-SCRIPT:
-\`\`\`javascript
-${script.substring(0, 1500)}
-\`\`\`
-
-TEST RESULT:
-- Success: ${testResult.success}
-- Fields extracted: ${testResult.fieldsExtracted}
-- Error: ${testResult.error || 'None'}
-${testResult.stack ? `- Stack trace: ${testResult.stack.substring(0, 300)}` : ''}
-${errorTypeHint}
-
-EXPECTED FIELDS (from config):
-${Object.keys(scraperConfig.fields).filter(k => !k.startsWith('step1-')).slice(0, 10).join(', ')}
-${knowledgeContext}
-
-DIAGNOSIS TASK:
-Identify the TOP 3 most likely problems:
-1. Syntax errors (missing punctuation, malformed code)?
-2. Wrong selectors/extraction logic?
-3. Module format issues?
-4. Runtime errors (undefined variables)?
-5. Other issues?
-
-Respond with ONLY a JSON object:
-{
-  "problems": ["problem 1", "problem 2", "problem 3"],
-  "rootCause": "most likely root cause",
-  "recommendation": "specific fix to apply"
-}`;
-
-    const response = await this.queryLLM(prompt, { temperature: 0.3, max_tokens: 500 });
+    // Quick heuristic-based diagnosis (faster than LLM analysis)
+    let rootCause = 'Unknown issue';
+    let problems = [];
+    let recommendation = 'Check selectors and page structure';
     
-    try {
-      // Try to parse JSON from response
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
+    if (isSyntaxError) {
+      rootCause = 'Syntax error in generated code';
+      problems = ['Code has syntax errors', 'Cannot be parsed by Node.js', 'Missing brackets or parentheses'];
+      recommendation = 'Regenerate with proper syntax';
+    } else if (isRuntimeError) {
+      rootCause = 'Runtime error - undefined variable or missing declaration';
+      problems = ['Variable not defined', 'Missing import or declaration', 'Incorrect variable reference'];
+      recommendation = 'Add missing declarations and imports';
+    } else if (testResult.fieldsExtracted === 0) {
+      rootCause = 'Selectors not finding elements on page';
+      problems = ['Wrong CSS selectors', 'Page structure different than expected', 'Elements may be loaded by JavaScript'];
+      recommendation = 'Update selectors to match actual page structure';
+    } else {
+      rootCause = 'Incomplete data extraction';
+      problems = ['Some fields not extracted', 'Partial success', 'Missing fields in output'];
+      recommendation = 'Add extraction for missing fields';
+    }
+    
+    // Add knowledge context if available
+    if (relevantContext?.similarFailures?.length > 0) {
+      const pastError = relevantContext.similarFailures[0];
+      if (pastError.rootCause) {
+        problems.unshift(`Past similar error: ${pastError.rootCause}`);
       }
-    } catch (e) {
-      console.warn('Failed to parse diagnosis JSON, using raw response');
     }
     
     return {
-      problems: ['Unknown issue'],
-      rootCause: response.substring(0, 200),
-      recommendation: 'Regenerate with clearer instructions'
+      problems: problems.slice(0, 3),
+      rootCause,
+      recommendation
     };
   }
   
