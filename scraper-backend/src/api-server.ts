@@ -191,20 +191,17 @@ initDatabase();
  */
 type Handler = (req: http.IncomingMessage, res: http.ServerResponse, body: any) => Promise<void>;
 
-const handlers: Record<string, Record<string, Handler>> = {
+const handlers: Record<string, Handler> = {
   
   // Execute scraper script
-  '/api/execute': {
-    'POST': async (req, res, body) => {
-      const result = await executeScript(body.scriptCode, body.targetUrl);
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(result));
-    }
+  '/api/execute': async (req, res, body) => {
+    const result = await executeScript(body.scriptCode, body.targetUrl);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(result));
   },
   
-  // Save scraper config
-  '/api/scrapers': {
-    'POST': async (req, res, body) => {
+  // Save scraper config  
+  'POST /api/scrapers': async (req, res, body) => {
       try {
         const { name, url, templateName, fields, aiFields, scriptCode, testResult } = body;
         
@@ -224,12 +221,10 @@ const handlers: Record<string, Record<string, Handler>> = {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: false, error: error.message }));
       }
-    }
   },
   
   // Update scraper
-  '/api/scrapers/:id': {
-    'PUT': async (req, res, body) => {
+  'PUT /api/scrapers/:id': async (req, res, body) => {
       try {
         const url = new URL(req.url!, `http://${req.headers.host}`);
         const id = url.pathname.split('/').pop();
@@ -249,12 +244,10 @@ const handlers: Record<string, Record<string, Handler>> = {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: false, error: error.message }));
       }
-    }
   },
   
   // List all scrapers
-  '/api/scrapers/list': {
-    'GET': async (req, res, body) => {
+  'GET /api/scrapers/list': async (req, res, body) => {
       try {
         const result = await pool.query(`
           SELECT id, name, url, template_name, fields, ai_fields, created_at, updated_at
@@ -289,8 +282,8 @@ const handlers: Record<string, Record<string, Handler>> = {
   },
   
   // Templates endpoint
-  '/api/templates': {
-    'GET': async (req, res, body) => {
+  '/api/templates': async (req, res, body) => {
+    if (req.method === 'GET') {
       try {
         const result = await pool.query(`
           SELECT id, name, description, steps, storage, created_at
@@ -305,8 +298,7 @@ const handlers: Record<string, Record<string, Handler>> = {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ templates: [] }));
       }
-    },
-    'POST': async (req, res, body) => {
+    } else if (req.method === 'POST') {
       try {
         const { name, description, steps, storage } = body;
         
@@ -329,8 +321,7 @@ const handlers: Record<string, Record<string, Handler>> = {
   },
   
   // Save RAG episode
-  '/api/rag/episode': {
-    'POST': async (req, res, body) => {
+  'POST /api/rag/episode': async (req, res, body) => {
       try {
         const { domain, templateType, url, success, script, testResult, diagnosis, embedding, summary } = body;
         
@@ -346,12 +337,10 @@ const handlers: Record<string, Record<string, Handler>> = {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: false, error: error.message }));
       }
-    }
   },
   
   // Get RAG episodes
-  '/api/rag/episodes': {
-    'GET': async (req, res, body) => {
+  'GET /api/rag/episodes': async (req, res, body) => {
       try {
         const result = await pool.query(`
           SELECT domain, template_type, url, success, test_result, diagnosis, summary, created_at
@@ -367,7 +356,6 @@ const handlers: Record<string, Record<string, Handler>> = {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ episodes: [] }));
       }
-    }
   }
 };
 
@@ -398,25 +386,41 @@ const server = http.createServer(async (req, res) => {
   const path = url.pathname;
   const method = req.method || 'GET';
   
-  // Exact match
-  let handler = handlers[path]?.[method];
+  // Try "METHOD /path" format first
+  let handler = handlers[`${method} ${path}`];
+  
+  // Try plain path (for handlers that handle multiple methods internally)
+  if (!handler) {
+    handler = handlers[path];
+  }
   
   // Pattern match (for :id routes)
   if (!handler) {
-    for (const [pattern, methods] of Object.entries(handlers)) {
-      if (pattern.includes(':id')) {
-        const regex = new RegExp('^' + pattern.replace(':id', '\\d+') + '$');
+    for (const [pattern, h] of Object.entries(handlers)) {
+      const cleanPattern = pattern.replace(/^(GET|POST|PUT|DELETE) /, '');
+      if (cleanPattern.includes(':id')) {
+        const regex = new RegExp('^' + cleanPattern.replace(':id', '\\d+') + '$');
         if (regex.test(path)) {
-          handler = methods[method];
-          break;
+          // Check if pattern includes method prefix
+          if (pattern.startsWith(method + ' ') || !pattern.match(/^(GET|POST|PUT|DELETE) /)) {
+            handler = h;
+            break;
+          }
         }
       }
     }
   }
   
   if (handler) {
-    await handler(req, res, parsedBody);
+    try {
+      await handler(req, res, parsedBody);
+    } catch (error: any) {
+      console.error(`❌ ${method} ${path} error:`, error.message);
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: error.message }));
+    }
   } else {
+    console.warn(`⚠️  ${method} ${path} not found`);
     res.writeHead(404, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'Not found' }));
   }
