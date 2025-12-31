@@ -38,11 +38,19 @@ async function executeScript(req: ExecuteRequest): Promise<ExecuteResponse> {
   const startTime = Date.now();
   const logs: string[] = [];
   
-  // Mock console.log to capture logs
+  // Mock console to capture logs
   const mockConsole = {
     log: (...args: any[]) => {
       logs.push(args.map(a => String(a)).join(' '));
       console.log('[SCRIPT]', ...args);
+    },
+    error: (...args: any[]) => {
+      logs.push('[ERROR] ' + args.map(a => String(a)).join(' '));
+      console.error('[SCRIPT ERROR]', ...args);
+    },
+    warn: (...args: any[]) => {
+      logs.push('[WARN] ' + args.map(a => String(a)).join(' '));
+      console.warn('[SCRIPT WARN]', ...args);
     }
   };
   
