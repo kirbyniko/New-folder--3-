@@ -3536,6 +3536,13 @@ function showScriptModal(script, editable) {
 }
 
 async function generateScriptForScraper(scraper, existingScraperId = null, options = {}) {
+  // Prevent multiple simultaneous generations
+  if (window.generationInProgress) {
+    console.warn('⚠️ Generation already in progress, ignoring click');
+    return;
+  }
+  
+  window.generationInProgress = true;
   let progressLog = null;
   
   try {
@@ -3584,11 +3591,28 @@ async function generateScriptForScraper(scraper, existingScraperId = null, optio
     
     addMessage('⏳ Initializing AI agent...');
     
-    // Use singleton pattern - reuse existing agent instance
+    // Use singleton pattern with mutex to prevent race conditions
+    if (window.agentInitializing) {
+      addMessage('⏳ Agent already initializing, waiting...');
+      // Wait for existing initialization to complete
+      while (window.agentInitializing) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      addMessage('✅ Using existing agent instance');
+    }
+    
     let agent = window.agentInstance;
     if (!agent) {
-      agent = new window.ScraperAIAgent();
-      window.agentInstance = agent;
+      window.agentInitializing = true;
+      try {
+        agent = new window.ScraperAIAgent();
+        window.agentInstance = agent;
+        addMessage('✅ New agent instance created');
+      } finally {
+        window.agentInitializing = false;
+      }
+    } else {
+      addMessage('♻️ Reusing existing agent instance');
     }
     
     // Load selected context guides from localStorage
@@ -3667,6 +3691,9 @@ async function generateScriptForScraper(scraper, existingScraperId = null, optio
       showToast(successMsg);
       // Switch to Scripts tab
       document.querySelector('.tab-button[data-tab="scripts"]').click();
+      
+      // Release generation lock
+      window.generationInProgress = false;
     }, 2000);
     
   } catch (error) {
@@ -3751,7 +3778,10 @@ Then try generating the script again.`;
     }
     
     alert('❌ Error generating script:\\n\\n' + errorMessage);
-    showToast('');
+    showToast('❌ Generation failed');
+  } finally {
+    // Always clear the lock
+    window.generationInProgress = false;
   }
 }
 

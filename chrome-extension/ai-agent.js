@@ -34,9 +34,17 @@ class ScraperAIAgent {
   // Initialize WebGPU inference iframe
   async initWebGPUInference() {
     return new Promise((resolve) => {
+      // CRITICAL: Remove any existing WebGPU iframes first
+      const existingIframes = document.querySelectorAll('iframe[src*="webgpu-inference.html"]');
+      if (existingIframes.length > 0) {
+        console.log(`🧹 Cleaning up ${existingIframes.length} existing WebGPU iframe(s)`);
+        existingIframes.forEach(iframe => iframe.remove());
+      }
+      
       // Create hidden iframe pointing to our webapp
       this.webgpuIframe = document.createElement('iframe');
       this.webgpuIframe.style.display = 'none';
+      this.webgpuIframe.id = 'webgpu-inference-iframe'; // Add ID for easier cleanup
       // Use deployed Cloudflare Pages domain
       this.webgpuIframe.src = 'https://civitracker.pages.dev/webgpu-inference.html';
       
