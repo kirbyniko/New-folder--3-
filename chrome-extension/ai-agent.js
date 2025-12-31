@@ -668,9 +668,9 @@ Generate the complete scraper code now:`;
     // Wait for WebGPU initialization if it's still loading
     if (this.useWebGPU && this.webgpuReady && !this.webgpuInitialized) {
       console.log('⏳ Waiting for WebGPU engine to initialize...');
-      // Wait up to 60 seconds for initialization
+      // Wait up to 5 minutes for initialization (4GB model download takes 2-5 minutes first time)
       const startTime = Date.now();
-      while (!this.webgpuInitialized && (Date.now() - startTime) < 60000) {
+      while (!this.webgpuInitialized && (Date.now() - startTime) < 300000) {
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
       
