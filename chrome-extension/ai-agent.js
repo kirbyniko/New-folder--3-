@@ -846,10 +846,19 @@ Generate the complete scraper code now:`;
         maxTokens: options.max_tokens || 500
       });
       
-      // Warn if using slow model with large prompt
-      if (modelName.includes('32b') && prompt.length > 10000) {
-        console.warn('⚠️ Large prompt + 32B model may take 2-3 minutes. Consider using 14B or 7B for faster generation.');
+      // Show realistic time estimate
+      let estimatedTime = '30-60 seconds';
+      if (modelName.includes('72b') || modelName.includes('236b')) {
+        estimatedTime = '3-5 minutes';
+      } else if (modelName.includes('32b') || modelName.includes('33b')) {
+        estimatedTime = '1-3 minutes';
+      } else if (modelName.includes('14b') || modelName.includes('16b')) {
+        estimatedTime = '45-90 seconds';
       }
+      
+      console.log(`⏳ Generating with ${modelName}...`);
+      console.log(`⏱️  Estimated time: ${estimatedTime}`);
+      console.log('💡 Tip: You can switch to a faster model in Agent Settings if needed');
       
       // Add system prefix for code generation tasks
       let finalPrompt = prompt;
@@ -857,14 +866,19 @@ Generate the complete scraper code now:`;
         finalPrompt = `Task: Generate JavaScript code for web data extraction.\n\n${prompt}`;
       }
       
-      // Create abort controller for timeout
+      // Create abort controller with 10 minute timeout (plenty of time for any model)
       const controller = new AbortController();
       const timeoutId = setTimeout(() => {
         controller.abort();
-        console.error('❌ Ollama request timed out after 3 minutes');
-      }, 180000); // 3 minute timeout
+        console.error('❌ Ollama request timed out after 10 minutes');
+      }, 600000); // 10 minute timeout - very generous
       
-      console.log('⏳ Waiting for Ollama response (this may take 1-3 minutes for large prompts)...');
+      // Progress indicator every 15 seconds
+      const progressInterval = setInterval(() => {
+        console.log('⏳ Still generating... (Ollama is processing)');
+      }, 15000);
+      
+      const startTime = Date.now();
       
       const response = await fetch(this.ollamaEndpoint, {
         method: 'POST',
@@ -886,6 +900,10 @@ Generate the complete scraper code now:`;
       });
       
       clearTimeout(timeoutId);
+      clearInterval(progressInterval);
+      
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+      console.log(`✅ Ollama responded in ${elapsed} seconds`);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -916,11 +934,14 @@ Generate the complete scraper code now:`;
       // Provide helpful error message for timeout
       if (error.name === 'AbortError' || error.message.includes('timed out')) {
         throw new Error(
-          `Ollama request timed out. The ${this.model} model is taking too long.\n\n` +
-          `Try switching to a faster model:\n` +
-          `• qwen2.5-coder:14b (recommended)\n` +
-          `• qwen2.5-coder:7b (fastest)\n\n` +
-          `Change model in Agent Settings tab.`
+          `Request timed out after 10 minutes. This usually means:\n\n` +
+          `1. Ollama is busy with another request\n` +
+          `2. The model is having trouble with this prompt\n` +
+          `3. Your system may need more RAM\n\n` +
+          `You can try:\n` +
+          `• Restart Ollama: Close and reopen\n` +
+          `• Use fewer context guides to reduce prompt size\n` +
+          `• Optional: Switch to a faster model (14B or 7B) in Agent Settings`
         );
       }
       
