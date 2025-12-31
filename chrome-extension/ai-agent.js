@@ -1498,7 +1498,7 @@ Return ONLY the compressed prompt, no explanations.`;
       if (requirementsMatch) {
         const condensedRequirements = `CRITICAL REQUIREMENTS:
 1. Use TARGET URL
-2. ${realPrompt.includes('Puppeteer') ? 'Use Puppeteer, wait 3s for JS' : 'Use axios + cheerio'}
+2. ${realPrompt.includes('Puppeteer') ? 'Use Puppeteer: await page.goto(url, {waitUntil: "networkidle0"}). NO page.waitForTimeout!' : 'Use axios + cheerio'}
 3. Extract ACTUAL VALUES (text/href/dates)
 4. For AI fields: call analyzeWithAI(content, prompt, model, contexts)
 5. Try fallback selectors if exact fails
