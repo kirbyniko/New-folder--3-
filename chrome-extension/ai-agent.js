@@ -839,11 +839,17 @@ Generate the complete scraper code now:`;
   // Query Ollama (fallback)
   async queryOllama(prompt, options = {}) {
     try {
+      const modelName = options.model || this.model;
       console.log('📤 Sending to Ollama:', {
-        model: options.model || this.model,
+        model: modelName,
         promptLength: prompt.length,
         maxTokens: options.max_tokens || 500
       });
+      
+      // Warn if using slow model with large prompt
+      if (modelName.includes('32b') && prompt.length > 10000) {
+        console.warn('⚠️ Large prompt + 32B model may take 2-3 minutes. Consider using 14B or 7B for faster generation.');
+      }
       
       // Add system prefix for code generation tasks
       let finalPrompt = prompt;
@@ -851,14 +857,24 @@ Generate the complete scraper code now:`;
         finalPrompt = `Task: Generate JavaScript code for web data extraction.\n\n${prompt}`;
       }
       
+      // Create abort controller for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+        console.error('❌ Ollama request timed out after 3 minutes');
+      }, 180000); // 3 minute timeout
+      
+      console.log('⏳ Waiting for Ollama response (this may take 1-3 minutes for large prompts)...');
+      
       const response = await fetch(this.ollamaEndpoint, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           'Origin': 'http://127.0.0.1'
         },
+        signal: controller.signal,
         body: JSON.stringify({
-          model: options.model || this.model,
+          model: modelName,
           prompt: finalPrompt,
           stream: false,
           options: {
@@ -868,6 +884,8 @@ Generate the complete scraper code now:`;
           }
         })
       });
+      
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -893,7 +911,19 @@ Generate the complete scraper code now:`;
       
       return data.response.trim();
     } catch (error) {
-      console.error('LLM query failed:', error);
+      console.error('❌ LLM query failed:', error);
+      
+      // Provide helpful error message for timeout
+      if (error.name === 'AbortError' || error.message.includes('timed out')) {
+        throw new Error(
+          `Ollama request timed out. The ${this.model} model is taking too long.\n\n` +
+          `Try switching to a faster model:\n` +
+          `• qwen2.5-coder:14b (recommended)\n` +
+          `• qwen2.5-coder:7b (fastest)\n\n` +
+          `Change model in Agent Settings tab.`
+        );
+      }
+      
       throw error;
     }
   }
