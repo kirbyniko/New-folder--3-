@@ -490,7 +490,15 @@ module.exports = async function scrape(url = '${targetUrl}') {
 };
 \`\`\`
 `}
-Generate the complete scraper code following this pattern. Use EXACT selectors provided. Extract clean values. NO markdown, NO explanations, ONLY code:`;
+
+CRITICAL INSTRUCTIONS:
+1. Output ONLY the JavaScript code - no markdown, no explanations, no notes
+2. Do NOT include ```javascript or ``` markers
+3. Do NOT add "Here's the code:" or any introductory text
+4. Start directly with: const puppeteer = require('puppeteer');
+5. End with the closing }; of module.exports
+
+Generate the complete scraper code now:`;
 
     console.log('📝 Generating script with prompt length:', prompt.length, usePuppeteer ? '(Puppeteer mode)' : '(Cheerio mode)');
 
@@ -554,38 +562,82 @@ Generate the complete scraper code following this pattern. Use EXACT selectors p
 
   // Extract clean JavaScript code from LLM response
   extractCode(response) {
-    // Remove markdown code blocks
-    let code = response.replace(/```(?:javascript|js)?\n?([\s\S]*?)```/g, '$1');
+    let code = response;
     
-    // If no markdown blocks, try to find code between explanatory text
-    if (code === response) {
-      // Look for code starting with common patterns
+    console.log('🧹 Extracting code from response (length:', response.length, ')');
+    
+    // 1. Extract from markdown code blocks first
+    const codeBlockMatch = response.match(/```(?:javascript|js)?\s*\n([\s\S]*?)```/);
+    if (codeBlockMatch) {
+      code = codeBlockMatch[1];
+      console.log('✂️ Extracted from markdown block');
+    }
+    
+    // 2. Remove HTML if present (common LLM mistake)
+    if (code.includes('<!DOCTYPE') || code.includes('<html')) {
+      console.log('⚠️ HTML detected in response, trying to extract code');
+      // Try to find JavaScript after HTML
+      const scriptMatch = code.match(/(?:^|\n)((?:const|module\.exports|async function)[\s\S]*)/);
+      if (scriptMatch) {
+        code = scriptMatch[1];
+      }
+    }
+    
+    // 3. Find code start if no code block
+    if (code === response || code.includes('Here') || code.includes('Note:')) {
       const codePatterns = [
-        /(?:^|\n)(const|module\.exports|async function)/,
-        /(?:^|\n)(\/\/ .*\n)?const puppeteer/,
-        /(?:^|\n)(\/\/ .*\n)?const cheerio/
+        /(?:^|\n)(const puppeteer[\s\S]*)/,
+        /(?:^|\n)(const cheerio[\s\S]*)/,
+        /(?:^|\n)(module\.exports[\s\S]*)/,
+        /(?:^|\n)(async function[\s\S]*)/
       ];
       
       for (const pattern of codePatterns) {
         const match = code.match(pattern);
         if (match) {
-          code = code.substring(match.index);
+          code = match[1];
+          console.log('✂️ Found code start');
           break;
         }
       }
-      
-      // Remove trailing explanatory text after the last closing brace
-      const lastBrace = code.lastIndexOf('};');
-      if (lastBrace !== -1) {
-        code = code.substring(0, lastBrace + 2);
+    }
+    
+    // 4. Remove trailing explanatory text after last complete statement
+    const lastClosing = Math.max(
+      code.lastIndexOf('};'),
+      code.lastIndexOf('});')
+    );
+    
+    if (lastClosing !== -1) {
+      // Find the complete closing
+      const afterClosing = code.substring(lastClosing + 2).trim();
+      // If there's text after the closing that looks like explanation, remove it
+      if (afterClosing && !afterClosing.startsWith('//') && /^[A-Z]/.test(afterClosing)) {
+        code = code.substring(0, lastClosing + 2);
+        console.log('✂️ Removed trailing text');
       }
     }
     
-    // Remove common prefixes
-    code = code.replace(/^(?:Here'?s? (?:the|a) (?:fixed|corrected|updated|complete) (?:code|script|version)?:?\s*\n?)+/i, '');
-    code = code.replace(/^(?:Note:|Important:|Explanation:).*?\n/gim, '');
+    // 5. Clean up common prefixes and suffixes
+    code = code.replace(/^(?:Here'?s? (?:the|a) (?:fixed|corrected|updated|complete) (?:code|script|version)?:?\s*\n?)+/gi, '');
+    code = code.replace(/^(?:Note:|Important:|Explanation:|Fixed version:).*?\n/gim, '');
+    code = code.replace(/^(?:```javascript|```js|```)\n?/gm, '');
+    code = code.replace(/```$/gm, '');
     
-    return code.trim();
+    code = code.trim();
+    
+    // 6. Validate it looks like code
+    const hasCode = code.includes('module.exports') || 
+                   code.includes('const ') || 
+                   code.includes('function ');
+    
+    if (!hasCode) {
+      console.error('⚠️ Extracted code does not contain expected patterns');
+      console.log('First 200 chars:', code.substring(0, 200));
+    }
+    
+    console.log('✅ Code extracted (length:', code.length, ')');
+    return code;
   }
 
   // Master orchestrator: Run full AI analysis pipeline
@@ -649,7 +701,7 @@ Generate the complete scraper code following this pattern. Use EXACT selectors p
     
     // Stage 2: Agentic testing and refinement loop
     updateProgress('🔄 Starting agentic testing loop...');
-    const maxIterations = 3;
+    const maxIterations = 5;  // Increased for complex Puppeteer scripts
     let iteration = 0;
     let testResult = null;
     let lastDiagnosis = null;
@@ -983,12 +1035,20 @@ TARGET URL: ${targetUrl}
 
 CRITICAL FIXES NEEDED:
 1. Fix any SYNTAX ERRORS first - check for missing/extra parentheses, brackets, braces
-2. Ensure selectors are correct - use .first().text().trim() or .first().attr('href')
-3. Check module.exports format: module.exports = async function scrape(url) { ... }
-4. Return proper format: { success: true, data: {...}, metadata: {...} }
-5. Handle missing elements: check if element exists before extracting
+2. Ensure all async functions are properly declared with 'async' keyword
+3. Add try-catch blocks where missing
+4. Ensure selectors are correct - use .first().text().trim() or .first().attr('href')
+5. Check module.exports format: module.exports = async function scrape(url) { ... }
+6. Return proper format: { success: true, data: {...}, metadata: {...} }
 
-Generate the FIXED complete script. NO explanations, NO markdown, ONLY code:`;
+OUTPUT INSTRUCTIONS:
+- Output ONLY valid JavaScript code
+- Do NOT include markdown code blocks (no \`\`\`javascript)
+- Do NOT add explanations, notes, or comments about what you fixed
+- Start directly with: const puppeteer = require('puppeteer');
+- End with the closing }; of module.exports
+
+Generate the FIXED complete script now:`;
 
     return await this.queryLLM(prompt, { temperature: 0.2, max_tokens: 4000 });
   }
