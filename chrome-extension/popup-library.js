@@ -198,7 +198,21 @@ function populateBuildTemplateSelector() {
   });
 }
 
-function loadScraperLibrary() {
+async function loadScraperLibrary() {
+  const syncEnabled = localStorage.getItem('dbSyncEnabled') === 'true';
+  
+  // Try to load from database first if sync is enabled
+  if (syncEnabled) {
+    const dbScrapers = await loadScrapersFromDatabase();
+    if (dbScrapers.length > 0) {
+      scrapers = dbScrapers;
+      localStorage.setItem('scrapers', JSON.stringify(scrapers)); // Backup to localStorage
+      displayTemplates();
+      return;
+    }
+  }
+  
+  // Fallback to localStorage
   const stored = localStorage.getItem('scrapers');
   scrapers = stored ? JSON.parse(stored) : [];
   displayTemplates();
@@ -294,9 +308,65 @@ function displayTemplates() {
   });
 }
 
-function saveScrapers() {
+async function saveScrapers() {
   localStorage.setItem('scrapers', JSON.stringify(scrapers));
   displayTemplates();
+  
+  // Sync to database if enabled
+  const syncEnabled = localStorage.getItem('dbSyncEnabled') === 'true';
+  if (syncEnabled) {
+    await syncScrapersToDatabase();
+  }
+}
+
+// Sync scrapers to PostgreSQL database
+async function syncScrapersToDatabase() {
+  const apiUrl = localStorage.getItem('apiUrl') || 'https://civitracker.pages.dev';
+  
+  try {
+    for (const scraper of scrapers) {
+      if (scraper.id) {
+        // Update existing
+        await fetch(`${apiUrl}/api/scraper-configs`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(scraper)
+        });
+      } else {
+        // Create new
+        const response = await fetch(`${apiUrl}/api/scraper-configs`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(scraper)
+        });
+        const result = await response.json();
+        if (result.success && result.config) {
+          scraper.id = result.config.id; // Store DB ID
+        }
+      }
+    }
+    console.log('✅ Synced scrapers to database');
+  } catch (error) {
+    console.warn('⚠️ Database sync failed:', error);
+  }
+}
+
+// Load scrapers from database
+async function loadScrapersFromDatabase() {
+  const apiUrl = localStorage.getItem('apiUrl') || 'https://civitracker.pages.dev';
+  
+  try {
+    const response = await fetch(`${apiUrl}/api/scraper-configs`);
+    const data = await response.json();
+    
+    if (data.configs && Array.isArray(data.configs)) {
+      return data.configs;
+    }
+  } catch (error) {
+    console.warn('⚠️ Failed to load from database:', error);
+  }
+  
+  return [];
 }
 
 // Export all scrapers to JSON file
