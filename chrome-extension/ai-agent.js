@@ -546,12 +546,23 @@ module.exports = async function scrape(url = '${targetUrl}') {
 \`\`\`
 `}
 
-CRITICAL INSTRUCTIONS:
-1. Output ONLY the JavaScript code - no markdown, no explanations, no notes
-2. Do NOT include triple backticks or code block markers
-3. Do NOT add "Here's the code:" or any introductory text
-4. Start directly with: const puppeteer = require('puppeteer');
-5. End with the closing }; of module.exports
+CRITICAL OUTPUT INSTRUCTIONS (READ CAREFULLY):
+Your response MUST follow this EXACT format:
+
+===CODE_START===
+const puppeteer = require('puppeteer');
+... rest of your code here ...
+module.exports = async function scrape(url) {
+  ... implementation ...
+};
+===CODE_END===
+
+RULES:
+1. Start with ===CODE_START=== on its own line
+2. Then your JavaScript code (NO markdown, NO explanations)
+3. End with ===CODE_END=== on its own line
+4. Do NOT include any text before ===CODE_START===
+5. Do NOT include any text after ===CODE_END===
 
 Generate the complete scraper code now:`;
 
@@ -627,6 +638,20 @@ Generate the complete scraper code now:`;
     let code = response;
     
     console.log('🧹 Extracting code from response (length:', response.length, ')');
+    
+    // 0. Check for special markers first (most reliable)
+    if (response.includes('===CODE_START===') && response.includes('===CODE_END===')) {
+      const startMarker = '===CODE_START===';
+      const endMarker = '===CODE_END===';
+      const startIdx = response.indexOf(startMarker) + startMarker.length;
+      const endIdx = response.indexOf(endMarker);
+      
+      if (startIdx > 0 && endIdx > startIdx) {
+        code = response.substring(startIdx, endIdx).trim();
+        console.log('✅ Extracted from special markers');
+        return code;
+      }
+    }
     
     // 1. Extract from markdown code blocks first
     const codeBlockMatch = response.match(/```(?:javascript|js)?\s*\n([\s\S]*?)```/);
@@ -1203,12 +1228,13 @@ CRITICAL FIXES NEEDED:
 5. Check module.exports format: module.exports = async function scrape(url) { ... }
 6. Return proper format: { success: true, data: {...}, metadata: {...} }
 
-OUTPUT INSTRUCTIONS:
-- Output ONLY valid JavaScript code
-- Do NOT include markdown code blocks (no \`\`\`javascript)
-- Do NOT add explanations, notes, or comments about what you fixed
-- Start directly with: const puppeteer = require('puppeteer');
-- End with the closing }; of module.exports
+OUTPUT FORMAT (EXACT):
+===CODE_START===
+const puppeteer = require('puppeteer');
+... your fixed code here ...
+===CODE_END===
+
+Do NOT add any text before ===CODE_START=== or after ===CODE_END===
 
 Generate the FIXED complete script now:`;
 
