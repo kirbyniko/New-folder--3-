@@ -10,6 +10,7 @@ import http from 'http';
 import { URL } from 'url';
 import * as cheerio from 'cheerio';
 import axios from 'axios';
+import puppeteer from 'puppeteer';
 
 const PORT = process.env.EXECUTE_PORT || 3002;
 
