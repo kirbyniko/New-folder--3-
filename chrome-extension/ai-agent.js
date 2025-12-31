@@ -970,27 +970,71 @@ Generate the complete scraper code now:`;
         
         console.log('📡 Streaming response...');
         
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          
-          const chunk = decoder.decode(value);
-          const lines = chunk.split('\n').filter(line => line.trim());
-          
-          for (const line of lines) {
-            try {
-              const json = JSON.parse(line);
-              if (json.response) {
-                fullResponse += json.response;
-                tokenCount++;
-                if (tokenCount % 10 === 0) {
-                  console.log(`📝 Generated ${tokenCount} tokens... (${fullResponse.length} chars)`);
+        // Monitor CPU usage every 2 seconds during generation
+        const cpuCheckInterval = setInterval(async () => {
+          try {
+            const ollamaStatus = await fetch('http://localhost:11434/api/ps');
+            if (ollamaStatus.ok) {
+              const statusData = await ollamaStatus.json();
+              const currentModel = statusData.models?.find(m => m.name === modelName);
+              
+              if (currentModel?.processor) {
+                const processorMatch = currentModel.processor.match(/(\d+)%\/(\d+)% CPU\/GPU/);
+                if (processorMatch) {
+                  const cpuPercent = parseInt(processorMatch[1]);
+                  const gpuPercent = parseInt(processorMatch[2]);
+                  
+                  console.log(`⚡ Real-time usage: ${cpuPercent}% CPU / ${gpuPercent}% GPU`);
+                  
+                  if (cpuPercent > 0) {
+                    clearInterval(cpuCheckInterval);
+                    reader.cancel();
+                    controller.abort();
+                    throw new Error(
+                      `🚫 CRITICAL FAILURE DURING GENERATION!\n\n` +
+                      `Ollama is using ${cpuPercent}% CPU during generation.\n` +
+                      `0% CPU is required for acceptable performance.\n\n` +
+                      `Current: ${cpuPercent}% CPU / ${gpuPercent}% GPU\n\n` +
+                      `Solutions:\n` +
+                      `1. Switch to deepseek-coder:6.7b (can achieve 0% CPU)\n` +
+                      `2. Reduce context size further\n` +
+                      `3. Upgrade to GPU with more VRAM (24GB+ recommended)`
+                    );
+                  }
                 }
               }
-            } catch (e) {
-              // Skip invalid JSON lines
+            }
+          } catch (error) {
+            // Don't fail generation if CPU check fails
+            console.warn('⚠️ CPU check failed:', error.message);
+          }
+        }, 2000); // Check every 2 seconds
+        
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n').filter(line => line.trim());
+            
+            for (const line of lines) {
+              try {
+                const json = JSON.parse(line);
+                if (json.response) {
+                  fullResponse += json.response;
+                  tokenCount++;
+                  if (tokenCount % 10 === 0) {
+                    console.log(`📝 Generated ${tokenCount} tokens... (${fullResponse.length} chars)`);
+                  }
+                }
+              } catch (e) {
+                // Skip invalid JSON lines
+              }
             }
           }
+        } finally {
+          clearInterval(cpuCheckInterval);
         }
         
         const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
