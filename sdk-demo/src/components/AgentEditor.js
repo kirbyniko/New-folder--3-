@@ -3174,16 +3174,14 @@ Respond with JSON: {"satisfied": true/false, "learning": "what I learned", "next
           const errorDetails = result.error || `HTTP ${response.status}: ${response.statusText}`;
           const errorLogs = result.logs?.join('\n') || '';
           
-          // Special handling for require() error - provide clear guidance
-          if (errorDetails.includes('already been declared') || errorDetails.includes('require')) {
-            const fixedError = `❌ ERROR: You tried to use require() but axios/cheerio are ALREADY AVAILABLE!\n\n` +
-              `DO NOT USE:\n` +
-              `  const axios = require('axios');  // ❌ WRONG\n` +
-              `  const cheerio = require('cheerio');  // ❌ WRONG\n\n` +
-              `CORRECT USAGE:\n` +
-              `  const response = await axios.get(url);  // ✅ axios is pre-loaded\n` +
-              `  const $ = cheerio.load(html);  // ✅ cheerio is pre-loaded\n\n` +
-              `Rewrite your code WITHOUT require() statements.`;
+          // Note: require() is now supported - this should rarely trigger
+          if (errorDetails.includes('already been declared')) {
+            const fixedError = `❌ ERROR: Variable naming conflict detected.\n\n` +
+              `This usually means you're trying to redeclare a variable.\n` +
+              `Both patterns are supported:\n` +
+              `  const axios = require('axios');  // ✅ Works\n` +
+              `  const response = await axios.get(url);  // ✅ Also works\n\n` +
+              `Check your code for duplicate variable declarations.`;
             
             return {
               success: false,
@@ -3583,9 +3581,9 @@ try {
         
         if (this.config.tools.includes('execute_code')) {
           enhancedPrompt += `- execute_code: Run ${this.config.environment.runtime} code. ALWAYS console.log() results!\n`;
-          enhancedPrompt += `  IMPORTANT: axios and cheerio are already available - DO NOT use require()!\n`;
-          enhancedPrompt += `  WRONG: const axios = require('axios'); // Will fail!\n`;
-          enhancedPrompt += `  RIGHT: const response = await axios.get(url); // axios is pre-loaded\n`;
+          enhancedPrompt += `  IMPORTANT: Both axios and cheerio are pre-loaded. Use either pattern:\n`;
+          enhancedPrompt += `  Pattern 1: const axios = require('axios'); // ✅ Works\n`;
+          enhancedPrompt += `  Pattern 2: const response = await axios.get(url); // ✅ Also works\n`;
           enhancedPrompt += `  Example: {"tool": "execute_code", "params": {"code": "const x = 5 + 3; console.log(x);"}}\n`;
         }
         if (this.config.tools.includes('fetch_url')) {
