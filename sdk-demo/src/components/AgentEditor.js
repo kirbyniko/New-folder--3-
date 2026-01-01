@@ -3279,14 +3279,13 @@ Respond with JSON: {"satisfied": true/false, "learning": "what I learned", "next
       
       if (toolName === 'search_web') {
         // Use DuckDuckGo search via execute_code backend
-        const searchCode = `
-const axios = require('axios');
+        const query = params.query;
+        const searchCode = `const axios = require('axios');
 
-async function search() {
+(async () => {
   try {
-    // DuckDuckGo HTML search
-    const query = ${JSON.stringify(params.query)};
-    const url = \`https://html.duckduckgo.com/html/?q=\${encodeURIComponent(query)}\`;
+    const query = ${JSON.stringify(query)};
+    const url = 'https://html.duckduckgo.com/html/?q=' + encodeURIComponent(query);
     
     const response = await axios.get(url, {
       headers: {
@@ -3296,36 +3295,32 @@ async function search() {
     
     const html = response.data;
     
-    // Extract results using regex (simple parsing)
+    // Extract search results
     const results = [];
-    const resultRegex = /<a[^>]+class="result__a"[^>]+href="([^"]+)"[^>]*>([^<]+)</g;
-    const snippetRegex = /<a[^>]+class="result__snippet"[^>]*>([^<]+)</g;
+    const resultRegex = /<a[^>]+class="result__a"[^>]+href="([^"]+)"[^>]*>([^<]+)<\\/a>/g;
     
     let match;
     let count = 0;
     while ((match = resultRegex.exec(html)) && count < 5) {
       const url = match[1];
-      const title = match[2];
+      const title = match[2].replace(/&amp;/g, '&').replace(/&quot;/g, '"');
       results.push({ url, title });
       count++;
     }
     
     if (results.length === 0) {
-      console.log(\`No results found for: \${query}\`);
+      console.log('No results found for: ' + query);
     } else {
-      console.log(\`Found \${results.length} results:\\n\`);
+      console.log('Found ' + results.length + ' results:\\n');
       results.forEach((r, i) => {
-        console.log(\`\${i+1}. \${r.title}\`);
-        console.log(\`   \${r.url}\\n\`);
+        console.log((i+1) + '. ' + r.title);
+        console.log('   ' + r.url + '\\n');
       });
     }
   } catch (error) {
-    console.log(\`Search error: \${error.message}\`);
+    console.log('Search error: ' + error.message);
   }
-}
-
-search();
-`;
+})();`;
 
         try {
           const response = await fetch('http://localhost:3002/execute', {
