@@ -39,6 +39,7 @@ export class AgentEditor {
       ragEpisodes: 3,
       useKnowledge: true,
       contextFiles: [],
+      tools: [],
       enabledGuides: ['basic-selectors', 'error-handling']
     };
   }
@@ -168,6 +169,45 @@ export class AgentEditor {
               <label>
                 <input type="checkbox" id="use-knowledge" ${this.config.useKnowledge ? 'checked' : ''}>
                 Use Knowledge Base
+              </label>
+            </div>
+            
+            <!-- Context Files -->
+            <div class="config-section">
+              <h4>📁 Context Files</h4>
+              <p style="font-size: 12px; color: #6b7280; margin-bottom: 8px;">
+                Upload files to give your agent context and knowledge
+              </p>
+              <input type="file" id="context-file-input" multiple style="display: none;" />
+              <button id="add-context-file" class="btn btn-secondary" style="width: 100%; margin-bottom: 8px;">
+                + Add Context Files
+              </button>
+              <div id="context-files-list" class="context-files-list">
+                ${this.renderContextFilesList()}
+              </div>
+            </div>
+            
+            <!-- Tools -->
+            <div class="config-section">
+              <h4>🛠️ Available Tools</h4>
+              <p style="font-size: 12px; color: #6b7280; margin-bottom: 8px;">
+                Tools the agent can call during execution
+              </p>
+              <label style="display: block; font-size: 13px; margin: 4px 0;">
+                <input type="checkbox" id="tool-execute-code" ${this.config.tools?.includes('execute_code') ? 'checked' : ''}>
+                Execute Code
+              </label>
+              <label style="display: block; font-size: 13px; margin: 4px 0;">
+                <input type="checkbox" id="tool-fetch-url" ${this.config.tools?.includes('fetch_url') ? 'checked' : ''}>
+                Fetch URL
+              </label>
+              <label style="display: block; font-size: 13px; margin: 4px 0;">
+                <input type="checkbox" id="tool-search-web" ${this.config.tools?.includes('search_web') ? 'checked' : ''}>
+                Search Web
+              </label>
+              <label style="display: block; font-size: 13px; margin: 4px 0;">
+                <input type="checkbox" id="tool-read-file" ${this.config.tools?.includes('read_file') ? 'checked' : ''}>
+                Read File
               </label>
             </div>
 
@@ -311,6 +351,34 @@ export class AgentEditor {
     document.getElementById('use-knowledge').addEventListener('change', (e) => {
       this.config.useKnowledge = e.target.checked;
     });
+    
+    // Context Files
+    document.getElementById('add-context-file')?.addEventListener('click', () => {
+      document.getElementById('context-file-input').click();
+    });
+    
+    document.getElementById('context-file-input')?.addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files);
+      for (const file of files) {
+        await this.addContextFile(file);
+      }
+      e.target.value = ''; // Reset input
+      this.renderContextFiles();
+    });
+    
+    // Tools
+    ['execute-code', 'fetch-url', 'search-web', 'read-file'].forEach(tool => {
+      document.getElementById(`tool-${tool}`)?.addEventListener('change', (e) => {
+        const toolName = tool.replace('-', '_');
+        if (e.target.checked) {
+          if (!this.config.tools.includes(toolName)) {
+            this.config.tools.push(toolName);
+          }
+        } else {
+          this.config.tools = this.config.tools.filter(t => t !== toolName);
+        }
+      });
+    });
 
     // Actions
     document.getElementById('save-agent').addEventListener('click', () => this.saveAgent());
@@ -391,6 +459,69 @@ Style:
     riskBadge.textContent = this.tokenEstimate.cpuRisk.toUpperCase();
     riskBadge.className = `badge badge-${this.tokenEstimate.cpuRisk}`;
   }
+  
+  renderContextFilesList() {
+    if (!this.config.contextFiles || this.config.contextFiles.length === 0) {
+      return '<p style="font-size: 12px; color: #9ca3af; text-align: center; padding: 12px;">No context files added</p>';
+    }
+    
+    return this.config.contextFiles.map((file, index) => `
+      <div class="context-file-item" style="display: flex; align-items: center; justify-content: space-between; padding: 8px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 6px;">
+        <div style="flex: 1; min-width: 0;">
+          <div style="font-size: 12px; font-weight: 500; color: #111827; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            📄 ${file.name}
+          </div>
+          <div style="font-size: 11px; color: #6b7280;">
+            ${(file.size / 1024).toFixed(1)} KB
+          </div>
+        </div>
+        <button class="remove-context-file" data-index="${index}" style="padding: 4px 8px; background: #fee; color: #dc2626; border: 1px solid #fecaca; border-radius: 4px; cursor: pointer; font-size: 11px;">
+          ✖
+        </button>
+      </div>
+    `).join('');
+  }
+  
+  renderContextFiles() {
+    const listContainer = document.getElementById('context-files-list');
+    if (listContainer) {
+      listContainer.innerHTML = this.renderContextFilesList();
+      
+      // Attach remove handlers
+      listContainer.querySelectorAll('.remove-context-file').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const index = parseInt(e.target.dataset.index);
+          this.removeContextFile(index);
+        });
+      });
+    }
+  }
+  
+  async addContextFile(file) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.config.contextFiles.push({
+          name: file.name,
+          size: file.size,
+          content: e.target.result,
+          addedAt: new Date().toISOString()
+        });
+        console.log(`✅ Added context file: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`);
+        resolve();
+      };
+      reader.readAsText(file);
+    });
+  }
+  
+  removeContextFile(index) {
+    const file = this.config.contextFiles[index];
+    if (confirm(`Remove "${file.name}" from context?`)) {
+      this.config.contextFiles.splice(index, 1);
+      this.renderContextFiles();
+      console.log(`🗑️ Removed context file: ${file.name}`);
+    }
+  }
 
   switchEditorTab(tab) {
     const monacoContainer = document.getElementById('monaco-editor');
@@ -404,7 +535,15 @@ Style:
       testOutput.style.display = 'none';
       
       if (tab === 'context') {
-        this.editor.setValue('# Context Files\n\n(File manager coming soon)');
+        // Show context files content
+        if (this.config.contextFiles.length === 0) {
+          this.editor.setValue('# Context Files\n\nNo context files added yet. Use the "+ Add Context Files" button to upload files.');
+        } else {
+          const contextContent = this.config.contextFiles.map(file => 
+            `# ${file.name} (${(file.size / 1024).toFixed(1)} KB)\n\n${file.content}\n\n---\n`
+          ).join('\n');
+          this.editor.setValue(contextContent);
+        }
         this.editor.updateOptions({ language: 'markdown', readOnly: true });
       } else {
         this.editor.setValue(this.config.systemPrompt);
