@@ -4,6 +4,25 @@
  * Integrates all components into a unified AI Agent Control Center
  */
 
+// Configure Monaco Editor environment BEFORE any imports
+window.MonacoEnvironment = {
+  getWorkerUrl: function (moduleId, label) {
+    if (label === 'json') {
+      return './monaco-editor/esm/vs/language/json/json.worker.js';
+    }
+    if (label === 'css' || label === 'scss' || label === 'less') {
+      return './monaco-editor/esm/vs/language/css/css.worker.js';
+    }
+    if (label === 'html' || label === 'handlebars' || label === 'razor') {
+      return './monaco-editor/esm/vs/language/html/html.worker.js';
+    }
+    if (label === 'typescript' || label === 'javascript') {
+      return './monaco-editor/esm/vs/language/typescript/ts.worker.js';
+    }
+    return './monaco-editor/esm/vs/editor/editor.worker.js';
+  }
+};
+
 import { UniversalAgent, SystemCapabilityDetector } from 'universal-agent-sdk';
 import { AgentEditor } from './src/components/AgentEditor.js';
 import { ChatInterface } from './src/components/ChatInterface.js';
