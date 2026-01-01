@@ -19,9 +19,9 @@ interface AgentRequest {
 }
 
 const server = http.createServer(async (req, res) => {
-  // CORS headers
+  // CORS headers - allow all origins
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   
   if (req.method === 'OPTIONS') {

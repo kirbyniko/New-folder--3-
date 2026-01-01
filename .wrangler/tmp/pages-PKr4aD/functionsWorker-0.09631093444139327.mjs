@@ -1,7 +1,7 @@
 var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
-// ../AppData/Roaming/npm/node_modules/wrangler/node_modules/unenv/dist/runtime/_internal/utils.mjs
+// ../../AppData/Roaming/npm/node_modules/wrangler/node_modules/unenv/dist/runtime/_internal/utils.mjs
 // @__NO_SIDE_EFFECTS__
 function createNotImplementedError(name) {
   return new Error(`[unenv] ${name} is not implemented yet!`);
@@ -26,7 +26,7 @@ function notImplementedClass(name) {
 }
 __name(notImplementedClass, "notImplementedClass");
 
-// ../AppData/Roaming/npm/node_modules/wrangler/node_modules/unenv/dist/runtime/node/internal/perf_hooks/performance.mjs
+// ../../AppData/Roaming/npm/node_modules/wrangler/node_modules/unenv/dist/runtime/node/internal/perf_hooks/performance.mjs
 var _timeOrigin = globalThis.performance?.timeOrigin ?? Date.now();
 var _performanceNow = globalThis.performance?.now ? globalThis.performance.now.bind(globalThis.performance) : () => Date.now() - _timeOrigin;
 var nodeTiming = {
@@ -264,7 +264,7 @@ var PerformanceObserver = class {
 };
 var performance = globalThis.performance && "addEventListener" in globalThis.performance ? globalThis.performance : new Performance();
 
-// ../AppData/Roaming/npm/node_modules/wrangler/node_modules/@cloudflare/unenv-preset/dist/runtime/polyfill/performance.mjs
+// ../../AppData/Roaming/npm/node_modules/wrangler/node_modules/@cloudflare/unenv-preset/dist/runtime/polyfill/performance.mjs
 globalThis.performance = performance;
 globalThis.Performance = Performance;
 globalThis.PerformanceEntry = PerformanceEntry;
@@ -274,14 +274,14 @@ globalThis.PerformanceObserver = PerformanceObserver;
 globalThis.PerformanceObserverEntryList = PerformanceObserverEntryList;
 globalThis.PerformanceResourceTiming = PerformanceResourceTiming;
 
-// ../AppData/Roaming/npm/node_modules/wrangler/node_modules/unenv/dist/runtime/node/console.mjs
+// ../../AppData/Roaming/npm/node_modules/wrangler/node_modules/unenv/dist/runtime/node/console.mjs
 import { Writable } from "node:stream";
 
-// ../AppData/Roaming/npm/node_modules/wrangler/node_modules/unenv/dist/runtime/mock/noop.mjs
+// ../../AppData/Roaming/npm/node_modules/wrangler/node_modules/unenv/dist/runtime/mock/noop.mjs
 var noop_default = Object.assign(() => {
 }, { __unenv__: true });
 
-// ../AppData/Roaming/npm/node_modules/wrangler/node_modules/unenv/dist/runtime/node/console.mjs
+// ../../AppData/Roaming/npm/node_modules/wrangler/node_modules/unenv/dist/runtime/node/console.mjs
 var _console = globalThis.console;
 var _ignoreErrors = true;
 var _stderr = new Writable();
@@ -313,7 +313,7 @@ var _times = /* @__PURE__ */ new Map();
 var _stdoutErrorHandler = noop_default;
 var _stderrErrorHandler = noop_default;
 
-// ../AppData/Roaming/npm/node_modules/wrangler/node_modules/@cloudflare/unenv-preset/dist/runtime/node/console.mjs
+// ../../AppData/Roaming/npm/node_modules/wrangler/node_modules/@cloudflare/unenv-preset/dist/runtime/node/console.mjs
 var workerdConsole = globalThis["console"];
 var {
   assert,
@@ -354,10 +354,10 @@ Object.assign(workerdConsole, {
 });
 var console_default = workerdConsole;
 
-// ../AppData/Roaming/npm/node_modules/wrangler/_virtual_unenv_global_polyfill-@cloudflare-unenv-preset-node-console
+// ../../AppData/Roaming/npm/node_modules/wrangler/_virtual_unenv_global_polyfill-@cloudflare-unenv-preset-node-console
 globalThis.console = console_default;
 
-// ../AppData/Roaming/npm/node_modules/wrangler/node_modules/unenv/dist/runtime/node/internal/process/hrtime.mjs
+// ../../AppData/Roaming/npm/node_modules/wrangler/node_modules/unenv/dist/runtime/node/internal/process/hrtime.mjs
 var hrtime = /* @__PURE__ */ Object.assign(/* @__PURE__ */ __name(function hrtime2(startTime) {
   const now = Date.now();
   const seconds = Math.trunc(now / 1e3);
@@ -376,10 +376,10 @@ var hrtime = /* @__PURE__ */ Object.assign(/* @__PURE__ */ __name(function hrtim
   return BigInt(Date.now() * 1e6);
 }, "bigint") });
 
-// ../AppData/Roaming/npm/node_modules/wrangler/node_modules/unenv/dist/runtime/node/internal/process/process.mjs
+// ../../AppData/Roaming/npm/node_modules/wrangler/node_modules/unenv/dist/runtime/node/internal/process/process.mjs
 import { EventEmitter } from "node:events";
 
-// ../AppData/Roaming/npm/node_modules/wrangler/node_modules/unenv/dist/runtime/node/internal/tty/read-stream.mjs
+// ../../AppData/Roaming/npm/node_modules/wrangler/node_modules/unenv/dist/runtime/node/internal/tty/read-stream.mjs
 var ReadStream = class {
   static {
     __name(this, "ReadStream");
@@ -396,7 +396,7 @@ var ReadStream = class {
   }
 };
 
-// ../AppData/Roaming/npm/node_modules/wrangler/node_modules/unenv/dist/runtime/node/internal/tty/write-stream.mjs
+// ../../AppData/Roaming/npm/node_modules/wrangler/node_modules/unenv/dist/runtime/node/internal/tty/write-stream.mjs
 var WriteStream = class {
   static {
     __name(this, "WriteStream");
@@ -408,7 +408,7 @@ var WriteStream = class {
   constructor(fd) {
     this.fd = fd;
   }
-  clearLine(dir4, callback) {
+  clearLine(dir3, callback) {
     callback && callback();
     return false;
   }
@@ -424,10 +424,10 @@ var WriteStream = class {
     callback && callback();
     return false;
   }
-  getColorDepth(env3) {
+  getColorDepth(env2) {
     return 1;
   }
-  hasColors(count4, env3) {
+  hasColors(count3, env2) {
     return false;
   }
   getWindowSize() {
@@ -446,11 +446,11 @@ var WriteStream = class {
   }
 };
 
-// ../AppData/Roaming/npm/node_modules/wrangler/node_modules/unenv/dist/runtime/node/internal/process/node-version.mjs
+// ../../AppData/Roaming/npm/node_modules/wrangler/node_modules/unenv/dist/runtime/node/internal/process/node-version.mjs
 var NODE_VERSION = "22.14.0";
 
-// ../AppData/Roaming/npm/node_modules/wrangler/node_modules/unenv/dist/runtime/node/internal/process/process.mjs
-var Process = class _Process2 extends EventEmitter {
+// ../../AppData/Roaming/npm/node_modules/wrangler/node_modules/unenv/dist/runtime/node/internal/process/process.mjs
+var Process = class _Process extends EventEmitter {
   static {
     __name(this, "Process");
   }
@@ -462,7 +462,7 @@ var Process = class _Process2 extends EventEmitter {
     this.env = impl.env;
     this.hrtime = impl.hrtime;
     this.nextTick = impl.nextTick;
-    for (const prop of [...Object.getOwnPropertyNames(_Process2.prototype), ...Object.getOwnPropertyNames(EventEmitter.prototype)]) {
+    for (const prop of [...Object.getOwnPropertyNames(_Process.prototype), ...Object.getOwnPropertyNames(EventEmitter.prototype)]) {
       const value = this[prop];
       if (typeof value === "function") {
         this[prop] = value.bind(this);
@@ -494,8 +494,8 @@ var Process = class _Process2 extends EventEmitter {
   }
   // --- cwd ---
   #cwd = "/";
-  chdir(cwd3) {
-    this.#cwd = cwd3;
+  chdir(cwd2) {
+    this.#cwd = cwd2;
   }
   cwd() {
     return this.#cwd;
@@ -684,7 +684,7 @@ var Process = class _Process2 extends EventEmitter {
   _linkedBinding = void 0;
 };
 
-// ../AppData/Roaming/npm/node_modules/wrangler/node_modules/@cloudflare/unenv-preset/dist/runtime/node/process.mjs
+// ../../AppData/Roaming/npm/node_modules/wrangler/node_modules/@cloudflare/unenv-preset/dist/runtime/node/process.mjs
 var globalProcess = globalThis["process"];
 var getBuiltinModule = globalProcess.getBuiltinModule;
 var workerdProcess = getBuiltinModule("node:process");
@@ -942,959 +942,12 @@ var _process = {
 };
 var process_default = _process;
 
-// ../AppData/Roaming/npm/node_modules/wrangler/_virtual_unenv_global_polyfill-@cloudflare-unenv-preset-node-process
+// ../../AppData/Roaming/npm/node_modules/wrangler/_virtual_unenv_global_polyfill-@cloudflare-unenv-preset-node-process
 globalThis.process = process_default;
 
-// .wrangler/tmp/pages-RMry0X/functionsWorker-0.5200062095372529.mjs
-import { Writable as Writable2 } from "node:stream";
-import { EventEmitter as EventEmitter2 } from "node:events";
-var __defProp2 = Object.defineProperty;
-var __name2 = /* @__PURE__ */ __name((target, value) => __defProp2(target, "name", { value, configurable: true }), "__name");
-// @__NO_SIDE_EFFECTS__
-function createNotImplementedError2(name) {
-  return new Error(`[unenv] ${name} is not implemented yet!`);
-}
-__name(createNotImplementedError2, "createNotImplementedError");
-__name2(createNotImplementedError2, "createNotImplementedError");
-// @__NO_SIDE_EFFECTS__
-function notImplemented2(name) {
-  const fn = /* @__PURE__ */ __name2(() => {
-    throw /* @__PURE__ */ createNotImplementedError2(name);
-  }, "fn");
-  return Object.assign(fn, { __unenv__: true });
-}
-__name(notImplemented2, "notImplemented");
-__name2(notImplemented2, "notImplemented");
-// @__NO_SIDE_EFFECTS__
-function notImplementedClass2(name) {
-  return class {
-    __unenv__ = true;
-    constructor() {
-      throw new Error(`[unenv] ${name} is not implemented yet!`);
-    }
-  };
-}
-__name(notImplementedClass2, "notImplementedClass");
-__name2(notImplementedClass2, "notImplementedClass");
-var _timeOrigin2 = globalThis.performance?.timeOrigin ?? Date.now();
-var _performanceNow2 = globalThis.performance?.now ? globalThis.performance.now.bind(globalThis.performance) : () => Date.now() - _timeOrigin2;
-var nodeTiming2 = {
-  name: "node",
-  entryType: "node",
-  startTime: 0,
-  duration: 0,
-  nodeStart: 0,
-  v8Start: 0,
-  bootstrapComplete: 0,
-  environment: 0,
-  loopStart: 0,
-  loopExit: 0,
-  idleTime: 0,
-  uvMetricsInfo: {
-    loopCount: 0,
-    events: 0,
-    eventsWaiting: 0
-  },
-  detail: void 0,
-  toJSON() {
-    return this;
-  }
-};
-var PerformanceEntry2 = class {
-  static {
-    __name(this, "PerformanceEntry");
-  }
-  static {
-    __name2(this, "PerformanceEntry");
-  }
-  __unenv__ = true;
-  detail;
-  entryType = "event";
-  name;
-  startTime;
-  constructor(name, options) {
-    this.name = name;
-    this.startTime = options?.startTime || _performanceNow2();
-    this.detail = options?.detail;
-  }
-  get duration() {
-    return _performanceNow2() - this.startTime;
-  }
-  toJSON() {
-    return {
-      name: this.name,
-      entryType: this.entryType,
-      startTime: this.startTime,
-      duration: this.duration,
-      detail: this.detail
-    };
-  }
-};
-var PerformanceMark3 = class PerformanceMark22 extends PerformanceEntry2 {
-  static {
-    __name(this, "PerformanceMark2");
-  }
-  static {
-    __name2(this, "PerformanceMark");
-  }
-  entryType = "mark";
-  constructor() {
-    super(...arguments);
-  }
-  get duration() {
-    return 0;
-  }
-};
-var PerformanceMeasure2 = class extends PerformanceEntry2 {
-  static {
-    __name(this, "PerformanceMeasure");
-  }
-  static {
-    __name2(this, "PerformanceMeasure");
-  }
-  entryType = "measure";
-};
-var PerformanceResourceTiming2 = class extends PerformanceEntry2 {
-  static {
-    __name(this, "PerformanceResourceTiming");
-  }
-  static {
-    __name2(this, "PerformanceResourceTiming");
-  }
-  entryType = "resource";
-  serverTiming = [];
-  connectEnd = 0;
-  connectStart = 0;
-  decodedBodySize = 0;
-  domainLookupEnd = 0;
-  domainLookupStart = 0;
-  encodedBodySize = 0;
-  fetchStart = 0;
-  initiatorType = "";
-  name = "";
-  nextHopProtocol = "";
-  redirectEnd = 0;
-  redirectStart = 0;
-  requestStart = 0;
-  responseEnd = 0;
-  responseStart = 0;
-  secureConnectionStart = 0;
-  startTime = 0;
-  transferSize = 0;
-  workerStart = 0;
-  responseStatus = 0;
-};
-var PerformanceObserverEntryList2 = class {
-  static {
-    __name(this, "PerformanceObserverEntryList");
-  }
-  static {
-    __name2(this, "PerformanceObserverEntryList");
-  }
-  __unenv__ = true;
-  getEntries() {
-    return [];
-  }
-  getEntriesByName(_name, _type) {
-    return [];
-  }
-  getEntriesByType(type) {
-    return [];
-  }
-};
-var Performance2 = class {
-  static {
-    __name(this, "Performance");
-  }
-  static {
-    __name2(this, "Performance");
-  }
-  __unenv__ = true;
-  timeOrigin = _timeOrigin2;
-  eventCounts = /* @__PURE__ */ new Map();
-  _entries = [];
-  _resourceTimingBufferSize = 0;
-  navigation = void 0;
-  timing = void 0;
-  timerify(_fn, _options) {
-    throw /* @__PURE__ */ createNotImplementedError2("Performance.timerify");
-  }
-  get nodeTiming() {
-    return nodeTiming2;
-  }
-  eventLoopUtilization() {
-    return {};
-  }
-  markResourceTiming() {
-    return new PerformanceResourceTiming2("");
-  }
-  onresourcetimingbufferfull = null;
-  now() {
-    if (this.timeOrigin === _timeOrigin2) {
-      return _performanceNow2();
-    }
-    return Date.now() - this.timeOrigin;
-  }
-  clearMarks(markName) {
-    this._entries = markName ? this._entries.filter((e) => e.name !== markName) : this._entries.filter((e) => e.entryType !== "mark");
-  }
-  clearMeasures(measureName) {
-    this._entries = measureName ? this._entries.filter((e) => e.name !== measureName) : this._entries.filter((e) => e.entryType !== "measure");
-  }
-  clearResourceTimings() {
-    this._entries = this._entries.filter((e) => e.entryType !== "resource" || e.entryType !== "navigation");
-  }
-  getEntries() {
-    return this._entries;
-  }
-  getEntriesByName(name, type) {
-    return this._entries.filter((e) => e.name === name && (!type || e.entryType === type));
-  }
-  getEntriesByType(type) {
-    return this._entries.filter((e) => e.entryType === type);
-  }
-  mark(name, options) {
-    const entry = new PerformanceMark3(name, options);
-    this._entries.push(entry);
-    return entry;
-  }
-  measure(measureName, startOrMeasureOptions, endMark) {
-    let start;
-    let end;
-    if (typeof startOrMeasureOptions === "string") {
-      start = this.getEntriesByName(startOrMeasureOptions, "mark")[0]?.startTime;
-      end = this.getEntriesByName(endMark, "mark")[0]?.startTime;
-    } else {
-      start = Number.parseFloat(startOrMeasureOptions?.start) || this.now();
-      end = Number.parseFloat(startOrMeasureOptions?.end) || this.now();
-    }
-    const entry = new PerformanceMeasure2(measureName, {
-      startTime: start,
-      detail: {
-        start,
-        end
-      }
-    });
-    this._entries.push(entry);
-    return entry;
-  }
-  setResourceTimingBufferSize(maxSize) {
-    this._resourceTimingBufferSize = maxSize;
-  }
-  addEventListener(type, listener, options) {
-    throw /* @__PURE__ */ createNotImplementedError2("Performance.addEventListener");
-  }
-  removeEventListener(type, listener, options) {
-    throw /* @__PURE__ */ createNotImplementedError2("Performance.removeEventListener");
-  }
-  dispatchEvent(event) {
-    throw /* @__PURE__ */ createNotImplementedError2("Performance.dispatchEvent");
-  }
-  toJSON() {
-    return this;
-  }
-};
-var PerformanceObserver2 = class {
-  static {
-    __name(this, "PerformanceObserver");
-  }
-  static {
-    __name2(this, "PerformanceObserver");
-  }
-  __unenv__ = true;
-  static supportedEntryTypes = [];
-  _callback = null;
-  constructor(callback) {
-    this._callback = callback;
-  }
-  takeRecords() {
-    return [];
-  }
-  disconnect() {
-    throw /* @__PURE__ */ createNotImplementedError2("PerformanceObserver.disconnect");
-  }
-  observe(options) {
-    throw /* @__PURE__ */ createNotImplementedError2("PerformanceObserver.observe");
-  }
-  bind(fn) {
-    return fn;
-  }
-  runInAsyncScope(fn, thisArg, ...args) {
-    return fn.call(thisArg, ...args);
-  }
-  asyncId() {
-    return 0;
-  }
-  triggerAsyncId() {
-    return 0;
-  }
-  emitDestroy() {
-    return this;
-  }
-};
-var performance2 = globalThis.performance && "addEventListener" in globalThis.performance ? globalThis.performance : new Performance2();
-globalThis.performance = performance2;
-globalThis.Performance = Performance2;
-globalThis.PerformanceEntry = PerformanceEntry2;
-globalThis.PerformanceMark = PerformanceMark3;
-globalThis.PerformanceMeasure = PerformanceMeasure2;
-globalThis.PerformanceObserver = PerformanceObserver2;
-globalThis.PerformanceObserverEntryList = PerformanceObserverEntryList2;
-globalThis.PerformanceResourceTiming = PerformanceResourceTiming2;
-var noop_default2 = Object.assign(() => {
-}, { __unenv__: true });
-var _console2 = globalThis.console;
-var _ignoreErrors2 = true;
-var _stderr2 = new Writable2();
-var _stdout2 = new Writable2();
-var log3 = _console2?.log ?? noop_default2;
-var info3 = _console2?.info ?? log3;
-var trace3 = _console2?.trace ?? info3;
-var debug3 = _console2?.debug ?? log3;
-var table3 = _console2?.table ?? log3;
-var error3 = _console2?.error ?? log3;
-var warn3 = _console2?.warn ?? error3;
-var createTask3 = _console2?.createTask ?? /* @__PURE__ */ notImplemented2("console.createTask");
-var clear3 = _console2?.clear ?? noop_default2;
-var count3 = _console2?.count ?? noop_default2;
-var countReset3 = _console2?.countReset ?? noop_default2;
-var dir3 = _console2?.dir ?? noop_default2;
-var dirxml3 = _console2?.dirxml ?? noop_default2;
-var group3 = _console2?.group ?? noop_default2;
-var groupEnd3 = _console2?.groupEnd ?? noop_default2;
-var groupCollapsed3 = _console2?.groupCollapsed ?? noop_default2;
-var profile3 = _console2?.profile ?? noop_default2;
-var profileEnd3 = _console2?.profileEnd ?? noop_default2;
-var time3 = _console2?.time ?? noop_default2;
-var timeEnd3 = _console2?.timeEnd ?? noop_default2;
-var timeLog3 = _console2?.timeLog ?? noop_default2;
-var timeStamp3 = _console2?.timeStamp ?? noop_default2;
-var Console2 = _console2?.Console ?? /* @__PURE__ */ notImplementedClass2("console.Console");
-var _times2 = /* @__PURE__ */ new Map();
-var _stdoutErrorHandler2 = noop_default2;
-var _stderrErrorHandler2 = noop_default2;
-var workerdConsole2 = globalThis["console"];
-var {
-  assert: assert3,
-  clear: clear22,
-  // @ts-expect-error undocumented public API
-  context: context2,
-  count: count22,
-  countReset: countReset22,
-  // @ts-expect-error undocumented public API
-  createTask: createTask22,
-  debug: debug22,
-  dir: dir22,
-  dirxml: dirxml22,
-  error: error22,
-  group: group22,
-  groupCollapsed: groupCollapsed22,
-  groupEnd: groupEnd22,
-  info: info22,
-  log: log22,
-  profile: profile22,
-  profileEnd: profileEnd22,
-  table: table22,
-  time: time22,
-  timeEnd: timeEnd22,
-  timeLog: timeLog22,
-  timeStamp: timeStamp22,
-  trace: trace22,
-  warn: warn22
-} = workerdConsole2;
-Object.assign(workerdConsole2, {
-  Console: Console2,
-  _ignoreErrors: _ignoreErrors2,
-  _stderr: _stderr2,
-  _stderrErrorHandler: _stderrErrorHandler2,
-  _stdout: _stdout2,
-  _stdoutErrorHandler: _stdoutErrorHandler2,
-  _times: _times2
-});
-var console_default2 = workerdConsole2;
-globalThis.console = console_default2;
-var hrtime4 = /* @__PURE__ */ Object.assign(/* @__PURE__ */ __name2(/* @__PURE__ */ __name(function hrtime22(startTime) {
-  const now = Date.now();
-  const seconds = Math.trunc(now / 1e3);
-  const nanos = now % 1e3 * 1e6;
-  if (startTime) {
-    let diffSeconds = seconds - startTime[0];
-    let diffNanos = nanos - startTime[0];
-    if (diffNanos < 0) {
-      diffSeconds = diffSeconds - 1;
-      diffNanos = 1e9 + diffNanos;
-    }
-    return [diffSeconds, diffNanos];
-  }
-  return [seconds, nanos];
-}, "hrtime2"), "hrtime"), { bigint: /* @__PURE__ */ __name2(/* @__PURE__ */ __name(function bigint2() {
-  return BigInt(Date.now() * 1e6);
-}, "bigint"), "bigint") });
-var ReadStream2 = class {
-  static {
-    __name(this, "ReadStream");
-  }
-  static {
-    __name2(this, "ReadStream");
-  }
-  fd;
-  isRaw = false;
-  isTTY = false;
-  constructor(fd) {
-    this.fd = fd;
-  }
-  setRawMode(mode) {
-    this.isRaw = mode;
-    return this;
-  }
-};
-var WriteStream2 = class {
-  static {
-    __name(this, "WriteStream");
-  }
-  static {
-    __name2(this, "WriteStream");
-  }
-  fd;
-  columns = 80;
-  rows = 24;
-  isTTY = false;
-  constructor(fd) {
-    this.fd = fd;
-  }
-  clearLine(dir32, callback) {
-    callback && callback();
-    return false;
-  }
-  clearScreenDown(callback) {
-    callback && callback();
-    return false;
-  }
-  cursorTo(x2, y, callback) {
-    callback && typeof callback === "function" && callback();
-    return false;
-  }
-  moveCursor(dx, dy, callback) {
-    callback && callback();
-    return false;
-  }
-  getColorDepth(env22) {
-    return 1;
-  }
-  hasColors(count32, env22) {
-    return false;
-  }
-  getWindowSize() {
-    return [this.columns, this.rows];
-  }
-  write(str, encoding, cb) {
-    if (str instanceof Uint8Array) {
-      str = new TextDecoder().decode(str);
-    }
-    try {
-      console.log(str);
-    } catch {
-    }
-    cb && typeof cb === "function" && cb();
-    return false;
-  }
-};
-var NODE_VERSION2 = "22.14.0";
-var Process2 = class _Process extends EventEmitter2 {
-  static {
-    __name(this, "_Process");
-  }
-  static {
-    __name2(this, "Process");
-  }
-  env;
-  hrtime;
-  nextTick;
-  constructor(impl) {
-    super();
-    this.env = impl.env;
-    this.hrtime = impl.hrtime;
-    this.nextTick = impl.nextTick;
-    for (const prop of [...Object.getOwnPropertyNames(_Process.prototype), ...Object.getOwnPropertyNames(EventEmitter2.prototype)]) {
-      const value = this[prop];
-      if (typeof value === "function") {
-        this[prop] = value.bind(this);
-      }
-    }
-  }
-  // --- event emitter ---
-  emitWarning(warning, type, code) {
-    console.warn(`${code ? `[${code}] ` : ""}${type ? `${type}: ` : ""}${warning}`);
-  }
-  emit(...args) {
-    return super.emit(...args);
-  }
-  listeners(eventName) {
-    return super.listeners(eventName);
-  }
-  // --- stdio (lazy initializers) ---
-  #stdin;
-  #stdout;
-  #stderr;
-  get stdin() {
-    return this.#stdin ??= new ReadStream2(0);
-  }
-  get stdout() {
-    return this.#stdout ??= new WriteStream2(1);
-  }
-  get stderr() {
-    return this.#stderr ??= new WriteStream2(2);
-  }
-  // --- cwd ---
-  #cwd = "/";
-  chdir(cwd22) {
-    this.#cwd = cwd22;
-  }
-  cwd() {
-    return this.#cwd;
-  }
-  // --- dummy props and getters ---
-  arch = "";
-  platform = "";
-  argv = [];
-  argv0 = "";
-  execArgv = [];
-  execPath = "";
-  title = "";
-  pid = 200;
-  ppid = 100;
-  get version() {
-    return `v${NODE_VERSION2}`;
-  }
-  get versions() {
-    return { node: NODE_VERSION2 };
-  }
-  get allowedNodeEnvironmentFlags() {
-    return /* @__PURE__ */ new Set();
-  }
-  get sourceMapsEnabled() {
-    return false;
-  }
-  get debugPort() {
-    return 0;
-  }
-  get throwDeprecation() {
-    return false;
-  }
-  get traceDeprecation() {
-    return false;
-  }
-  get features() {
-    return {};
-  }
-  get release() {
-    return {};
-  }
-  get connected() {
-    return false;
-  }
-  get config() {
-    return {};
-  }
-  get moduleLoadList() {
-    return [];
-  }
-  constrainedMemory() {
-    return 0;
-  }
-  availableMemory() {
-    return 0;
-  }
-  uptime() {
-    return 0;
-  }
-  resourceUsage() {
-    return {};
-  }
-  // --- noop methods ---
-  ref() {
-  }
-  unref() {
-  }
-  // --- unimplemented methods ---
-  umask() {
-    throw /* @__PURE__ */ createNotImplementedError2("process.umask");
-  }
-  getBuiltinModule() {
-    return void 0;
-  }
-  getActiveResourcesInfo() {
-    throw /* @__PURE__ */ createNotImplementedError2("process.getActiveResourcesInfo");
-  }
-  exit() {
-    throw /* @__PURE__ */ createNotImplementedError2("process.exit");
-  }
-  reallyExit() {
-    throw /* @__PURE__ */ createNotImplementedError2("process.reallyExit");
-  }
-  kill() {
-    throw /* @__PURE__ */ createNotImplementedError2("process.kill");
-  }
-  abort() {
-    throw /* @__PURE__ */ createNotImplementedError2("process.abort");
-  }
-  dlopen() {
-    throw /* @__PURE__ */ createNotImplementedError2("process.dlopen");
-  }
-  setSourceMapsEnabled() {
-    throw /* @__PURE__ */ createNotImplementedError2("process.setSourceMapsEnabled");
-  }
-  loadEnvFile() {
-    throw /* @__PURE__ */ createNotImplementedError2("process.loadEnvFile");
-  }
-  disconnect() {
-    throw /* @__PURE__ */ createNotImplementedError2("process.disconnect");
-  }
-  cpuUsage() {
-    throw /* @__PURE__ */ createNotImplementedError2("process.cpuUsage");
-  }
-  setUncaughtExceptionCaptureCallback() {
-    throw /* @__PURE__ */ createNotImplementedError2("process.setUncaughtExceptionCaptureCallback");
-  }
-  hasUncaughtExceptionCaptureCallback() {
-    throw /* @__PURE__ */ createNotImplementedError2("process.hasUncaughtExceptionCaptureCallback");
-  }
-  initgroups() {
-    throw /* @__PURE__ */ createNotImplementedError2("process.initgroups");
-  }
-  openStdin() {
-    throw /* @__PURE__ */ createNotImplementedError2("process.openStdin");
-  }
-  assert() {
-    throw /* @__PURE__ */ createNotImplementedError2("process.assert");
-  }
-  binding() {
-    throw /* @__PURE__ */ createNotImplementedError2("process.binding");
-  }
-  // --- attached interfaces ---
-  permission = { has: /* @__PURE__ */ notImplemented2("process.permission.has") };
-  report = {
-    directory: "",
-    filename: "",
-    signal: "SIGUSR2",
-    compact: false,
-    reportOnFatalError: false,
-    reportOnSignal: false,
-    reportOnUncaughtException: false,
-    getReport: /* @__PURE__ */ notImplemented2("process.report.getReport"),
-    writeReport: /* @__PURE__ */ notImplemented2("process.report.writeReport")
-  };
-  finalization = {
-    register: /* @__PURE__ */ notImplemented2("process.finalization.register"),
-    unregister: /* @__PURE__ */ notImplemented2("process.finalization.unregister"),
-    registerBeforeExit: /* @__PURE__ */ notImplemented2("process.finalization.registerBeforeExit")
-  };
-  memoryUsage = Object.assign(() => ({
-    arrayBuffers: 0,
-    rss: 0,
-    external: 0,
-    heapTotal: 0,
-    heapUsed: 0
-  }), { rss: /* @__PURE__ */ __name2(() => 0, "rss") });
-  // --- undefined props ---
-  mainModule = void 0;
-  domain = void 0;
-  // optional
-  send = void 0;
-  exitCode = void 0;
-  channel = void 0;
-  getegid = void 0;
-  geteuid = void 0;
-  getgid = void 0;
-  getgroups = void 0;
-  getuid = void 0;
-  setegid = void 0;
-  seteuid = void 0;
-  setgid = void 0;
-  setgroups = void 0;
-  setuid = void 0;
-  // internals
-  _events = void 0;
-  _eventsCount = void 0;
-  _exiting = void 0;
-  _maxListeners = void 0;
-  _debugEnd = void 0;
-  _debugProcess = void 0;
-  _fatalException = void 0;
-  _getActiveHandles = void 0;
-  _getActiveRequests = void 0;
-  _kill = void 0;
-  _preload_modules = void 0;
-  _rawDebug = void 0;
-  _startProfilerIdleNotifier = void 0;
-  _stopProfilerIdleNotifier = void 0;
-  _tickCallback = void 0;
-  _disconnect = void 0;
-  _handleQueue = void 0;
-  _pendingMessage = void 0;
-  _channel = void 0;
-  _send = void 0;
-  _linkedBinding = void 0;
-};
-var globalProcess2 = globalThis["process"];
-var getBuiltinModule2 = globalProcess2.getBuiltinModule;
-var workerdProcess2 = getBuiltinModule2("node:process");
-var isWorkerdProcessV22 = globalThis.Cloudflare.compatibilityFlags.enable_nodejs_process_v2;
-var unenvProcess2 = new Process2({
-  env: globalProcess2.env,
-  // `hrtime` is only available from workerd process v2
-  hrtime: isWorkerdProcessV22 ? workerdProcess2.hrtime : hrtime4,
-  // `nextTick` is available from workerd process v1
-  nextTick: workerdProcess2.nextTick
-});
-var { exit: exit2, features: features2, platform: platform2 } = workerdProcess2;
-var {
-  // Always implemented by workerd
-  env: env2,
-  // Only implemented in workerd v2
-  hrtime: hrtime32,
-  // Always implemented by workerd
-  nextTick: nextTick2
-} = unenvProcess2;
-var {
-  _channel: _channel2,
-  _disconnect: _disconnect2,
-  _events: _events2,
-  _eventsCount: _eventsCount2,
-  _handleQueue: _handleQueue2,
-  _maxListeners: _maxListeners2,
-  _pendingMessage: _pendingMessage2,
-  _send: _send2,
-  assert: assert22,
-  disconnect: disconnect2,
-  mainModule: mainModule2
-} = unenvProcess2;
-var {
-  // @ts-expect-error `_debugEnd` is missing typings
-  _debugEnd: _debugEnd2,
-  // @ts-expect-error `_debugProcess` is missing typings
-  _debugProcess: _debugProcess2,
-  // @ts-expect-error `_exiting` is missing typings
-  _exiting: _exiting2,
-  // @ts-expect-error `_fatalException` is missing typings
-  _fatalException: _fatalException2,
-  // @ts-expect-error `_getActiveHandles` is missing typings
-  _getActiveHandles: _getActiveHandles2,
-  // @ts-expect-error `_getActiveRequests` is missing typings
-  _getActiveRequests: _getActiveRequests2,
-  // @ts-expect-error `_kill` is missing typings
-  _kill: _kill2,
-  // @ts-expect-error `_linkedBinding` is missing typings
-  _linkedBinding: _linkedBinding2,
-  // @ts-expect-error `_preload_modules` is missing typings
-  _preload_modules: _preload_modules2,
-  // @ts-expect-error `_rawDebug` is missing typings
-  _rawDebug: _rawDebug2,
-  // @ts-expect-error `_startProfilerIdleNotifier` is missing typings
-  _startProfilerIdleNotifier: _startProfilerIdleNotifier2,
-  // @ts-expect-error `_stopProfilerIdleNotifier` is missing typings
-  _stopProfilerIdleNotifier: _stopProfilerIdleNotifier2,
-  // @ts-expect-error `_tickCallback` is missing typings
-  _tickCallback: _tickCallback2,
-  abort: abort2,
-  addListener: addListener2,
-  allowedNodeEnvironmentFlags: allowedNodeEnvironmentFlags2,
-  arch: arch2,
-  argv: argv2,
-  argv0: argv02,
-  availableMemory: availableMemory2,
-  // @ts-expect-error `binding` is missing typings
-  binding: binding2,
-  channel: channel2,
-  chdir: chdir2,
-  config: config2,
-  connected: connected2,
-  constrainedMemory: constrainedMemory2,
-  cpuUsage: cpuUsage2,
-  cwd: cwd2,
-  debugPort: debugPort2,
-  dlopen: dlopen2,
-  // @ts-expect-error `domain` is missing typings
-  domain: domain2,
-  emit: emit2,
-  emitWarning: emitWarning2,
-  eventNames: eventNames2,
-  execArgv: execArgv2,
-  execPath: execPath2,
-  exitCode: exitCode2,
-  finalization: finalization2,
-  getActiveResourcesInfo: getActiveResourcesInfo2,
-  getegid: getegid2,
-  geteuid: geteuid2,
-  getgid: getgid2,
-  getgroups: getgroups2,
-  getMaxListeners: getMaxListeners2,
-  getuid: getuid2,
-  hasUncaughtExceptionCaptureCallback: hasUncaughtExceptionCaptureCallback2,
-  // @ts-expect-error `initgroups` is missing typings
-  initgroups: initgroups2,
-  kill: kill2,
-  listenerCount: listenerCount2,
-  listeners: listeners2,
-  loadEnvFile: loadEnvFile2,
-  memoryUsage: memoryUsage2,
-  // @ts-expect-error `moduleLoadList` is missing typings
-  moduleLoadList: moduleLoadList2,
-  off: off2,
-  on: on2,
-  once: once2,
-  // @ts-expect-error `openStdin` is missing typings
-  openStdin: openStdin2,
-  permission: permission2,
-  pid: pid2,
-  ppid: ppid2,
-  prependListener: prependListener2,
-  prependOnceListener: prependOnceListener2,
-  rawListeners: rawListeners2,
-  // @ts-expect-error `reallyExit` is missing typings
-  reallyExit: reallyExit2,
-  ref: ref2,
-  release: release2,
-  removeAllListeners: removeAllListeners2,
-  removeListener: removeListener2,
-  report: report2,
-  resourceUsage: resourceUsage2,
-  send: send2,
-  setegid: setegid2,
-  seteuid: seteuid2,
-  setgid: setgid2,
-  setgroups: setgroups2,
-  setMaxListeners: setMaxListeners2,
-  setSourceMapsEnabled: setSourceMapsEnabled2,
-  setuid: setuid2,
-  setUncaughtExceptionCaptureCallback: setUncaughtExceptionCaptureCallback2,
-  sourceMapsEnabled: sourceMapsEnabled2,
-  stderr: stderr2,
-  stdin: stdin2,
-  stdout: stdout2,
-  throwDeprecation: throwDeprecation2,
-  title: title2,
-  traceDeprecation: traceDeprecation2,
-  umask: umask2,
-  unref: unref2,
-  uptime: uptime2,
-  version: version2,
-  versions: versions2
-} = isWorkerdProcessV22 ? workerdProcess2 : unenvProcess2;
-var _process2 = {
-  abort: abort2,
-  addListener: addListener2,
-  allowedNodeEnvironmentFlags: allowedNodeEnvironmentFlags2,
-  hasUncaughtExceptionCaptureCallback: hasUncaughtExceptionCaptureCallback2,
-  setUncaughtExceptionCaptureCallback: setUncaughtExceptionCaptureCallback2,
-  loadEnvFile: loadEnvFile2,
-  sourceMapsEnabled: sourceMapsEnabled2,
-  arch: arch2,
-  argv: argv2,
-  argv0: argv02,
-  chdir: chdir2,
-  config: config2,
-  connected: connected2,
-  constrainedMemory: constrainedMemory2,
-  availableMemory: availableMemory2,
-  cpuUsage: cpuUsage2,
-  cwd: cwd2,
-  debugPort: debugPort2,
-  dlopen: dlopen2,
-  disconnect: disconnect2,
-  emit: emit2,
-  emitWarning: emitWarning2,
-  env: env2,
-  eventNames: eventNames2,
-  execArgv: execArgv2,
-  execPath: execPath2,
-  exit: exit2,
-  finalization: finalization2,
-  features: features2,
-  getBuiltinModule: getBuiltinModule2,
-  getActiveResourcesInfo: getActiveResourcesInfo2,
-  getMaxListeners: getMaxListeners2,
-  hrtime: hrtime32,
-  kill: kill2,
-  listeners: listeners2,
-  listenerCount: listenerCount2,
-  memoryUsage: memoryUsage2,
-  nextTick: nextTick2,
-  on: on2,
-  off: off2,
-  once: once2,
-  pid: pid2,
-  platform: platform2,
-  ppid: ppid2,
-  prependListener: prependListener2,
-  prependOnceListener: prependOnceListener2,
-  rawListeners: rawListeners2,
-  release: release2,
-  removeAllListeners: removeAllListeners2,
-  removeListener: removeListener2,
-  report: report2,
-  resourceUsage: resourceUsage2,
-  setMaxListeners: setMaxListeners2,
-  setSourceMapsEnabled: setSourceMapsEnabled2,
-  stderr: stderr2,
-  stdin: stdin2,
-  stdout: stdout2,
-  title: title2,
-  throwDeprecation: throwDeprecation2,
-  traceDeprecation: traceDeprecation2,
-  umask: umask2,
-  uptime: uptime2,
-  version: version2,
-  versions: versions2,
-  // @ts-expect-error old API
-  domain: domain2,
-  initgroups: initgroups2,
-  moduleLoadList: moduleLoadList2,
-  reallyExit: reallyExit2,
-  openStdin: openStdin2,
-  assert: assert22,
-  binding: binding2,
-  send: send2,
-  exitCode: exitCode2,
-  channel: channel2,
-  getegid: getegid2,
-  geteuid: geteuid2,
-  getgid: getgid2,
-  getgroups: getgroups2,
-  getuid: getuid2,
-  setegid: setegid2,
-  seteuid: seteuid2,
-  setgid: setgid2,
-  setgroups: setgroups2,
-  setuid: setuid2,
-  permission: permission2,
-  mainModule: mainModule2,
-  _events: _events2,
-  _eventsCount: _eventsCount2,
-  _exiting: _exiting2,
-  _maxListeners: _maxListeners2,
-  _debugEnd: _debugEnd2,
-  _debugProcess: _debugProcess2,
-  _fatalException: _fatalException2,
-  _getActiveHandles: _getActiveHandles2,
-  _getActiveRequests: _getActiveRequests2,
-  _kill: _kill2,
-  _preload_modules: _preload_modules2,
-  _rawDebug: _rawDebug2,
-  _startProfilerIdleNotifier: _startProfilerIdleNotifier2,
-  _stopProfilerIdleNotifier: _stopProfilerIdleNotifier2,
-  _tickCallback: _tickCallback2,
-  _disconnect: _disconnect2,
-  _handleQueue: _handleQueue2,
-  _pendingMessage: _pendingMessage2,
-  _channel: _channel2,
-  _send: _send2,
-  _linkedBinding: _linkedBinding2
-};
-var process_default2 = _process2;
-globalThis.process = process_default2;
-async function onRequest(context22) {
-  const { request, env: env22 } = context22;
+// api/admin-events.ts
+async function onRequest(context2) {
+  const { request, env: env2 } = context2;
   const url = new URL(request.url);
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
@@ -1936,7 +989,7 @@ async function onRequest(context22) {
       query2 += ` ORDER BY (SELECT COUNT(*) FROM event_bills WHERE event_id = e.id) DESC, e.date ASC, e.time ASC LIMIT ?`;
     }
     params.push(limit);
-    const { results: events } = await env22.DB.prepare(query2).bind(...params).all();
+    const { results: events } = await env2.DB.prepare(query2).bind(...params).all();
     if (events.length > 0) {
       const eventIds = events.map((e) => `'${e.id}'`).join(",");
       const billsMap = /* @__PURE__ */ new Map();
@@ -1945,7 +998,7 @@ async function onRequest(context22) {
         billsMap.set(event.id, []);
         tagsMap.set(event.id, []);
       }
-      const { results: allBills } = await env22.DB.prepare(`
+      const { results: allBills } = await env2.DB.prepare(`
         SELECT 
           eb.event_id,
           b.bill_number as number,
@@ -1957,7 +1010,7 @@ async function onRequest(context22) {
         WHERE eb.event_id IN (${eventIds})
         ORDER BY eb.event_id, b.bill_number
       `).all();
-      const { results: allTags } = await env22.DB.prepare(`
+      const { results: allTags } = await env2.DB.prepare(`
         SELECT event_id, tag
         FROM event_tags
         WHERE event_id IN (${eventIds})
@@ -1981,12 +1034,12 @@ async function onRequest(context22) {
     return new Response(JSON.stringify({ events }), {
       headers: corsHeaders
     });
-  } catch (error32) {
-    console.error("Error:", error32);
+  } catch (error3) {
+    console.error("Error:", error3);
     return new Response(JSON.stringify({
       error: "Failed to fetch events",
-      message: error32.message,
-      stack: error32.stack
+      message: error3.message,
+      stack: error3.stack
     }), {
       status: 500,
       headers: corsHeaders
@@ -1994,30 +1047,31 @@ async function onRequest(context22) {
   }
 }
 __name(onRequest, "onRequest");
-__name2(onRequest, "onRequest");
+
+// ../node_modules/@neondatabase/serverless/index.mjs
 var So = Object.create;
 var Ie = Object.defineProperty;
 var Eo = Object.getOwnPropertyDescriptor;
 var Ao = Object.getOwnPropertyNames;
 var Co = Object.getPrototypeOf;
 var _o = Object.prototype.hasOwnProperty;
-var Io = /* @__PURE__ */ __name2((r, e, t) => e in r ? Ie(r, e, { enumerable: true, configurable: true, writable: true, value: t }) : r[e] = t, "Io");
-var a = /* @__PURE__ */ __name2((r, e) => Ie(r, "name", { value: e, configurable: true }), "a");
-var G = /* @__PURE__ */ __name2((r, e) => () => (r && (e = r(r = 0)), e), "G");
-var T = /* @__PURE__ */ __name2((r, e) => () => (e || r((e = { exports: {} }).exports, e), e.exports), "T");
-var ie = /* @__PURE__ */ __name2((r, e) => {
+var Io = /* @__PURE__ */ __name((r, e, t) => e in r ? Ie(r, e, { enumerable: true, configurable: true, writable: true, value: t }) : r[e] = t, "Io");
+var a = /* @__PURE__ */ __name((r, e) => Ie(r, "name", { value: e, configurable: true }), "a");
+var G = /* @__PURE__ */ __name((r, e) => () => (r && (e = r(r = 0)), e), "G");
+var T = /* @__PURE__ */ __name((r, e) => () => (e || r((e = { exports: {} }).exports, e), e.exports), "T");
+var ie = /* @__PURE__ */ __name((r, e) => {
   for (var t in e) Ie(r, t, {
     get: e[t],
     enumerable: true
   });
 }, "ie");
-var Dn = /* @__PURE__ */ __name2((r, e, t, n) => {
-  if (e && typeof e == "object" || typeof e == "function") for (let i of Ao(e)) !_o.call(r, i) && i !== t && Ie(r, i, { get: /* @__PURE__ */ __name2(() => e[i], "get"), enumerable: !(n = Eo(e, i)) || n.enumerable });
+var Dn = /* @__PURE__ */ __name((r, e, t, n) => {
+  if (e && typeof e == "object" || typeof e == "function") for (let i of Ao(e)) !_o.call(r, i) && i !== t && Ie(r, i, { get: /* @__PURE__ */ __name(() => e[i], "get"), enumerable: !(n = Eo(e, i)) || n.enumerable });
   return r;
 }, "Dn");
-var Se = /* @__PURE__ */ __name2((r, e, t) => (t = r != null ? So(Co(r)) : {}, Dn(e || !r || !r.__esModule ? Ie(t, "default", { value: r, enumerable: true }) : t, r)), "Se");
-var O = /* @__PURE__ */ __name2((r) => Dn(Ie({}, "__esModule", { value: true }), r), "O");
-var E = /* @__PURE__ */ __name2((r, e, t) => Io(r, typeof e != "symbol" ? e + "" : e, t), "E");
+var Se = /* @__PURE__ */ __name((r, e, t) => (t = r != null ? So(Co(r)) : {}, Dn(e || !r || !r.__esModule ? Ie(t, "default", { value: r, enumerable: true }) : t, r)), "Se");
+var O = /* @__PURE__ */ __name((r) => Dn(Ie({}, "__esModule", { value: true }), r), "O");
+var E = /* @__PURE__ */ __name((r, e, t) => Io(r, typeof e != "symbol" ? e + "" : e, t), "E");
 var Qn = T((lt) => {
   "use strict";
   p();
@@ -2038,20 +1092,17 @@ var Qn = T((lt) => {
     return [t, n];
   }
   __name(qn, "qn");
-  __name2(qn, "qn");
   a(qn, "getLens");
   function Po(r) {
     var e = qn(r), t = e[0], n = e[1];
     return (t + n) * 3 / 4 - n;
   }
   __name(Po, "Po");
-  __name2(Po, "Po");
   a(Po, "byteLength");
   function Bo(r, e, t) {
     return (e + t) * 3 / 4 - t;
   }
   __name(Bo, "Bo");
-  __name2(Bo, "Bo");
   a(Bo, "_byteLength");
   function Ro(r) {
     var e, t = qn(r), n = t[0], i = t[1], s = new To(Bo(r, n, i)), o = 0, u = i > 0 ? n - 4 : n, c;
@@ -2061,20 +1112,17 @@ var Qn = T((lt) => {
     )] << 2 | te[r.charCodeAt(c + 1)] >> 4, s[o++] = e & 255), i === 1 && (e = te[r.charCodeAt(c)] << 10 | te[r.charCodeAt(c + 1)] << 4 | te[r.charCodeAt(c + 2)] >> 2, s[o++] = e >> 8 & 255, s[o++] = e & 255), s;
   }
   __name(Ro, "Ro");
-  __name2(Ro, "Ro");
   a(Ro, "toByteArray");
   function Lo(r) {
     return ae[r >> 18 & 63] + ae[r >> 12 & 63] + ae[r >> 6 & 63] + ae[r & 63];
   }
   __name(Lo, "Lo");
-  __name2(Lo, "Lo");
   a(Lo, "tripletToBase64");
   function Fo(r, e, t) {
     for (var n, i = [], s = e; s < t; s += 3) n = (r[s] << 16 & 16711680) + (r[s + 1] << 8 & 65280) + (r[s + 2] & 255), i.push(Lo(n));
     return i.join("");
   }
   __name(Fo, "Fo");
-  __name2(Fo, "Fo");
   a(Fo, "encodeChunk");
   function ko(r) {
     for (var e, t = r.length, n = t % 3, i = [], s = 16383, o = 0, u = t - n; o < u; o += s) i.push(Fo(
@@ -2085,7 +1133,6 @@ var Qn = T((lt) => {
     return n === 1 ? (e = r[t - 1], i.push(ae[e >> 2] + ae[e << 4 & 63] + "==")) : n === 2 && (e = (r[t - 2] << 8) + r[t - 1], i.push(ae[e >> 10] + ae[e >> 4 & 63] + ae[e << 2 & 63] + "=")), i.join("");
   }
   __name(ko, "ko");
-  __name2(ko, "ko");
   a(ko, "fromByteArray");
 });
 var Nn = T((Qt) => {
@@ -2130,7 +1177,6 @@ var ii = T((Re) => {
     }
   }
   __name(Mo, "Mo");
-  __name2(Mo, "Mo");
   a(Mo, "typedArraySupport");
   Object.defineProperty(h.prototype, "parent", { enumerable: true, get: a(function() {
     if (h.isBuffer(this)) return this.buffer;
@@ -2146,7 +1192,6 @@ var ii = T((Re) => {
     return Object.setPrototypeOf(e, h.prototype), e;
   }
   __name(he, "he");
-  __name2(he, "he");
   a(he, "createBuffer");
   function h(r, e, t) {
     if (typeof r == "number") {
@@ -2158,7 +1203,6 @@ var ii = T((Re) => {
     return Gn(r, e, t);
   }
   __name(h, "h");
-  __name2(h, "h");
   a(h, "Buffer");
   h.poolSize = 8192;
   function Gn(r, e, t) {
@@ -2178,7 +1222,6 @@ var ii = T((Re) => {
     throw new TypeError("The first argument must be one of type string, Buffer, ArrayBuffer, Array, or Array-like Object. Received type " + typeof r);
   }
   __name(Gn, "Gn");
-  __name2(Gn, "Gn");
   a(Gn, "from");
   h.from = function(r, e, t) {
     return Gn(r, e, t);
@@ -2195,13 +1238,11 @@ var ii = T((Re) => {
     if (r < 0) throw new RangeError('The value "' + r + '" is invalid for option "size"');
   }
   __name(Vn, "Vn");
-  __name2(Vn, "Vn");
   a(Vn, "assertSize");
   function Uo(r, e, t) {
     return Vn(r), r <= 0 ? he(r) : e !== void 0 ? typeof t == "string" ? he(r).fill(e, t) : he(r).fill(e) : he(r);
   }
   __name(Uo, "Uo");
-  __name2(Uo, "Uo");
   a(Uo, "alloc");
   h.alloc = function(r, e, t) {
     return Uo(r, e, t);
@@ -2210,7 +1251,6 @@ var ii = T((Re) => {
     return Vn(r), he(r < 0 ? 0 : Gt(r) | 0);
   }
   __name($t, "$t");
-  __name2($t, "$t");
   a($t, "allocUnsafe");
   h.allocUnsafe = function(r) {
     return $t(
@@ -2229,7 +1269,6 @@ var ii = T((Re) => {
     return i !== t && (n = n.slice(0, i)), n;
   }
   __name(Do, "Do");
-  __name2(Do, "Do");
   a(Do, "fromString");
   function Wt(r) {
     let e = r.length < 0 ? 0 : Gt(r.length) | 0, t = he(e);
@@ -2237,7 +1276,6 @@ var ii = T((Re) => {
     return t;
   }
   __name(Wt, "Wt");
-  __name2(Wt, "Wt");
   a(Wt, "fromArrayLike");
   function Oo(r) {
     if (ue(r, Uint8Array)) {
@@ -2247,7 +1285,6 @@ var ii = T((Re) => {
     return Wt(r);
   }
   __name(Oo, "Oo");
-  __name2(Oo, "Oo");
   a(Oo, "fromArrayView");
   function jt(r, e, t) {
     if (e < 0 || r.byteLength < e) throw new RangeError('"offset" is outside of buffer bounds');
@@ -2260,7 +1297,6 @@ var ii = T((Re) => {
     ), Object.setPrototypeOf(n, h.prototype), n;
   }
   __name(jt, "jt");
-  __name2(jt, "jt");
   a(jt, "fromArrayBuffer");
   function qo(r) {
     if (h.isBuffer(r)) {
@@ -2271,20 +1307,17 @@ var ii = T((Re) => {
     if (r.type === "Buffer" && Array.isArray(r.data)) return Wt(r.data);
   }
   __name(qo, "qo");
-  __name2(qo, "qo");
   a(qo, "fromObject");
   function Gt(r) {
     if (r >= ft) throw new RangeError("Attempt to allocate Buffer larger than maximum size: 0x" + ft.toString(16) + " bytes");
     return r | 0;
   }
   __name(Gt, "Gt");
-  __name2(Gt, "Gt");
   a(Gt, "checked");
   function Qo(r) {
     return +r != r && (r = 0), h.alloc(+r);
   }
   __name(Qo, "Qo");
-  __name2(Qo, "Qo");
   a(Qo, "SlowBuffer");
   h.isBuffer = a(function(e) {
     return e != null && e._isBuffer === true && e !== h.prototype;
@@ -2369,7 +1402,6 @@ var ii = T((Re) => {
     }
   }
   __name(zn, "zn");
-  __name2(zn, "zn");
   a(zn, "byteLength");
   h.byteLength = zn;
   function No(r, e, t) {
@@ -2407,7 +1439,6 @@ var ii = T((Re) => {
     }
   }
   __name(No, "No");
-  __name2(No, "No");
   a(
     No,
     "slowToString"
@@ -2418,7 +1449,6 @@ var ii = T((Re) => {
     r[e] = r[t], r[t] = n;
   }
   __name(Ae, "Ae");
-  __name2(Ae, "Ae");
   a(Ae, "swap");
   h.prototype.swap16 = a(function() {
     let e = this.length;
@@ -2491,7 +1521,6 @@ var ii = T((Re) => {
     throw new TypeError("val must be string, number or Buffer");
   }
   __name(Kn, "Kn");
-  __name2(Kn, "Kn");
   a(Kn, "bidirectionalIndexOf");
   function jn(r, e, t, n, i) {
     let s = 1, o = r.length, u = e.length;
@@ -2503,7 +1532,6 @@ var ii = T((Re) => {
       return s === 1 ? f[y] : f.readUInt16BE(y * s);
     }
     __name(c, "c");
-    __name2(c, "c");
     a(c, "read");
     let l;
     if (i) {
@@ -2522,7 +1550,6 @@ var ii = T((Re) => {
     return -1;
   }
   __name(jn, "jn");
-  __name2(jn, "jn");
   a(jn, "arrayIndexOf");
   h.prototype.includes = a(function(e, t, n) {
     return this.indexOf(
@@ -2552,19 +1579,16 @@ var ii = T((Re) => {
     return o;
   }
   __name(Wo, "Wo");
-  __name2(Wo, "Wo");
   a(Wo, "hexWrite");
   function jo(r, e, t, n) {
     return ht(Ht(e, r.length - t), r, t, n);
   }
   __name(jo, "jo");
-  __name2(jo, "jo");
   a(jo, "utf8Write");
   function Ho(r, e, t, n) {
     return ht(ra(e), r, t, n);
   }
   __name(Ho, "Ho");
-  __name2(Ho, "Ho");
   a(
     Ho,
     "asciiWrite"
@@ -2573,7 +1597,6 @@ var ii = T((Re) => {
     return ht(ni(e), r, t, n);
   }
   __name($o, "$o");
-  __name2($o, "$o");
   a($o, "base64Write");
   function Go(r, e, t, n) {
     return ht(
@@ -2584,7 +1607,6 @@ var ii = T((Re) => {
     );
   }
   __name(Go, "Go");
-  __name2(Go, "Go");
   a(Go, "ucs2Write");
   h.prototype.write = a(function(e, t, n, i) {
     if (t === void 0) i = "utf8", n = this.length, t = 0;
@@ -2625,7 +1647,6 @@ var ii = T((Re) => {
     return e === 0 && t === r.length ? Nt.fromByteArray(r) : Nt.fromByteArray(r.slice(e, t));
   }
   __name(Vo, "Vo");
-  __name2(Vo, "Vo");
   a(Vo, "base64Slice");
   function Yn(r, e, t) {
     t = Math.min(r.length, t);
@@ -2653,7 +1674,6 @@ var ii = T((Re) => {
     return zo(n);
   }
   __name(Yn, "Yn");
-  __name2(Yn, "Yn");
   a(Yn, "utf8Slice");
   var Hn = 4096;
   function zo(r) {
@@ -2664,7 +1684,6 @@ var ii = T((Re) => {
     return t;
   }
   __name(zo, "zo");
-  __name2(zo, "zo");
   a(zo, "decodeCodePointsArray");
   function Ko(r, e, t) {
     let n = "";
@@ -2673,7 +1692,6 @@ var ii = T((Re) => {
     return n;
   }
   __name(Ko, "Ko");
-  __name2(Ko, "Ko");
   a(Ko, "asciiSlice");
   function Yo(r, e, t) {
     let n = "";
@@ -2682,7 +1700,6 @@ var ii = T((Re) => {
     return n;
   }
   __name(Yo, "Yo");
-  __name2(Yo, "Yo");
   a(Yo, "latin1Slice");
   function Zo(r, e, t) {
     let n = r.length;
@@ -2692,7 +1709,6 @@ var ii = T((Re) => {
     return i;
   }
   __name(Zo, "Zo");
-  __name2(Zo, "Zo");
   a(Zo, "hexSlice");
   function Jo(r, e, t) {
     let n = r.slice(e, t), i = "";
@@ -2700,7 +1716,6 @@ var ii = T((Re) => {
     return i;
   }
   __name(Jo, "Jo");
-  __name2(Jo, "Jo");
   a(Jo, "utf16leSlice");
   h.prototype.slice = a(function(e, t) {
     let n = this.length;
@@ -2713,7 +1728,6 @@ var ii = T((Re) => {
     if (r + e > t) throw new RangeError("Trying to access beyond buffer length");
   }
   __name(q, "q");
-  __name2(q, "q");
   a(q, "checkOffset");
   h.prototype.readUintLE = h.prototype.readUIntLE = a(
     function(e, t, n) {
@@ -2853,7 +1867,6 @@ var ii = T((Re) => {
     if (t + n > r.length) throw new RangeError("Index out of range");
   }
   __name(V, "V");
-  __name2(V, "V");
   a(V, "checkInt");
   h.prototype.writeUintLE = h.prototype.writeUIntLE = a(function(e, t, n, i) {
     if (e = +e, t = t >>> 0, n = n >>> 0, !i) {
@@ -2917,7 +1930,6 @@ var ii = T((Re) => {
     return r[t++] = o, o = o >> 8, r[t++] = o, o = o >> 8, r[t++] = o, o = o >> 8, r[t++] = o, t;
   }
   __name(Zn, "Zn");
-  __name2(Zn, "Zn");
   a(Zn, "wrtBigUInt64LE");
   function Jn(r, e, t, n, i) {
     ri(e, n, i, r, t, 7);
@@ -2927,7 +1939,6 @@ var ii = T((Re) => {
     return r[t + 3] = o, o = o >> 8, r[t + 2] = o, o = o >> 8, r[t + 1] = o, o = o >> 8, r[t] = o, t + 8;
   }
   __name(Jn, "Jn");
-  __name2(Jn, "Jn");
   a(Jn, "wrtBigUInt64BE");
   h.prototype.writeBigUInt64LE = we(a(function(e, t = 0) {
     return Zn(this, e, t, BigInt(0), BigInt("0xffffffffffffffff"));
@@ -2998,13 +2009,11 @@ var ii = T((Re) => {
     if (t < 0) throw new RangeError("Index out of range");
   }
   __name(Xn, "Xn");
-  __name2(Xn, "Xn");
   a(Xn, "checkIEEE754");
   function ei(r, e, t, n, i) {
     return e = +e, t = t >>> 0, i || Xn(r, e, t, 4, 34028234663852886e22, -34028234663852886e22), Pe.write(r, e, t, n, 23, 4), t + 4;
   }
   __name(ei, "ei");
-  __name2(ei, "ei");
   a(
     ei,
     "writeFloat"
@@ -3026,7 +2035,6 @@ var ii = T((Re) => {
     ), t + 8;
   }
   __name(ti, "ti");
-  __name2(ti, "ti");
   a(ti, "writeDouble");
   h.prototype.writeDoubleLE = a(function(e, t, n) {
     return ti(this, e, t, true, n);
@@ -3077,9 +2085,6 @@ var ii = T((Re) => {
       static {
         __name(this, "n");
       }
-      static {
-        __name2(this, "n");
-      }
       constructor() {
         super(), Object.defineProperty(this, "message", { value: e.apply(this, arguments), writable: true, configurable: true }), this.name = `${this.name} [${r}]`, this.stack, delete this.name;
       }
@@ -3099,7 +2104,6 @@ var ii = T((Re) => {
     }, a(n, "NodeError"), n);
   }
   __name(Vt, "Vt");
-  __name2(Vt, "Vt");
   a(Vt, "E");
   Vt("ERR_BUFFER_OUT_OF_BOUNDS", function(r) {
     return r ? `${r} is outside of buffer bounds` : "Attempt to access memory outside buffer bounds";
@@ -3123,13 +2127,11 @@ var ii = T((Re) => {
     return `${r.slice(0, t)}${e}`;
   }
   __name($n, "$n");
-  __name2($n, "$n");
   a($n, "addNumericalSeparator");
   function Xo(r, e, t) {
     Be(e, "offset"), (r[e] === void 0 || r[e + t] === void 0) && je(e, r.length - (t + 1));
   }
   __name(Xo, "Xo");
-  __name2(Xo, "Xo");
   a(Xo, "checkBounds");
   function ri(r, e, t, n, i, s) {
     if (r > t || r < e) {
@@ -3139,19 +2141,16 @@ var ii = T((Re) => {
     Xo(n, i, s);
   }
   __name(ri, "ri");
-  __name2(ri, "ri");
   a(ri, "checkIntBI");
   function Be(r, e) {
     if (typeof r != "number") throw new Te.ERR_INVALID_ARG_TYPE(e, "number", r);
   }
   __name(Be, "Be");
-  __name2(Be, "Be");
   a(Be, "validateNumber");
   function je(r, e, t) {
     throw Math.floor(r) !== r ? (Be(r, t), new Te.ERR_OUT_OF_RANGE(t || "offset", "an integer", r)) : e < 0 ? new Te.ERR_BUFFER_OUT_OF_BOUNDS() : new Te.ERR_OUT_OF_RANGE(t || "offset", `>= ${t ? 1 : 0} and <= ${e}`, r);
   }
   __name(je, "je");
-  __name2(je, "je");
   a(je, "boundsError");
   var ea = /[^+/0-9A-Za-z-_]/g;
   function ta(r) {
@@ -3160,7 +2159,6 @@ var ii = T((Re) => {
     return r;
   }
   __name(ta, "ta");
-  __name2(ta, "ta");
   a(ta, "base64clean");
   function Ht(r, e) {
     e = e || 1 / 0;
@@ -3201,7 +2199,6 @@ var ii = T((Re) => {
     return s;
   }
   __name(Ht, "Ht");
-  __name2(Ht, "Ht");
   a(Ht, "utf8ToBytes");
   function ra(r) {
     let e = [];
@@ -3209,7 +2206,6 @@ var ii = T((Re) => {
     return e;
   }
   __name(ra, "ra");
-  __name2(ra, "ra");
   a(
     ra,
     "asciiToBytes"
@@ -3222,7 +2218,6 @@ var ii = T((Re) => {
     return s;
   }
   __name(na, "na");
-  __name2(na, "na");
   a(na, "utf16leToBytes");
   function ni(r) {
     return Nt.toByteArray(
@@ -3230,7 +2225,6 @@ var ii = T((Re) => {
     );
   }
   __name(ni, "ni");
-  __name2(ni, "ni");
   a(ni, "base64ToBytes");
   function ht(r, e, t, n) {
     let i;
@@ -3239,19 +2233,16 @@ var ii = T((Re) => {
     return i;
   }
   __name(ht, "ht");
-  __name2(ht, "ht");
   a(ht, "blitBuffer");
   function ue(r, e) {
     return r instanceof e || r != null && r.constructor != null && r.constructor.name != null && r.constructor.name === e.name;
   }
   __name(ue, "ue");
-  __name2(ue, "ue");
   a(ue, "isInstance");
   function zt(r) {
     return r !== r;
   }
   __name(zt, "zt");
-  __name2(zt, "zt");
   a(zt, "numberIsNaN");
   var ia = (function() {
     let r = "0123456789abcdef", e = new Array(256);
@@ -3265,13 +2256,11 @@ var ii = T((Re) => {
     return typeof BigInt > "u" ? sa : r;
   }
   __name(we, "we");
-  __name2(we, "we");
   a(we, "defineBigIntMethod");
   function sa() {
     throw new Error("BigInt not supported");
   }
   __name(sa, "sa");
-  __name2(sa, "sa");
   a(sa, "BufferBigIntNotDefined");
 });
 var b;
@@ -3306,7 +2295,6 @@ var ge = T((Rl, Kt) => {
     console && console.warn && console.warn(r);
   }
   __name(oa, "oa");
-  __name2(oa, "oa");
   a(
     oa,
     "ProcessEmitWarning"
@@ -3318,7 +2306,6 @@ var ge = T((Rl, Kt) => {
     B.init.call(this);
   }
   __name(B, "B");
-  __name2(B, "B");
   a(B, "EventEmitter");
   Kt.exports = B;
   Kt.exports.once = la;
@@ -3331,7 +2318,6 @@ var ge = T((Rl, Kt) => {
     if (typeof r != "function") throw new TypeError('The "listener" argument must be of type Function. Received type ' + typeof r);
   }
   __name(dt, "dt");
-  __name2(dt, "dt");
   a(dt, "checkListener");
   Object.defineProperty(B, "defaultMaxListeners", { enumerable: true, get: a(function() {
     return oi;
@@ -3353,7 +2339,6 @@ var ge = T((Rl, Kt) => {
     return r._maxListeners === void 0 ? B.defaultMaxListeners : r._maxListeners;
   }
   __name(ui, "ui");
-  __name2(ui, "ui");
   a(ui, "_getMaxListeners");
   B.prototype.getMaxListeners = a(function() {
     return ui(this);
@@ -3388,7 +2373,6 @@ var ge = T((Rl, Kt) => {
     return r;
   }
   __name(ci, "ci");
-  __name2(ci, "ci");
   a(ci, "_addListener");
   B.prototype.addListener = a(function(e, t) {
     return ci(this, e, t, false);
@@ -3401,7 +2385,6 @@ var ge = T((Rl, Kt) => {
     if (!this.fired) return this.target.removeListener(this.type, this.wrapFn), this.fired = true, arguments.length === 0 ? this.listener.call(this.target) : this.listener.apply(this.target, arguments);
   }
   __name(aa, "aa");
-  __name2(aa, "aa");
   a(aa, "onceWrapper");
   function li(r, e, t) {
     var n = {
@@ -3414,7 +2397,6 @@ var ge = T((Rl, Kt) => {
     return i.listener = t, n.wrapFn = i, i;
   }
   __name(li, "li");
-  __name2(li, "li");
   a(li, "_onceWrap");
   B.prototype.once = a(function(e, t) {
     return dt(t), this.on(e, li(this, e, t)), this;
@@ -3460,7 +2442,6 @@ var ge = T((Rl, Kt) => {
     return i === void 0 ? [] : typeof i == "function" ? t ? [i.listener || i] : [i] : t ? ca(i) : pi(i, i.length);
   }
   __name(fi, "fi");
-  __name2(fi, "fi");
   a(fi, "_listeners");
   B.prototype.listeners = a(function(e) {
     return fi(this, e, true);
@@ -3483,7 +2464,6 @@ var ge = T((Rl, Kt) => {
     return 0;
   }
   __name(hi, "hi");
-  __name2(hi, "hi");
   a(hi, "listenerCount");
   B.prototype.eventNames = a(function() {
     return this._eventsCount > 0 ? pt(this._events) : [];
@@ -3493,21 +2473,18 @@ var ge = T((Rl, Kt) => {
     return t;
   }
   __name(pi, "pi");
-  __name2(pi, "pi");
   a(pi, "arrayClone");
   function ua(r, e) {
     for (; e + 1 < r.length; e++) r[e] = r[e + 1];
     r.pop();
   }
   __name(ua, "ua");
-  __name2(ua, "ua");
   a(ua, "spliceOne");
   function ca(r) {
     for (var e = new Array(r.length), t = 0; t < e.length; ++t) e[t] = r[t].listener || r[t];
     return e;
   }
   __name(ca, "ca");
-  __name2(ca, "ca");
   a(ca, "unwrapListeners");
   function la(r, e) {
     return new Promise(function(t, n) {
@@ -3515,46 +2492,40 @@ var ge = T((Rl, Kt) => {
         r.removeListener(e, s), n(o);
       }
       __name(i, "i");
-      __name2(i, "i");
       a(i, "errorListener");
       function s() {
         typeof r.removeListener == "function" && r.removeListener("error", i), t([].slice.call(arguments));
       }
       __name(s, "s");
-      __name2(s, "s");
       a(s, "resolver"), di(r, e, s, { once: true }), e !== "error" && fa(r, i, { once: true });
     });
   }
   __name(la, "la");
-  __name2(la, "la");
   a(la, "once");
   function fa(r, e, t) {
     typeof r.on == "function" && di(r, "error", e, t);
   }
   __name(fa, "fa");
-  __name2(fa, "fa");
   a(
     fa,
     "addErrorHandlerIfEventEmitter"
   );
   function di(r, e, t, n) {
     if (typeof r.on == "function") n.once ? r.once(e, t) : r.on(e, t);
-    else if (typeof r.addEventListener == "function") r.addEventListener(e, a(/* @__PURE__ */ __name2(/* @__PURE__ */ __name(function i(s) {
+    else if (typeof r.addEventListener == "function") r.addEventListener(e, a(/* @__PURE__ */ __name(function i(s) {
       n.once && r.removeEventListener(e, i), t(s);
-    }, "i"), "i"), "wrapListener"));
+    }, "i"), "wrapListener"));
     else throw new TypeError('The "emitter" argument must be of type EventEmitter. Received type ' + typeof r);
   }
   __name(di, "di");
-  __name2(di, "di");
   a(di, "eventTargetAgnosticAddListener");
 });
 var wi = {};
-ie(wi, { Socket: /* @__PURE__ */ __name2(() => ce, "Socket"), isIP: /* @__PURE__ */ __name2(() => ha, "isIP") });
+ie(wi, { Socket: /* @__PURE__ */ __name(() => ce, "Socket"), isIP: /* @__PURE__ */ __name(() => ha, "isIP") });
 function ha(r) {
   return 0;
 }
 __name(ha, "ha");
-__name2(ha, "ha");
 var mi;
 var yi;
 var S;
@@ -3566,10 +2537,7 @@ var Fe = G(() => {
   a(ha, "isIP");
   yi = /^[^.]+\./, S = class S2 extends mi.EventEmitter {
     static {
-      __name(this, "S2");
-    }
-    static {
-      __name2(this, "S");
+      __name(this, "S");
     }
     constructor() {
       super(...arguments);
@@ -3887,7 +2855,7 @@ var Fe = G(() => {
   ce = S;
 });
 var gi = {};
-ie(gi, { parse: /* @__PURE__ */ __name2(() => Yt, "parse") });
+ie(gi, { parse: /* @__PURE__ */ __name(() => Yt, "parse") });
 function Yt(r, e = false) {
   let { protocol: t } = new URL(r), n = "http:" + r.substring(
     t.length
@@ -3912,7 +2880,6 @@ function Yt(r, e = false) {
   };
 }
 __name(Yt, "Yt");
-__name2(Yt, "Yt");
 var Zt = G(() => {
   "use strict";
   p();
@@ -3926,10 +2893,7 @@ var tr = T((Ai) => {
   };
   var vt = class vt2 {
     static {
-      __name(this, "vt2");
-    }
-    static {
-      __name2(this, "vt");
+      __name(this, "vt");
     }
     constructor(e, t) {
       this.source = e, this.transform = t || Ca, this.position = 0, this.entries = [], this.recorded = [], this.dimension = 0;
@@ -3974,7 +2938,6 @@ var tr = T((Ai) => {
     return r;
   }
   __name(Ca, "Ca");
-  __name2(Ca, "Ca");
   a(Ca, "identity");
 });
 var rr = T((Zl, Ci) => {
@@ -4018,7 +2981,6 @@ var Ti = T((ef, Ii) => {
     }
   }
   __name(Ra, "Ra");
-  __name2(Ra, "Ra");
   a(Ra, "getDate");
   function La(r) {
     if (r.endsWith("+00")) return 0;
@@ -4034,19 +2996,16 @@ var Ti = T((ef, Ii) => {
     }
   }
   __name(La, "La");
-  __name2(La, "La");
   a(La, "timeZoneOffset");
   function _i(r) {
     return -(r - 1);
   }
   __name(_i, "_i");
-  __name2(_i, "_i");
   a(_i, "bcYearToNegativeYear");
   function nr(r) {
     return r >= 0 && r < 100;
   }
   __name(nr, "nr");
-  __name2(nr, "nr");
   a(nr, "is0To99");
 });
 var Bi = T((nf, Pi) => {
@@ -4061,7 +3020,6 @@ var Bi = T((nf, Pi) => {
     return r;
   }
   __name(ka, "ka");
-  __name2(ka, "ka");
   a(ka, "extend");
 });
 var Fi = T((af, Li) => {
@@ -4075,7 +3033,6 @@ var Fi = T((af, Li) => {
     Ma(this, Va(r));
   }
   __name(ke, "ke");
-  __name2(ke, "ke");
   a(ke, "PostgresInterval");
   var Ua = [
     "seconds",
@@ -4107,7 +3064,6 @@ var Fi = T((af, Li) => {
       )), i + Da[n];
     }
     __name(t, "t");
-    __name2(t, "t");
   };
   var ir = "([+-]?\\d+)", Qa = ir + "\\s+years?", Na = ir + "\\s+mons?", Wa = ir + "\\s+days?", ja = "([+-])?([\\d]*):(\\d\\d):(\\d\\d)\\.?(\\d{1,6})?", Ha = new RegExp([Qa, Na, Wa, ja].map(function(r) {
     return "(" + r + ")?";
@@ -4120,7 +3076,6 @@ var Fi = T((af, Li) => {
     ) / 1e3;
   }
   __name(Ga, "Ga");
-  __name2(Ga, "Ga");
   a(Ga, "parseMilliseconds");
   function Va(r) {
     if (!r) return {};
@@ -4131,7 +3086,6 @@ var Fi = T((af, Li) => {
     }, {});
   }
   __name(Va, "Va");
-  __name2(Va, "Va");
   a(Va, "parse");
 });
 var Mi = T((lf, ki) => {
@@ -4160,31 +3114,26 @@ var Wi = T((pf, Ni) => {
     }, "nullAllowed");
   }
   __name(St, "St");
-  __name2(St, "St");
   a(St, "allowNull");
   function qi(r) {
     return r === null ? r : r === "TRUE" || r === "t" || r === "true" || r === "y" || r === "yes" || r === "on" || r === "1";
   }
   __name(qi, "qi");
-  __name2(qi, "qi");
   a(qi, "parseBool");
   function za(r) {
     return r ? Ve.parse(r, qi) : null;
   }
   __name(za, "za");
-  __name2(za, "za");
   a(za, "parseBoolArray");
   function Ka(r) {
     return parseInt(r, 10);
   }
   __name(Ka, "Ka");
-  __name2(Ka, "Ka");
   a(Ka, "parseBaseTenInt");
   function sr(r) {
     return r ? Ve.parse(r, St(Ka)) : null;
   }
   __name(sr, "sr");
-  __name2(sr, "sr");
   a(sr, "parseIntegerArray");
   function Ya(r) {
     return r ? Ve.parse(r, St(function(e) {
@@ -4192,7 +3141,6 @@ var Wi = T((pf, Ni) => {
     })) : null;
   }
   __name(Ya, "Ya");
-  __name2(Ya, "Ya");
   a(Ya, "parseBigIntegerArray");
   var Za = a(function(r) {
     if (!r) return null;
@@ -4292,7 +3240,6 @@ var Hi = T((mf, ji) => {
     return s = e % z, o = 4294967296 * s + t, u = "" + o % z, n + u + i;
   }
   __name(ru, "ru");
-  __name2(ru, "ru");
   a(ru, "readInt8");
   ji.exports = ru;
 });
@@ -4472,19 +3419,16 @@ var Je = T((Ze) => {
     return String(r);
   }
   __name(Ji, "Ji");
-  __name2(Ji, "Ji");
   a(Ji, "noParse");
   function yu(r, e) {
     return e = e || "text", Ye[e] && Ye[e][r] || Ji;
   }
   __name(yu, "yu");
-  __name2(yu, "yu");
   a(yu, "getTypeParser");
   function mu(r, e, t) {
     typeof e == "function" && (t = e, e = "text"), Ye[e][r] = t;
   }
   __name(mu, "mu");
-  __name2(mu, "mu");
   a(mu, "setTypeParser");
   fu.init(function(r, e) {
     Ye.text[r] = e;
@@ -4501,7 +3445,6 @@ var At = T((If, Xi) => {
     this._types = r || wu, this.text = {}, this.binary = {};
   }
   __name(Et, "Et");
-  __name2(Et, "Et");
   a(Et, "TypeOverrides");
   Et.prototype.getOverrides = function(r) {
     switch (r) {
@@ -4625,7 +3568,6 @@ function Xe(r) {
   return r === void 0 ? { add: Y, digest: P } : (Y(r), P());
 }
 __name(Xe, "Xe");
-__name2(Xe, "Xe");
 var es = G(() => {
   "use strict";
   p();
@@ -4638,10 +3580,7 @@ var ts = G(() => {
   p();
   U = class U2 {
     static {
-      __name(this, "U2");
-    }
-    static {
-      __name2(this, "U");
+      __name(this, "U");
     }
     constructor() {
       E(this, "_dataLength", 0);
@@ -4742,12 +3681,11 @@ var ts = G(() => {
   et = U;
 });
 var lr = {};
-ie(lr, { createHash: /* @__PURE__ */ __name2(() => bu, "createHash"), createHmac: /* @__PURE__ */ __name2(() => vu, "createHmac"), randomBytes: /* @__PURE__ */ __name2(() => gu, "randomBytes") });
+ie(lr, { createHash: /* @__PURE__ */ __name(() => bu, "createHash"), createHmac: /* @__PURE__ */ __name(() => vu, "createHmac"), randomBytes: /* @__PURE__ */ __name(() => gu, "randomBytes") });
 function gu(r) {
   return crypto.getRandomValues(d.alloc(r));
 }
 __name(gu, "gu");
-__name2(gu, "gu");
 function bu(r) {
   if (r === "sha256") return { update: a(function(e) {
     return { digest: a(
@@ -4767,7 +3705,6 @@ function bu(r) {
   throw new Error(`Hash type '${r}' not supported`);
 }
 __name(bu, "bu");
-__name2(bu, "bu");
 function vu(r, e) {
   if (r !== "sha256") throw new Error(`Only sha256 is supported (requested: '${r}')`);
   return { update: a(function(t) {
@@ -4796,7 +3733,6 @@ function vu(r, e) {
   }, "update") };
 }
 __name(vu, "vu");
-__name2(vu, "vu");
 var fr = G(() => {
   "use strict";
   p();
@@ -4857,14 +3793,12 @@ var rt = T((Wf, ns) => {
     return '"' + e + '"';
   }
   __name(Cu, "Cu");
-  __name2(Cu, "Cu");
   a(Cu, "escapeElement");
   function rs(r) {
     for (var e = "{", t = 0; t < r.length; t++) t > 0 && (e = e + ","), r[t] === null || typeof r[t] > "u" ? e = e + "NULL" : Array.isArray(r[t]) ? e = e + rs(r[t]) : r[t] instanceof d ? e += "\\\\x" + r[t].toString("hex") : e += Cu(Ct(r[t]));
     return e = e + "}", e;
   }
   __name(rs, "rs");
-  __name2(rs, "rs");
   a(rs, "arrayString");
   var Ct = a(function(r, e) {
     if (r == null) return null;
@@ -4883,14 +3817,12 @@ var rt = T((Wf, ns) => {
     return JSON.stringify(r);
   }
   __name(_u, "_u");
-  __name2(_u, "_u");
   a(_u, "prepareObject");
   function N(r, e) {
     for (r = "" + r; r.length < e; ) r = "0" + r;
     return r;
   }
   __name(N, "N");
-  __name2(N, "N");
   a(N, "pad");
   function Iu(r) {
     var e = -r.getTimezoneOffset(), t = r.getFullYear(), n = t < 1;
@@ -4902,7 +3834,6 @@ var rt = T((Wf, ns) => {
     return e < 0 ? (i += "-", e *= -1) : i += "+", i += N(Math.floor(e / 60), 2) + ":" + N(e % 60, 2), n && (i += " BC"), i;
   }
   __name(Iu, "Iu");
-  __name2(Iu, "Iu");
   a(Iu, "dateToString");
   function Tu(r) {
     var e = r.getUTCFullYear(), t = e < 1;
@@ -4914,13 +3845,11 @@ var rt = T((Wf, ns) => {
     return n += "+00:00", t && (n += " BC"), n;
   }
   __name(Tu, "Tu");
-  __name2(Tu, "Tu");
   a(Tu, "dateToStringUTC");
   function Pu(r, e, t) {
     return r = typeof r == "string" ? { text: r } : r, e && (typeof e == "function" ? r.callback = e : r.values = e), t && (r.callback = t), r;
   }
   __name(Pu, "Pu");
-  __name2(Pu, "Pu");
   a(Pu, "normalizeQueryConfig");
   var pr = a(function(r) {
     return Eu.createHash("md5").update(r, "utf-8").digest("hex");
@@ -4941,7 +3870,7 @@ var rt = T((Wf, ns) => {
   };
 });
 var nt = {};
-ie(nt, { default: /* @__PURE__ */ __name2(() => ku, "default") });
+ie(nt, { default: /* @__PURE__ */ __name(() => ku, "default") });
 var ku;
 var it = G(() => {
   "use strict";
@@ -4960,7 +3889,6 @@ var ds = T((th, ps) => {
     return { mechanism: "SCRAM-SHA-256", clientNonce: e, response: "n,,n=*,r=" + e, message: "SASLInitialResponse" };
   }
   __name(Mu, "Mu");
-  __name2(Mu, "Mu");
   a(Mu, "startSession");
   function Uu(r, e, t) {
     if (r.message !== "SASLInitialResponse") throw new Error(
@@ -4978,7 +3906,6 @@ var ds = T((th, ps) => {
     r.message = "SASLResponse", r.serverSignature = Y.toString("base64"), r.response = f + ",p=" + C;
   }
   __name(Uu, "Uu");
-  __name2(Uu, "Uu");
   a(Uu, "continueSession");
   function Du(r, e) {
     if (r.message !== "SASLResponse") throw new Error("SASL: Last message was not SASLResponse");
@@ -4989,20 +3916,17 @@ var ds = T((th, ps) => {
     if (t !== r.serverSignature) throw new Error("SASL: SCRAM-SERVER-FINAL-MESSAGE: server signature does not match");
   }
   __name(Du, "Du");
-  __name2(Du, "Du");
   a(Du, "finalizeSession");
   function Ou(r) {
     if (typeof r != "string") throw new TypeError("SASL: text must be a string");
     return r.split("").map((e, t) => r.charCodeAt(t)).every((e) => e >= 33 && e <= 43 || e >= 45 && e <= 126);
   }
   __name(Ou, "Ou");
-  __name2(Ou, "Ou");
   a(Ou, "isPrintableChars");
   function ls(r) {
     return /^(?:[a-zA-Z0-9+/]{4})*(?:[a-zA-Z0-9+/]{2}==|[a-zA-Z0-9+/]{3}=)?$/.test(r);
   }
   __name(ls, "ls");
-  __name2(ls, "ls");
   a(ls, "isBase64");
   function fs(r) {
     if (typeof r != "string") throw new TypeError("SASL: attribute pairs text must be a string");
@@ -5013,7 +3937,6 @@ var ds = T((th, ps) => {
     }));
   }
   __name(fs, "fs");
-  __name2(fs, "fs");
   a(fs, "parseAttributePairs");
   function qu(r) {
     let e = fs(r), t = e.get("r");
@@ -5032,7 +3955,6 @@ var ds = T((th, ps) => {
     return { nonce: t, salt: n, iteration: s };
   }
   __name(qu, "qu");
-  __name2(qu, "qu");
   a(qu, "parseServerFirstMessage");
   function Qu(r) {
     let t = fs(r).get("v");
@@ -5042,7 +3964,6 @@ var ds = T((th, ps) => {
     return { serverSignature: t };
   }
   __name(Qu, "Qu");
-  __name2(Qu, "Qu");
   a(Qu, "parseServerFinalMessage");
   function hs(r, e) {
     if (!d.isBuffer(r)) throw new TypeError("first argument must be a Buffer");
@@ -5054,19 +3975,16 @@ var ds = T((th, ps) => {
     return d.from(r.map((t, n) => r[n] ^ e[n]));
   }
   __name(hs, "hs");
-  __name2(hs, "hs");
   a(hs, "xorBuffers");
   function Nu(r) {
     return yr.createHash("sha256").update(r).digest();
   }
   __name(Nu, "Nu");
-  __name2(Nu, "Nu");
   a(Nu, "sha256");
   function Ue(r, e) {
     return yr.createHmac("sha256", r).update(e).digest();
   }
   __name(Ue, "Ue");
-  __name2(Ue, "Ue");
   a(Ue, "hmacSha256");
   function Wu(r, e, t) {
     for (var n = Ue(
@@ -5076,17 +3994,15 @@ var ds = T((th, ps) => {
     return i;
   }
   __name(Wu, "Wu");
-  __name2(Wu, "Wu");
   a(Wu, "Hi");
   ps.exports = { startSession: Mu, continueSession: Uu, finalizeSession: Du };
 });
 var mr = {};
-ie(mr, { join: /* @__PURE__ */ __name2(() => ju, "join") });
+ie(mr, { join: /* @__PURE__ */ __name(() => ju, "join") });
 function ju(...r) {
   return r.join("/");
 }
 __name(ju, "ju");
-__name2(ju, "ju");
 var wr = G(() => {
   "use strict";
   p();
@@ -5096,19 +4012,18 @@ var wr = G(() => {
   );
 });
 var gr = {};
-ie(gr, { stat: /* @__PURE__ */ __name2(() => Hu, "stat") });
+ie(gr, { stat: /* @__PURE__ */ __name(() => Hu, "stat") });
 function Hu(r, e) {
   e(new Error("No filesystem"));
 }
 __name(Hu, "Hu");
-__name2(Hu, "Hu");
 var br = G(() => {
   "use strict";
   p();
   a(Hu, "stat");
 });
 var vr = {};
-ie(vr, { default: /* @__PURE__ */ __name2(() => $u, "default") });
+ie(vr, { default: /* @__PURE__ */ __name(() => $u, "default") });
 var $u;
 var xr = G(() => {
   "use strict";
@@ -5116,7 +4031,7 @@ var xr = G(() => {
   $u = {};
 });
 var ys = {};
-ie(ys, { StringDecoder: /* @__PURE__ */ __name2(() => Sr, "StringDecoder") });
+ie(ys, { StringDecoder: /* @__PURE__ */ __name(() => Sr, "StringDecoder") });
 var Er;
 var Sr;
 var ms = G(() => {
@@ -5125,9 +4040,6 @@ var ms = G(() => {
   Er = class Er {
     static {
       __name(this, "Er");
-    }
-    static {
-      __name2(this, "Er");
     }
     constructor(e) {
       E(this, "td");
@@ -5172,7 +4084,6 @@ var vs = T((fh, bs) => {
     t();
   }
   __name(zu, "zu");
-  __name2(zu, "zu");
   a(zu, "transform");
   function Ku(r) {
     if (this[ve] += this[It].end(), this[ve])
@@ -5184,19 +4095,16 @@ var vs = T((fh, bs) => {
     r();
   }
   __name(Ku, "Ku");
-  __name2(Ku, "Ku");
   a(Ku, "flush");
   function gs(r, e) {
     e !== void 0 && r.push(e);
   }
   __name(gs, "gs");
-  __name2(gs, "gs");
   a(gs, "push");
   function ws(r) {
     return r;
   }
   __name(ws, "ws");
-  __name2(ws, "ws");
   a(ws, "noop");
   function Yu(r, e, t) {
     switch (r = r || /\r?\n/, e = e || ws, t = t || {}, arguments.length) {
@@ -5213,7 +4121,6 @@ var vs = T((fh, bs) => {
     }, n;
   }
   __name(Yu, "Yu");
-  __name2(Yu, "Yu");
   a(Yu, "split");
   bs.exports = Yu;
 });
@@ -5225,7 +4132,6 @@ var Es = T((dh, pe) => {
     return (r & rc) == nc;
   }
   __name(ic, "ic");
-  __name2(ic, "ic");
   a(ic, "isRegFile");
   var De = ["host", "port", "database", "user", "password"], Ar = De.length, sc = De[Ar - 1];
   function Cr() {
@@ -5237,7 +4143,6 @@ var Es = T((dh, pe) => {
     }
   }
   __name(Cr, "Cr");
-  __name2(Cr, "Cr");
   a(Cr, "warn");
   Object.defineProperty(pe.exports, "isWin", { get: a(function() {
     return Tt;
@@ -5271,7 +4176,6 @@ var Es = T((dh, pe) => {
       l && uc(l) && oc(r, l) && (n = l[sc], i.end());
     }
     __name(s, "s");
-    __name2(s, "s");
     a(s, "onLine");
     var o = a(function() {
       e.destroy(), t(n);
@@ -5335,7 +4239,7 @@ var Cs = T((gh, _r) => {
   _r.exports.warnTo = Pt.warnTo;
 });
 var _s = {};
-ie(_s, { default: /* @__PURE__ */ __name2(() => cc, "default") });
+ie(_s, { default: /* @__PURE__ */ __name(() => cc, "default") });
 var cc;
 var Is = G(() => {
   "use strict";
@@ -5383,7 +4287,6 @@ var Ps = T((xh, Ts) => {
     return t;
   }
   __name(Tr, "Tr");
-  __name2(Tr, "Tr");
   a(Tr, "parse");
   Ts.exports = Tr;
   Tr.parse = Tr;
@@ -5414,9 +4317,6 @@ var Bt = T((Ah, Ls) => {
   }, "add"), Br = class Br {
     static {
       __name(this, "Br");
-    }
-    static {
-      __name2(this, "Br");
     }
     constructor(e) {
       e = typeof e == "string" ? Bs(e) : e || {}, e.connectionString && (e = Object.assign({}, e, Bs(e.connectionString))), this.user = H("user", e), this.database = H("database", e), this.database === void 0 && (this.database = this.user), this.port = parseInt(H("port", e), 10), this.host = H("host", e), Object.defineProperty(this, "password", {
@@ -5450,9 +4350,6 @@ var Ms = T((Ih, ks) => {
   var pc = Je(), Fs = /^([A-Za-z]+)(?: (\d+))?(?: (\d+))?/, Lr = class Lr {
     static {
       __name(this, "Lr");
-    }
-    static {
-      __name2(this, "Lr");
     }
     constructor(e, t) {
       this.command = null, this.rowCount = null, this.oid = null, this.rows = [], this.fields = [], this._parsers = void 0, this._types = t, this.RowCtor = null, this.rowAsArray = e === "array", this.rowAsArray && (this.parseRow = this._parseRowAsArray);
@@ -5503,9 +4400,6 @@ var qs = T((Bh, Os) => {
   var { EventEmitter: dc } = ge(), Us = Ms(), Ds = rt(), kr = class kr extends dc {
     static {
       __name(this, "kr");
-    }
-    static {
-      __name2(this, "kr");
     }
     constructor(e, t, n) {
       super(), e = Ds.normalizeQueryConfig(e, t, n), this.text = e.text, this.values = e.values, this.rows = e.rows, this.types = e.types, this.name = e.name, this.binary = e.binary, this.portal = e.portal || "", this.callback = e.callback, this._rowMode = e.rowMode, m.domain && e.callback && (this.callback = m.domain.bind(e.callback)), this._result = new Us(this._rowMode, this.types), this._results = this._result, this.isPreparedStatement = false, this._canceledDueToError = false, this._promise = null;
@@ -5615,9 +4509,6 @@ var ln = T((_) => {
     static {
       __name(this, "Kr");
     }
-    static {
-      __name2(this, "Kr");
-    }
     constructor(e, t, n) {
       super(e), this.length = t, this.name = n;
     }
@@ -5628,9 +4519,6 @@ var ln = T((_) => {
   var Yr = class Yr {
     static {
       __name(this, "Yr");
-    }
-    static {
-      __name2(this, "Yr");
     }
     constructor(e, t) {
       this.length = e, this.chunk = t, this.name = "copyData";
@@ -5643,9 +4531,6 @@ var ln = T((_) => {
     static {
       __name(this, "Zr");
     }
-    static {
-      __name2(this, "Zr");
-    }
     constructor(e, t, n, i) {
       this.length = e, this.name = t, this.binary = n, this.columnTypes = new Array(i);
     }
@@ -5656,9 +4541,6 @@ var ln = T((_) => {
   var Jr = class Jr {
     static {
       __name(this, "Jr");
-    }
-    static {
-      __name2(this, "Jr");
     }
     constructor(e, t, n, i, s, o, u) {
       this.name = e, this.tableID = t, this.columnID = n, this.dataTypeID = i, this.dataTypeSize = s, this.dataTypeModifier = o, this.format = u;
@@ -5671,9 +4553,6 @@ var ln = T((_) => {
     static {
       __name(this, "Xr");
     }
-    static {
-      __name2(this, "Xr");
-    }
     constructor(e, t) {
       this.length = e, this.fieldCount = t, this.name = "rowDescription", this.fields = new Array(this.fieldCount);
     }
@@ -5684,9 +4563,6 @@ var ln = T((_) => {
   var en = class en {
     static {
       __name(this, "en");
-    }
-    static {
-      __name2(this, "en");
     }
     constructor(e, t) {
       this.length = e, this.parameterCount = t, this.name = "parameterDescription", this.dataTypeIDs = new Array(this.parameterCount);
@@ -5699,9 +4575,6 @@ var ln = T((_) => {
     static {
       __name(this, "tn");
     }
-    static {
-      __name2(this, "tn");
-    }
     constructor(e, t, n) {
       this.length = e, this.parameterName = t, this.parameterValue = n, this.name = "parameterStatus";
     }
@@ -5712,9 +4585,6 @@ var ln = T((_) => {
   var rn = class rn {
     static {
       __name(this, "rn");
-    }
-    static {
-      __name2(this, "rn");
     }
     constructor(e, t) {
       this.length = e, this.salt = t, this.name = "authenticationMD5Password";
@@ -5727,9 +4597,6 @@ var ln = T((_) => {
     static {
       __name(this, "nn");
     }
-    static {
-      __name2(this, "nn");
-    }
     constructor(e, t, n) {
       this.length = e, this.processID = t, this.secretKey = n, this.name = "backendKeyData";
     }
@@ -5741,9 +4608,6 @@ var ln = T((_) => {
     static {
       __name(this, "sn");
     }
-    static {
-      __name2(this, "sn");
-    }
     constructor(e, t, n, i) {
       this.length = e, this.processId = t, this.channel = n, this.payload = i, this.name = "notification";
     }
@@ -5751,26 +4615,20 @@ var ln = T((_) => {
   a(sn, "NotificationResponseMessage");
   var Hr = sn;
   _.NotificationResponseMessage = Hr;
-  var on22 = class on {
+  var on2 = class on {
     static {
       __name(this, "on");
-    }
-    static {
-      __name2(this, "on");
     }
     constructor(e, t) {
       this.length = e, this.status = t, this.name = "readyForQuery";
     }
   };
-  a(on22, "ReadyForQueryMessage");
-  var $r = on22;
+  a(on2, "ReadyForQueryMessage");
+  var $r = on2;
   _.ReadyForQueryMessage = $r;
   var an = class an {
     static {
       __name(this, "an");
-    }
-    static {
-      __name2(this, "an");
     }
     constructor(e, t) {
       this.length = e, this.text = t, this.name = "commandComplete";
@@ -5783,9 +4641,6 @@ var ln = T((_) => {
     static {
       __name(this, "un");
     }
-    static {
-      __name2(this, "un");
-    }
     constructor(e, t) {
       this.length = e, this.fields = t, this.name = "dataRow", this.fieldCount = t.length;
     }
@@ -5796,9 +4651,6 @@ var ln = T((_) => {
   var cn = class cn {
     static {
       __name(this, "cn");
-    }
-    static {
-      __name2(this, "cn");
     }
     constructor(e, t) {
       this.length = e, this.message = t, this.name = "notice";
@@ -5816,9 +4668,6 @@ var Qs = T((Rt) => {
   var hn = class hn {
     static {
       __name(this, "hn");
-    }
-    static {
-      __name2(this, "hn");
     }
     constructor(e = 256) {
       this.size = e, this.offset = 5, this.headerPosition = 0, this.buffer = d.allocUnsafe(e);
@@ -5964,9 +4813,6 @@ var js = T((kt) => {
     static {
       __name(this, "mn");
     }
-    static {
-      __name2(this, "mn");
-    }
     constructor(e = 0) {
       this.offset = e, this.buffer = Oc, this.encoding = "utf-8";
     }
@@ -6017,9 +4863,6 @@ var Gs = T((Mt) => {
   var k = ln(), qc = js(), wn = 1, Qc = 4, Hs = wn + Qc, $s = d.allocUnsafe(0), bn = class bn {
     static {
       __name(this, "bn");
-    }
-    static {
-      __name2(this, "bn");
     }
     constructor(e) {
       if (this.buffer = $s, this.bufferLength = 0, this.bufferOffset = 0, this.reader = new qc.BufferReader(), e?.mode === "binary") throw new Error("Binary mode not supported yet");
@@ -6280,17 +5123,15 @@ var vn = T((xe) => {
     return r.on("data", (n) => t.parse(n, e)), new Promise((n) => r.on("end", () => n()));
   }
   __name(Hc, "Hc");
-  __name2(Hc, "Hc");
   a(Hc, "parse");
   xe.parse = Hc;
 });
 var Vs = {};
-ie(Vs, { connect: /* @__PURE__ */ __name2(() => $c, "connect") });
+ie(Vs, { connect: /* @__PURE__ */ __name(() => $c, "connect") });
 function $c({ socket: r, servername: e }) {
   return r.startTls(e), r;
 }
 __name($c, "$c");
-__name2($c, "$c");
 var zs = G(
   () => {
     "use strict";
@@ -6304,9 +5145,6 @@ var En = T((Xh, Zs) => {
   var Ks = (Fe(), O(wi)), Gc = ge().EventEmitter, { parse: Vc, serialize: Q } = vn(), Ys = Q.flush(), zc = Q.sync(), Kc = Q.end(), Sn = class Sn extends Gc {
     static {
       __name(this, "Sn");
-    }
-    static {
-      __name2(this, "Sn");
     }
     constructor(e) {
       super(), e = e || {}, this.stream = e.stream || new Ks.Socket(), this._keepAlive = e.keepAlive, this._keepAliveInitialDelayMillis = e.keepAliveInitialDelayMillis, this.lastBuffer = false, this.parsedStatements = {}, this.ssl = e.ssl || false, this._ending = false, this._emitMessage = false;
@@ -6445,9 +5283,6 @@ var eo = T((np, Xs) => {
   var Yc = ge().EventEmitter, rp = (it(), O(nt)), Zc = rt(), An = ds(), Jc = Cs(), Xc = At(), el = Bt(), Js = qs(), tl = tt(), rl = En(), Cn = class Cn extends Yc {
     static {
       __name(this, "Cn");
-    }
-    static {
-      __name2(this, "Cn");
     }
     constructor(e) {
       super(), this.connectionParameters = new el(e), this.user = this.connectionParameters.user, this.database = this.connectionParameters.database, this.port = this.connectionParameters.port, this.host = this.connectionParameters.host, Object.defineProperty(
@@ -6720,9 +5555,6 @@ var io = T((op, no) => {
     static {
       __name(this, "Tn");
     }
-    static {
-      __name2(this, "Tn");
-    }
     constructor(e, t, n) {
       this.client = e, this.idleListener = t, this.timeoutId = n;
     }
@@ -6731,9 +5563,6 @@ var io = T((op, no) => {
   var _n = Tn, Pn = class Pn {
     static {
       __name(this, "Pn");
-    }
-    static {
-      __name2(this, "Pn");
     }
     constructor(e) {
       this.callback = e;
@@ -6745,7 +5574,6 @@ var io = T((op, no) => {
     throw new Error("Release called on client which has already been released to the pool.");
   }
   __name(il, "il");
-  __name2(il, "il");
   a(il, "throwOnDoubleRelease");
   function Dt(r, e) {
     if (e)
@@ -6760,27 +5588,22 @@ var io = T((op, no) => {
     return { callback: i, result: s };
   }
   __name(Dt, "Dt");
-  __name2(Dt, "Dt");
   a(Dt, "promisify");
   function sl(r, e) {
-    return a(/* @__PURE__ */ __name2(/* @__PURE__ */ __name(function t(n) {
+    return a(/* @__PURE__ */ __name(function t(n) {
       n.client = e, e.removeListener("error", t), e.on("error", () => {
         r.log(
           "additional client error after disconnection due to error",
           n
         );
       }), r._remove(e), r.emit("error", n, e);
-    }, "t"), "t"), "idleListener");
+    }, "t"), "idleListener");
   }
   __name(sl, "sl");
-  __name2(sl, "sl");
   a(sl, "makeIdleListener");
   var Bn = class Bn extends nl {
     static {
       __name(this, "Bn");
-    }
-    static {
-      __name2(this, "Bn");
     }
     constructor(e, t) {
       super(), this.options = Object.assign({}, e), e != null && "password" in e && Object.defineProperty(this.options, "password", {
@@ -6968,7 +5791,7 @@ var io = T((op, no) => {
   no.exports = In;
 });
 var so = {};
-ie(so, { default: /* @__PURE__ */ __name2(() => ol, "default") });
+ie(so, { default: /* @__PURE__ */ __name(() => ol, "default") });
 var ol;
 var oo = G(() => {
   "use strict";
@@ -7206,9 +6029,6 @@ var ot = T((vp, at) => {
         static {
           __name(this, "e");
         }
-        static {
-          __name2(this, "e");
-        }
         constructor(n) {
           super(n, r);
         }
@@ -7287,7 +6107,6 @@ function Ea(r, { alphabet: e, scratchArr: t } = {}) {
   return xa.decode(o.subarray(0, n));
 }
 __name(Ea, "Ea");
-__name2(Ea, "Ea");
 a(Ea, "_toHex");
 function Aa(r, e = {}) {
   let t = "", n = r.length, i = va >>> 1, s = Math.ceil(n / i), o = new Uint16Array(s > 1 ? i : n);
@@ -7301,21 +6120,16 @@ function Aa(r, e = {}) {
   return t;
 }
 __name(Aa, "Aa");
-__name2(Aa, "Aa");
 a(Aa, "_toHexChunked");
 function Ei(r, e = {}) {
   return e.alphabet !== "upper" && typeof r.toHex == "function" ? r.toHex() : Aa(r, e);
 }
 __name(Ei, "Ei");
-__name2(Ei, "Ei");
 a(Ei, "toHex");
 p();
 var gt = class gt2 {
   static {
-    __name(this, "gt2");
-  }
-  static {
-    __name2(this, "gt");
+    __name(this, "gt");
   }
   constructor(e, t) {
     this.strings = e;
@@ -7345,10 +6159,7 @@ a(gt, "SqlTemplate");
 var $e = gt;
 var Xt = class Xt2 {
   static {
-    __name(this, "Xt2");
-  }
-  static {
-    __name2(this, "Xt");
+    __name(this, "Xt");
   }
   constructor(e) {
     this.sql = e;
@@ -7376,17 +6187,13 @@ function bt() {
         ************************************************************`);
 }
 __name(bt, "bt");
-__name2(bt, "bt");
 a(bt, "warnIfBrowser");
 Fe();
 var as = Se(At());
 var us = Se(rt());
 var _t = class _t2 extends Error {
   static {
-    __name(this, "_t2");
-  }
-  static {
-    __name2(this, "_t");
+    __name(this, "_t");
   }
   constructor(t) {
     super(t);
@@ -7425,14 +6232,12 @@ function Lu(r) {
   return r instanceof d ? "\\x" + Ei(r) : r;
 }
 __name(Lu, "Lu");
-__name2(Lu, "Lu");
 a(Lu, "encodeBuffersAsBytea");
 function ss(r) {
   let { query: e, params: t } = r instanceof $e ? r.toParameterizedQuery() : r;
   return { query: e, params: t.map((n) => Lu((0, us.prepareValue)(n))) };
 }
 __name(ss, "ss");
-__name2(ss, "ss");
 a(ss, "prepareQuery");
 function cs(r, {
   arrayMode: e,
@@ -7463,7 +6268,6 @@ function cs(r, {
     );
   }
   __name(D, "D");
-  __name2(D, "D");
   a(D, "templateFn"), D.query = (P, I, w) => new Ce(Y, { query: P, params: I ?? [] }, w), D.unsafe = (P) => new Ge(
     P
   ), D.transaction = async (P, I) => {
@@ -7523,18 +6327,13 @@ function cs(r, {
     }
   }
   __name(Y, "Y");
-  __name2(Y, "Y");
   return a(Y, "execute"), D;
 }
 __name(cs, "cs");
-__name2(cs, "cs");
 a(cs, "neon");
 var dr = class dr2 {
   static {
-    __name(this, "dr2");
-  }
-  static {
-    __name2(this, "dr");
+    __name(this, "dr");
   }
   constructor(e, t, n) {
     this.execute = e;
@@ -7569,7 +6368,6 @@ function os(r, {
   return t ? (r.viaNeonFetch = true, r.rowAsArray = e, r.rows = u, r._parsers = o, r._types = i, r) : u;
 }
 __name(os, "os");
-__name2(os, "os");
 a(os, "processQueryResult");
 async function Fu(r) {
   if (typeof r == "string") return r;
@@ -7581,7 +6379,6 @@ async function Fu(r) {
   }
 }
 __name(Fu, "Fu");
-__name2(Fu, "Fu");
 a(Fu, "getAuthToken");
 p();
 var go = Se(ot());
@@ -7589,10 +6386,7 @@ p();
 var wo = Se(ot());
 var kn = class kn2 extends wo.Client {
   static {
-    __name(this, "kn2");
-  }
-  static {
-    __name2(this, "kn");
+    __name(this, "kn");
   }
   constructor(t) {
     super(t);
@@ -7707,14 +6501,10 @@ function vl(r, e) {
   return { callback: i, result: s };
 }
 __name(vl, "vl");
-__name2(vl, "vl");
 a(vl, "promisify");
 var Un = class Un2 extends go.Pool {
   static {
-    __name(this, "Un2");
-  }
-  static {
-    __name2(this, "Un");
+    __name(this, "Un");
   }
   constructor() {
     super(...arguments);
@@ -7755,23 +6545,26 @@ var export_defaults = ct.defaults;
 var export_escapeIdentifier = ct.escapeIdentifier;
 var export_escapeLiteral = ct.escapeLiteral;
 var export_types = ct.types;
+
+// utils/db/connection.ts
 ce.fetchConnectionCache = true;
-function getSQL(env22) {
-  const connectionString = env22?.DATABASE_URL || process.env.DATABASE_URL;
+function getSQL(env2) {
+  const connectionString = env2?.DATABASE_URL || process.env.DATABASE_URL;
   if (!connectionString) {
     throw new Error("DATABASE_URL environment variable is required");
   }
   return cs(connectionString);
 }
 __name(getSQL, "getSQL");
-__name2(getSQL, "getSQL");
-async function onRequest2(context22) {
-  const { request, env: env22 } = context22;
+
+// api/admin-events-backup.ts
+async function onRequest2(context2) {
+  const { request, env: env2 } = context2;
   const url = new URL(request.url);
   const method = request.method;
   if (method !== "GET") {
     const apiKey = request.headers.get("X-API-Key");
-    if (apiKey !== env22.ADMIN_API_KEY) {
+    if (apiKey !== env2.ADMIN_API_KEY) {
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         {
@@ -7784,7 +6577,7 @@ async function onRequest2(context22) {
       );
     }
   }
-  const sql = getSQL(context22.env);
+  const sql = getSQL(context2.env);
   try {
     if (method === "GET") {
       const limit = parseInt(url.searchParams.get("limit") || "100", 10);
@@ -7903,8 +6696,8 @@ async function onRequest2(context22) {
         }
       }
     );
-  } catch (error32) {
-    console.error("Admin events error:", error32);
+  } catch (error3) {
+    console.error("Admin events error:", error3);
     return new Response(
       JSON.stringify({ error: "Internal server error" }),
       {
@@ -7917,11 +6710,12 @@ async function onRequest2(context22) {
     );
   }
 }
-__name(onRequest2, "onRequest2");
-__name2(onRequest2, "onRequest");
+__name(onRequest2, "onRequest");
+
+// api/admin-events-simple.ts
 ce.fetchConnectionCache = true;
-async function onRequest3(context22) {
-  const { request, env: env22 } = context22;
+async function onRequest3(context2) {
+  const { request, env: env2 } = context2;
   const url = new URL(request.url);
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
@@ -7933,7 +6727,7 @@ async function onRequest3(context22) {
     return new Response(null, { headers: corsHeaders });
   }
   try {
-    const connectionString = env22.DATABASE_URL;
+    const connectionString = env2.DATABASE_URL;
     if (!connectionString) {
       throw new Error("DATABASE_URL not configured");
     }
@@ -7993,21 +6787,22 @@ async function onRequest3(context22) {
     }), {
       headers: corsHeaders
     });
-  } catch (error32) {
-    console.error("Error:", error32);
+  } catch (error3) {
+    console.error("Error:", error3);
     return new Response(JSON.stringify({
       error: "Failed to fetch events",
-      message: error32.message
+      message: error3.message
     }), {
       status: 500,
       headers: corsHeaders
     });
   }
 }
-__name(onRequest3, "onRequest3");
-__name2(onRequest3, "onRequest");
-async function onRequest4(context22) {
-  const { request, env: env22 } = context22;
+__name(onRequest3, "onRequest");
+
+// api/agenda-summaries.ts
+async function onRequest4(context2) {
+  const { request, env: env2 } = context2;
   const url = new URL(request.url);
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
@@ -8047,26 +6842,27 @@ async function onRequest4(context22) {
     }
     query2 += ` ORDER BY e.date ASC, e.time ASC LIMIT ?`;
     params.push(limit);
-    const stmt = env22.DB.prepare(query2);
+    const stmt = env2.DB.prepare(query2);
     const { results: agendas } = await stmt.bind(...params).all();
     return new Response(JSON.stringify({ agendas }), {
       headers: corsHeaders
     });
-  } catch (error32) {
-    console.error("Error:", error32);
+  } catch (error3) {
+    console.error("Error:", error3);
     return new Response(JSON.stringify({
       error: "Failed to fetch agenda summaries",
-      details: error32.message
+      details: error3.message
     }), {
       status: 500,
       headers: corsHeaders
     });
   }
 }
-__name(onRequest4, "onRequest4");
-__name2(onRequest4, "onRequest");
-var onRequest5 = /* @__PURE__ */ __name2(async (context22) => {
-  const { SCRAPER_CACHE } = context22.env;
+__name(onRequest4, "onRequest");
+
+// api/cache-info.ts
+var onRequest5 = /* @__PURE__ */ __name(async (context2) => {
+  const { SCRAPER_CACHE } = context2.env;
   try {
     const list = await SCRAPER_CACHE.list({ prefix: "scraper:" });
     const caches = await Promise.all(
@@ -8084,17 +6880,19 @@ var onRequest5 = /* @__PURE__ */ __name2(async (context22) => {
     return new Response(JSON.stringify(caches), {
       headers: { "Content-Type": "application/json" }
     });
-  } catch (error32) {
-    console.error("Cache info error:", error32);
+  } catch (error3) {
+    console.error("Cache info error:", error3);
     return new Response(JSON.stringify({ error: "Failed to fetch cache info" }), {
       status: 500,
       headers: { "Content-Type": "application/json" }
     });
   }
 }, "onRequest");
-async function onRequest6(context22) {
-  const { request, env: env22 } = context22;
-  const apiKey = env22.CONGRESS_API_KEY || env22.VITE_CONGRESS_API_KEY;
+
+// api/congress-meetings.ts
+async function onRequest6(context2) {
+  const { request, env: env2 } = context2;
+  const apiKey = env2.CONGRESS_API_KEY || env2.VITE_CONGRESS_API_KEY;
   if (!apiKey) {
     return new Response(
       JSON.stringify({
@@ -8125,12 +6923,12 @@ async function onRequest6(context22) {
         }
       }
     );
-  } catch (error32) {
-    console.error("Congress API error:", error32);
+  } catch (error3) {
+    console.error("Congress API error:", error3);
     return new Response(
       JSON.stringify({
         error: "Failed to fetch congressional meetings",
-        details: error32 instanceof Error ? error32.message : "Unknown error"
+        details: error3 instanceof Error ? error3.message : "Unknown error"
       }),
       {
         status: 500,
@@ -8143,12 +6941,13 @@ async function onRequest6(context22) {
     );
   }
 }
-__name(onRequest6, "onRequest6");
-__name2(onRequest6, "onRequest");
-async function onRequest7(context22) {
-  const { request, env: env22 } = context22;
+__name(onRequest6, "onRequest");
+
+// api/db-maintenance.ts
+async function onRequest7(context2) {
+  const { request, env: env2 } = context2;
   const apiKey = request.headers.get("X-API-Key");
-  if (apiKey !== env22.ADMIN_API_KEY) {
+  if (apiKey !== env2.ADMIN_API_KEY) {
     return new Response(
       JSON.stringify({ error: "Unauthorized" }),
       {
@@ -8161,7 +6960,7 @@ async function onRequest7(context22) {
     );
   }
   try {
-    const sql = getSQL(context22.env);
+    const sql = getSQL(context2.env);
     const results = {};
     const cleanupResult = await sql`
       DELETE FROM events WHERE date < CURRENT_DATE - INTERVAL '7 days'
@@ -8189,12 +6988,12 @@ async function onRequest7(context22) {
         }
       }
     );
-  } catch (error32) {
-    console.error("Database maintenance error:", error32);
+  } catch (error3) {
+    console.error("Database maintenance error:", error3);
     return new Response(
       JSON.stringify({
         error: "Maintenance failed",
-        details: error32 instanceof Error ? error32.message : "Unknown error"
+        details: error3 instanceof Error ? error3.message : "Unknown error"
       }),
       {
         status: 500,
@@ -8206,11 +7005,12 @@ async function onRequest7(context22) {
     );
   }
 }
-__name(onRequest7, "onRequest7");
-__name2(onRequest7, "onRequest");
-var onRequest8 = /* @__PURE__ */ __name2(async (context22) => {
-  const { SCRAPER_CACHE } = context22.env;
-  const url = new URL(context22.request.url);
+__name(onRequest7, "onRequest");
+
+// api/invalidate-cache.ts
+var onRequest8 = /* @__PURE__ */ __name(async (context2) => {
+  const { SCRAPER_CACHE } = context2.env;
+  const url = new URL(context2.request.url);
   const state = url.searchParams.get("state");
   if (!state) {
     return new Response(JSON.stringify({ error: "State parameter required" }), {
@@ -8227,16 +7027,18 @@ var onRequest8 = /* @__PURE__ */ __name2(async (context22) => {
     }), {
       headers: { "Content-Type": "application/json" }
     });
-  } catch (error32) {
-    console.error("Cache invalidation error:", error32);
+  } catch (error3) {
+    console.error("Cache invalidation error:", error3);
     return new Response(JSON.stringify({ error: "Failed to invalidate cache" }), {
       status: 500,
       headers: { "Content-Type": "application/json" }
     });
   }
 }, "onRequest");
-async function onRequest9(context22) {
-  const { request, env: env22 } = context22;
+
+// api/local-meetings.ts
+async function onRequest9(context2) {
+  const { request, env: env2 } = context2;
   console.log("\u{1F3D8}\uFE0F LOCAL-MEETINGS: Request received");
   const url = new URL(request.url);
   const lat = parseFloat(url.searchParams.get("lat") || "");
@@ -8261,7 +7063,7 @@ async function onRequest9(context22) {
     );
   }
   try {
-    const { results: allEvents } = await env22.DB.prepare(`
+    const { results: allEvents } = await env2.DB.prepare(`
       SELECT 
         id, name, date, time, location_name as location, lat, lng,
         level, type, state_code as state, committee_name as committee, description,
@@ -8283,7 +7085,7 @@ async function onRequest9(context22) {
       return distance <= radius;
     }).slice(0, 100);
     for (const event of eventsWithinRadius) {
-      const { results: agendaSummaries } = await env22.DB.prepare(`
+      const { results: agendaSummaries } = await env2.DB.prepare(`
         SELECT summary FROM agenda_summaries WHERE event_id = ? LIMIT 1
       `).bind(event.id).all();
       if (agendaSummaries && agendaSummaries.length > 0 && agendaSummaries[0].summary) {
@@ -8303,13 +7105,13 @@ async function onRequest9(context22) {
         }
       }
     );
-  } catch (error32) {
-    console.error("Error in local-meetings:", error32);
+  } catch (error3) {
+    console.error("Error in local-meetings:", error3);
     return new Response(
       JSON.stringify({
         error: "Failed to fetch local meetings",
-        message: error32.message,
-        stack: error32.stack
+        message: error3.message,
+        stack: error3.stack
       }),
       {
         status: 500,
@@ -8322,8 +7124,9 @@ async function onRequest9(context22) {
     );
   }
 }
-__name(onRequest9, "onRequest9");
-__name2(onRequest9, "onRequest");
+__name(onRequest9, "onRequest");
+
+// api/scraper-configs.ts
 function parseNeonUrl(connectionString) {
   const match2 = connectionString.match(/postgresql:\/\/([^:]+):([^@]+)@([^\/]+)\/(.+?)(\?|$)/);
   if (!match2) throw new Error("Invalid DATABASE_URL format");
@@ -8332,7 +7135,6 @@ function parseNeonUrl(connectionString) {
   return { username, password, host, database, projectId };
 }
 __name(parseNeonUrl, "parseNeonUrl");
-__name2(parseNeonUrl, "parseNeonUrl");
 async function query(connectionString, sql, params = []) {
   const { host, database, username, password } = parseNeonUrl(connectionString);
   const directHost = host.replace("-pooler", "");
@@ -8351,18 +7153,17 @@ async function query(connectionString, sql, params = []) {
     })
   });
   if (!response.ok) {
-    const error32 = await response.text();
-    throw new Error(`Database query failed: ${error32}`);
+    const error3 = await response.text();
+    throw new Error(`Database query failed: ${error3}`);
   }
   const result = await response.json();
   return result.rows || [];
 }
 __name(query, "query");
-__name2(query, "query");
-async function onRequest10(context22) {
-  const { request, env: env22 } = context22;
+async function onRequest10(context2) {
+  const { request, env: env2 } = context2;
   const url = new URL(request.url);
-  const DATABASE_URL = env22.DATABASE_URL || "postgresql://neondb_owner:npg_j3RuDlkJep6n@ep-frosty-dream-adlutkdw-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
+  const DATABASE_URL = env2.DATABASE_URL || "postgresql://neondb_owner:npg_j3RuDlkJep6n@ep-frosty-dream-adlutkdw-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
@@ -8393,17 +7194,17 @@ async function onRequest10(context22) {
       });
     }
     if (request.method === "POST") {
-      const config22 = await request.json();
+      const config2 = await request.json();
       const rows = await query(
         DATABASE_URL,
         "INSERT INTO scraper_configs (name, description, start_url, fields, ai_fields, storage) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, description, start_url, fields, ai_fields, storage, created_at, updated_at",
         [
-          config22.name,
-          config22.description || null,
-          config22.startUrl,
-          JSON.stringify(config22.fields),
-          config22.aiFields ? JSON.stringify(config22.aiFields) : null,
-          config22.storage ? JSON.stringify(config22.storage) : null
+          config2.name,
+          config2.description || null,
+          config2.startUrl,
+          JSON.stringify(config2.fields),
+          config2.aiFields ? JSON.stringify(config2.aiFields) : null,
+          config2.storage ? JSON.stringify(config2.storage) : null
         ]
       );
       const saved = rows[0];
@@ -8425,8 +7226,8 @@ async function onRequest10(context22) {
       });
     }
     if (request.method === "PUT") {
-      const config22 = await request.json();
-      if (!config22.id) {
+      const config2 = await request.json();
+      if (!config2.id) {
         return new Response(JSON.stringify({ error: "Missing config ID" }), {
           status: 400,
           headers: { "Content-Type": "application/json", ...corsHeaders }
@@ -8436,13 +7237,13 @@ async function onRequest10(context22) {
         DATABASE_URL,
         "UPDATE scraper_configs SET name = $1, description = $2, start_url = $3, fields = $4, ai_fields = $5, storage = $6, updated_at = NOW() WHERE id = $7 RETURNING id, name, description, start_url, fields, ai_fields, storage, created_at, updated_at",
         [
-          config22.name,
-          config22.description || null,
-          config22.startUrl,
-          JSON.stringify(config22.fields),
-          config22.aiFields ? JSON.stringify(config22.aiFields) : null,
-          config22.storage ? JSON.stringify(config22.storage) : null,
-          config22.id
+          config2.name,
+          config2.description || null,
+          config2.startUrl,
+          JSON.stringify(config2.fields),
+          config2.aiFields ? JSON.stringify(config2.aiFields) : null,
+          config2.storage ? JSON.stringify(config2.storage) : null,
+          config2.id
         ]
       );
       if (rows.length === 0) {
@@ -8486,20 +7287,21 @@ async function onRequest10(context22) {
       status: 405,
       headers: { "Content-Type": "application/json", ...corsHeaders }
     });
-  } catch (error32) {
-    console.error("Scraper configs API error:", error32);
+  } catch (error3) {
+    console.error("Scraper configs API error:", error3);
     return new Response(JSON.stringify({
-      error: error32.message || "Internal server error"
+      error: error3.message || "Internal server error"
     }), {
       status: 500,
       headers: { "Content-Type": "application/json", ...corsHeaders }
     });
   }
 }
-__name(onRequest10, "onRequest10");
-__name2(onRequest10, "onRequest");
-async function onRequest11(context22) {
-  const { request, env: env22 } = context22;
+__name(onRequest10, "onRequest");
+
+// api/scraper-templates.ts
+async function onRequest11(context2) {
+  const { request, env: env2 } = context2;
   const url = new URL(request.url);
   const path = url.pathname;
   const corsHeaders = {
@@ -8525,7 +7327,7 @@ async function onRequest11(context22) {
         params.push(`%${search}%`, `%${search}%`);
       }
       query2 += " ORDER BY use_count DESC, name ASC";
-      const { results } = await env22.DB.prepare(query2).bind(...params).all();
+      const { results } = await env2.DB.prepare(query2).bind(...params).all();
       const templates = results.map((t) => ({
         ...t,
         selectors: JSON.parse(t.selectors || "{}")
@@ -8540,7 +7342,7 @@ async function onRequest11(context22) {
     }
     if (request.method === "GET" && url.searchParams.get("id")) {
       const id = url.searchParams.get("id");
-      const { results } = await env22.DB.prepare(
+      const { results } = await env2.DB.prepare(
         "SELECT * FROM scraper_templates WHERE id = ?"
       ).bind(id).all();
       if (!results || results.length === 0) {
@@ -8554,7 +7356,7 @@ async function onRequest11(context22) {
       }
       const template = results[0];
       template.selectors = JSON.parse(template.selectors || "{}");
-      await env22.DB.prepare(
+      await env2.DB.prepare(
         "UPDATE scraper_templates SET use_count = use_count + 1 WHERE id = ?"
       ).bind(id).run();
       return new Response(JSON.stringify({
@@ -8568,7 +7370,7 @@ async function onRequest11(context22) {
       const data = await request.json();
       const id = data.id || `template-${Date.now()}`;
       const selectorsJson = JSON.stringify(data.selectors || {});
-      await env22.DB.prepare(`
+      await env2.DB.prepare(`
         INSERT INTO scraper_templates 
         (id, name, description, category, url_pattern, selectors, example_url, requires_javascript, is_public)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -8636,7 +7438,7 @@ async function onRequest11(context22) {
         });
       }
       params.push(id);
-      await env22.DB.prepare(`
+      await env2.DB.prepare(`
         UPDATE scraper_templates SET ${updates.join(", ")} WHERE id = ?
       `).bind(...params).run();
       return new Response(JSON.stringify({
@@ -8648,7 +7450,7 @@ async function onRequest11(context22) {
     }
     if (request.method === "DELETE" && url.searchParams.get("id")) {
       const id = url.searchParams.get("id");
-      await env22.DB.prepare("DELETE FROM scraper_templates WHERE id = ?").bind(id).run();
+      await env2.DB.prepare("DELETE FROM scraper_templates WHERE id = ?").bind(id).run();
       return new Response(JSON.stringify({
         success: true,
         message: "Template deleted successfully"
@@ -8663,21 +7465,22 @@ async function onRequest11(context22) {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
-  } catch (error32) {
-    console.error("Template API error:", error32);
+  } catch (error3) {
+    console.error("Template API error:", error3);
     return new Response(JSON.stringify({
       success: false,
-      error: error32.message
+      error: error3.message
     }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
   }
 }
-__name(onRequest11, "onRequest11");
-__name2(onRequest11, "onRequest");
-async function onRequest12(context22) {
-  const { request, env: env22 } = context22;
+__name(onRequest11, "onRequest");
+
+// api/state-events.ts
+async function onRequest12(context2) {
+  const { request, env: env2 } = context2;
   const url = new URL(request.url);
   const stateAbbr = url.searchParams.get("state")?.toUpperCase();
   const corsHeaders = {
@@ -8700,7 +7503,7 @@ async function onRequest12(context22) {
   }
   try {
     const limit = parseInt(url.searchParams.get("limit") || "100", 10);
-    const { results: events } = await env22.DB.prepare(`
+    const { results: events } = await env2.DB.prepare(`
       SELECT 
         e.id,
         e.name,
@@ -8730,7 +7533,7 @@ async function onRequest12(context22) {
     const billsMap = /* @__PURE__ */ new Map();
     if (eventIds.length > 0) {
       const placeholders = eventIds.map(() => "?").join(",");
-      const { results: allBills } = await env22.DB.prepare(`
+      const { results: allBills } = await env2.DB.prepare(`
         SELECT 
           eb.event_id,
           b.bill_number as number,
@@ -8752,7 +7555,7 @@ async function onRequest12(context22) {
     const tagsMap = /* @__PURE__ */ new Map();
     if (eventIds.length > 0) {
       const placeholders = eventIds.map(() => "?").join(",");
-      const { results: allTags } = await env22.DB.prepare(`
+      const { results: allTags } = await env2.DB.prepare(`
         SELECT event_id, tag FROM event_tags WHERE event_id IN (${placeholders})
       `).bind(...eventIds).all();
       for (const tagRow of allTags || []) {
@@ -8765,7 +7568,7 @@ async function onRequest12(context22) {
     const summariesMap = /* @__PURE__ */ new Map();
     if (eventIds.length > 0) {
       const placeholders = eventIds.map(() => "?").join(",");
-      const { results: allSummaries } = await env22.DB.prepare(`
+      const { results: allSummaries } = await env2.DB.prepare(`
         SELECT event_id, summary FROM agenda_summaries WHERE event_id IN (${placeholders})
       `).bind(...eventIds).all();
       for (const summaryRow of allSummaries || []) {
@@ -8783,7 +7586,7 @@ async function onRequest12(context22) {
     }
     let calendarSources = [];
     try {
-      const { results: sources } = await env22.DB.prepare(`
+      const { results: sources } = await env2.DB.prepare(`
         SELECT name, url, type, description, notes, status
         FROM data_sources
         WHERE state_code = ?
@@ -8803,20 +7606,21 @@ async function onRequest12(context22) {
     return new Response(JSON.stringify(events), {
       headers: responseHeaders
     });
-  } catch (error32) {
-    console.error("Error:", error32);
+  } catch (error3) {
+    console.error("Error:", error3);
     return new Response(JSON.stringify({
       error: "Failed to fetch state events",
-      message: error32.message,
-      stack: error32.stack
+      message: error3.message,
+      stack: error3.stack
     }), {
       status: 500,
       headers: corsHeaders
     });
   }
 }
-__name(onRequest12, "onRequest12");
-__name2(onRequest12, "onRequest");
+__name(onRequest12, "onRequest");
+
+// api/state-events-backup2.ts
 var STATE_JURISDICTIONS = {
   "AL": { id: "ocd-jurisdiction/country:us/state:al/government", capitol: { lat: 32.3617, lng: -86.2792, city: "Montgomery" } },
   "AK": { id: "ocd-jurisdiction/country:us/state:ak/government", capitol: { lat: 58.3019, lng: -134.4197, city: "Juneau" } },
@@ -8869,8 +7673,8 @@ var STATE_JURISDICTIONS = {
   "WI": { id: "ocd-jurisdiction/country:us/state:wi/government", capitol: { lat: 43.0731, lng: -89.4012, city: "Madison" } },
   "WY": { id: "ocd-jurisdiction/country:us/state:wy/government", capitol: { lat: 41.14, lng: -104.8202, city: "Cheyenne" } }
 };
-async function onRequest13(context22) {
-  const { request, env: env22 } = context22;
+async function onRequest13(context2) {
+  const { request, env: env2 } = context2;
   console.log("\u{1F3E2} STATE-EVENTS: Request received");
   const url = new URL(request.url);
   const stateAbbr = url.searchParams.get("state")?.toUpperCase();
@@ -8892,7 +7696,7 @@ async function onRequest13(context22) {
       }
     );
   }
-  const sql = getSQL(context22.env);
+  const sql = getSQL(context2.env);
   try {
     console.log(`\u{1F4CA} Querying database for ${stateAbbr} events...`);
     const dataAgeResult = await sql`
@@ -9007,11 +7811,12 @@ async function onRequest13(context22) {
     );
   }
 }
-__name(onRequest13, "onRequest13");
-__name2(onRequest13, "onRequest");
+__name(onRequest13, "onRequest");
+
+// api/state-events-simple.ts
 ce.fetchConnectionCache = true;
-async function onRequest14(context22) {
-  const { request, env: env22 } = context22;
+async function onRequest14(context2) {
+  const { request, env: env2 } = context2;
   const url = new URL(request.url);
   const stateAbbr = url.searchParams.get("state")?.toUpperCase();
   const corsHeaders = {
@@ -9032,7 +7837,7 @@ async function onRequest14(context22) {
     });
   }
   try {
-    const sql = cs(env22.DATABASE_URL);
+    const sql = cs(env2.DATABASE_URL);
     const limit = parseInt(url.searchParams.get("limit") || "100", 10);
     const result = await sql`
       SELECT 
@@ -9084,22 +7889,23 @@ async function onRequest14(context22) {
     }), {
       headers: corsHeaders
     });
-  } catch (error32) {
-    console.error("Error:", error32);
+  } catch (error3) {
+    console.error("Error:", error3);
     return new Response(JSON.stringify({
       error: "Failed to fetch state events",
-      message: error32.message
+      message: error3.message
     }), {
       status: 500,
       headers: corsHeaders
     });
   }
 }
-__name(onRequest14, "onRequest14");
-__name2(onRequest14, "onRequest");
-async function onRequest15(context22) {
+__name(onRequest14, "onRequest");
+
+// api/test.ts
+async function onRequest15(context2) {
   try {
-    const sql = getSQL(context22.env);
+    const sql = getSQL(context2.env);
     const result = await sql`SELECT NOW() as current_time, COUNT(*) as event_count FROM events`;
     return new Response(
       JSON.stringify({
@@ -9120,8 +7926,8 @@ async function onRequest15(context22) {
         }
       }
     );
-  } catch (error32) {
-    console.error("Test endpoint error:", error32);
+  } catch (error3) {
+    console.error("Test endpoint error:", error3);
     return new Response(
       JSON.stringify({
         message: "Test function works!",
@@ -9129,7 +7935,7 @@ async function onRequest15(context22) {
         service: "CiviTracker API",
         database: {
           connected: false,
-          error: error32 instanceof Error ? error32.message : "Unknown error"
+          error: error3 instanceof Error ? error3.message : "Unknown error"
         }
       }),
       {
@@ -9142,12 +7948,13 @@ async function onRequest15(context22) {
     );
   }
 }
-__name(onRequest15, "onRequest15");
-__name2(onRequest15, "onRequest");
-async function onRequest16(context22) {
-  const { env: env22 } = context22;
+__name(onRequest15, "onRequest");
+
+// api/test-db.ts
+async function onRequest16(context2) {
+  const { env: env2 } = context2;
   try {
-    const dbUrl = new URL(env22.DATABASE_URL.replace("postgresql://", "https://"));
+    const dbUrl = new URL(env2.DATABASE_URL.replace("postgresql://", "https://"));
     const auth = dbUrl.username + ":" + dbUrl.password;
     const response = await fetch("https://console.neon.tech/api/v2/sql", {
       method: "POST",
@@ -9169,18 +7976,19 @@ async function onRequest16(context22) {
         "Access-Control-Allow-Origin": "*"
       }
     });
-  } catch (error32) {
+  } catch (error3) {
     return new Response(JSON.stringify({
-      error: error32.message,
-      dbUrlExists: !!env22.DATABASE_URL
+      error: error3.message,
+      dbUrlExists: !!env2.DATABASE_URL
     }), {
       status: 500,
       headers: { "Content-Type": "application/json" }
     });
   }
 }
-__name(onRequest16, "onRequest16");
-__name2(onRequest16, "onRequest");
+__name(onRequest16, "onRequest");
+
+// api/test-simple.ts
 async function onRequest17() {
   return new Response(JSON.stringify({
     status: "ok",
@@ -9193,10 +8001,11 @@ async function onRequest17() {
     }
   });
 }
-__name(onRequest17, "onRequest17");
-__name2(onRequest17, "onRequest");
-async function onRequest18(context22) {
-  const { request, env: env22 } = context22;
+__name(onRequest17, "onRequest");
+
+// api/top-events.ts
+async function onRequest18(context2) {
+  const { request, env: env2 } = context2;
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, OPTIONS",
@@ -9207,7 +8016,7 @@ async function onRequest18(context22) {
     return new Response(null, { headers: corsHeaders });
   }
   try {
-    const { results: events } = await env22.DB.prepare(`
+    const { results: events } = await env2.DB.prepare(`
       SELECT 
         e.id,
         e.name,
@@ -9228,7 +8037,7 @@ async function onRequest18(context22) {
       LIMIT 100
     `).all();
     for (const event of events) {
-      const { results: tags } = await env22.DB.prepare(`
+      const { results: tags } = await env2.DB.prepare(`
         SELECT tag FROM event_tags WHERE event_id = ?
       `).bind(event.id).all();
       event.tags = tags?.map((t) => t.tag) || [];
@@ -9251,13 +8060,13 @@ async function onRequest18(context22) {
         }
       }
     );
-  } catch (error32) {
-    console.error("Error fetching top events:", error32);
+  } catch (error3) {
+    console.error("Error fetching top events:", error3);
     return new Response(
       JSON.stringify({
         error: "Failed to fetch top events",
-        message: error32.message,
-        stack: error32.stack
+        message: error3.message,
+        stack: error3.stack
       }),
       {
         status: 500,
@@ -9269,8 +8078,9 @@ async function onRequest18(context22) {
     );
   }
 }
-__name(onRequest18, "onRequest18");
-__name2(onRequest18, "onRequest");
+__name(onRequest18, "onRequest");
+
+// api/update-tags.ts
 var TAG_PATTERNS = {
   "healthcare": [/health/i, /medicaid/i, /medicare/i, /hospital/i, /medical/i, /patient/i, /doctor/i, /nurse/i, /pharmacy/i, /prescription/i, /mental\s?health/i, /opioid/i, /vaccine/i, /pandemic/i, /covid/i],
   "education": [/education/i, /school/i, /university/i, /college/i, /student/i, /teacher/i, /curriculum/i, /literacy/i, /tuition/i, /scholarship/i, /k-12/i, /charter\s?school/i],
@@ -9293,8 +8103,8 @@ var TAG_PATTERNS = {
   "public": [/public\s?comment/i, /public\s?input/i, /public\s?testimony/i, /citizen/i, /community\s?input/i, /open\s?to\s?public/i, /public\s?participation/i],
   "livestream": [/livestream/i, /live\s?stream/i, /webcast/i, /broadcast/i, /streaming/i, /watch\s?live/i, /remote/i, /virtual/i, /zoom/i, /teams/i]
 };
-async function onRequest19(context22) {
-  const { request, env: env22 } = context22;
+async function onRequest19(context2) {
+  const { request, env: env2 } = context2;
   if (request.method === "OPTIONS") {
     return new Response(null, {
       status: 204,
@@ -9306,7 +8116,7 @@ async function onRequest19(context22) {
     });
   }
   try {
-    const { results: events } = await env22.DB.prepare(`
+    const { results: events } = await env2.DB.prepare(`
       SELECT 
         e.id, 
         e.name, 
@@ -9333,11 +8143,11 @@ async function onRequest19(context22) {
         }
         if (tags.length > 0) {
           statements.push(
-            env22.DB.prepare(`DELETE FROM event_tags WHERE event_id = ?`).bind(event.id)
+            env2.DB.prepare(`DELETE FROM event_tags WHERE event_id = ?`).bind(event.id)
           );
           for (const tag of tags) {
             statements.push(
-              env22.DB.prepare(`INSERT INTO event_tags (event_id, tag) VALUES (?, ?)`).bind(event.id, tag)
+              env2.DB.prepare(`INSERT INTO event_tags (event_id, tag) VALUES (?, ?)`).bind(event.id, tag)
             );
             totalTagsAdded++;
           }
@@ -9345,7 +8155,7 @@ async function onRequest19(context22) {
         }
       }
       if (statements.length > 0) {
-        await env22.DB.batch(statements);
+        await env2.DB.batch(statements);
         console.log(`\u2705 Processed batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(events.length / batchSize)}`);
       }
     }
@@ -9366,12 +8176,12 @@ async function onRequest19(context22) {
         }
       }
     );
-  } catch (error32) {
-    console.error("Update tags error:", error32);
+  } catch (error3) {
+    console.error("Update tags error:", error3);
     return new Response(
       JSON.stringify({
         error: "Tag update failed",
-        details: error32 instanceof Error ? error32.message : "Unknown error"
+        details: error3 instanceof Error ? error3.message : "Unknown error"
       }),
       {
         status: 500,
@@ -9383,8 +8193,9 @@ async function onRequest19(context22) {
     );
   }
 }
-__name(onRequest19, "onRequest19");
-__name2(onRequest19, "onRequest");
+__name(onRequest19, "onRequest");
+
+// ../.wrangler/tmp/pages-PKr4aD/functionsRoutes-0.5959036383704024.mjs
 var routes = [
   {
     routePath: "/api/admin-events",
@@ -9520,6 +8331,8 @@ var routes = [
     modules: [onRequest19]
   }
 ];
+
+// ../../AppData/Roaming/npm/node_modules/wrangler/node_modules/path-to-regexp/dist.es2015/index.js
 function lexer(str) {
   var tokens = [];
   var i = 0;
@@ -9565,7 +8378,7 @@ function lexer(str) {
       continue;
     }
     if (char === "(") {
-      var count32 = 1;
+      var count3 = 1;
       var pattern = "";
       var j = i + 1;
       if (str[j] === "?") {
@@ -9577,20 +8390,20 @@ function lexer(str) {
           continue;
         }
         if (str[j] === ")") {
-          count32--;
-          if (count32 === 0) {
+          count3--;
+          if (count3 === 0) {
             j++;
             break;
           }
         } else if (str[j] === "(") {
-          count32++;
+          count3++;
           if (str[j + 1] !== "?") {
             throw new TypeError("Capturing groups are not allowed at ".concat(j));
           }
         }
         pattern += str[j++];
       }
-      if (count32)
+      if (count3)
         throw new TypeError("Unbalanced pattern at ".concat(i));
       if (!pattern)
         throw new TypeError("Missing pattern at ".concat(i));
@@ -9604,7 +8417,6 @@ function lexer(str) {
   return tokens;
 }
 __name(lexer, "lexer");
-__name2(lexer, "lexer");
 function parse(str, options) {
   if (options === void 0) {
     options = {};
@@ -9615,18 +8427,18 @@ function parse(str, options) {
   var key = 0;
   var i = 0;
   var path = "";
-  var tryConsume = /* @__PURE__ */ __name2(function(type) {
+  var tryConsume = /* @__PURE__ */ __name(function(type) {
     if (i < tokens.length && tokens[i].type === type)
       return tokens[i++].value;
   }, "tryConsume");
-  var mustConsume = /* @__PURE__ */ __name2(function(type) {
+  var mustConsume = /* @__PURE__ */ __name(function(type) {
     var value2 = tryConsume(type);
     if (value2 !== void 0)
       return value2;
     var _a2 = tokens[i], nextType = _a2.type, index = _a2.index;
     throw new TypeError("Unexpected ".concat(nextType, " at ").concat(index, ", expected ").concat(type));
   }, "mustConsume");
-  var consumeText = /* @__PURE__ */ __name2(function() {
+  var consumeText = /* @__PURE__ */ __name(function() {
     var result2 = "";
     var value2;
     while (value2 = tryConsume("CHAR") || tryConsume("ESCAPED_CHAR")) {
@@ -9634,7 +8446,7 @@ function parse(str, options) {
     }
     return result2;
   }, "consumeText");
-  var isSafe = /* @__PURE__ */ __name2(function(value2) {
+  var isSafe = /* @__PURE__ */ __name(function(value2) {
     for (var _i = 0, delimiter_1 = delimiter; _i < delimiter_1.length; _i++) {
       var char2 = delimiter_1[_i];
       if (value2.indexOf(char2) > -1)
@@ -9642,7 +8454,7 @@ function parse(str, options) {
     }
     return false;
   }, "isSafe");
-  var safePattern = /* @__PURE__ */ __name2(function(prefix2) {
+  var safePattern = /* @__PURE__ */ __name(function(prefix2) {
     var prev = result[result.length - 1];
     var prevText = prefix2 || (prev && typeof prev === "string" ? prev : "");
     if (prev && !prevText) {
@@ -9705,14 +8517,12 @@ function parse(str, options) {
   return result;
 }
 __name(parse, "parse");
-__name2(parse, "parse");
 function match(str, options) {
   var keys = [];
   var re = pathToRegexp(str, keys, options);
   return regexpToFunction(re, keys, options);
 }
 __name(match, "match");
-__name2(match, "match");
 function regexpToFunction(re, keys, options) {
   if (options === void 0) {
     options = {};
@@ -9726,7 +8536,7 @@ function regexpToFunction(re, keys, options) {
       return false;
     var path = m2[0], index = m2.index;
     var params = /* @__PURE__ */ Object.create(null);
-    var _loop_1 = /* @__PURE__ */ __name2(function(i2) {
+    var _loop_1 = /* @__PURE__ */ __name(function(i2) {
       if (m2[i2] === void 0)
         return "continue";
       var key = keys[i2 - 1];
@@ -9745,17 +8555,14 @@ function regexpToFunction(re, keys, options) {
   };
 }
 __name(regexpToFunction, "regexpToFunction");
-__name2(regexpToFunction, "regexpToFunction");
 function escapeString(str) {
   return str.replace(/([.+*?=^!:${}()[\]|/\\])/g, "\\$1");
 }
 __name(escapeString, "escapeString");
-__name2(escapeString, "escapeString");
 function flags(options) {
   return options && options.sensitive ? "" : "i";
 }
 __name(flags, "flags");
-__name2(flags, "flags");
 function regexpToRegexp(path, keys) {
   if (!keys)
     return path;
@@ -9776,7 +8583,6 @@ function regexpToRegexp(path, keys) {
   return path;
 }
 __name(regexpToRegexp, "regexpToRegexp");
-__name2(regexpToRegexp, "regexpToRegexp");
 function arrayToRegexp(paths, keys, options) {
   var parts = paths.map(function(path) {
     return pathToRegexp(path, keys, options).source;
@@ -9784,12 +8590,10 @@ function arrayToRegexp(paths, keys, options) {
   return new RegExp("(?:".concat(parts.join("|"), ")"), flags(options));
 }
 __name(arrayToRegexp, "arrayToRegexp");
-__name2(arrayToRegexp, "arrayToRegexp");
 function stringToRegexp(path, keys, options) {
   return tokensToRegexp(parse(path, options), keys, options);
 }
 __name(stringToRegexp, "stringToRegexp");
-__name2(stringToRegexp, "stringToRegexp");
 function tokensToRegexp(tokens, keys, options) {
   if (options === void 0) {
     options = {};
@@ -9845,7 +8649,6 @@ function tokensToRegexp(tokens, keys, options) {
   return new RegExp(route, flags(options));
 }
 __name(tokensToRegexp, "tokensToRegexp");
-__name2(tokensToRegexp, "tokensToRegexp");
 function pathToRegexp(path, keys, options) {
   if (path instanceof RegExp)
     return regexpToRegexp(path, keys);
@@ -9854,7 +8657,8 @@ function pathToRegexp(path, keys, options) {
   return stringToRegexp(path, keys, options);
 }
 __name(pathToRegexp, "pathToRegexp");
-__name2(pathToRegexp, "pathToRegexp");
+
+// ../../AppData/Roaming/npm/node_modules/wrangler/templates/pages-template-worker.ts
 var escapeRegex = /[.+?^${}()|[\]\\]/g;
 function* executeRequest(request) {
   const requestPath = new URL(request.url).pathname;
@@ -9905,14 +8709,13 @@ function* executeRequest(request) {
   }
 }
 __name(executeRequest, "executeRequest");
-__name2(executeRequest, "executeRequest");
 var pages_template_worker_default = {
-  async fetch(originalRequest, env22, workerContext) {
+  async fetch(originalRequest, env2, workerContext) {
     let request = originalRequest;
     const handlerIterator = executeRequest(request);
     let data = {};
     let isFailOpen = false;
-    const next = /* @__PURE__ */ __name2(async (input, init) => {
+    const next = /* @__PURE__ */ __name(async (input, init) => {
       if (input !== void 0) {
         let url = input;
         if (typeof input === "string") {
@@ -9923,7 +8726,7 @@ var pages_template_worker_default = {
       const result = handlerIterator.next();
       if (result.done === false) {
         const { handler, params, path } = result.value;
-        const context22 = {
+        const context2 = {
           request: new Request(request.clone()),
           functionPath: path,
           next,
@@ -9937,19 +8740,19 @@ var pages_template_worker_default = {
             }
             data = value;
           },
-          env: env22,
+          env: env2,
           waitUntil: workerContext.waitUntil.bind(workerContext),
-          passThroughOnException: /* @__PURE__ */ __name2(() => {
+          passThroughOnException: /* @__PURE__ */ __name(() => {
             isFailOpen = true;
           }, "passThroughOnException")
         };
-        const response = await handler(context22);
+        const response = await handler(context2);
         if (!(response instanceof Response)) {
           throw new Error("Your Pages function should return a Response");
         }
         return cloneResponse(response);
       } else if ("ASSETS") {
-        const response = await env22["ASSETS"].fetch(request);
+        const response = await env2["ASSETS"].fetch(request);
         return cloneResponse(response);
       } else {
         const response = await fetch(request);
@@ -9958,25 +8761,27 @@ var pages_template_worker_default = {
     }, "next");
     try {
       return await next();
-    } catch (error32) {
+    } catch (error3) {
       if (isFailOpen) {
-        const response = await env22["ASSETS"].fetch(request);
+        const response = await env2["ASSETS"].fetch(request);
         return cloneResponse(response);
       }
-      throw error32;
+      throw error3;
     }
   }
 };
-var cloneResponse = /* @__PURE__ */ __name2((response) => (
+var cloneResponse = /* @__PURE__ */ __name((response) => (
   // https://fetch.spec.whatwg.org/#null-body-status
   new Response(
     [101, 204, 205, 304].includes(response.status) ? null : response.body,
     response
   )
 ), "cloneResponse");
-var drainBody = /* @__PURE__ */ __name2(async (request, env22, _ctx, middlewareCtx) => {
+
+// ../../AppData/Roaming/npm/node_modules/wrangler/templates/middleware/middleware-ensure-req-body-drained.ts
+var drainBody = /* @__PURE__ */ __name(async (request, env2, _ctx, middlewareCtx) => {
   try {
-    return await middlewareCtx.next(request, env22);
+    return await middlewareCtx.next(request, env2);
   } finally {
     try {
       if (request.body !== null && !request.bodyUsed) {
@@ -9990,6 +8795,8 @@ var drainBody = /* @__PURE__ */ __name2(async (request, env22, _ctx, middlewareC
   }
 }, "drainBody");
 var middleware_ensure_req_body_drained_default = drainBody;
+
+// ../../AppData/Roaming/npm/node_modules/wrangler/templates/middleware/middleware-miniflare3-json-error.ts
 function reduceError(e) {
   return {
     name: e?.name,
@@ -9999,31 +8806,33 @@ function reduceError(e) {
   };
 }
 __name(reduceError, "reduceError");
-__name2(reduceError, "reduceError");
-var jsonError = /* @__PURE__ */ __name2(async (request, env22, _ctx, middlewareCtx) => {
+var jsonError = /* @__PURE__ */ __name(async (request, env2, _ctx, middlewareCtx) => {
   try {
-    return await middlewareCtx.next(request, env22);
+    return await middlewareCtx.next(request, env2);
   } catch (e) {
-    const error32 = reduceError(e);
-    return Response.json(error32, {
+    const error3 = reduceError(e);
+    return Response.json(error3, {
       status: 500,
       headers: { "MF-Experimental-Error-Stack": "true" }
     });
   }
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
+
+// ../.wrangler/tmp/bundle-dsm60J/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
 ];
 var middleware_insertion_facade_default = pages_template_worker_default;
+
+// ../../AppData/Roaming/npm/node_modules/wrangler/templates/middleware/common.ts
 var __facade_middleware__ = [];
 function __facade_register__(...args) {
   __facade_middleware__.push(...args.flat());
 }
 __name(__facade_register__, "__facade_register__");
-__name2(__facade_register__, "__facade_register__");
-function __facade_invokeChain__(request, env22, ctx, dispatch, middlewareChain) {
+function __facade_invokeChain__(request, env2, ctx, dispatch, middlewareChain) {
   const [head, ...tail] = middlewareChain;
   const middlewareCtx = {
     dispatch,
@@ -10031,29 +8840,26 @@ function __facade_invokeChain__(request, env22, ctx, dispatch, middlewareChain) 
       return __facade_invokeChain__(newRequest, newEnv, ctx, dispatch, tail);
     }
   };
-  return head(request, env22, ctx, middlewareCtx);
+  return head(request, env2, ctx, middlewareCtx);
 }
 __name(__facade_invokeChain__, "__facade_invokeChain__");
-__name2(__facade_invokeChain__, "__facade_invokeChain__");
-function __facade_invoke__(request, env22, ctx, dispatch, finalMiddleware) {
-  return __facade_invokeChain__(request, env22, ctx, dispatch, [
+function __facade_invoke__(request, env2, ctx, dispatch, finalMiddleware) {
+  return __facade_invokeChain__(request, env2, ctx, dispatch, [
     ...__facade_middleware__,
     finalMiddleware
   ]);
 }
 __name(__facade_invoke__, "__facade_invoke__");
-__name2(__facade_invoke__, "__facade_invoke__");
+
+// ../.wrangler/tmp/bundle-dsm60J/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
-  static {
-    __name(this, "___Facade_ScheduledController__");
-  }
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;
     this.cron = cron;
     this.#noRetry = noRetry;
   }
   static {
-    __name2(this, "__Facade_ScheduledController__");
+    __name(this, "__Facade_ScheduledController__");
   }
   #noRetry;
   noRetry() {
@@ -10070,16 +8876,16 @@ function wrapExportedHandler(worker) {
   for (const middleware of __INTERNAL_WRANGLER_MIDDLEWARE__) {
     __facade_register__(middleware);
   }
-  const fetchDispatcher = /* @__PURE__ */ __name2(function(request, env22, ctx) {
+  const fetchDispatcher = /* @__PURE__ */ __name(function(request, env2, ctx) {
     if (worker.fetch === void 0) {
       throw new Error("Handler does not export a fetch() function.");
     }
-    return worker.fetch(request, env22, ctx);
+    return worker.fetch(request, env2, ctx);
   }, "fetchDispatcher");
   return {
     ...worker,
-    fetch(request, env22, ctx) {
-      const dispatcher = /* @__PURE__ */ __name2(function(type, init) {
+    fetch(request, env2, ctx) {
+      const dispatcher = /* @__PURE__ */ __name(function(type, init) {
         if (type === "scheduled" && worker.scheduled !== void 0) {
           const controller = new __Facade_ScheduledController__(
             Date.now(),
@@ -10087,15 +8893,14 @@ function wrapExportedHandler(worker) {
             () => {
             }
           );
-          return worker.scheduled(controller, env22, ctx);
+          return worker.scheduled(controller, env2, ctx);
         }
       }, "dispatcher");
-      return __facade_invoke__(request, env22, ctx, dispatcher, fetchDispatcher);
+      return __facade_invoke__(request, env2, ctx, dispatcher, fetchDispatcher);
     }
   };
 }
 __name(wrapExportedHandler, "wrapExportedHandler");
-__name2(wrapExportedHandler, "wrapExportedHandler");
 function wrapWorkerEntrypoint(klass) {
   if (__INTERNAL_WRANGLER_MIDDLEWARE__ === void 0 || __INTERNAL_WRANGLER_MIDDLEWARE__.length === 0) {
     return klass;
@@ -10104,15 +8909,15 @@ function wrapWorkerEntrypoint(klass) {
     __facade_register__(middleware);
   }
   return class extends klass {
-    #fetchDispatcher = /* @__PURE__ */ __name2((request, env22, ctx) => {
-      this.env = env22;
+    #fetchDispatcher = /* @__PURE__ */ __name((request, env2, ctx) => {
+      this.env = env2;
       this.ctx = ctx;
       if (super.fetch === void 0) {
         throw new Error("Entrypoint class does not define a fetch() function.");
       }
       return super.fetch(request);
     }, "#fetchDispatcher");
-    #dispatcher = /* @__PURE__ */ __name2((type, init) => {
+    #dispatcher = /* @__PURE__ */ __name((type, init) => {
       if (type === "scheduled" && super.scheduled !== void 0) {
         const controller = new __Facade_ScheduledController__(
           Date.now(),
@@ -10135,7 +8940,6 @@ function wrapWorkerEntrypoint(klass) {
   };
 }
 __name(wrapWorkerEntrypoint, "wrapWorkerEntrypoint");
-__name2(wrapWorkerEntrypoint, "wrapWorkerEntrypoint");
 var WRAPPED_ENTRY;
 if (typeof middleware_insertion_facade_default === "object") {
   WRAPPED_ENTRY = wrapExportedHandler(middleware_insertion_facade_default);
@@ -10143,239 +8947,9 @@ if (typeof middleware_insertion_facade_default === "object") {
   WRAPPED_ENTRY = wrapWorkerEntrypoint(middleware_insertion_facade_default);
 }
 var middleware_loader_entry_default = WRAPPED_ENTRY;
-
-// ../AppData/Roaming/npm/node_modules/wrangler/templates/pages-dev-util.ts
-function isRoutingRuleMatch(pathname, routingRule) {
-  if (!pathname) {
-    throw new Error("Pathname is undefined.");
-  }
-  if (!routingRule) {
-    throw new Error("Routing rule is undefined.");
-  }
-  const ruleRegExp = transformRoutingRuleToRegExp(routingRule);
-  return pathname.match(ruleRegExp) !== null;
-}
-__name(isRoutingRuleMatch, "isRoutingRuleMatch");
-function transformRoutingRuleToRegExp(rule) {
-  let transformedRule;
-  if (rule === "/" || rule === "/*") {
-    transformedRule = rule;
-  } else if (rule.endsWith("/*")) {
-    transformedRule = `${rule.substring(0, rule.length - 2)}(/*)?`;
-  } else if (rule.endsWith("/")) {
-    transformedRule = `${rule.substring(0, rule.length - 1)}(/)?`;
-  } else if (rule.endsWith("*")) {
-    transformedRule = rule;
-  } else {
-    transformedRule = `${rule}(/)?`;
-  }
-  transformedRule = `^${transformedRule.replaceAll(/\./g, "\\.").replaceAll(/\*/g, ".*")}$`;
-  return new RegExp(transformedRule);
-}
-__name(transformRoutingRuleToRegExp, "transformRoutingRuleToRegExp");
-
-// .wrangler/tmp/pages-RMry0X/ezc0xchfz2.js
-var define_ROUTES_default = {
-  version: 1,
-  include: [
-    "/api/*"
-  ],
-  exclude: []
-};
-var routes2 = define_ROUTES_default;
-var pages_dev_pipeline_default = {
-  fetch(request, env3, context3) {
-    const { pathname } = new URL(request.url);
-    for (const exclude of routes2.exclude) {
-      if (isRoutingRuleMatch(pathname, exclude)) {
-        return env3.ASSETS.fetch(request);
-      }
-    }
-    for (const include of routes2.include) {
-      if (isRoutingRuleMatch(pathname, include)) {
-        const workerAsHandler = middleware_loader_entry_default;
-        if (workerAsHandler.fetch === void 0) {
-          throw new TypeError("Entry point missing `fetch` handler");
-        }
-        return workerAsHandler.fetch(request, env3, context3);
-      }
-    }
-    return env3.ASSETS.fetch(request);
-  }
-};
-
-// ../AppData/Roaming/npm/node_modules/wrangler/templates/middleware/middleware-ensure-req-body-drained.ts
-var drainBody2 = /* @__PURE__ */ __name(async (request, env3, _ctx, middlewareCtx) => {
-  try {
-    return await middlewareCtx.next(request, env3);
-  } finally {
-    try {
-      if (request.body !== null && !request.bodyUsed) {
-        const reader = request.body.getReader();
-        while (!(await reader.read()).done) {
-        }
-      }
-    } catch (e) {
-      console.error("Failed to drain the unused request body.", e);
-    }
-  }
-}, "drainBody");
-var middleware_ensure_req_body_drained_default2 = drainBody2;
-
-// ../AppData/Roaming/npm/node_modules/wrangler/templates/middleware/middleware-miniflare3-json-error.ts
-function reduceError2(e) {
-  return {
-    name: e?.name,
-    message: e?.message ?? String(e),
-    stack: e?.stack,
-    cause: e?.cause === void 0 ? void 0 : reduceError2(e.cause)
-  };
-}
-__name(reduceError2, "reduceError");
-var jsonError2 = /* @__PURE__ */ __name(async (request, env3, _ctx, middlewareCtx) => {
-  try {
-    return await middlewareCtx.next(request, env3);
-  } catch (e) {
-    const error4 = reduceError2(e);
-    return Response.json(error4, {
-      status: 500,
-      headers: { "MF-Experimental-Error-Stack": "true" }
-    });
-  }
-}, "jsonError");
-var middleware_miniflare3_json_error_default2 = jsonError2;
-
-// .wrangler/tmp/bundle-M5fzSx/middleware-insertion-facade.js
-var __INTERNAL_WRANGLER_MIDDLEWARE__2 = [
-  middleware_ensure_req_body_drained_default2,
-  middleware_miniflare3_json_error_default2
-];
-var middleware_insertion_facade_default2 = pages_dev_pipeline_default;
-
-// ../AppData/Roaming/npm/node_modules/wrangler/templates/middleware/common.ts
-var __facade_middleware__2 = [];
-function __facade_register__2(...args) {
-  __facade_middleware__2.push(...args.flat());
-}
-__name(__facade_register__2, "__facade_register__");
-function __facade_invokeChain__2(request, env3, ctx, dispatch, middlewareChain) {
-  const [head, ...tail] = middlewareChain;
-  const middlewareCtx = {
-    dispatch,
-    next(newRequest, newEnv) {
-      return __facade_invokeChain__2(newRequest, newEnv, ctx, dispatch, tail);
-    }
-  };
-  return head(request, env3, ctx, middlewareCtx);
-}
-__name(__facade_invokeChain__2, "__facade_invokeChain__");
-function __facade_invoke__2(request, env3, ctx, dispatch, finalMiddleware) {
-  return __facade_invokeChain__2(request, env3, ctx, dispatch, [
-    ...__facade_middleware__2,
-    finalMiddleware
-  ]);
-}
-__name(__facade_invoke__2, "__facade_invoke__");
-
-// .wrangler/tmp/bundle-M5fzSx/middleware-loader.entry.ts
-var __Facade_ScheduledController__2 = class ___Facade_ScheduledController__2 {
-  constructor(scheduledTime, cron, noRetry) {
-    this.scheduledTime = scheduledTime;
-    this.cron = cron;
-    this.#noRetry = noRetry;
-  }
-  static {
-    __name(this, "__Facade_ScheduledController__");
-  }
-  #noRetry;
-  noRetry() {
-    if (!(this instanceof ___Facade_ScheduledController__2)) {
-      throw new TypeError("Illegal invocation");
-    }
-    this.#noRetry();
-  }
-};
-function wrapExportedHandler2(worker) {
-  if (__INTERNAL_WRANGLER_MIDDLEWARE__2 === void 0 || __INTERNAL_WRANGLER_MIDDLEWARE__2.length === 0) {
-    return worker;
-  }
-  for (const middleware of __INTERNAL_WRANGLER_MIDDLEWARE__2) {
-    __facade_register__2(middleware);
-  }
-  const fetchDispatcher = /* @__PURE__ */ __name(function(request, env3, ctx) {
-    if (worker.fetch === void 0) {
-      throw new Error("Handler does not export a fetch() function.");
-    }
-    return worker.fetch(request, env3, ctx);
-  }, "fetchDispatcher");
-  return {
-    ...worker,
-    fetch(request, env3, ctx) {
-      const dispatcher = /* @__PURE__ */ __name(function(type, init) {
-        if (type === "scheduled" && worker.scheduled !== void 0) {
-          const controller = new __Facade_ScheduledController__2(
-            Date.now(),
-            init.cron ?? "",
-            () => {
-            }
-          );
-          return worker.scheduled(controller, env3, ctx);
-        }
-      }, "dispatcher");
-      return __facade_invoke__2(request, env3, ctx, dispatcher, fetchDispatcher);
-    }
-  };
-}
-__name(wrapExportedHandler2, "wrapExportedHandler");
-function wrapWorkerEntrypoint2(klass) {
-  if (__INTERNAL_WRANGLER_MIDDLEWARE__2 === void 0 || __INTERNAL_WRANGLER_MIDDLEWARE__2.length === 0) {
-    return klass;
-  }
-  for (const middleware of __INTERNAL_WRANGLER_MIDDLEWARE__2) {
-    __facade_register__2(middleware);
-  }
-  return class extends klass {
-    #fetchDispatcher = /* @__PURE__ */ __name((request, env3, ctx) => {
-      this.env = env3;
-      this.ctx = ctx;
-      if (super.fetch === void 0) {
-        throw new Error("Entrypoint class does not define a fetch() function.");
-      }
-      return super.fetch(request);
-    }, "#fetchDispatcher");
-    #dispatcher = /* @__PURE__ */ __name((type, init) => {
-      if (type === "scheduled" && super.scheduled !== void 0) {
-        const controller = new __Facade_ScheduledController__2(
-          Date.now(),
-          init.cron ?? "",
-          () => {
-          }
-        );
-        return super.scheduled(controller);
-      }
-    }, "#dispatcher");
-    fetch(request) {
-      return __facade_invoke__2(
-        request,
-        this.env,
-        this.ctx,
-        this.#dispatcher,
-        this.#fetchDispatcher
-      );
-    }
-  };
-}
-__name(wrapWorkerEntrypoint2, "wrapWorkerEntrypoint");
-var WRAPPED_ENTRY2;
-if (typeof middleware_insertion_facade_default2 === "object") {
-  WRAPPED_ENTRY2 = wrapExportedHandler2(middleware_insertion_facade_default2);
-} else if (typeof middleware_insertion_facade_default2 === "function") {
-  WRAPPED_ENTRY2 = wrapWorkerEntrypoint2(middleware_insertion_facade_default2);
-}
-var middleware_loader_entry_default2 = WRAPPED_ENTRY2;
 export {
-  __INTERNAL_WRANGLER_MIDDLEWARE__2 as __INTERNAL_WRANGLER_MIDDLEWARE__,
-  middleware_loader_entry_default2 as default
+  __INTERNAL_WRANGLER_MIDDLEWARE__,
+  middleware_loader_entry_default as default
 };
 /*! Bundled license information:
 
@@ -10394,4 +8968,4 @@ export {
      *)
   *)
 */
-//# sourceMappingURL=ezc0xchfz2.js.map
+//# sourceMappingURL=functionsWorker-0.09631093444139327.mjs.map
