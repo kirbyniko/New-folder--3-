@@ -212,10 +212,84 @@ const server = http.createServer(async (req, res) => {
     return;
   }
   
-  // Only accept POST to /execute or /fetch-html
+  // Only accept POST to /execute, /run, or /fetch-html
   if (req.method !== 'POST') {
     res.writeHead(404, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: 'Not found. Use POST /execute or POST /fetch-html' }));
+    res.end(JSON.stringify({ error: 'Not found. Use POST /execute, /run, or /fetch-html' }));
+    return;
+  }
+  
+  // Route: /run - Simple code execution (no scraping context)
+  if (req.url === '/run') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const request = JSON.parse(body);
+        
+        if (!request.code) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ 
+            success: false,
+            error: 'Missing code parameter' 
+          }));
+          return;
+        }
+        
+        console.log(`\n🔧 Executing code snippet...`);
+        const startTime = Date.now();
+        const logs: string[] = [];
+        
+        // Mock console to capture logs
+        const mockConsole = {
+          log: (...args: any[]) => {
+            logs.push(args.map(a => String(a)).join(' '));
+            console.log('[CODE]', ...args);
+          },
+          error: (...args: any[]) => {
+            logs.push('[ERROR] ' + args.map(a => String(a)).join(' '));
+            console.error('[CODE ERROR]', ...args);
+          }
+        };
+        
+        try {
+          // Execute code with access to axios, cheerio, console
+          const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
+          const fn = new AsyncFunction('axios', 'cheerio', 'console', request.code);
+          await fn(axios, cheerio, mockConsole);
+          
+          const duration = Date.now() - startTime;
+          console.log(`✅ Code executed successfully in ${duration}ms`);
+          
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            success: true,
+            logs: logs,
+            duration: duration
+          }));
+        } catch (error: any) {
+          const duration = Date.now() - startTime;
+          console.error('❌ Code execution failed:', error);
+          
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            success: false,
+            error: error.message,
+            stack: error.stack,
+            logs: logs,
+            duration: duration
+          }));
+        }
+      } catch (error: any) {
+        console.error('❌ Server error:', error);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ 
+          success: false,
+          error: error.message,
+          logs: []
+        }));
+      }
+    });
     return;
   }
   

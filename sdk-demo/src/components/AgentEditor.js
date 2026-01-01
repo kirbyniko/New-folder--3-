@@ -3280,53 +3280,50 @@ Respond with JSON: {"satisfied": true/false, "learning": "what I learned", "next
       if (toolName === 'search_web') {
         // Use DuckDuckGo search via execute_code backend
         const query = params.query;
-        const searchCode = `const axios = require('axios');
-
-(async () => {
-  try {
-    const query = ${JSON.stringify(query)};
-    const url = 'https://html.duckduckgo.com/html/?q=' + encodeURIComponent(query);
-    
-    const response = await axios.get(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-      }
-    });
-    
-    const html = response.data;
-    
-    // Extract search results
-    const results = [];
-    const resultRegex = /<a[^>]+class="result__a"[^>]+href="([^"]+)"[^>]*>([^<]+)<\\/a>/g;
-    
-    let match;
-    let count = 0;
-    while ((match = resultRegex.exec(html)) && count < 5) {
-      const url = match[1];
-      const title = match[2].replace(/&amp;/g, '&').replace(/&quot;/g, '"');
-      results.push({ url, title });
-      count++;
+        const searchCode = `
+try {
+  const url = 'https://html.duckduckgo.com/html/?q=' + encodeURIComponent(${JSON.stringify(query)});
+  
+  const response = await axios.get(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
     }
-    
-    if (results.length === 0) {
-      console.log('No results found for: ' + query);
-    } else {
-      console.log('Found ' + results.length + ' results:\\n');
-      results.forEach((r, i) => {
-        console.log((i+1) + '. ' + r.title);
-        console.log('   ' + r.url + '\\n');
-      });
-    }
-  } catch (error) {
-    console.log('Search error: ' + error.message);
+  });
+  
+  const html = response.data;
+  
+  // Extract search results
+  const results = [];
+  const resultRegex = /<a[^>]+class="result__a"[^>]+href="([^"]+)"[^>]*>([^<]+)<\\/a>/g;
+  
+  let match;
+  let count = 0;
+  while ((match = resultRegex.exec(html)) && count < 5) {
+    const url = match[1];
+    const title = match[2].replace(/&amp;/g, '&').replace(/&quot;/g, '"');
+    results.push({ url, title });
+    count++;
   }
-})();`;
+  
+  if (results.length === 0) {
+    console.log('No results found for: ' + ${JSON.stringify(query)});
+  } else {
+    console.log('Found ' + results.length + ' results:\\n');
+    results.forEach((r, i) => {
+      console.log((i+1) + '. ' + r.title);
+      console.log('   ' + r.url + '\\n');
+    });
+  }
+} catch (error) {
+  console.log('Search error: ' + error.message);
+}
+`;
 
         try {
-          const response = await fetch('http://localhost:3002/execute', {
+          const response = await fetch('http://localhost:3002/run', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code: searchCode, language: 'javascript' })
+            body: JSON.stringify({ code: searchCode })
           });
           
           const result = await response.json();
