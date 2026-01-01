@@ -1469,6 +1469,119 @@ Style:
     `;
   }
   
+  async continueWithToolResults(container) {
+    // Agent continues autonomously after receiving tool results
+    const messagesDiv = container.querySelector('#chat-messages');
+    
+    // Add loading indicator
+    this.testConversation.push({
+      role: 'assistant',
+      content: '⏳ Processing results...',
+      loading: true
+    });
+    this.renderChatInterface(container);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    
+    const startTime = Date.now();
+    
+    try {
+      // Build conversation with tool results
+      const conversationContext = this.testConversation
+        .filter(msg => !msg.loading && !msg.error)
+        .map(msg => {
+          if (msg.role === 'system') return `System: ${msg.content}`;
+          return `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`;
+        })
+        .join('\n\n');
+      
+      // Enhanced prompt with action reminder
+      let enhancedPrompt = this.config.systemPrompt;
+      enhancedPrompt += `\n\nREMEMBER: You are executing autonomously. Continue working on the task using the tool results above. Either:\n`;
+      enhancedPrompt += `1. Use another tool to continue (respond with JSON)\n`;
+      enhancedPrompt += `2. Analyze results and proceed to next step\n`;
+      enhancedPrompt += `3. Present final results if task is complete\n\n`;
+      enhancedPrompt += `DO NOT ask what to do next - keep working!\n`;
+      
+      const response = await fetch('http://localhost:11434/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: this.config.model || 'qwen2.5-coder:14b',
+          prompt: `${enhancedPrompt}\n\n${conversationContext}\n\nAssistant:`,
+          options: {
+            temperature: this.config.temperature,
+            top_p: this.config.topP,
+            num_predict: this.config.maxTokens
+          },
+          stream: false
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Ollama returned ${response.status}`);
+      }
+      
+      const result = await response.json();
+      const duration = Date.now() - startTime;
+      
+      // Remove loading
+      this.testConversation = this.testConversation.filter(msg => !msg.loading);
+      
+      if (result.response) {
+        // Check for another tool call
+        let toolCallMatch = null;
+        try {
+          const jsonMatch = result.response.match(/\{[\s\S]*?"tool"[\s\S]*?\}/);
+          if (jsonMatch) {
+            toolCallMatch = JSON.parse(jsonMatch[0]);
+          }
+        } catch (e) {}
+        
+        if (toolCallMatch && this.config.tools.includes(toolCallMatch.tool)) {
+          // Execute next tool
+          const toolResult = await this.executeTool(toolCallMatch.tool, toolCallMatch.params);
+          
+          this.testConversation.push({
+            role: 'assistant',
+            content: `🛠️ Executing: ${toolCallMatch.tool}(${JSON.stringify(toolCallMatch.params).substring(0, 100)}...)`,
+            metadata: `⏱️ ${duration}ms`
+          });
+          
+          this.testConversation.push({
+            role: 'system',
+            content: `Tool Result:\n${toolResult.success ? toolResult.output : 'Error: ' + toolResult.error}`,
+            metadata: `⏱️ ${toolResult.duration}ms`
+          });
+          
+          this.renderChatInterface(container);
+          messagesDiv.scrollTop = messagesDiv.scrollHeight;
+          
+          // Continue again
+          await this.continueWithToolResults(container);
+          return;
+        }
+        
+        // Regular response
+        this.testConversation.push({
+          role: 'assistant',
+          content: result.response,
+          metadata: `⏱️ ${duration}ms • 📊 ~${Math.ceil(result.response.length / 4)} tokens`
+        });
+      }
+      
+    } catch (error) {
+      this.testConversation = this.testConversation.filter(msg => !msg.loading);
+      this.testConversation.push({
+        role: 'error',
+        content: error.message,
+        error: true
+      });
+    }
+    
+    this.renderChatInterface(container);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  }
+  
   async executeTool(toolName, params) {
     const startTime = Date.now();
     
@@ -1569,30 +1682,61 @@ Style:
       
       // Add tool descriptions if tools are enabled
       if (this.config.tools.length > 0) {
-        enhancedPrompt += `\n\nAVAILABLE TOOLS:\n`;
+        enhancedPrompt += `\n\n=== AGENT EXECUTION MODE ===\n`;
+        enhancedPrompt += `You are an AUTONOMOUS AGENT that TAKES ACTION, not a tutorial writer.\n\n`;
+        enhancedPrompt += `CRITICAL RULES:\n`;
+        enhancedPrompt += `1. DO NOT explain steps or give instructions\n`;
+        enhancedPrompt += `2. DO NOT say "you can" or "we will" or "here's how"\n`;
+        enhancedPrompt += `3. IMMEDIATELY use tools to accomplish the task\n`;
+        enhancedPrompt += `4. Execute code, fetch URLs, and show ACTUAL RESULTS\n`;
+        enhancedPrompt += `5. Build complete, working solutions iteratively\n`;
+        enhancedPrompt += `6. If something fails, fix it and try again automatically\n\n`;
+        
+        enhancedPrompt += `AVAILABLE TOOLS:\n`;
         
         if (this.config.tools.includes('execute_code')) {
-          enhancedPrompt += `- execute_code(language, code): Execute ${this.config.environment.runtime} code. Returns output and results.\n`;
+          enhancedPrompt += `- execute_code: Run ${this.config.environment.runtime} code and get real output\n`;
+          enhancedPrompt += `  Format: {"tool": "execute_code", "params": {"code": "const x = 1; console.log(x);"}}\n`;
         }
         if (this.config.tools.includes('fetch_url')) {
-          enhancedPrompt += `- fetch_url(url): Fetch content from a URL. Returns HTML/text content.\n`;
+          enhancedPrompt += `- fetch_url: Fetch actual webpage content\n`;
+          enhancedPrompt += `  Format: {"tool": "fetch_url", "params": {"url": "https://example.com"}}\n`;
         }
         if (this.config.tools.includes('search_web')) {
-          enhancedPrompt += `- search_web(query): Search the web. Returns search results with titles and snippets.\n`;
+          enhancedPrompt += `- search_web: Search the web for information\n`;
+          enhancedPrompt += `  Format: {"tool": "search_web", "params": {"query": "latest news"}}\n`;
         }
         if (this.config.tools.includes('read_file')) {
-          enhancedPrompt += `- read_file(path): Read file contents from the environment.\n`;
+          enhancedPrompt += `- read_file: Read file contents\n`;
+          enhancedPrompt += `  Format: {"tool": "read_file", "params": {"path": "data.txt"}}\n`;
         }
         
-        enhancedPrompt += `\nTo use a tool, respond with JSON: {"tool": "tool_name", "params": {...}}\n`;
-        enhancedPrompt += `After using a tool, you'll receive the results and can continue the conversation.\n`;
+        enhancedPrompt += `\nWORKFLOW:\n`;
+        enhancedPrompt += `1. User asks for something → You use tools IMMEDIATELY\n`;
+        enhancedPrompt += `2. Tool returns results → You analyze and continue\n`;
+        enhancedPrompt += `3. Build solution step-by-step with REAL code execution\n`;
+        enhancedPrompt += `4. Show actual outputs, not pseudo-code or examples\n\n`;
+        
+        enhancedPrompt += `EXAMPLE GOOD BEHAVIOR:\n`;
+        enhancedPrompt += `User: "Scrape Hacker News headlines"\n`;
+        enhancedPrompt += `You: {"tool": "fetch_url", "params": {"url": "https://news.ycombinator.com"}}\n`;
+        enhancedPrompt += `[System returns HTML]\n`;
+        enhancedPrompt += `You: {"tool": "execute_code", "params": {"code": "const cheerio = require('cheerio'); const $ = cheerio.load(html); const headlines = $('.titleline').map((i, el) => $(el).text()).get(); console.log(headlines.slice(0,5));"}}\n`;
+        enhancedPrompt += `[System returns actual headlines]\n`;
+        enhancedPrompt += `You: "Found 5 top headlines: [list]"\n\n`;
+        
+        enhancedPrompt += `EXAMPLE BAD BEHAVIOR (NEVER DO THIS):\n`;
+        enhancedPrompt += `User: "Scrape Hacker News"\n`;
+        enhancedPrompt += `You: "To scrape Hacker News, follow these steps: 1. Use axios to fetch..."\n`;
+        enhancedPrompt += `^ This is WRONG - you must USE TOOLS, not explain them!\n\n`;
       }
       
       // Add environment info
       if (this.config.environment.runtime) {
-        enhancedPrompt += `\n\nRUNTIME ENVIRONMENT: ${this.config.environment.runtime}`;
+        enhancedPrompt += `\nRUNTIME ENVIRONMENT: ${this.config.environment.runtime}`;
         if (this.config.environment.dependencies.length > 0) {
-          enhancedPrompt += `\nAVAILABLE PACKAGES: ${this.config.environment.dependencies.join(', ')}`;
+          enhancedPrompt += `\nINSTALLED PACKAGES: ${this.config.environment.dependencies.join(', ')}`;
+          enhancedPrompt += `\nYou can use these packages directly in execute_code!`;
         }
       }
       
@@ -1656,8 +1800,8 @@ Style:
           this.renderChatInterface(container);
           messagesDiv.scrollTop = messagesDiv.scrollHeight;
           
-          // Continue conversation with tool results
-          await this.sendChatMessage(`Continue based on the tool results above.`, container);
+          // Automatically continue with tool results (agent continues autonomously)
+          await this.continueWithToolResults(container);
           return;
         }
         
