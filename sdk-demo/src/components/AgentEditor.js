@@ -3723,94 +3723,95 @@ JSON format:
     const { suggestions, optimizing, strategy } = this.pendingOptimizations;
     const btn = document.getElementById('run-ai-optimize');
     
-    this.addProgressMessage('');
-    this.addProgressMessage('✅ Applying changes...');
-        
-        // Apply optimizations
-        if (suggestions.systemPrompt && optimizing.systemPrompt) {
-          this.config.systemPrompt = suggestions.systemPrompt;
-          if (this.editor) this.editor.setValue(suggestions.systemPrompt);
-          this.addProgressMessage('✓ System prompt updated');
-        }
-        
-        if (suggestions.instructions && optimizing.instructions) {
-          this.config.instructions = suggestions.instructions;
-          this.addProgressMessage('✓ Instructions updated');
-        }
-        
-        if (suggestions.environment && optimizing.environment) {
-          this.config.environment = suggestions.environment;
-          this.renderEnvironment();
-          this.addProgressMessage('✓ Environment updated');
-        }
-        
-        if (suggestions.contextFiles && optimizing.contextFiles) {
-          // Add new context files from AI
-          suggestions.contextFiles.forEach(file => {
-            this.config.contextFiles.push({
-              name: file.name,
-              content: file.content,
-              size: file.content.length,
-              addedAt: new Date().toISOString(),
-              isLibraryGuide: false
-            });
-          });
-          this.renderContextFiles();
-          this.addProgressMessage(`✓ Added ${suggestions.contextFiles.length} context files`);
-        }
-        
-        if (suggestions.tools && optimizing.tools) {
-          this.config.tools = suggestions.tools;
-          // Update tool checkboxes
-          ['execute-code', 'fetch-url', 'search-web', 'read-file'].forEach(tool => {
-            const toolName = tool.replace('-', '_');
-            const checkbox = document.getElementById(`tool-${tool}`);
-            if (checkbox) checkbox.checked = suggestions.tools.includes(toolName);
-          });
-          this.addProgressMessage('✓ Tools updated');
-        }
-        
-        if (suggestions.settings && optimizing.settings) {
-          this.config.temperature = suggestions.settings.temperature;
-          this.config.topP = suggestions.settings.topP;
-          this.config.maxTokens = suggestions.settings.maxTokens;
-          this.config.contextWindow = suggestions.settings.contextWindow;
-          if (suggestions.settings.ragEpisodes) {
-            this.config.ragEpisodes = suggestions.settings.ragEpisodes;
-          }
+    try {
+      this.addProgressMessage('');
+      this.addProgressMessage('✅ Applying changes...');
           
-          // Update UI
-          document.getElementById('temperature').value = suggestions.settings.temperature;
-          document.getElementById('temp-value').textContent = suggestions.settings.temperature;
-          document.getElementById('top-p').value = suggestions.settings.topP;
-          document.getElementById('topp-value').textContent = suggestions.settings.topP;
-          document.getElementById('max-tokens').value = suggestions.settings.maxTokens;
-          document.getElementById('maxtoken-value').textContent = suggestions.settings.maxTokens;
-          document.getElementById('context-window').value = suggestions.settings.contextWindow;
-          document.getElementById('context-value').textContent = suggestions.settings.contextWindow;
-          if (suggestions.settings.ragEpisodes) {
-            document.getElementById('rag-episodes').value = suggestions.settings.ragEpisodes;
-            document.getElementById('rag-value').textContent = suggestions.settings.ragEpisodes;
-          }
-          this.addProgressMessage('✓ Settings updated');
+      // Apply optimizations
+      if (suggestions.systemPrompt && optimizing.systemPrompt) {
+        this.config.systemPrompt = suggestions.systemPrompt;
+        if (this.editor) this.editor.setValue(suggestions.systemPrompt);
+        this.addProgressMessage('✓ System prompt updated');
+      }
+      
+      if (suggestions.instructions && optimizing.instructions) {
+        this.config.instructions = suggestions.instructions;
+        this.addProgressMessage('✓ Instructions updated');
+      }
+      
+      if (suggestions.environment && optimizing.environment) {
+        this.config.environment = suggestions.environment;
+        this.renderEnvironment();
+        this.addProgressMessage('✓ Environment updated');
+      }
+      
+      if (suggestions.contextFiles && optimizing.contextFiles) {
+        // Add new context files from AI
+        suggestions.contextFiles.forEach(file => {
+          this.config.contextFiles.push({
+            name: file.name,
+            content: file.content,
+            size: file.content.length,
+            addedAt: new Date().toISOString(),
+            isLibraryGuide: false
+          });
+        });
+        this.renderContextFiles();
+        this.addProgressMessage(`✓ Added ${suggestions.contextFiles.length} context files`);
+      }
+      
+      if (suggestions.tools && optimizing.tools) {
+        this.config.tools = suggestions.tools;
+        // Update tool checkboxes
+        ['execute-code', 'fetch-url', 'search-web', 'read-file'].forEach(tool => {
+          const toolName = tool.replace('-', '_');
+          const checkbox = document.getElementById(`tool-${tool}`);
+          if (checkbox) checkbox.checked = suggestions.tools.includes(toolName);
+        });
+        this.addProgressMessage('✓ Tools updated');
+      }
+      
+      if (suggestions.settings && optimizing.settings) {
+        this.config.temperature = suggestions.settings.temperature;
+        this.config.topP = suggestions.settings.topP;
+        this.config.maxTokens = suggestions.settings.maxTokens;
+        this.config.contextWindow = suggestions.settings.contextWindow;
+        if (suggestions.settings.ragEpisodes) {
+          this.config.ragEpisodes = suggestions.settings.ragEpisodes;
         }
         
-        this.updateTokenEstimate();
-        this.addProgressMessage('');
-        this.addProgressMessage('🎉 Agent optimized successfully!');
-        this.addProgressMessage(`📊 New token estimate: ${this.tokenEstimate.total}`);
-        
-        // Clear pending and re-enable button
-        this.pendingOptimizations = null;
-        if (btn) {
-          btn.disabled = false;
-          btn.innerHTML = '🚀 Run AI Optimization';
+        // Update UI
+        document.getElementById('temperature').value = suggestions.settings.temperature;
+        document.getElementById('temp-value').textContent = suggestions.settings.temperature;
+        document.getElementById('top-p').value = suggestions.settings.topP;
+        document.getElementById('topp-value').textContent = suggestions.settings.topP;
+        document.getElementById('max-tokens').value = suggestions.settings.maxTokens;
+        document.getElementById('maxtoken-value').textContent = suggestions.settings.maxTokens;
+        document.getElementById('context-window').value = suggestions.settings.contextWindow;
+        document.getElementById('context-value').textContent = suggestions.settings.contextWindow;
+        if (suggestions.settings.ragEpisodes) {
+          document.getElementById('rag-episodes').value = suggestions.settings.ragEpisodes;
+          document.getElementById('rag-value').textContent = suggestions.settings.ragEpisodes;
         }
-        
-        // Hide optimization panel after a delay
-        setTimeout(() => {
-          this.hideOptimizationPanel();
-        }, 2000);
+        this.addProgressMessage('✓ Settings updated');
+      }
+      
+      this.updateTokenEstimate();
+      this.addProgressMessage('');
+      this.addProgressMessage('🎉 Agent optimized successfully!');
+      this.addProgressMessage(`📊 New token estimate: ${this.tokenEstimate.total}`);
+      
+      // Clear pending and re-enable button
+      this.pendingOptimizations = null;
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '🚀 Run AI Optimization';
+      }
+      
+      // Hide optimization panel after a delay
+      setTimeout(() => {
+        this.hideOptimizationPanel();
+      }, 2000);
     } catch (error) {
       console.error('Apply optimization error:', error);
       this.addProgressMessage('');
