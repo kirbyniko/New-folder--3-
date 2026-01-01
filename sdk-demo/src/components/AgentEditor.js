@@ -1325,24 +1325,186 @@ Style:
   }
 
   async testAgent() {
-    // Show modal for test prompt
-    const testPrompt = await this.showTestPromptModal();
-    if (!testPrompt) return;
+    // Initialize conversation history if not exists
+    if (!this.testConversation) {
+      this.testConversation = [];
+    }
     
+    // Switch to output tab and show chat interface
     document.querySelector('[data-tab="output"]').click();
     const output = document.getElementById('test-result');
-    output.innerHTML = '<div class="loading">🔄 Testing agent with Ollama...</div>';
+    
+    // Render chat interface
+    this.renderChatInterface(output);
+  }
+  
+  renderChatInterface(container) {
+    container.innerHTML = `
+      <div style="display: flex; flex-direction: column; height: 100%; background: #1e1e1e;">
+        <!-- Chat Header -->
+        <div style="padding: 16px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h3 style="margin: 0; color: #e0e0e0; font-size: 16px; font-weight: 600;">🧪 Agent Test Chat</h3>
+            <p style="margin: 4px 0 0 0; color: #9ca3af; font-size: 12px;">Test your agent interactively with multi-turn conversations</p>
+          </div>
+          <button id="clear-chat-btn" style="padding: 8px 16px; background: #374151; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">🗑️ Clear Chat</button>
+        </div>
+        
+        <!-- Chat Messages -->
+        <div id="chat-messages" style="flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+          ${this.testConversation.length === 0 ? `
+            <div style="text-align: center; padding: 40px; color: #6b7280;">
+              <p style="font-size: 18px; margin-bottom: 8px;">👋 Start a conversation</p>
+              <p style="font-size: 14px;">Type a message below to test your agent</p>
+            </div>
+          ` : this.testConversation.map((msg, idx) => this.renderChatMessage(msg, idx)).join('')}
+        </div>
+        
+        <!-- Input Area -->
+        <div style="padding: 16px; border-top: 1px solid #333; background: #0f0f0f;">
+          <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+            <button id="ai-gen-test-msg-btn" style="padding: 6px 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+              <span>✨</span>
+              <span>AI Generate</span>
+            </button>
+            <div style="flex: 1; color: #6b7280; font-size: 11px; display: flex; align-items: center;">
+              ${this.config.tools.length > 0 ? `🛠️ Tools enabled: ${this.config.tools.join(', ')}` : '⚠️ No tools enabled'}
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <textarea id="chat-input" placeholder="Type your message... (Shift+Enter for new line, Enter to send)" style="flex: 1; min-height: 60px; max-height: 200px; padding: 12px; background: #2d2d2d; border: 1px solid #444; border-radius: 6px; color: #e0e0e0; font-size: 14px; font-family: inherit; resize: vertical;"></textarea>
+            <button id="send-chat-btn" style="padding: 12px 24px; background: #7c3aed; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px;">
+              Send
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // Attach event listeners
+    const input = container.querySelector('#chat-input');
+    const sendBtn = container.querySelector('#send-chat-btn');
+    const clearBtn = container.querySelector('#clear-chat-btn');
+    const aiGenBtn = container.querySelector('#ai-gen-test-msg-btn');
+    
+    const sendMessage = async () => {
+      const message = input.value.trim();
+      if (!message) return;
+      
+      input.value = '';
+      input.disabled = true;
+      sendBtn.disabled = true;
+      
+      await this.sendChatMessage(message, container);
+      
+      input.disabled = false;
+      sendBtn.disabled = false;
+      input.focus();
+    };
+    
+    sendBtn.onclick = sendMessage;
+    
+    input.onkeydown = (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    };
+    
+    clearBtn.onclick = () => {
+      this.testConversation = [];
+      this.renderChatInterface(container);
+    };
+    
+    aiGenBtn.onclick = async () => {
+      aiGenBtn.disabled = true;
+      aiGenBtn.innerHTML = '<span>⏳</span><span>Generating...</span>';
+      
+      try {
+        const testPrompt = await this.generateTestPrompt();
+        if (testPrompt) {
+          input.value = testPrompt;
+          input.focus();
+        }
+      } catch (error) {
+        console.error('Failed to generate test prompt:', error);
+      }
+      
+      aiGenBtn.disabled = false;
+      aiGenBtn.innerHTML = '<span>✨</span><span>AI Generate</span>';
+    };
+    
+    input.focus();
+  }
+  
+  renderChatMessage(msg, idx) {
+    const isUser = msg.role === 'user';
+    const isError = msg.error;
+    
+    return `
+      <div style="display: flex; ${isUser ? 'justify-content: flex-end;' : 'justify-content: flex-start;'}">
+        <div style="max-width: 80%; padding: 12px 16px; border-radius: 12px; ${
+          isUser 
+            ? 'background: #7c3aed; color: white;' 
+            : isError
+              ? 'background: #7f1d1d; color: #fca5a5; border: 1px solid #991b1b;'
+              : 'background: #2d2d2d; color: #e0e0e0; border: 1px solid #404040;'
+        }">
+          <div style="font-size: 10px; margin-bottom: 4px; opacity: 0.7; text-transform: uppercase; font-weight: 600;">
+            ${isUser ? '👤 You' : isError ? '❌ Error' : '🤖 Agent'}
+          </div>
+          <div style="white-space: pre-wrap; word-wrap: break-word; font-size: 14px; line-height: 1.5;">
+            ${this.escapeHtml(msg.content)}
+          </div>
+          ${msg.metadata ? `
+            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid ${isUser ? 'rgba(255,255,255,0.2)' : '#404040'}; font-size: 11px; opacity: 0.7;">
+              ${msg.metadata}
+            </div>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  }
+  
+  async sendChatMessage(message, container) {
+    // Add user message to conversation
+    this.testConversation.push({
+      role: 'user',
+      content: message
+    });
+    
+    // Re-render to show user message
+    this.renderChatInterface(container);
+    
+    // Scroll to bottom
+    const messagesDiv = container.querySelector('#chat-messages');
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    
+    // Add loading indicator
+    this.testConversation.push({
+      role: 'assistant',
+      content: '⏳ Thinking...',
+      loading: true
+    });
+    this.renderChatInterface(container);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
     
     const startTime = Date.now();
     
     try {
-      // Call Ollama directly
+      // Build conversation history for context
+      const conversationContext = this.testConversation
+        .filter(msg => !msg.loading && !msg.error)
+        .map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
+        .join('\n\n');
+      
+      // Call Ollama with full conversation context
       const response = await fetch('http://localhost:11434/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: this.config.model || 'qwen2.5-coder:14b',
-          prompt: `${this.config.systemPrompt}\n\nUser: ${testPrompt}\n\nAssistant:`,
+          prompt: `${this.config.systemPrompt}\n\n${conversationContext}`,
           options: {
             temperature: this.config.temperature,
             top_p: this.config.topP,
@@ -1359,58 +1521,67 @@ Style:
       const result = await response.json();
       const duration = Date.now() - startTime;
       
+      // Remove loading message
+      this.testConversation = this.testConversation.filter(msg => !msg.loading);
+      
       if (result.response) {
-        // Extract tool calls if any (basic detection)
-        const hasToolCalls = /execute_code|fetch_url|search_web|read_file/i.test(result.response);
+        // Check for tool mentions
+        const toolMentions = [];
+        if (/execute_code|run code|execute.*code/i.test(result.response) && !this.config.tools.includes('execute_code')) {
+          toolMentions.push('execute_code');
+        }
+        if (/fetch|http|url|website/i.test(result.response) && !this.config.tools.includes('fetch_url')) {
+          toolMentions.push('fetch_url');
+        }
+        if (/search|google|query/i.test(result.response) && !this.config.tools.includes('search_web')) {
+          toolMentions.push('search_web');
+        }
         
-        output.innerHTML = `
-          <div class="test-success">
-            <h4>✅ Test Successful (${duration}ms)</h4>
-            <div class="test-metadata">
-              <span>Model: ${this.config.model || 'qwen2.5-coder:14b'}</span>
-              <span>Tokens: ~${Math.ceil(result.response.length / 4)}</span>
-            </div>
-            ${hasToolCalls ? '<div class="tool-suggestion">💡 <strong>Tool calls detected!</strong> Enable tools in the Tools section for this agent to work properly.</div>' : ''}
-            <div class="test-response">${this.escapeHtml(result.response)}</div>
-          </div>
-        `;
+        const metadata = [
+          `⏱️ ${duration}ms`,
+          `📊 ~${Math.ceil(result.response.length / 4)} tokens`
+        ];
         
-        // Track successful agent execution
+        if (toolMentions.length > 0) {
+          metadata.push(`💡 Wants: ${toolMentions.join(', ')}`);
+        }
+        
+        // Add assistant message
+        this.testConversation.push({
+          role: 'assistant',
+          content: result.response,
+          metadata: metadata.join(' • ')
+        });
+        
+        // Track successful execution
         MetricsService.trackAgentExecution(
           this.config.name || 'Unnamed Agent',
           true,
           duration
         );
       } else {
-        output.innerHTML = `
-          <div class="test-error">
-            <h4>❌ Test Failed</h4>
-            <pre>No response from Ollama</pre>
-          </div>
-        `;
-        
-        // Track failed agent execution
-        MetricsService.trackAgentExecution(
-          this.config.name || 'Unnamed Agent',
-          false,
-          duration,
-          'No response'
-        );
+        throw new Error('No response from Ollama');
       }
+      
     } catch (error) {
       const duration = Date.now() - startTime;
       const errorMsg = error.message || String(error);
       const isOllamaDown = errorMsg.includes('Failed to fetch') || errorMsg.includes('ECONNREFUSED');
       
-      output.innerHTML = `
-        <div class="test-error">
-          <h4>❌ ${isOllamaDown ? 'Ollama Not Running' : 'Test Error'}</h4>
-          <pre>${errorMsg}</pre>
-          ${isOllamaDown ? '<div class="error-help">💡 Start Ollama: Open terminal and run <code>ollama serve</code></div>' : ''}
-        </div>
-      `;
+      // Remove loading message
+      this.testConversation = this.testConversation.filter(msg => !msg.loading);
       
-      // Track failed agent execution
+      // Add error message
+      this.testConversation.push({
+        role: 'error',
+        content: isOllamaDown 
+          ? 'Ollama is not running. Start it with: ollama serve'
+          : errorMsg,
+        error: true,
+        metadata: `⏱️ ${duration}ms`
+      });
+      
+      // Track failed execution
       MetricsService.trackAgentExecution(
         this.config.name || 'Unnamed Agent',
         false,
@@ -1418,9 +1589,13 @@ Style:
         error
       );
     }
+    
+    // Re-render with response
+    this.renderChatInterface(container);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
   }
   
-  // Helper to show non-blocking test prompt modal
+  // Helper to show non-blocking test prompt modal (DEPRECATED - now using chat interface)
   showTestPromptModal() {
     return new Promise((resolve) => {
       const modal = document.createElement('div');
