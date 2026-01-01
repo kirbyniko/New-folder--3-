@@ -105,34 +105,30 @@ export class AgentEditor {
               🎨 <strong style="color: #e0e0e0;">Generation Mode:</strong> Your agent is empty. Describe what you want it to do and AI will create everything for you!
             </p>
             
-            <div style="margin-bottom: 20px;">
+            <div style="margin-bottom: 15px;">
               <label style="display: block; color: #e0e0e0; font-size: 14px; font-weight: 500; margin-bottom: 8px;">
                 What should your agent do?
               </label>
               <textarea id="agent-purpose-input" 
                         placeholder="Example: scrape e-commerce sites for product prices&#10;Example: analyze CSV files and generate reports&#10;Example: monitor RSS feeds and send alerts"
-                        style="width: 100%; min-height: 120px; background: #1e1e1e; border: 1px solid #444; border-radius: 6px; color: #e0e0e0; padding: 12px; font-size: 14px; font-family: inherit; resize: vertical;"></textarea>
-            </div>
-            
-            <div style="background: #1e1e1e; border-radius: 6px; padding: 12px; margin-bottom: 15px;">
-              <p style="color: #9ca3af; font-size: 12px; margin: 0; line-height: 1.5;">
-                💡 <strong>AI will generate:</strong><br>
-                • System prompt optimized for your task<br>
-                • 3-5 step instruction workflow<br>
-                • Runtime environment + dependencies<br>
-                • Tool selection (execute_code, fetch_url, etc.)<br>
-                • Optimal settings (temperature, tokens)
-              </p>
+                        style="width: 100%; min-height: 100px; background: #1e1e1e; border: 1px solid #444; border-radius: 6px; color: #e0e0e0; padding: 12px; font-size: 14px; font-family: inherit; resize: vertical;"></textarea>
             </div>
           </div>
           
-          <!-- Optimization Mode (shown when agent has content) -->
-          <div id="optimization-mode" style="display: block;">
+          <!-- Optimization Mode Description (shown when agent has content) -->
+          <div id="optimization-mode-description" style="display: none;">
             <p style="color: #9ca3af; font-size: 13px; margin-bottom: 15px;">
-              Select which aspects of your agent AI should analyze and optimize:
+              ⚡ <strong style="color: #e0e0e0;">Optimization Mode:</strong> Select which aspects of your existing agent to improve.
+            </p>
+          </div>
+          
+          <!-- Checkboxes (always shown) -->
+          <div id="optimization-checkboxes">
+            <p style="color: #9ca3af; font-size: 13px; margin-bottom: 10px;">
+              Select what to <span id="mode-action">optimize</span>:
             </p>
             
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
               <label style="display: flex; align-items: center; gap: 8px; color: #e0e0e0; font-size: 14px; cursor: pointer; padding: 8px; background: #1e1e1e; border-radius: 4px;">
                 <input type="checkbox" id="opt-system-prompt" checked style="cursor: pointer; width: 16px; height: 16px;">
                 📝 System Prompt
@@ -158,16 +154,17 @@ export class AgentEditor {
                 ⚡ Settings
               </label>
             </div>
-            
-            <div style="background: #1e1e1e; border-radius: 6px; padding: 12px; margin-bottom: 15px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <span style="color: #9ca3af; font-size: 13px;">Token Impact:</span>
-                <span id="token-impact" style="color: #10b981; font-size: 14px; font-weight: 600;">Calculating...</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span style="color: #9ca3af; font-size: 13px;">Current Tokens:</span>
-                <span id="current-tokens-display" style="color: #e0e0e0; font-size: 13px; font-weight: 500;">0</span>
-              </div>
+          </div>
+          
+          <!-- Token Impact (only for optimization mode) -->
+          <div id="token-impact-section" style="background: #1e1e1e; border-radius: 6px; padding: 12px; margin-bottom: 15px; display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="color: #9ca3af; font-size: 13px;">Token Impact:</span>
+              <span id="token-impact" style="color: #10b981; font-size: 14px; font-weight: 600;">Calculating...</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="color: #9ca3af; font-size: 13px;">Current Tokens:</span>
+              <span id="current-tokens-display" style="color: #e0e0e0; font-size: 13px; font-weight: 500;">0</span>
             </div>
           </div>
           
@@ -1348,20 +1345,26 @@ return data.response;`
     // Update UI based on mode
     const title = document.getElementById('optimize-panel-title');
     const generationMode = document.getElementById('generation-mode');
-    const optimizationMode = document.getElementById('optimization-mode');
+    const optimizationModeDesc = document.getElementById('optimization-mode-description');
+    const tokenImpactSection = document.getElementById('token-impact-section');
+    const modeAction = document.getElementById('mode-action');
     const runButton = document.getElementById('run-ai-optimize');
     
     if (isGenerationMode) {
       // Show generation mode
       if (title) title.textContent = '🎨 AI Agent Generator';
       if (generationMode) generationMode.style.display = 'block';
-      if (optimizationMode) optimizationMode.style.display = 'none';
+      if (optimizationModeDesc) optimizationModeDesc.style.display = 'none';
+      if (tokenImpactSection) tokenImpactSection.style.display = 'none';
+      if (modeAction) modeAction.textContent = 'generate';
       if (runButton) runButton.innerHTML = '✨ Generate Agent';
     } else {
       // Show optimization mode
       if (title) title.textContent = '🤖 AI Optimization';
       if (generationMode) generationMode.style.display = 'none';
-      if (optimizationMode) optimizationMode.style.display = 'block';
+      if (optimizationModeDesc) optimizationModeDesc.style.display = 'block';
+      if (tokenImpactSection) tokenImpactSection.style.display = 'block';
+      if (modeAction) modeAction.textContent = 'optimize';
       if (runButton) runButton.innerHTML = '🚀 Run AI Optimization';
       this.updateTokenImpact();
     }
@@ -1431,6 +1434,21 @@ return data.response;`
     const btn = document.getElementById('run-ai-optimize');
     if (!btn) return;
     
+    // Get selected optimization options (always available)
+    const optimizing = {
+      systemPrompt: document.getElementById('opt-system-prompt')?.checked,
+      instructions: document.getElementById('opt-instructions')?.checked,
+      environment: document.getElementById('opt-environment')?.checked,
+      contextFiles: document.getElementById('opt-context-files')?.checked,
+      tools: document.getElementById('opt-tools')?.checked,
+      settings: document.getElementById('opt-settings')?.checked
+    };
+    
+    if (!Object.values(optimizing).some(Boolean)) {
+      alert('⚠️ Please select at least one aspect to generate/optimize');
+      return;
+    }
+    
     // Detect mode
     const generationMode = document.getElementById('generation-mode');
     const isGenerationMode = generationMode && generationMode.style.display !== 'none';
@@ -1446,36 +1464,11 @@ return data.response;`
         return;
       }
       
-      // All aspects are optimized in generation mode
-      const optimizing = {
-        systemPrompt: true,
-        instructions: true,
-        environment: true,
-        contextFiles: false,
-        tools: true,
-        settings: true
-      };
-      
       await this.generateAgentFromScratch(userIntent, optimizing);
       return;
     }
     
-    // Optimization mode: get selected checkboxes
-    const optimizing = {
-      systemPrompt: document.getElementById('opt-system-prompt')?.checked,
-      instructions: document.getElementById('opt-instructions')?.checked,
-      environment: document.getElementById('opt-environment')?.checked,
-      contextFiles: document.getElementById('opt-context-files')?.checked,
-      tools: document.getElementById('opt-tools')?.checked,
-      settings: document.getElementById('opt-settings')?.checked
-    };
-    
-    if (!Object.values(optimizing).some(Boolean)) {
-      alert('Please select at least one aspect to optimize');
-      return;
-    }
-    
-    // Normal optimization mode
+    // Optimization mode
     this.optimizeExistingAgent(optimizing, btn);
   }
   
