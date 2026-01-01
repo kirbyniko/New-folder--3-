@@ -39,7 +39,7 @@ export class AgentEditor {
       ragEpisodes: 3,
       useKnowledge: true,
       contextFiles: [],
-      tools: [],
+      tools: ['execute_code', 'fetch_url', 'search_web'], // Enable tools by default for testing
       enabledGuides: ['basic-selectors', 'error-handling'],
       // Multi-step instructions
       instructions: [],
