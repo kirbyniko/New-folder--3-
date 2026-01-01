@@ -2148,11 +2148,12 @@ Style:
           else {
             const startIdx = response.indexOf('{');
             if (startIdx !== -1) {
-              let braceCount = 0;
+              let braceCount = 1;  // Start at 1 because we already found the opening brace
               let inString = false;
               let escapeNext = false;
               
-              for (let i = startIdx; i < response.length; i++) {
+              // Start from the character AFTER the opening brace
+              for (let i = startIdx + 1; i < response.length; i++) {
                 const char = response[i];
                 
                 if (escapeNext) {
