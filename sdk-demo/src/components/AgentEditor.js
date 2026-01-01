@@ -1677,6 +1677,8 @@ Style:
   }
 
   async sendChatMessage(message, container) {
+    console.log('[Agent] Starting chat message with tools:', this.config.tools);
+    
     // Add user message to conversation
     this.testConversation.push({
       role: 'user',
@@ -1805,10 +1807,15 @@ Style:
           const jsonMatch = result.response.match(/\{[\s\S]*?"tool"[\s\S]*?\}/);
           if (jsonMatch) {
             toolCallMatch = JSON.parse(jsonMatch[0]);
+            console.log('[Agent] Parsed tool call:', toolCallMatch);
           }
         } catch (e) {
-          // Not a tool call, treat as regular response
+          console.log('[Agent] Failed to parse tool call:', e.message);
         }
+        
+        console.log('[Agent] Available tools:', this.config.tools);
+        console.log('[Agent] Tool call match:', toolCallMatch);
+        console.log('[Agent] Tool enabled?', toolCallMatch ? this.config.tools.includes(toolCallMatch.tool) : 'N/A');
         
         if (toolCallMatch && this.config.tools.includes(toolCallMatch.tool)) {
           console.log('[Agent] Tool call detected:', toolCallMatch.tool, toolCallMatch.params);
