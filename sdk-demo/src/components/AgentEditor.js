@@ -93,51 +93,81 @@ export class AgentEditor {
         </div>
         
         <!-- AI Optimization Panel (Global, shown as modal) -->
-        <div id="ai-optimize-panel" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #2d2d2d; border: 2px solid #7c3aed; border-radius: 8px; padding: 20px; z-index: 1000; box-shadow: 0 10px 40px rgba(0,0,0,0.5); min-width: 500px;">
+        <div id="ai-optimize-panel" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #2d2d2d; border: 2px solid #7c3aed; border-radius: 8px; padding: 20px; z-index: 1000; box-shadow: 0 10px 40px rgba(0,0,0,0.5); min-width: 500px; max-width: 600px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <h3 style="margin: 0; color: #e0e0e0; font-size: 18px;">🤖 AI Optimization</h3>
+            <h3 id="optimize-panel-title" style="margin: 0; color: #e0e0e0; font-size: 18px;">🤖 AI Optimization</h3>
             <button id="close-optimize-panel" style="background: transparent; border: none; color: #9ca3af; cursor: pointer; font-size: 20px; padding: 0; width: 30px; height: 30px;">✖</button>
           </div>
           
-          <p style="color: #9ca3af; font-size: 13px; margin-bottom: 15px;">
-            Select which aspects of your agent AI should analyze and optimize:
-          </p>
-          
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
-            <label style="display: flex; align-items: center; gap: 8px; color: #e0e0e0; font-size: 14px; cursor: pointer; padding: 8px; background: #1e1e1e; border-radius: 4px;">
-              <input type="checkbox" id="opt-system-prompt" checked style="cursor: pointer; width: 16px; height: 16px;">
-              📝 System Prompt
-            </label>
-            <label style="display: flex; align-items: center; gap: 8px; color: #e0e0e0; font-size: 14px; cursor: pointer; padding: 8px; background: #1e1e1e; border-radius: 4px;">
-              <input type="checkbox" id="opt-instructions" checked style="cursor: pointer; width: 16px; height: 16px;">
-              📋 Instructions
-            </label>
-            <label style="display: flex; align-items: center; gap: 8px; color: #e0e0e0; font-size: 14px; cursor: pointer; padding: 8px; background: #1e1e1e; border-radius: 4px;">
-              <input type="checkbox" id="opt-environment" checked style="cursor: pointer; width: 16px; height: 16px;">
-              ⚙️ Environment
-            </label>
-            <label style="display: flex; align-items: center; gap: 8px; color: #e0e0e0; font-size: 14px; cursor: pointer; padding: 8px; background: #1e1e1e; border-radius: 4px;">
-              <input type="checkbox" id="opt-context-files" style="cursor: pointer; width: 16px; height: 16px;">
-              📁 Context Files
-            </label>
-            <label style="display: flex; align-items: center; gap: 8px; color: #e0e0e0; font-size: 14px; cursor: pointer; padding: 8px; background: #1e1e1e; border-radius: 4px;">
-              <input type="checkbox" id="opt-tools" checked style="cursor: pointer; width: 16px; height: 16px;">
-              🛠️ Tools
-            </label>
-            <label style="display: flex; align-items: center; gap: 8px; color: #e0e0e0; font-size: 14px; cursor: pointer; padding: 8px; background: #1e1e1e; border-radius: 4px;">
-              <input type="checkbox" id="opt-settings" checked style="cursor: pointer; width: 16px; height: 16px;">
-              ⚡ Settings
-            </label>
+          <!-- Generation Mode (shown when agent is empty) -->
+          <div id="generation-mode" style="display: none;">
+            <p style="color: #9ca3af; font-size: 13px; margin-bottom: 15px;">
+              🎨 <strong style="color: #e0e0e0;">Generation Mode:</strong> Your agent is empty. Describe what you want it to do and AI will create everything for you!
+            </p>
+            
+            <div style="margin-bottom: 20px;">
+              <label style="display: block; color: #e0e0e0; font-size: 14px; font-weight: 500; margin-bottom: 8px;">
+                What should your agent do?
+              </label>
+              <textarea id="agent-purpose-input" 
+                        placeholder="Example: scrape e-commerce sites for product prices&#10;Example: analyze CSV files and generate reports&#10;Example: monitor RSS feeds and send alerts"
+                        style="width: 100%; min-height: 120px; background: #1e1e1e; border: 1px solid #444; border-radius: 6px; color: #e0e0e0; padding: 12px; font-size: 14px; font-family: inherit; resize: vertical;"></textarea>
+            </div>
+            
+            <div style="background: #1e1e1e; border-radius: 6px; padding: 12px; margin-bottom: 15px;">
+              <p style="color: #9ca3af; font-size: 12px; margin: 0; line-height: 1.5;">
+                💡 <strong>AI will generate:</strong><br>
+                • System prompt optimized for your task<br>
+                • 3-5 step instruction workflow<br>
+                • Runtime environment + dependencies<br>
+                • Tool selection (execute_code, fetch_url, etc.)<br>
+                • Optimal settings (temperature, tokens)
+              </p>
+            </div>
           </div>
           
-          <div style="background: #1e1e1e; border-radius: 6px; padding: 12px; margin-bottom: 15px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <span style="color: #9ca3af; font-size: 13px;">Token Impact:</span>
-              <span id="token-impact" style="color: #10b981; font-size: 14px; font-weight: 600;">Calculating...</span>
+          <!-- Optimization Mode (shown when agent has content) -->
+          <div id="optimization-mode" style="display: block;">
+            <p style="color: #9ca3af; font-size: 13px; margin-bottom: 15px;">
+              Select which aspects of your agent AI should analyze and optimize:
+            </p>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+              <label style="display: flex; align-items: center; gap: 8px; color: #e0e0e0; font-size: 14px; cursor: pointer; padding: 8px; background: #1e1e1e; border-radius: 4px;">
+                <input type="checkbox" id="opt-system-prompt" checked style="cursor: pointer; width: 16px; height: 16px;">
+                📝 System Prompt
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; color: #e0e0e0; font-size: 14px; cursor: pointer; padding: 8px; background: #1e1e1e; border-radius: 4px;">
+                <input type="checkbox" id="opt-instructions" checked style="cursor: pointer; width: 16px; height: 16px;">
+                📋 Instructions
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; color: #e0e0e0; font-size: 14px; cursor: pointer; padding: 8px; background: #1e1e1e; border-radius: 4px;">
+                <input type="checkbox" id="opt-environment" checked style="cursor: pointer; width: 16px; height: 16px;">
+                ⚙️ Environment
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; color: #e0e0e0; font-size: 14px; cursor: pointer; padding: 8px; background: #1e1e1e; border-radius: 4px;">
+                <input type="checkbox" id="opt-context-files" style="cursor: pointer; width: 16px; height: 16px;">
+                📁 Context Files
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; color: #e0e0e0; font-size: 14px; cursor: pointer; padding: 8px; background: #1e1e1e; border-radius: 4px;">
+                <input type="checkbox" id="opt-tools" checked style="cursor: pointer; width: 16px; height: 16px;">
+                🛠️ Tools
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; color: #e0e0e0; font-size: 14px; cursor: pointer; padding: 8px; background: #1e1e1e; border-radius: 4px;">
+                <input type="checkbox" id="opt-settings" checked style="cursor: pointer; width: 16px; height: 16px;">
+                ⚡ Settings
+              </label>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="color: #9ca3af; font-size: 13px;">Current Tokens:</span>
-              <span id="current-tokens-display" style="color: #e0e0e0; font-size: 13px; font-weight: 500;">0</span>
+            
+            <div style="background: #1e1e1e; border-radius: 6px; padding: 12px; margin-bottom: 15px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="color: #9ca3af; font-size: 13px;">Token Impact:</span>
+                <span id="token-impact" style="color: #10b981; font-size: 14px; font-weight: 600;">Calculating...</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="color: #9ca3af; font-size: 13px;">Current Tokens:</span>
+                <span id="current-tokens-display" style="color: #e0e0e0; font-size: 13px; font-weight: 500;">0</span>
+              </div>
             </div>
           </div>
           
@@ -1304,11 +1334,40 @@ return data.response;`
   showOptimizationPanel() {
     const panel = document.getElementById('ai-optimize-panel');
     const backdrop = document.getElementById('ai-optimize-backdrop');
-    if (panel && backdrop) {
-      panel.style.display = 'block';
-      backdrop.style.display = 'block';
+    if (!panel || !backdrop) return;
+    
+    // Detect if agent is empty (generation mode) or has content (optimization mode)
+    const isEmpty = !this.config.systemPrompt || 
+                    this.config.systemPrompt.trim() === 'You are a helpful AI assistant.' ||
+                    this.config.systemPrompt.trim().length < 50;
+    
+    const hasNoInstructions = !this.config.instructions || this.config.instructions.length === 0;
+    
+    const isGenerationMode = isEmpty && hasNoInstructions;
+    
+    // Update UI based on mode
+    const title = document.getElementById('optimize-panel-title');
+    const generationMode = document.getElementById('generation-mode');
+    const optimizationMode = document.getElementById('optimization-mode');
+    const runButton = document.getElementById('run-ai-optimize');
+    
+    if (isGenerationMode) {
+      // Show generation mode
+      if (title) title.textContent = '🎨 AI Agent Generator';
+      if (generationMode) generationMode.style.display = 'block';
+      if (optimizationMode) optimizationMode.style.display = 'none';
+      if (runButton) runButton.innerHTML = '✨ Generate Agent';
+    } else {
+      // Show optimization mode
+      if (title) title.textContent = '🤖 AI Optimization';
+      if (generationMode) generationMode.style.display = 'none';
+      if (optimizationMode) optimizationMode.style.display = 'block';
+      if (runButton) runButton.innerHTML = '🚀 Run AI Optimization';
       this.updateTokenImpact();
     }
+    
+    panel.style.display = 'block';
+    backdrop.style.display = 'block';
   }
   
   hideOptimizationPanel() {
@@ -1372,7 +1431,36 @@ return data.response;`
     const btn = document.getElementById('run-ai-optimize');
     if (!btn) return;
     
-    // Get selected optimization options
+    // Detect mode
+    const generationMode = document.getElementById('generation-mode');
+    const isGenerationMode = generationMode && generationMode.style.display !== 'none';
+    
+    if (isGenerationMode) {
+      // Generation mode: get user intent from textarea
+      const purposeInput = document.getElementById('agent-purpose-input');
+      const userIntent = purposeInput?.value?.trim();
+      
+      if (!userIntent || userIntent.length === 0) {
+        alert('⚠️ Please describe what you want your agent to do');
+        purposeInput?.focus();
+        return;
+      }
+      
+      // All aspects are optimized in generation mode
+      const optimizing = {
+        systemPrompt: true,
+        instructions: true,
+        environment: true,
+        contextFiles: false,
+        tools: true,
+        settings: true
+      };
+      
+      await this.generateAgentFromScratch(userIntent, optimizing);
+      return;
+    }
+    
+    // Optimization mode: get selected checkboxes
     const optimizing = {
       systemPrompt: document.getElementById('opt-system-prompt')?.checked,
       instructions: document.getElementById('opt-instructions')?.checked,
@@ -1384,31 +1472,6 @@ return data.response;`
     
     if (!Object.values(optimizing).some(Boolean)) {
       alert('Please select at least one aspect to optimize');
-      return;
-    }
-    
-    // Detect if this is generation mode (empty agent) or optimization mode
-    const isEmpty = !this.config.systemPrompt || 
-                    this.config.systemPrompt.trim() === 'You are a helpful AI assistant.' ||
-                    this.config.systemPrompt.trim().length < 50;
-    
-    const hasNoInstructions = !this.config.instructions || this.config.instructions.length === 0;
-    
-    const isGenerationMode = isEmpty && hasNoInstructions;
-    
-    if (isGenerationMode) {
-      // Ask user what they want to build
-      const userIntent = prompt(
-        '🤖 AI Agent Generator\\n\\n' +
-        'Describe what you want your agent to do:\\n' +
-        '(e.g., "scrape e-commerce sites for prices", "analyze CSV data", "monitor news feeds")'
-      );
-      
-      if (!userIntent || userIntent.trim().length === 0) {
-        return; // User cancelled
-      }
-      
-      await this.generateAgentFromScratch(userIntent, optimizing);
       return;
     }
     
