@@ -2188,16 +2188,17 @@ Style:
         
         enhancedPrompt += `CRITICAL RULES:\n`;
         enhancedPrompt += `1. Respond with JSON ONLY - no explanations, no text before or after\n`;
-        enhancedPrompt += `2. Chain multiple tools together to complete tasks\n`;
-        enhancedPrompt += `3. If a tool fails, try a different approach with another tool\n`;
-        enhancedPrompt += `4. Keep using tools until you have a complete answer\n`;
-        enhancedPrompt += `5. ONLY after getting final results, respond with plain text summary\n\n`;
+        enhancedPrompt += `2. In execute_code, ALWAYS console.log() the final result\n`;
+        enhancedPrompt += `3. Chain multiple tools together to complete tasks\n`;
+        enhancedPrompt += `4. If a tool fails, try a different approach with another tool\n`;
+        enhancedPrompt += `5. Keep using tools until you have a complete answer\n`;
+        enhancedPrompt += `6. ONLY after getting final results, respond with plain text summary\n\n`;
         
         enhancedPrompt += `AVAILABLE TOOLS:\n`;
         
         if (this.config.tools.includes('execute_code')) {
-          enhancedPrompt += `- execute_code: Run ${this.config.environment.runtime} code\n`;
-          enhancedPrompt += `  Example: {"tool": "execute_code", "params": {"code": "console.log('hello');"}}\n`;
+          enhancedPrompt += `- execute_code: Run ${this.config.environment.runtime} code. ALWAYS console.log() results!\n`;
+          enhancedPrompt += `  Example: {"tool": "execute_code", "params": {"code": "const x = 5 + 3; console.log(x);"}}\n`;
         }
         if (this.config.tools.includes('fetch_url')) {
           enhancedPrompt += `- fetch_url: Get webpage HTML\n`;

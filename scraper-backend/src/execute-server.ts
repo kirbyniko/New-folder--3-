@@ -299,7 +299,14 @@ const server = http.createServer(async (req, res) => {
             throw new Error(`Module '${moduleName}' not available. Only axios and cheerio are supported.`);
           };
           
-          const scriptFunc = new Function('require', 'console', code);
+          // Wrap code to handle async patterns and capture return value
+          const wrappedCode = `
+            (async () => {
+              ${code}
+            })()
+          `;
+          
+          const scriptFunc = new Function('require', 'console', 'return ' + wrappedCode);
           const result = await scriptFunc(require, mockConsole);
           
           const duration = Date.now() - startTime;
