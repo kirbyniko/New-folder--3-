@@ -11,7 +11,10 @@ export class TemplateManager {
   constructor() {
     this.currentTemplate = null;
     this.templates = [];
-    this.apiUrl = 'https://civitracker.pages.dev/api/scraper-templates'; // Cloudflare Pages
+    // Try local dev first, fallback to prod
+    this.apiUrl = window.location.hostname === 'localhost' 
+      ? 'http://localhost:8788/api/scraper-templates'
+      : 'https://civitracker.pages.dev/api/scraper-templates';
     this.init();
   }
 

@@ -61,6 +61,37 @@ class AgentStudio {
     // Initialize TemplateManager
     this.templateManager = new TemplateManager();
     console.log('✅ Template Manager initialized');
+    
+    // Listen for template selection
+    window.addEventListener('template-selected', (e) => {
+      const template = e.detail;
+      console.log('📋 Template selected:', template);
+      
+      // Switch to Builder tab
+      document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
+      document.querySelector('[data-tab="builder"]').classList.add('active');
+      document.querySelectorAll('.sidebar-content').forEach(c => c.style.display = 'none');
+      document.getElementById('builder-tab').style.display = 'block';
+      
+      // Populate builder fields with template data
+      const urlInput = document.getElementById('scraper-url');
+      const selectorsTextarea = document.getElementById('scraper-selectors');
+      
+      if (urlInput && template.example_url) {
+        urlInput.value = template.example_url;
+      }
+      
+      if (selectorsTextarea && template.selectors) {
+        // Format selectors as JSON for the textarea
+        const selectorsObj = typeof template.selectors === 'string' 
+          ? JSON.parse(template.selectors) 
+          : template.selectors;
+        selectorsTextarea.value = JSON.stringify(selectorsObj, null, 2);
+      }
+      
+      // Show success message
+      console.log('✅ Builder populated with template data');
+    });
   }
 
   attachEventListeners() {
