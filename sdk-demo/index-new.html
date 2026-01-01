@@ -18,6 +18,7 @@
       <!-- Tab Selector -->
       <div class="sidebar-tabs">
         <button class="sidebar-tab active" data-tab="chat">💬 Chat</button>
+        <button class="sidebar-tab" data-tab="agent-editor">🤖 Agent Editor</button>
         <button class="sidebar-tab" data-tab="templates">🏭 Templates</button>
         <button class="sidebar-tab" data-tab="builder">🛠️ Builder</button>
         <button class="sidebar-tab" data-tab="workflows">🔄 Workflows</button>
@@ -242,6 +243,11 @@
             <pre style="background: #f3f4f6; padding: 12px; border-radius: 6px; font-size: 11px; overflow-x: auto; max-height: 300px;"></pre>
           </div>
         </div>
+      </div>
+      
+      <!-- Agent Editor Tab Content -->
+      <div class="sidebar-content" id="agent-editor-tab" style="display: none;">
+        <div id="agent-editor-container"></div>
       </div>
       
       <!-- Workflows Tab Content -->
