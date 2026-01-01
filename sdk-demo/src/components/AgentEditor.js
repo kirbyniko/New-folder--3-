@@ -3416,15 +3416,16 @@ Respond with JSON: {"satisfied": true/false, "learning": "what I learned", "next
         
         enhancedPrompt += `CRITICAL RULES:\n`;
         enhancedPrompt += `1. Respond with JSON ONLY - no explanations, no text, no code examples!\n`;
-        enhancedPrompt += `2. If you don't know a URL, use search_web to find one FIRST\n`;
-        enhancedPrompt += `3. In execute_code, ALWAYS END WITH console.log() or the result will be EMPTY!\n`;
+        enhancedPrompt += `2. NEVER GUESS URLs! If you need a URL, ALWAYS use search_web FIRST to find real URLs\n`;
+        enhancedPrompt += `3. If you don't know a URL, use search_web to find one FIRST\n`;
+        enhancedPrompt += `4. In execute_code, ALWAYS END WITH console.log() or the result will be EMPTY!\n`;
         enhancedPrompt += `   WRONG: await page.content(); // No output!\n`;
         enhancedPrompt += `   RIGHT: const html = await page.content(); console.log(html);\n`;
-        enhancedPrompt += `4. Chain multiple tools together to complete tasks\n`;
-        enhancedPrompt += `5. If a tool fails, try a different approach with another tool\n`;
-        enhancedPrompt += `6. NEVER give up - keep trying different tools until you succeed\n`;
-        enhancedPrompt += `7. NEVER provide code examples or tutorials - execute tools instead!\n`;
-        enhancedPrompt += `8. ONLY after getting final results, respond with plain text summary\n\n`;
+        enhancedPrompt += `5. Chain multiple tools together to complete tasks\n`;
+        enhancedPrompt += `6. If a tool fails, try a different approach with another tool\n`;
+        enhancedPrompt += `7. NEVER give up - keep trying different tools until you succeed\n`;
+        enhancedPrompt += `8. NEVER provide code examples or tutorials - execute tools instead!\n`;
+        enhancedPrompt += `9. ONLY after getting final results, respond with plain text summary\n\n`;
         
         if (this.config.enablePlanning && !this.config.enableExplicitPlanning) {
           this.intelligenceActivity.basicPlanning.count++;
@@ -3655,6 +3656,30 @@ Respond with JSON: {"satisfied": true/false, "learning": "what I learned", "next
         
         if (toolCallMatch && this.config.tools.includes(toolCallMatch.tool)) {
           console.log('[Agent] Tool call detected:', toolCallMatch.tool, toolCallMatch.params);
+          
+          // Detect if agent is guessing URLs instead of searching
+          if ((toolCallMatch.tool === 'fetch_url' || toolCallMatch.tool === 'execute_code') && 
+              toolCallMatch.params && 
+              (toolCallMatch.params.url || (toolCallMatch.params.code && toolCallMatch.params.code.includes('http')))) {
+            
+            const url = toolCallMatch.params.url || toolCallMatch.params.code.match(/https?:\/\/[^\s'"]+/)?.[0];
+            
+            // Check if URL looks fake/generic (contains "photo", "example", "recipes/" with generic names)
+            if (url && (url.includes('/photo/') || url.includes('/example') || 
+                        url.match(/recipes?\/([\w-]+)/)?.[1]?.split('-').length <= 2)) {
+              console.warn('⚠️ Agent is guessing URLs! Forcing search_web instead.');
+              this.testConversation.push({
+                role: 'system',
+                content: `⚠️ ERROR: You tried to use a fake/guessed URL. You MUST use search_web to find real URLs first! Tool call blocked.`,
+                error: true
+              });
+              this.renderChatInterface(container);
+              
+              // Force continue with instruction to search
+              await this.continueWithToolResults(container);
+              return;
+            }
+          }
           
           // Execute the tool
           const toolResult = await this.executeTool(toolCallMatch.tool, toolCallMatch.params);
