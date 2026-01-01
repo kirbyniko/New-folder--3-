@@ -3575,14 +3575,58 @@ JSON format:
       const data = await response.json();
       const responseText = data.response;
       
-      // Extract JSON from response
-      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        this.addProgressMessage('❌ Could not parse AI response');
-        throw new Error('Could not parse AI response');
-      }
+      this.addProgressMessage('✅ AI response received');
+      this.addProgressMessage('📝 Parsing suggestions...');
       
-      const suggestions = JSON.parse(jsonMatch[0]);
+      // Extract and parse JSON with better error handling
+      let suggestions = null;
+      
+      try {
+        // Try to extract JSON from markdown code blocks first
+        let jsonMatch = responseText.match(/```json\s*([\s\S]*?)```/);
+        if (!jsonMatch) {
+          jsonMatch = responseText.match(/```\s*([\s\S]*?)```/);
+        }
+        if (!jsonMatch) {
+          // Look for raw JSON object
+          jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        }
+        
+        if (!jsonMatch) {
+          this.addProgressMessage('❌ Could not find JSON in AI response');
+          throw new Error('Could not find JSON in AI response');
+        }
+        
+        let jsonStr = jsonMatch[1] || jsonMatch[0];
+        
+        // Clean up common JSON issues
+        jsonStr = jsonStr.trim();
+        
+        // Try parsing directly first
+        try {
+          suggestions = JSON.parse(jsonStr);
+        } catch (firstError) {
+          // If that fails, try to fix common issues
+          this.addProgressMessage('⚠️ JSON has formatting issues, attempting to clean...');
+          
+          // Fix unescaped newlines in strings
+          jsonStr = jsonStr.replace(/("(?:[^"\\]|\\.)*")|(\n)/g, (match, quoted) => {
+            return quoted || '\\n';
+          });
+          
+          // Try parsing again
+          try {
+            suggestions = JSON.parse(jsonStr);
+          } catch (secondError) {
+            this.addProgressMessage(`❌ JSON parsing failed: ${secondError.message}`);
+            this.addProgressMessage('📄 Raw response preview:');
+            this.addProgressMessage(responseText.substring(0, 500) + '...');
+            throw new Error(`Could not parse AI response: ${secondError.message}`);
+          }
+        }
+      } catch (parseError) {
+        throw parseError;
+      }
       
       this.addProgressMessage('');
       this.addProgressMessage('✨ AI Suggestions:');
