@@ -83,9 +83,13 @@ export class AgentEditor {
             <button id="load-agent" class="btn">
               📂 Load
             </button>
+            <button id="import-agent" class="btn">
+              📥 Import
+            </button>
             <button id="export-agent" class="btn">
               📤 Export
             </button>
+            <input type="file" id="import-agent-file" accept=".json" style="display: none;" />
             <button id="test-agent" class="btn btn-success">
               🧪 Test Agent
             </button>
@@ -642,6 +646,10 @@ export class AgentEditor {
     // Actions
     document.getElementById('save-agent').addEventListener('click', () => this.saveAgent());
     document.getElementById('load-agent').addEventListener('click', () => this.loadAgent());
+    document.getElementById('import-agent').addEventListener('click', () => {
+      document.getElementById('import-agent-file').click();
+    });
+    document.getElementById('import-agent-file')?.addEventListener('change', (e) => this.importAgent(e));
     document.getElementById('export-agent').addEventListener('click', () => this.exportAgent());
     document.getElementById('test-agent').addEventListener('click', () => this.testAgent());
 
@@ -824,47 +832,126 @@ Style:
   }
 
   saveAgent() {
+    // Ensure all current UI values are synced to config
+    this.config.name = document.getElementById('agent-name')?.value || this.config.name;
+    this.config.systemPrompt = this.editor?.getValue() || this.config.systemPrompt;
+    
     const agents = JSON.parse(localStorage.getItem('saved_agents') || '[]');
     const existingIndex = agents.findIndex(a => a.name === this.config.name);
     
     if (existingIndex >= 0) {
+      if (!confirm(`Agent "${this.config.name}" already exists. Overwrite?`)) {
+        return;
+      }
       agents[existingIndex] = this.config;
     } else {
       agents.push(this.config);
     }
     
     localStorage.setItem('saved_agents', JSON.stringify(agents));
-    alert(`✅ Agent "${this.config.name}" saved!`);
+    
+    // Show detailed save confirmation
+    const configSize = JSON.stringify(this.config).length;
+    const details = `
+✅ Agent "${this.config.name}" saved to browser storage!
+
+📊 Configuration Details:
+• System Prompt: ${this.config.systemPrompt.length} chars
+• Instructions: ${this.config.instructions.length} steps
+• Environment: ${this.config.environment.runtime}
+• Dependencies: ${this.config.environment.dependencies.length}
+• Context Files: ${this.config.contextFiles.length}
+• Tools: ${this.config.tools.length}
+• Total Size: ${(configSize / 1024).toFixed(2)} KB
+
+💡 Tip: Use "📤 Export" to save as a file for backup or sharing.`;
+    
+    alert(details);
   }
 
   loadAgent() {
     const agents = JSON.parse(localStorage.getItem('saved_agents') || '[]');
     if (agents.length === 0) {
-      alert('No saved agents found');
+      alert('❌ No saved agents found.\n\nTip: Save an agent first with the "💾 Save" button, or use "📥 Import" to load from a file.');
       return;
     }
     
-    const agentName = prompt(`Available agents:\n${agents.map(a => a.name).join('\n')}\n\nEnter agent name to load:`);
-    const agent = agents.find(a => a.name === agentName);
+    // Create a better selection UI
+    const agentList = agents.map((a, i) => `${i + 1}. ${a.name} (${a.instructions.length} steps, ${a.tools.length} tools)`).join('\n');
+    const agentName = prompt(`📂 Available Agents (${agents.length} saved):\n\n${agentList}\n\nEnter the agent name to load:`);
+    
+    if (!agentName) return;
+    
+    const agent = agents.find(a => a.name.toLowerCase() === agentName.toLowerCase());
     
     if (agent) {
-      this.config = agent;
+      this.config = JSON.parse(JSON.stringify(agent)); // Deep clone
       this.init();
-      alert(`✅ Agent "${agentName}" loaded!`);
+      alert(`✅ Agent "${agentName}" loaded successfully!\n\n📊 Loaded:\n• ${agent.instructions.length} instructions\n• ${agent.environment.dependencies.length} dependencies\n• ${agent.contextFiles.length} context files\n• ${agent.tools.length} tools`);
     } else {
-      alert('Agent not found');
+      alert(`❌ Agent "${agentName}" not found.\n\nAvailable agents:\n${agents.map(a => '• ' + a.name).join('\n')}`);
     }
   }
 
+  importAgent(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const imported = JSON.parse(e.target.result);
+        
+        // Validate that it's an agent config
+        if (!imported.name || !imported.systemPrompt) {
+          throw new Error('Invalid agent configuration file');
+        }
+        
+        // Ask for confirmation with details
+        const details = `
+📥 Import Agent Configuration
+
+📛 Name: ${imported.name}
+📝 System Prompt: ${imported.systemPrompt.substring(0, 100)}...
+📋 Instructions: ${imported.instructions?.length || 0} steps
+⚙️ Environment: ${imported.environment?.runtime || 'nodejs'}
+📦 Dependencies: ${imported.environment?.dependencies?.length || 0}
+📁 Context Files: ${imported.contextFiles?.length || 0}
+🛠️ Tools: ${imported.tools?.length || 0}
+
+Import this configuration?`;
+        
+        if (confirm(details)) {
+          this.config = imported;
+          this.init();
+          alert(`✅ Agent "${imported.name}" imported successfully!`);
+        }
+      } catch (error) {
+        alert(`❌ Failed to import agent:\n\n${error.message}\n\nMake sure the file is a valid agent configuration JSON.`);
+      }
+    };
+    reader.readAsText(file);
+    
+    // Reset file input so same file can be imported again
+    event.target.value = '';
+  }
+
   exportAgent() {
+    // Ensure all current UI values are synced to config
+    this.config.name = document.getElementById('agent-name')?.value || this.config.name;
+    this.config.systemPrompt = this.editor?.getValue() || this.config.systemPrompt;
+    
     const dataStr = JSON.stringify(this.config, null, 2);
     const blob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${this.config.name.replace(/\s+/g, '_')}.json`;
+    a.download = `${this.config.name.replace(/\s+/g, '_')}_agent.json`;
     a.click();
     URL.revokeObjectURL(url);
+    
+    const configSize = JSON.stringify(this.config).length;
+    alert(`✅ Agent "${this.config.name}" exported!\n\n💾 File: ${this.config.name.replace(/\s+/g, '_')}_agent.json\n📊 Size: ${(configSize / 1024).toFixed(2)} KB\n\n✨ Complete configuration saved including:\n• System prompt\n• ${this.config.instructions.length} instruction steps\n• Environment & dependencies\n• ${this.config.contextFiles.length} context files\n• ${this.config.tools.length} tools\n• All settings`);
   }
 
   async testAgent() {
