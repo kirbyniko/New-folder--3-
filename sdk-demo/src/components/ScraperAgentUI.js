@@ -10,13 +10,13 @@ export class ScraperAgentUI {
     // VRAM-based model presets
     this.vramPresets = {
       '8GB': { model: 'qwen2.5-coder:14b', temperature: 0.3, context: 8192 },
-      '16GB': { model: 'qwen2.5-coder:32b', temperature: 0.3, context: 16384 },
+      '16GB': { model: 'mistral-nemo:12b-instruct-2407-q8_0', temperature: 0.3, context: 16384 },
       '24GB+': { model: 'qwen2.5-coder:70b', temperature: 0.3, context: 32768 }
     };
     
-    // Default configuration
+    // Default config
     this.config = {
-      model: 'qwen2.5-coder:14b',
+      model: 'mistral-nemo:12b-instruct-2407-q8_0',
       temperature: 0.3,
       contextWindow: 8192,
       systemPrompt: this.getScraperSystemPrompt(),

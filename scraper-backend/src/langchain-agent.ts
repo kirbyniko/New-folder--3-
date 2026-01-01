@@ -149,8 +149,8 @@ export async function createScraperAgent(config: {
   tools?: string[]; // ['execute_code', 'fetch_url', 'search_web']
 }) {
   const {
-    model = 'qwen2.5-coder:14b',
-    temperature = 0.7,
+    model = 'mistral-nemo:12b-instruct-2407-q8_0',
+    temperature = 0.3,
     systemPrompt = 'You are a helpful web scraping assistant.',
     tools: enabledTools = ['execute_code', 'fetch_url', 'search_web']
   } = config;
