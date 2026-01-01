@@ -26,6 +26,10 @@ export class AgentEditor {
   }
 
   getDefaultConfig() {
+    // Load hardware config from localStorage if available
+    const savedHardware = localStorage.getItem('agentEditor_hardware');
+    const hardware = savedHardware ? JSON.parse(savedHardware) : { preset: 'consumer', gpuVRAM: 8, tokenLimit: 4096 };
+    
     return {
       name: 'New Agent',
       mode: 'general',
@@ -41,6 +45,7 @@ export class AgentEditor {
       contextFiles: [],
       tools: ['execute_code', 'fetch_url', 'search_web'], // Enable tools by default for testing
       enabledGuides: ['basic-selectors', 'error-handling'],
+      hardware: hardware,
       // Multi-step instructions
       instructions: [],
       // Coding environment
@@ -629,6 +634,9 @@ export class AgentEditor {
       this.config.hardware.gpuVRAM = config.vram;
       this.config.hardware.tokenLimit = config.tokens;
       
+      // Save to localStorage
+      localStorage.setItem('agentEditor_hardware', JSON.stringify(this.config.hardware));
+      
       // Update display
       const limitEl = document.getElementById('hardware-token-limit');
       if (limitEl) {
@@ -643,6 +651,9 @@ export class AgentEditor {
       this.config.hardware = this.config.hardware || {};
       this.config.hardware.gpuVRAM = vram;
       this.config.hardware.tokenLimit = this.calculateTokenLimit(vram);
+      
+      // Save to localStorage
+      localStorage.setItem('agentEditor_hardware', JSON.stringify(this.config.hardware));
       
       const limitEl = document.getElementById('hardware-token-limit');
       if (limitEl) {
@@ -1800,17 +1811,48 @@ Style:
       this.testConversation = this.testConversation.filter(msg => !msg.loading);
       
       if (result.response) {
+        console.log('[Agent] Full response from Ollama:', result.response);
+        
         // Check if the response contains a tool call
         let toolCallMatch = null;
         try {
-          // Try to parse JSON tool call
-          const jsonMatch = result.response.match(/\{[\s\S]*?"tool"[\s\S]*?\}/);
-          if (jsonMatch) {
-            toolCallMatch = JSON.parse(jsonMatch[0]);
+          // Try to parse JSON tool call - use better regex to capture complete JSON
+          // Match from first { to last } that contains "tool"
+          let jsonStr = null;
+          
+          // Try to extract clean JSON - look for {"tool": ... }
+          const toolIndex = result.response.indexOf('"tool"');
+          if (toolIndex !== -1) {
+            // Find the opening { before "tool"
+            let start = result.response.lastIndexOf('{', toolIndex);
+            if (start !== -1) {
+              // Find matching closing }
+              let braceCount = 0;
+              let end = -1;
+              for (let i = start; i < result.response.length; i++) {
+                if (result.response[i] === '{') braceCount++;
+                if (result.response[i] === '}') {
+                  braceCount--;
+                  if (braceCount === 0) {
+                    end = i + 1;
+                    break;
+                  }
+                }
+              }
+              if (end !== -1) {
+                jsonStr = result.response.substring(start, end);
+              }
+            }
+          }
+          
+          if (jsonStr) {
+            console.log('[Agent] Extracted JSON string:', jsonStr);
+            toolCallMatch = JSON.parse(jsonStr);
             console.log('[Agent] Parsed tool call:', toolCallMatch);
           }
         } catch (e) {
           console.log('[Agent] Failed to parse tool call:', e.message);
+          console.log('[Agent] Attempted to parse:', jsonStr);
         }
         
         console.log('[Agent] Available tools:', this.config.tools);
