@@ -1610,6 +1610,17 @@ Style:
         enhancedPrompt += `\nAVAILABLE PACKAGES: ${this.config.environment.dependencies.join(', ')}\n`;
       }
       
+      // Add context files (including library guides)
+      if (this.config.contextFiles && this.config.contextFiles.length > 0) {
+        enhancedPrompt += `\n=== REFERENCE GUIDES ===\n`;
+        enhancedPrompt += `Consult these when tools fail:\n\n`;
+        
+        this.config.contextFiles.forEach(file => {
+          enhancedPrompt += `--- ${file.name} ---\n`;
+          enhancedPrompt += `${file.content.substring(0, 2000)}...\n\n`;
+        });
+      }
+      
       const response = await fetch('http://localhost:11434/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1845,6 +1856,17 @@ Style:
           enhancedPrompt += `\nINSTALLED PACKAGES: ${this.config.environment.dependencies.join(', ')}`;
           enhancedPrompt += `\nYou can use these packages directly in execute_code!`;
         }
+      }
+      
+      // Add context files (including library guides)
+      if (this.config.contextFiles && this.config.contextFiles.length > 0) {
+        enhancedPrompt += `\n\n=== REFERENCE DOCUMENTATION ===\n`;
+        enhancedPrompt += `You have access to these guides and references. Use them when encountering errors:\n\n`;
+        
+        this.config.contextFiles.forEach(file => {
+          enhancedPrompt += `--- ${file.name} ---\n`;
+          enhancedPrompt += `${file.content}\n\n`;
+        });
       }
       
       // Call Ollama with full conversation context
