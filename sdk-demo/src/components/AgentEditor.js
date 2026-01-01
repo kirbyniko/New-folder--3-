@@ -2598,18 +2598,34 @@ Style:
       return results;
     }
     
-    // Execute in parallel
+    // Execute in parallel - mark activity
+    this.intelligenceActivity.parallelTools.active = true;
+    this.intelligenceActivity.parallelTools.count++;
+    this.intelligenceActivity.parallelTools.lastRun = Date.now();
+    console.log(`⚡ [INTELLIGENCE] Parallel Tools STARTED (Run #${this.intelligenceActivity.parallelTools.count}) - ${toolCalls.length} tools`);
+    this.updateIntelStatusPanel();
+    
     console.log(`⚡ Executing ${toolCalls.length} tools in parallel`);
     const promises = toolCalls.map(call => 
       this.executeTool(call.tool, call.params)
         .then(result => ({ tool: call.tool, result }))
     );
     
-    return await Promise.all(promises);
+    const results = await Promise.all(promises);
+    
+    this.intelligenceActivity.parallelTools.active = false;
+    console.log('⚡ [INTELLIGENCE] Parallel Tools COMPLETED');
+    this.updateIntelStatusPanel();
+    
+    return results;
   }
   
   savePersistentMemory() {
     if (this.config.enablePersistentMemory) {
+      this.intelligenceActivity.persistentMemory.count++;
+      this.intelligenceActivity.persistentMemory.lastRun = Date.now();
+      console.log(`💾 [INTELLIGENCE] Persistent Memory SAVE (Run #${this.intelligenceActivity.persistentMemory.count})`);
+      
       const memory = {
         failureLog: this.config.failureLog,
         successPatterns: this.config.successPatterns,
@@ -3445,6 +3461,10 @@ Respond with JSON: {"satisfied": true/false, "learning": "what I learned", "next
       
       // Check if agent is stuck and suggest pivot
       if (this.config.enableStrategyPivot && this.config.recentFailures >= this.config.stuckThreshold) {
+        this.intelligenceActivity.strategyPivot.count++;
+        this.intelligenceActivity.strategyPivot.lastRun = Date.now();
+        console.log(`🎯 [INTELLIGENCE] Strategy Pivot TRIGGERED (Run #${this.intelligenceActivity.strategyPivot.count}) - ${this.config.recentFailures} failures`);
+        
         const currentApproach = this.config.currentPlan ? 
           this.config.currentPlan.steps.map(s => s.action).join(', ') : 
           'current approach';
