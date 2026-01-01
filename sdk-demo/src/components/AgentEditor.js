@@ -2038,6 +2038,11 @@ Style:
         enhancedPrompt += `Instead, use execute_code with axios and custom headers:\n`;
         enhancedPrompt += `{"tool": "execute_code", "params": {"code": "const axios = require('axios'); axios.get('URL', {headers: {'User-Agent': 'Mozilla/5.0'}}).then(r => console.log(r.data));"}}\n\n`;
         
+        enhancedPrompt += `EMPTY OUTPUT HANDLING:\n`;
+        enhancedPrompt += `If execute_code returns "Code executed successfully (no output)", it means you forgot console.log()!\n`;
+        enhancedPrompt += `Fix your code to include console.log() to see the actual results.\n`;
+        enhancedPrompt += `Example: const data = await fetchSomething(); console.log(JSON.stringify(data));\n\n`;
+        
         enhancedPrompt += `DO NOT explain, DO NOT retry the same tool - switch to execute_code!\n`;
       }
       
@@ -2210,7 +2215,9 @@ Style:
         
         // Regular response (task complete)
         // Validate if response actually answers the question
-        const isValidResponse = await this.validateResponse(result.response, this.testConversation);
+        // Skip validation for tool calls (JSON responses)
+        const isToolCall = result.response.includes('"tool"') && result.response.includes('"params"');
+        const isValidResponse = isToolCall ? true : await this.validateResponse(result.response, this.testConversation);
         
         this.testConversation.push({
           role: 'assistant',
@@ -2482,6 +2489,12 @@ Style:
   // Multi-layer validation system
   async validateResponse(response, conversation) {
     const userQuery = conversation.find(m => m.role === 'user')?.content || '';
+    
+    // Don't validate tool calls - only final answers
+    if (response.includes('"tool"') && response.includes('"params"')) {
+      console.log('⏩ Skipping validation - this is a tool call, not a final answer');
+      return true;
+    }
     
     // Layer 1: Syntax and format checks
     if (response.length < 20) {
@@ -2844,6 +2857,13 @@ Respond with JSON: {"satisfied": true/false, "learning": "what I learned", "next
           output = result.logs.join('\n');
         } else {
           output = 'Code executed successfully (no output)';
+        }
+        
+        // Detect empty output - likely missing console.log()
+        if (output === 'Code executed successfully (no output)') {
+          console.warn('⚠️ Code executed but produced no output - likely missing console.log()');
+          // Don't fail, but provide helpful context
+          output += '\n\n⚠️ Note: Code ran but printed nothing. If you expected output, add console.log() to your code.';
         }
         
         // Reset failure counter on success
