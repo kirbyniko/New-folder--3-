@@ -266,9 +266,60 @@ export class AgentEditor {
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <h3 style="color: #e0e0e0; margin: 0;">⚙️ Coding Environment</h3>
                 <button id="auto-configure-env-btn" style="padding: 8px 16px; background: #7c3aed; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 500;">
-                  ✨ Auto-Configure
+                  ✨ AI Optimize All
                 </button>
               </div>
+              
+              <!-- AI Optimization Panel -->
+              <div id="ai-optimize-panel" style="display: none; background: #2d2d2d; border: 1px solid #7c3aed; border-radius: 6px; padding: 15px; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                  <h4 style="margin: 0; color: #e0e0e0; font-size: 14px;">🤖 What should AI optimize?</h4>
+                  <button id="close-optimize-panel" style="background: transparent; border: none; color: #9ca3af; cursor: pointer; font-size: 18px; padding: 0;">✖</button>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px;">
+                  <label style="display: flex; align-items: center; gap: 6px; color: #e0e0e0; font-size: 13px; cursor: pointer;">
+                    <input type="checkbox" id="opt-system-prompt" checked style="cursor: pointer;">
+                    System Prompt
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 6px; color: #e0e0e0; font-size: 13px; cursor: pointer;">
+                    <input type="checkbox" id="opt-instructions" checked style="cursor: pointer;">
+                    Instructions
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 6px; color: #e0e0e0; font-size: 13px; cursor: pointer;">
+                    <input type="checkbox" id="opt-environment" checked style="cursor: pointer;">
+                    Environment
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 6px; color: #e0e0e0; font-size: 13px; cursor: pointer;">
+                    <input type="checkbox" id="opt-context-files" style="cursor: pointer;">
+                    Context Files
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 6px; color: #e0e0e0; font-size: 13px; cursor: pointer;">
+                    <input type="checkbox" id="opt-tools" checked style="cursor: pointer;">
+                    Tools
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 6px; color: #e0e0e0; font-size: 13px; cursor: pointer;">
+                    <input type="checkbox" id="opt-settings" checked style="cursor: pointer;">
+                    Settings (temp, tokens)
+                  </label>
+                </div>
+                
+                <div style="background: #1e1e1e; border-radius: 4px; padding: 10px; margin-bottom: 12px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <span style="color: #9ca3af; font-size: 12px;">Token Impact:</span>
+                    <span id="token-impact" style="color: #10b981; font-size: 13px; font-weight: 600;">Calculating...</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: #9ca3af; font-size: 12px;">Current Tokens:</span>
+                    <span id="current-tokens-display" style="color: #e0e0e0; font-size: 12px;">0</span>
+                  </div>
+                </div>
+                
+                <button id="run-ai-optimize" style="width: 100%; padding: 10px; background: #7c3aed; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">
+                  🚀 Run AI Optimization
+                </button>
+              </div>
+              
               <p style="color: #9ca3af; font-size: 12px; margin-bottom: 15px;">
                 Let AI analyze your prompts to suggest optimal runtime and dependencies
               </p>
@@ -498,8 +549,24 @@ export class AgentEditor {
       this.addEnvironmentVariable();
     });
     
+    // AI Optimization
     document.getElementById('auto-configure-env-btn')?.addEventListener('click', () => {
-      this.autoConfigureEnvironment();
+      this.showOptimizationPanel();
+    });
+    
+    document.getElementById('close-optimize-panel')?.addEventListener('click', () => {
+      document.getElementById('ai-optimize-panel').style.display = 'none';
+    });
+    
+    document.getElementById('run-ai-optimize')?.addEventListener('click', () => {
+      this.runAIOptimization();
+    });
+    
+    // Update token impact when checkboxes change
+    ['opt-system-prompt', 'opt-instructions', 'opt-environment', 'opt-context-files', 'opt-tools', 'opt-settings'].forEach(id => {
+      document.getElementById(id)?.addEventListener('change', () => {
+        this.updateTokenImpact();
+      });
     });
 
     // Actions
@@ -1226,51 +1293,136 @@ return data.response;`
     textarea.placeholder = placeholders[this.config.environment.runtime] || '';
   }
   
-  async autoConfigureEnvironment() {
-    const btn = document.getElementById('auto-configure-env-btn');
+  showOptimizationPanel() {
+    const panel = document.getElementById('ai-optimize-panel');
+    if (panel) {
+      panel.style.display = 'block';
+      this.updateTokenImpact();
+    }
+  }
+  
+  updateTokenImpact() {
+    const currentTokens = this.estimateCurrentTokens();
+    document.getElementById('current-tokens-display').textContent = currentTokens.toLocaleString();
+    
+    // Calculate what will change based on selected options
+    const optimizing = {
+      systemPrompt: document.getElementById('opt-system-prompt')?.checked,
+      instructions: document.getElementById('opt-instructions')?.checked,
+      environment: document.getElementById('opt-environment')?.checked,
+      contextFiles: document.getElementById('opt-context-files')?.checked,
+      tools: document.getElementById('opt-tools')?.checked,
+      settings: document.getElementById('opt-settings')?.checked
+    };
+    
+    let impact = '~';
+    const optimizingCount = Object.values(optimizing).filter(Boolean).length;
+    
+    if (optimizingCount === 0) {
+      impact = 'No changes selected';
+      document.getElementById('token-impact').style.color = '#9ca3af';
+    } else {
+      // Rough estimate: optimizing usually reduces tokens
+      const estimatedReduction = Math.floor(currentTokens * 0.1 * (optimizingCount / 6));
+      impact = `-${estimatedReduction.toLocaleString()} tokens (estimated)`;
+      document.getElementById('token-impact').style.color = '#10b981';
+    }
+    
+    document.getElementById('token-impact').textContent = impact;
+  }
+  
+  estimateCurrentTokens() {
+    let total = 0;
+    
+    // System prompt (rough: 4 chars per token)
+    total += Math.ceil(this.config.systemPrompt.length / 4);
+    
+    // Instructions
+    this.config.instructions.forEach(inst => {
+      total += Math.ceil((inst.name?.length || 0) / 4);
+      total += Math.ceil((inst.prompt?.length || 0) / 4);
+    });
+    
+    // Context files
+    this.config.contextFiles.forEach(file => {
+      total += Math.ceil(file.content.length / 4);
+    });
+    
+    return total;
+  }
+  
+  async runAIOptimization() {
+    const btn = document.getElementById('run-ai-optimize');
     if (!btn) return;
+    
+    // Get selected optimization options
+    const optimizing = {
+      systemPrompt: document.getElementById('opt-system-prompt')?.checked,
+      instructions: document.getElementById('opt-instructions')?.checked,
+      environment: document.getElementById('opt-environment')?.checked,
+      contextFiles: document.getElementById('opt-context-files')?.checked,
+      tools: document.getElementById('opt-tools')?.checked,
+      settings: document.getElementById('opt-settings')?.checked
+    };
+    
+    if (!Object.values(optimizing).some(Boolean)) {
+      alert('Please select at least one aspect to optimize');
+      return;
+    }
     
     // Disable button and show loading
     btn.disabled = true;
-    btn.innerHTML = '⏳ Analyzing...';
+    btn.innerHTML = '⏳ AI is analyzing...';
     
     try {
-      // Gather context from agent configuration
+      // Gather current configuration
       const context = {
         systemPrompt: this.config.systemPrompt,
         instructions: this.config.instructions,
-        mode: this.config.mode,
-        tools: this.config.tools
+        contextFiles: this.config.contextFiles,
+        tools: this.config.tools,
+        environment: this.config.environment,
+        settings: {
+          temperature: this.config.temperature,
+          topP: this.config.topP,
+          maxTokens: this.config.maxTokens,
+          contextWindow: this.config.contextWindow
+        },
+        mode: this.config.mode
       };
       
-      // Create analysis prompt
-      const analysisPrompt = `Analyze this AI agent configuration and suggest the optimal coding environment:
+      // Build optimization prompt
+      const optimizationPrompt = `You are an AI agent optimization expert. Analyze this agent configuration and suggest improvements.
 
-**Agent Mode:** ${context.mode}
+**Current Configuration:**
 
-**System Prompt:**
+System Prompt:
 ${context.systemPrompt}
 
-**Instructions:**
+Instructions (${context.instructions.length} steps):
 ${context.instructions.map((inst, i) => `${i + 1}. ${inst.name}: ${inst.prompt}`).join('\\n')}
 
-**Available Tools:** ${context.tools.join(', ') || 'None'}
+Context Files (${context.contextFiles.length}):
+${context.contextFiles.map(f => f.name).join(', ') || 'None'}
 
-Based on this, determine:
-1. Best runtime (nodejs/python/deno/browser)
-2. Required dependencies with exact versions
-3. Recommended timeout (5-300 seconds)
-4. Recommended memory limit (256MB/512MB/1GB/2GB)
-5. Whether sandboxing should be enabled
+Tools: ${context.tools.join(', ') || 'None'}
 
-Respond ONLY with valid JSON in this format:
+Environment: ${context.environment.runtime}, Dependencies: ${context.environment.dependencies.join(', ') || 'None'}
+
+Settings: temp=${context.settings.temperature}, topP=${context.settings.topP}, maxTokens=${context.settings.maxTokens}
+
+**Optimize these aspects:** ${Object.entries(optimizing).filter(([k, v]) => v).map(([k]) => k).join(', ')}
+
+Provide optimized configuration as JSON:
 {
-  "runtime": "nodejs",
-  "dependencies": ["axios@1.6.0", "cheerio@1.0.0"],
-  "timeout": 30,
-  "memoryLimit": "512MB",
-  "sandboxed": true,
-  "reasoning": "Short explanation of choices"
+  ${optimizing.systemPrompt ? '"systemPrompt": "improved prompt",' : ''}
+  ${optimizing.instructions ? '"instructions": [{name:"...", prompt:"...", conditional:false, loop:false}],' : ''}
+  ${optimizing.environment ? '"environment": {runtime:"nodejs", dependencies:["pkg@1.0"], timeout:30000, memoryLimit:"512MB", sandboxed:true},' : ''}
+  ${optimizing.contextFiles ? '"contextFileSuggestions": ["file1.md", "file2.txt"],' : ''}
+  ${optimizing.tools ? '"tools": ["execute_code", "fetch_url"],' : ''}
+  ${optimizing.settings ? '"settings": {temperature:0.7, topP:0.9, maxTokens:2048, contextWindow:8192},' : ''}
+  "reasoning": "explanation of changes",
+  "tokenReduction": 123
 }`;
 
       // Call Ollama API
@@ -1279,13 +1431,13 @@ Respond ONLY with valid JSON in this format:
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: this.config.model || 'qwen2.5-coder:14b',
-          prompt: analysisPrompt,
+          prompt: optimizationPrompt,
           stream: false
         })
       });
       
       if (!response.ok) {
-        throw new Error('Failed to get AI recommendation');
+        throw new Error('Failed to get AI optimization');
       }
       
       const data = await response.json();
@@ -1297,39 +1449,93 @@ Respond ONLY with valid JSON in this format:
         throw new Error('Could not parse AI response');
       }
       
-      const suggestion = JSON.parse(jsonMatch[0]);
+      const suggestions = JSON.parse(jsonMatch[0]);
       
-      // Apply suggestions with confirmation
-      const confirmMsg = `AI suggests:\\n\\n` +
-        `Runtime: ${suggestion.runtime}\\n` +
-        `Dependencies: ${suggestion.dependencies.join(', ')}\\n` +
-        `Timeout: ${suggestion.timeout}s\\n` +
-        `Memory: ${suggestion.memoryLimit}\\n` +
-        `Sandboxed: ${suggestion.sandboxed}\\n\\n` +
-        `Reasoning: ${suggestion.reasoning}\\n\\n` +
-        `Apply these settings?`;
+      // Show confirmation dialog
+      let changesMsg = 'AI suggests the following changes:\\n\\n';
       
-      if (confirm(confirmMsg)) {
-        // Apply configuration
-        this.config.environment.runtime = suggestion.runtime;
-        this.config.environment.dependencies = suggestion.dependencies;
-        this.config.environment.timeout = suggestion.timeout * 1000;
-        this.config.environment.memoryLimit = suggestion.memoryLimit;
-        this.config.environment.sandboxed = suggestion.sandboxed;
+      if (suggestions.systemPrompt && optimizing.systemPrompt) {
+        changesMsg += `📝 System Prompt: Updated (${suggestions.systemPrompt.length} chars)\\n`;
+      }
+      if (suggestions.instructions && optimizing.instructions) {
+        changesMsg += `📋 Instructions: ${suggestions.instructions.length} steps\\n`;
+      }
+      if (suggestions.environment && optimizing.environment) {
+        changesMsg += `⚙️ Environment: ${suggestions.environment.runtime} with ${suggestions.environment.dependencies.length} dependencies\\n`;
+      }
+      if (suggestions.contextFileSuggestions && optimizing.contextFiles) {
+        changesMsg += `📁 Context: Suggested ${suggestions.contextFileSuggestions.length} files\\n`;
+      }
+      if (suggestions.tools && optimizing.tools) {
+        changesMsg += `🛠️ Tools: ${suggestions.tools.join(', ')}\\n`;
+      }
+      if (suggestions.settings && optimizing.settings) {
+        changesMsg += `⚡ Settings: temp=${suggestions.settings.temperature}, tokens=${suggestions.settings.maxTokens}\\n`;
+      }
+      
+      changesMsg += `\\n💡 Reasoning: ${suggestions.reasoning}`;
+      changesMsg += `\\n📊 Token Reduction: ~${suggestions.tokenReduction || 0}`;
+      changesMsg += `\\n\\nApply these optimizations?`;
+      
+      if (confirm(changesMsg)) {
+        // Apply optimizations
+        if (suggestions.systemPrompt && optimizing.systemPrompt) {
+          this.config.systemPrompt = suggestions.systemPrompt;
+          if (this.editor) this.editor.setValue(suggestions.systemPrompt);
+        }
         
-        // Re-render environment UI
-        this.renderEnvironment();
+        if (suggestions.instructions && optimizing.instructions) {
+          this.config.instructions = suggestions.instructions;
+        }
         
-        alert('✅ Environment auto-configured successfully!');
+        if (suggestions.environment && optimizing.environment) {
+          this.config.environment = suggestions.environment;
+          this.renderEnvironment();
+        }
+        
+        if (suggestions.contextFileSuggestions && optimizing.contextFiles) {
+          alert(`Context file suggestions:\\n${suggestions.contextFileSuggestions.join('\\n')}`);
+        }
+        
+        if (suggestions.tools && optimizing.tools) {
+          this.config.tools = suggestions.tools;
+          // Update tool checkboxes
+          ['execute-code', 'fetch-url', 'search-web', 'read-file'].forEach(tool => {
+            const toolName = tool.replace('-', '_');
+            const checkbox = document.getElementById(`tool-${tool}`);
+            if (checkbox) checkbox.checked = suggestions.tools.includes(toolName);
+          });
+        }
+        
+        if (suggestions.settings && optimizing.settings) {
+          this.config.temperature = suggestions.settings.temperature;
+          this.config.topP = suggestions.settings.topP;
+          this.config.maxTokens = suggestions.settings.maxTokens;
+          this.config.contextWindow = suggestions.settings.contextWindow;
+          
+          // Update UI
+          document.getElementById('temperature').value = suggestions.settings.temperature;
+          document.getElementById('temp-value').textContent = suggestions.settings.temperature;
+          document.getElementById('top-p').value = suggestions.settings.topP;
+          document.getElementById('topp-value').textContent = suggestions.settings.topP;
+          document.getElementById('max-tokens').value = suggestions.settings.maxTokens;
+          document.getElementById('maxtoken-value').textContent = suggestions.settings.maxTokens;
+          document.getElementById('context-window').value = suggestions.settings.contextWindow;
+          document.getElementById('context-value').textContent = suggestions.settings.contextWindow;
+        }
+        
+        this.updateTokenEstimate();
+        alert('✅ Agent optimized successfully!');
+        document.getElementById('ai-optimize-panel').style.display = 'none';
       }
       
     } catch (error) {
-      console.error('Auto-configure error:', error);
-      alert(`Failed to auto-configure: ${error.message}\\n\\nPlease configure manually or check that Ollama is running.`);
+      console.error('AI optimization error:', error);
+      alert(`Failed to optimize: ${error.message}\\n\\nPlease check that Ollama is running.`);
     } finally {
       // Re-enable button
       btn.disabled = false;
-      btn.innerHTML = '✨ Auto-Configure';
+      btn.innerHTML = '🚀 Run AI Optimization';
     }
   }
 }
