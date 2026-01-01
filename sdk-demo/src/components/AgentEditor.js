@@ -2185,6 +2185,8 @@ Style:
           
           if (jsonStr) {
             console.log('[Agent] Extracted JSON from continuation:', jsonStr.substring(0, 200));
+            console.log('🔍 [DEBUG] Extracted JSON length:', jsonStr.length);
+            console.log('🔍 [DEBUG] Full extracted JSON:', jsonStr);
             toolCallMatch = JSON.parse(jsonStr);
             console.log('[Agent] Parsed tool call from continuation:', toolCallMatch);
           } else {
@@ -2192,6 +2194,7 @@ Style:
           }
         } catch (e) {
           console.log('[Agent] Failed to parse tool call in continuation:', e.message);
+          console.log('🔍 [DEBUG] Failed JSON string:', jsonStr?.substring(0, 500));
         }
         
         if (toolCallMatch && this.config.tools.includes(toolCallMatch.tool)) {
