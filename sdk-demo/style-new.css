@@ -714,6 +714,41 @@ body {
   background: var(--bg-hover);
 }
 
+/* Agent Indicators */
+.agent-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-message);
+  border-radius: 6px;
+  margin-bottom: 6px;
+  transition: all 0.2s;
+}
+
+.agent-indicator.active {
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.2), rgba(99, 102, 241, 0.1));
+  border-left: 3px solid var(--primary);
+}
+
+.agent-icon {
+  font-size: 16px;
+}
+
+.agent-name {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.agent-calls {
+  font-size: 11px;
+  color: var(--text-dim);
+  background: var(--bg-dark);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .sidebar {
@@ -736,3 +771,4 @@ body {
     grid-template-columns: 1fr;
   }
 }
+

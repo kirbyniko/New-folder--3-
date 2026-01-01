@@ -11,6 +11,7 @@
 import { UniversalAgent } from 'universal-agent-sdk';
 import MetricsService from './src/services/MetricsService.js';
 import { TemplateManager } from './src/components/TemplateManager.js';
+import { AgentOrchestrator } from './src/agents/AgentOrchestrator.js';
 
 class AgentStudio {
   constructor() {
@@ -20,6 +21,12 @@ class AgentStudio {
     this.isGenerating = false;
     this.currentStream = null;
     this.templateManager = null;
+    
+    // Initialize Agent Orchestrator
+    this.orchestrator = new AgentOrchestrator({
+      url: 'http://localhost:11434',
+      model: 'qwen2.5-coder:14b'
+    });
     
     this.config = {
       model: 'qwen2.5-coder:32b',
@@ -124,6 +131,15 @@ class AgentStudio {
     document.getElementById('rag-enabled')?.addEventListener('change', (e) => {
       this.config.ragEnabled = e.target.checked;
       this.updateTokenEstimate();
+    });
+    
+    // Orchestration toggle
+    document.getElementById('orchestration-enabled')?.addEventListener('change', (e) => {
+      this.config.orchestrationEnabled = e.target.checked;
+      const agentStatus = document.getElementById('agent-status');
+      if (agentStatus) {
+        agentStatus.style.display = e.target.checked ? 'block' : 'none';
+      }
     });
 
     // Max iterations
@@ -336,8 +352,39 @@ class AgentStudio {
     try {
       let fullResponse = '';
       
-      // Check if iterative mode is enabled
-      if (this.config.iterativeMode) {
+      // Check if orchestration is enabled
+      if (this.config.orchestrationEnabled) {
+        const assistantMessageEl = this.addMessage('assistant', '🎭 Orchestrating multi-agent workflow...');
+        const contentEl = assistantMessageEl.querySelector('.message-content');
+        
+        const result = await this.orchestrator.execute(message, {
+          onProgress: (progress) => {
+            contentEl.innerHTML = `
+              <div style="margin-bottom: 12px; padding: 10px; background: #dbeafe; border-left: 3px solid #3b82f6; border-radius: 4px;">
+                <strong>🎭 Multi-Agent Processing</strong><br>
+                <span style="font-size: 12px;">Step ${progress.step}/${progress.total}: ${progress.currentTask}</span>
+              </div>
+            `;
+            this.updateAgentIndicators(progress.result);
+          }
+        });
+        
+        fullResponse = result.result;
+        
+        // Show final result with agent stats
+        contentEl.innerHTML = `
+          <div style="margin-bottom: 12px; padding: 10px; background: #d1fae5; border-left: 3px solid #10b981; border-radius: 4px;">
+            <strong>✨ Multi-Agent Result</strong><br>
+            <span style="font-size: 11px;">
+              Agents: ${result.agentsCalled.join(', ')} | 
+              Tools: ${result.toolsCalled.length > 0 ? result.toolsCalled.join(', ') : 'none'} | 
+              Duration: ${result.duration}ms
+            </span>
+          </div>
+          ${this.formatMessage(fullResponse)}
+        `;
+        
+      } else if (this.config.iterativeMode) {
         const assistantMessageEl = this.addMessage('assistant', '🔄 Starting iterative refinement...');
         fullResponse = await this.sendMessageIterative(message);
         
@@ -466,6 +513,27 @@ class AgentStudio {
     this.sendMessage();
     
     MetricsService.trackConversation('regenerated');
+  }
+  
+  updateAgentIndicators(stepResult) {
+    if (!stepResult || !stepResult.agent) return;
+    
+    const stats = this.orchestrator.getStats();
+    stats.agents.forEach(agent => {
+      const indicator = document.querySelector(`[data-agent="${agent.id}"]`);
+      if (indicator) {
+        const callsSpan = indicator.querySelector('.agent-calls');
+        if (callsSpan) {
+          callsSpan.textContent = `${agent.calls} calls`;
+        }
+        
+        // Highlight active agent
+        if (agent.id === stepResult.agent) {
+          indicator.classList.add('active');
+          setTimeout(() => indicator.classList.remove('active'), 2000);
+        }
+      }
+    });
   }
 
   addMessage(role, content) {

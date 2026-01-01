@@ -95,6 +95,48 @@
               </div>
             </label>
           </div>
+          
+          <div class="setting-item">
+            <label style="display: flex; align-items: center; cursor: pointer; padding: 8px; background: #dbeafe; border-radius: 6px;">
+              <input type="checkbox" id="orchestration-enabled" style="width: 18px; height: 18px; margin-right: 10px; cursor: pointer;">
+              <div>
+                <div style="font-weight: 600; color: #2563eb;">🎭 Multi-Agent</div>
+                <div style="font-size: 11px; color: #6b7280;">Route to specialized agents</div>
+              </div>
+            </label>
+          </div>
+        </div>
+        
+        <!-- Agent Status (shown when orchestration enabled) -->
+        <div class="sidebar-section" id="agent-status" style="display: none;">
+          <h3>🤖 Active Agents</h3>
+          <div id="agent-indicators" style="font-size: 12px;">
+            <div class="agent-indicator" data-agent="planner">
+              <span class="agent-icon">🎯</span>
+              <span class="agent-name">Planner</span>
+              <span class="agent-calls">0 calls</span>
+            </div>
+            <div class="agent-indicator" data-agent="code">
+              <span class="agent-icon">💻</span>
+              <span class="agent-name">Code Gen</span>
+              <span class="agent-calls">0 calls</span>
+            </div>
+            <div class="agent-indicator" data-agent="scraper">
+              <span class="agent-icon">🕷️</span>
+              <span class="agent-name">Scraper</span>
+              <span class="agent-calls">0 calls</span>
+            </div>
+            <div class="agent-indicator" data-agent="analyst">
+              <span class="agent-icon">📊</span>
+              <span class="agent-name">Analyst</span>
+              <span class="agent-calls">0 calls</span>
+            </div>
+            <div class="agent-indicator" data-agent="researcher">
+              <span class="agent-icon">🔍</span>
+              <span class="agent-name">Researcher</span>
+              <span class="agent-calls">0 calls</span>
+            </div>
+          </div>
         </div>
 
         <!-- Token Estimate -->
