@@ -789,22 +789,45 @@ return data.response;`
     // Update config
     this.config = {...template};
     
-    // Update UI
-    document.getElementById('agent-name').value = template.name;
-    document.getElementById('agent-mode').value = template.mode;
-    document.getElementById('model-select').value = template.model;
-    document.getElementById('temperature-slider').value = template.temperature;
-    document.getElementById('temperature-value').textContent = template.temperature.toFixed(2);
-    document.getElementById('top-p-slider').value = template.topP;
-    document.getElementById('top-p-value').textContent = template.topP.toFixed(2);
-    document.getElementById('max-tokens-slider').value = template.maxTokens;
-    document.getElementById('max-tokens-value').textContent = template.maxTokens;
-    document.getElementById('context-window-slider').value = template.contextWindow;
-    document.getElementById('context-window-value').textContent = `${(template.contextWindow/1024).toFixed(0)}K`;
-    document.getElementById('rag-episodes-slider').value = template.ragEpisodes;
-    document.getElementById('rag-episodes-value').textContent = template.ragEpisodes;
-    document.getElementById('use-rag').checked = template.useRAG;
-    document.getElementById('use-knowledge').checked = template.useKnowledge;
+    // Update UI with null checks
+    const setValueIfExists = (id, value) => {
+      const el = document.getElementById(id);
+      if (el) el.value = value;
+    };
+    
+    const setTextIfExists = (id, text) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = text;
+    };
+    
+    const setCheckedIfExists = (id, checked) => {
+      const el = document.getElementById(id);
+      if (el) el.checked = checked;
+    };
+    
+    setValueIfExists('agent-name', template.name);
+    setValueIfExists('agent-mode', template.mode);
+    setValueIfExists('agent-model', template.model);
+    setValueIfExists('temperature', template.temperature);
+    setTextIfExists('temp-value', template.temperature);
+    setValueIfExists('top-p', template.topP);
+    setTextIfExists('topp-value', template.topP);
+    setValueIfExists('max-tokens', template.maxTokens);
+    setTextIfExists('maxtoken-value', template.maxTokens);
+    setValueIfExists('context-window', template.contextWindow);
+    setTextIfExists('context-value', template.contextWindow);
+    setValueIfExists('rag-episodes', template.ragEpisodes);
+    setTextIfExists('rag-value', template.ragEpisodes);
+    setCheckedIfExists('use-rag', template.useRAG);
+    setCheckedIfExists('use-knowledge', template.useKnowledge);
+    
+    // Update tools if present
+    if (template.tools) {
+      ['execute-code', 'fetch-url', 'search-web', 'read-file'].forEach(tool => {
+        const toolName = tool.replace('-', '_');
+        setCheckedIfExists(`tool-${tool}`, template.tools.includes(toolName));
+      });
+    }
     
     // Update Monaco editor
     if (this.editor) {
