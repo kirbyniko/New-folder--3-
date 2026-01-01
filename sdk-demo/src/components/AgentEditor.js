@@ -687,12 +687,12 @@ export class AgentEditor {
         customSection.style.display = preset === 'custom' ? 'block' : 'none';
       }
       
-      // Set VRAM and token limits based on preset
+      // Set VRAM and token limits based on preset (dynamically calculated per model)
       const presets = {
-        consumer: { vram: 8, tokens: this.calculateTokenLimit(8) },      // ~666 tokens (CPU fallback needed)
-        midrange: { vram: 12, tokens: this.calculateTokenLimit(12) },    // ~3,333 tokens
-        highend: { vram: 24, tokens: this.calculateTokenLimit(24) },     // ~11,333 tokens
-        cpu: { vram: 0, tokens: 32000 },                                  // Full 32k context via CPU
+        consumer: { vram: 8, tokens: this.calculateTokenLimit(8) },      // Model-dependent (may be 0 for large models)
+        midrange: { vram: 12, tokens: this.calculateTokenLimit(12) },    // ~12k for qwen2.5-coder:14b
+        highend: { vram: 24, tokens: this.calculateTokenLimit(24) },     // ~32k+ for most models
+        cpu: { vram: 0, tokens: 32000 },                                  // Full context via CPU (slow)
         custom: { vram: this.config.hardware.gpuVRAM || 8, tokens: this.calculateTokenLimit(this.config.hardware.gpuVRAM || 8) }
       };
       
@@ -990,12 +990,12 @@ Style:
     const percentage = (total / this.config.contextWindow) * 100;
     
     // Use hardware config for limits
-    const GPU_SAFE_LIMIT = this.config.hardware?.tokenLimit || 4096;
-    const GPU_WARNING_LIMIT = GPU_SAFE_LIMIT * 2; // 2x safe limit = warning
+    const gpuTokenLimit = this.config.hardware?.tokenLimit || 0;
+    const modelMaxContext = this.config.contextWindow || 32768;
     
     this.tokenEstimate.total = total;
-    this.tokenEstimate.fitsGPU = total <= GPU_SAFE_LIMIT;
-    this.tokenEstimate.cpuRisk = total <= GPU_SAFE_LIMIT ? 'low' : total <= GPU_WARNING_LIMIT ? 'medium' : 'high';
+    this.tokenEstimate.fitsGPU = total <= gpuTokenLimit;
+    this.tokenEstimate.cpuRisk = total <= gpuTokenLimit ? 'low' : total <= modelMaxContext ? 'medium' : 'high';
     
     // Update UI
     const tokenTotalEl = document.getElementById('token-total');
@@ -1025,11 +1025,17 @@ Style:
     // Show warning if exceeds GPU limits
     const warningEl = document.getElementById('token-warning');
     if (warningEl) {
-      if (total > GPU_SAFE_LIMIT) {
+      const vramGB = this.config.hardware?.gpuVRAM || 8;
+      const modelName = (this.config.model || 'qwen2.5-coder:14b').split(':')[0];
+      
+      if (total > modelMaxContext) {
+        // Exceeds model's max context
         warningEl.style.display = 'block';
-        warningEl.innerHTML = total > GPU_WARNING_LIMIT 
-          ? `⚠️ <strong>CPU Processing Required:</strong> ${total} tokens exceeds GPU capacity (${GPU_WARNING_LIMIT}+). Expect slower performance.`
-          : `💡 <strong>GPU Caution:</strong> ${total} tokens may require CPU fallback on some GPUs. Consider reducing context or max tokens.`;
+        warningEl.innerHTML = `⚠️ <strong>Model Limit Exceeded:</strong> ${total.toLocaleString()} tokens exceeds ${modelName}'s max context (${modelMaxContext.toLocaleString()}). Reduce context.`;
+      } else if (total > gpuTokenLimit) {
+        // Fits in model context but exceeds VRAM
+        warningEl.style.display = 'block';
+        warningEl.innerHTML = `💡 <strong>VRAM Exceeded:</strong> ${total.toLocaleString()} tokens exceeds your ${vramGB}GB VRAM limit (${gpuTokenLimit.toLocaleString()} tokens). Model will use slower CPU processing for overflow.`;
       } else {
         warningEl.style.display = 'none';
       }
