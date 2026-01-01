@@ -967,48 +967,53 @@ Import this configuration?`;
   }
 
   async testAgent() {
-    const testPrompt = prompt('Enter test prompt:', 'Hello, introduce yourself!');
+    // Show modal for test prompt
+    const testPrompt = await this.showTestPromptModal();
     if (!testPrompt) return;
     
     document.querySelector('[data-tab="output"]').click();
     const output = document.getElementById('test-result');
-    output.innerHTML = '<div class="loading">🔄 Testing agent...</div>';
+    output.innerHTML = '<div class="loading">🔄 Testing agent with Ollama...</div>';
     
     const startTime = Date.now();
     
     try {
-      const response = await fetch('http://localhost:3002/execute', {
+      // Call Ollama directly
+      const response = await fetch('http://localhost:11434/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          code: `// Agent Test
-const response = await fetch('http://localhost:11434/api/generate', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    model: '${this.config.model}',
-    prompt: \`${this.config.systemPrompt}\\n\\nUser: ${testPrompt}\\n\\nAssistant:\`,
-    options: {
-      temperature: ${this.config.temperature},
-      top_p: ${this.config.topP},
-      num_predict: ${this.config.maxTokens}
-    },
-    stream: false
-  })
-});
-const data = await response.json();
-return data.response;`
+          model: this.config.model || 'qwen2.5-coder:14b',
+          prompt: `${this.config.systemPrompt}\n\nUser: ${testPrompt}\n\nAssistant:`,
+          options: {
+            temperature: this.config.temperature,
+            top_p: this.config.topP,
+            num_predict: this.config.maxTokens
+          },
+          stream: false
         })
       });
+      
+      if (!response.ok) {
+        throw new Error(`Ollama returned ${response.status}: ${response.statusText}`);
+      }
       
       const result = await response.json();
       const duration = Date.now() - startTime;
       
-      if (result.success) {
+      if (result.response) {
+        // Extract tool calls if any (basic detection)
+        const hasToolCalls = /execute_code|fetch_url|search_web|read_file/i.test(result.response);
+        
         output.innerHTML = `
           <div class="test-success">
-            <h4>✅ Test Successful</h4>
-            <div class="test-response">${result.output}</div>
+            <h4>✅ Test Successful (${duration}ms)</h4>
+            <div class="test-metadata">
+              <span>Model: ${this.config.model || 'qwen2.5-coder:14b'}</span>
+              <span>Tokens: ~${Math.ceil(result.response.length / 4)}</span>
+            </div>
+            ${hasToolCalls ? '<div class="tool-suggestion">💡 <strong>Tool calls detected!</strong> Enable tools in the Tools section for this agent to work properly.</div>' : ''}
+            <div class="test-response">${this.escapeHtml(result.response)}</div>
           </div>
         `;
         
@@ -1022,7 +1027,7 @@ return data.response;`
         output.innerHTML = `
           <div class="test-error">
             <h4>❌ Test Failed</h4>
-            <pre>${result.error}</pre>
+            <pre>No response from Ollama</pre>
           </div>
         `;
         
@@ -1031,15 +1036,19 @@ return data.response;`
           this.config.name || 'Unnamed Agent',
           false,
           duration,
-          result.error
+          'No response'
         );
       }
     } catch (error) {
       const duration = Date.now() - startTime;
+      const errorMsg = error.message || String(error);
+      const isOllamaDown = errorMsg.includes('Failed to fetch') || errorMsg.includes('ECONNREFUSED');
+      
       output.innerHTML = `
         <div class="test-error">
-          <h4>❌ Connection Error</h4>
-          <pre>${error.message}</pre>
+          <h4>❌ ${isOllamaDown ? 'Ollama Not Running' : 'Test Error'}</h4>
+          <pre>${errorMsg}</pre>
+          ${isOllamaDown ? '<div class="error-help">💡 Start Ollama: Open terminal and run <code>ollama serve</code></div>' : ''}
         </div>
       `;
       
@@ -1051,6 +1060,73 @@ return data.response;`
         error
       );
     }
+  }
+  
+  // Helper to show non-blocking test prompt modal
+  showTestPromptModal() {
+    return new Promise((resolve) => {
+      const modal = document.createElement('div');
+      modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 10000;';
+      
+      modal.innerHTML = `
+        <div style="background: #1e1e1e; border-radius: 8px; padding: 24px; min-width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+          <h3 style="margin: 0 0 16px 0; color: #e0e0e0; font-size: 18px;">🧪 Test Agent</h3>
+          <p style="color: #9ca3af; font-size: 14px; margin-bottom: 12px;">Enter a message to test your agent's response:</p>
+          <textarea id="test-prompt-input" 
+                    placeholder="Example: Hello, introduce yourself!&#10;Example: What can you help me with?&#10;Example: Analyze this webpage"
+                    style="width: 100%; min-height: 100px; background: #2d2d2d; border: 1px solid #444; border-radius: 6px; color: #e0e0e0; padding: 12px; font-size: 14px; font-family: inherit; resize: vertical; margin-bottom: 16px;">Hello, introduce yourself!</textarea>
+          <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button id="test-cancel-btn" style="padding: 10px 20px; background: #374151; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Cancel</button>
+            <button id="test-run-btn" style="padding: 10px 20px; background: #7c3aed; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">🚀 Test Agent</button>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      
+      const input = modal.querySelector('#test-prompt-input');
+      const runBtn = modal.querySelector('#test-run-btn');
+      const cancelBtn = modal.querySelector('#test-cancel-btn');
+      
+      input.focus();
+      input.select();
+      
+      const cleanup = () => {
+        modal.remove();
+      };
+      
+      runBtn.onclick = () => {
+        const value = input.value.trim();
+        cleanup();
+        resolve(value || null);
+      };
+      
+      cancelBtn.onclick = () => {
+        cleanup();
+        resolve(null);
+      };
+      
+      modal.onclick = (e) => {
+        if (e.target === modal) {
+          cleanup();
+          resolve(null);
+        }
+      };
+      
+      input.onkeydown = (e) => {
+        if (e.key === 'Enter' && e.ctrlKey) {
+          e.preventDefault();
+          runBtn.click();
+        }
+      };
+    });
+  }
+  
+  // Helper to escape HTML
+  escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
 
   showTemplates() {
