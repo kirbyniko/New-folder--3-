@@ -2059,7 +2059,8 @@ Style:
         enhancedPrompt += `\nCRITICAL ERROR HANDLING:\n`;
         enhancedPrompt += `If you see CORS, 403, or 401 errors, DO NOT retry fetch_url!\n`;
         enhancedPrompt += `Instead, use execute_code with axios and AWAIT:\n`;
-        enhancedPrompt += `{"tool": "execute_code", "params": {"code": "const axios = require('axios'); const res = await axios.get('URL', {headers: {'User-Agent': 'Mozilla/5.0'}}); console.log(res.data);"}}\n\n`;
+        enhancedPrompt += `{"tool": "execute_code", "params": {"code": "const axios = require('axios'); const res = await axios.get('URL', {headers: {'User-Agent': 'Mozilla/5.0'}}); console.log(res.data);"}}\n`;
+        enhancedPrompt += `IMPORTANT: Code is auto-wrapped in async function - DON'T add (async () => {...})()!\n\n`;
         
         // SUPER STRONG MESSAGE if last tool had empty output
         if (hadEmptyOutput) {
@@ -2073,7 +2074,7 @@ Style:
             enhancedPrompt += `YOUR BROKEN CODE:\n${failedCode}\n\n`;
             enhancedPrompt += `REQUIRED FIXES:\n`;
             enhancedPrompt += `1. USE AWAIT: const res = await axios.get(...); console.log(res.data);\n`;
-            enhancedPrompt += `2. DON'T use .then() - Use await instead!\n`;
+            enhancedPrompt += `2. DON'T wrap in (async () => {...})() - already auto-wrapped!\n`;
             enhancedPrompt += `3. ALWAYS add console.log() to see output!\n\n`;
           }
           
