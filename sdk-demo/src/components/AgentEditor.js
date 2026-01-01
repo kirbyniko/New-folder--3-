@@ -171,6 +171,32 @@ export class AgentEditor {
           <button id="run-ai-optimize" style="width: 100%; padding: 12px; background: #7c3aed; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px;">
             🚀 Run AI Optimization
           </button>
+          
+          <!-- AI Progress/Thinking Stream -->
+          <div id="ai-progress-stream" style="display: none; margin-top: 15px; background: #1e1e1e; border-radius: 6px; padding: 15px; max-height: 300px; overflow-y: auto;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+              <div style="width: 16px; height: 16px; border: 2px solid #7c3aed; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+              <span style="color: #e0e0e0; font-weight: 500; font-size: 13px;">🤖 AI is thinking...</span>
+            </div>
+            <div id="ai-progress-content" style="color: #9ca3af; font-size: 12px; font-family: 'Consolas', 'Monaco', monospace; line-height: 1.6; white-space: pre-wrap;"></div>
+          </div>
+          
+          <style>
+            @keyframes spin {
+              to { transform: rotate(360deg); }
+            }
+            #ai-progress-stream::-webkit-scrollbar {
+              width: 8px;
+            }
+            #ai-progress-stream::-webkit-scrollbar-track {
+              background: #2d2d2d;
+              border-radius: 4px;
+            }
+            #ai-progress-stream::-webkit-scrollbar-thumb {
+              background: #7c3aed;
+              border-radius: 4px;
+            }
+          </style>
         </div>
         
         <!-- Modal backdrop -->
@@ -1378,6 +1404,7 @@ return data.response;`
     const backdrop = document.getElementById('ai-optimize-backdrop');
     if (panel) panel.style.display = 'none';
     if (backdrop) backdrop.style.display = 'none';
+    this.hideProgressStream();
   }
   
   updateTokenImpact() {
@@ -1479,7 +1506,14 @@ return data.response;`
     btn.disabled = true;
     btn.innerHTML = '⏳ AI is generating agent...';
     
+    // Show progress stream
+    this.showProgressStream();
+    this.addProgressMessage('🎯 Analyzing user intent: "' + userIntent + '"');
+    this.addProgressMessage('📊 Selected components: ' + Object.entries(optimizing).filter(([k,v]) => v).map(([k]) => k).join(', '));
+    
     try {
+      this.addProgressMessage('🤖 Sending request to AI (qwen2.5-coder:14b)...');
+      
       const generationPrompt = `You are an AI agent architect. Create a complete agent configuration from this user intent.
 
 **User Intent:** ${userIntent}
@@ -1504,6 +1538,7 @@ Return JSON:
 
 Make it production-ready and practical.`;
 
+      const startTime = Date.now();
       const response = await fetch('http://localhost:11434/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1518,6 +1553,9 @@ Make it production-ready and practical.`;
         throw new Error('Failed to generate agent');
       }
       
+      this.addProgressMessage('⏱️ AI responded in ' + ((Date.now() - startTime) / 1000).toFixed(1) + 's');
+      this.addProgressMessage('📝 Parsing AI response...');
+      
       const data = await response.json();
       const responseText = data.response;
       
@@ -1527,6 +1565,37 @@ Make it production-ready and practical.`;
       }
       
       const generated = JSON.parse(jsonMatch[0]);
+      
+      this.addProgressMessage('✅ Successfully parsed JSON response');
+      this.addProgressMessage('');
+      this.addProgressMessage('📦 Generated Configuration:');
+      
+      if (generated.suggestedName) {
+        this.addProgressMessage('  📛 Name: ' + generated.suggestedName);
+      }
+      if (generated.systemPrompt) {
+        this.addProgressMessage('  📝 System Prompt: ' + generated.systemPrompt.substring(0, 80) + '...');
+      }
+      if (generated.instructions) {
+        this.addProgressMessage('  📋 Instructions: ' + generated.instructions.length + ' steps');
+        generated.instructions.forEach((inst, i) => {
+          this.addProgressMessage('     ' + (i + 1) + '. ' + inst.name);
+        });
+      }
+      if (generated.environment) {
+        this.addProgressMessage('  ⚙️ Runtime: ' + generated.environment.runtime);
+        if (generated.environment.dependencies && generated.environment.dependencies.length > 0) {
+          this.addProgressMessage('  📦 Dependencies: ' + generated.environment.dependencies.join(', '));
+        }
+      }
+      if (generated.tools) {
+        this.addProgressMessage('  🛠️ Tools: ' + generated.tools.join(', '));
+      }
+      if (generated.settings) {
+        this.addProgressMessage('  ⚡ Settings: temp=' + generated.settings.temperature + ', tokens=' + generated.settings.maxTokens);
+      }
+      this.addProgressMessage('');
+      this.addProgressMessage('💡 AI Reasoning: ' + generated.reasoning);
       
       // Show preview
       let previewMsg = `🤖 AI Generated Agent: "${generated.suggestedName || 'New Agent'}"\\n\\n`;
@@ -1555,28 +1624,38 @@ Make it production-ready and practical.`;
       previewMsg += `💡 Reasoning: ${generated.reasoning}\\n\\n`;
       previewMsg += `Create this agent?`;
       
+      this.addProgressMessage('');
+      this.addProgressMessage('⏸️ Waiting for user confirmation...');
+      
       if (confirm(previewMsg)) {
+        this.addProgressMessage('✅ User confirmed - applying configuration...');
+        
         // Apply generated configuration
         if (generated.suggestedName) {
+          this.addProgressMessage('  📛 Setting agent name...');
           this.config.name = generated.suggestedName;
           document.getElementById('agent-name').value = generated.suggestedName;
         }
         
         if (generated.systemPrompt && optimizing.systemPrompt) {
+          this.addProgressMessage('  📝 Applying system prompt...');
           this.config.systemPrompt = generated.systemPrompt;
           if (this.editor) this.editor.setValue(generated.systemPrompt);
         }
         
         if (generated.instructions && optimizing.instructions) {
+          this.addProgressMessage('  📋 Creating ' + generated.instructions.length + ' instruction steps...');
           this.config.instructions = generated.instructions;
         }
         
         if (generated.environment && optimizing.environment) {
+          this.addProgressMessage('  ⚙️ Configuring environment (' + generated.environment.runtime + ')...');
           this.config.environment = generated.environment;
           this.renderEnvironment();
         }
         
         if (generated.tools && optimizing.tools) {
+          this.addProgressMessage('  🛠️ Enabling tools: ' + generated.tools.join(', '));
           this.config.tools = generated.tools;
           ['execute-code', 'fetch-url', 'search-web', 'read-file'].forEach(tool => {
             const toolName = tool.replace('-', '_');
@@ -1586,6 +1665,7 @@ Make it production-ready and practical.`;
         }
         
         if (generated.settings && optimizing.settings) {
+          this.addProgressMessage('  ⚡ Applying optimal settings...');
           this.config.temperature = generated.settings.temperature;
           this.config.topP = generated.settings.topP;
           this.config.maxTokens = generated.settings.maxTokens;
@@ -1602,12 +1682,22 @@ Make it production-ready and practical.`;
         }
         
         this.updateTokenEstimate();
-        alert('✅ Agent generated successfully! Review and save when ready.');
-        this.hideOptimizationPanel();
+        this.addProgressMessage('');
+        this.addProgressMessage('🎉 Agent generated successfully!');
+        this.addProgressMessage('💾 Remember to save your agent configuration.');
+        
+        setTimeout(() => {
+          alert('✅ Agent generated successfully! Review and save when ready.');
+          this.hideOptimizationPanel();
+        }, 500);
+      } else {
+        this.addProgressMessage('❌ User cancelled - generation aborted');
       }
       
     } catch (error) {
       console.error('Generation error:', error);
+      this.addProgressMessage('');
+      this.addProgressMessage('❌ ERROR: ' + error.message);
       alert(`Failed to generate agent: ${error.message}\\n\\nPlease check that Ollama is running.`);
     } finally {
       btn.disabled = false;
@@ -1782,6 +1872,32 @@ Provide optimized configuration as JSON:
       // Re-enable button
       btn.disabled = false;
       btn.innerHTML = '🚀 Run AI Optimization';
+    }
+  }
+  
+  // Progress stream helpers
+  showProgressStream() {
+    const stream = document.getElementById('ai-progress-stream');
+    const content = document.getElementById('ai-progress-content');
+    if (stream) {
+      stream.style.display = 'block';
+      if (content) content.textContent = '';
+    }
+  }
+  
+  hideProgressStream() {
+    const stream = document.getElementById('ai-progress-stream');
+    if (stream) stream.style.display = 'none';
+  }
+  
+  addProgressMessage(message) {
+    const content = document.getElementById('ai-progress-content');
+    if (content) {
+      const timestamp = new Date().toLocaleTimeString();
+      content.textContent += `[${timestamp}] ${message}\n`;
+      // Auto-scroll to bottom
+      const stream = document.getElementById('ai-progress-stream');
+      if (stream) stream.scrollTop = stream.scrollHeight;
     }
   }
 }
