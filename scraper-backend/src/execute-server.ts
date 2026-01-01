@@ -301,12 +301,12 @@ const server = http.createServer(async (req, res) => {
           
           // Wrap code to handle async patterns and capture return value
           const wrappedCode = `
-            (async () => {
+            return (async function(require, console) {
               ${code}
-            })()
+            })(require, console);
           `;
           
-          const scriptFunc = new Function('require', 'console', 'return ' + wrappedCode);
+          const scriptFunc = new Function('require', 'console', wrappedCode);
           const result = await scriptFunc(require, mockConsole);
           
           const duration = Date.now() - startTime;
