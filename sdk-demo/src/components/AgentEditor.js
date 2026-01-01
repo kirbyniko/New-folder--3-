@@ -1626,16 +1626,32 @@ return data.response;`
 **Required Components:**
 ${optimizing.systemPrompt ? '- System Prompt: Concise, focused (200-500 tokens). Define role, capabilities, constraints.' : ''}
 ${optimizing.instructions ? '- Instructions: 3-5 actionable steps. Each step: clear name + specific prompt (50-100 tokens each).' : ''}
-${optimizing.environment ? '- Environment: Choose runtime (nodejs/python/deno/browser). List ONLY essential dependencies with versions.' : ''}
+${optimizing.environment ? `- Environment: Choose runtime (nodejs/python/deno/browser). List essential dependencies with versions.
+  * Optimize timeout based on complexity: Simple tasks (30s), Moderate (60s), Complex/Web (120s), API-heavy (180s)
+  * Optimize memoryLimit: Simple (512MB), Moderate (1GB), Complex (2GB), Large context (≥8192 tokens → 2GB)` : ''}
+${optimizing.contextFiles ? `- Context Files: Generate 2-4 relevant guide/reference documents based on agent purpose.
+  * For web scrapers: "Web Scraping Best Practices.md", "CSS Selectors Guide.md", "Error Handling Patterns.md"
+  * For data analysts: "Data Analysis Patterns.md", "Statistics Reference.md", "Visualization Guide.md"
+  * For code assistants: "Code Review Checklist.md", "Refactoring Patterns.md", "Best Practices.md"
+  * For API integrators: "API Design Patterns.md", "Authentication Methods.md", "Error Codes Reference.md"
+  * Each file: {name: "filename.md", content: "relevant guide content (500-1000 words)", type: "text/markdown"}` : ''}
 ${optimizing.tools ? '- Tools: Select from [execute_code, fetch_url, search_web, read_file]. Only what agent truly needs.' : ''}
-${optimizing.settings ? '- Settings: Optimize temperature (0.1-1.0), topP (0.1-1.0), maxTokens, contextWindow for this use case.' : ''}
+${optimizing.settings ? `- Settings: Optimize for use case.
+  * temperature: Factual (0.3-0.5), Balanced (0.5-0.7), Creative (0.7-0.9)
+  * topP: Keep 0.9-0.95 for most cases
+  * maxTokens: Match output needs (Code: 4096+, Chat: 2048, Simple: 1024)
+  * contextWindow: Match input needs (Complex context: 16384, Moderate: 8192, Simple: 4096)
+  * ragEpisodes: Optimize based on context window (Large ≥8192 → 2-3, Medium 4096-8191 → 3-5, Small <4096 → 5-7)` : ''}
 
 **Quality Guidelines:**
 1. System prompt: Be specific about agent's expertise and limitations
 2. Instructions: Each step should be atomic and testable
-3. Dependencies: Use stable versions, avoid bloat
-4. Tools: Minimal set - only what's needed for the task
-5. Settings: Lower temperature (0.3-0.5) for factual tasks, higher (0.7-0.9) for creative ones
+3. Environment resources: Match timeout/memory to agent complexity and token budget
+4. Context files: Create actual useful guides, not generic placeholders
+5. Dependencies: Use stable versions, avoid bloat
+6. Tools: Minimal set - only what's needed for the task
+7. Settings: Balance performance vs quality based on use case
+8. Holistic optimization: If maxTokens > 4096 → memoryLimit ≥ 1GB; if tools include fetch_url → timeout ≥ 60s
 
 CRITICAL: Return ONLY valid JSON. No markdown, no code blocks, no explanations.
 
@@ -1643,9 +1659,10 @@ JSON format:
 {
   ${optimizing.systemPrompt ? '"systemPrompt": "Concise, focused system prompt defining role and capabilities",' : ''}
   ${optimizing.instructions ? '"instructions": [{"name":"Clear step name", "prompt":"Specific action to take", "conditional":false, "loop":false}],' : ''}
-  ${optimizing.environment ? '"environment": {"runtime":"nodejs", "dependencies":["axios@1.6.0"], "timeout":30000, "memoryLimit":"512MB", "sandboxed":true},' : ''}
+  ${optimizing.environment ? '"environment": {"runtime":"nodejs", "dependencies":["axios@1.6.0"], "timeout":60000, "memoryLimit":"1GB", "sandboxed":true, "environmentVars":{}},' : ''}
+  ${optimizing.contextFiles ? '"contextFiles": [{"name":"Guide.md", "content":"Comprehensive guide content", "type":"text/markdown"}],' : ''}
   ${optimizing.tools ? '"tools": ["execute_code", "fetch_url"],' : ''}
-  ${optimizing.settings ? '"settings": {"temperature":0.7, "topP":0.9, "maxTokens":2048, "contextWindow":8192},' : ''}
+  ${optimizing.settings ? '"settings": {"temperature":0.7, "topP":0.9, "maxTokens":2048, "contextWindow":8192, "ragEpisodes":3},' : ''}
   "reasoning": "Brief explanation of design decisions",
   "suggestedName": "AgentName"
 }`;
@@ -1745,8 +1762,15 @@ JSON format:
       if (generated.tools) {
         this.addProgressMessage('  🛠️ Tools: ' + generated.tools.join(', '));
       }
+      if (generated.contextFiles && generated.contextFiles.length > 0) {
+        this.addProgressMessage('  📚 Context Files: ' + generated.contextFiles.map(f => f.name).join(', '));
+      }
       if (generated.settings) {
-        this.addProgressMessage('  ⚡ Settings: temp=' + generated.settings.temperature + ', tokens=' + generated.settings.maxTokens);
+        let settingsMsg = '  ⚡ Settings: temp=' + generated.settings.temperature + ', tokens=' + generated.settings.maxTokens;
+        if (generated.settings.ragEpisodes) {
+          settingsMsg += ', RAG=' + generated.settings.ragEpisodes;
+        }
+        this.addProgressMessage(settingsMsg);
       }
       this.addProgressMessage('');
       this.addProgressMessage('💡 AI Reasoning: ' + generated.reasoning);
@@ -1766,13 +1790,31 @@ JSON format:
       }
       if (generated.environment) {
         previewMsg += `⚙️ Environment: ${generated.environment.runtime}\\n`;
-        previewMsg += `   Dependencies: ${generated.environment.dependencies.slice(0, 3).join(', ')}\\n\\n`;
+        previewMsg += `   Dependencies: ${generated.environment.dependencies.slice(0, 3).join(', ')}\\n`;
+        if (generated.environment.timeout) {
+          previewMsg += `   Timeout: ${generated.environment.timeout}ms\\n`;
+        }
+        if (generated.environment.memoryLimit) {
+          previewMsg += `   Memory: ${generated.environment.memoryLimit}\\n`;
+        }
+        previewMsg += '\\n';
+      }
+      if (generated.contextFiles && generated.contextFiles.length > 0) {
+        previewMsg += `📚 Context Files: ${generated.contextFiles.length} guides\\n`;
+        generated.contextFiles.forEach((file, i) => {
+          previewMsg += `   ${i + 1}. ${file.name}\\n`;
+        });
+        previewMsg += '\\n';
       }
       if (generated.tools) {
         previewMsg += `🛠️ Tools: ${generated.tools.join(', ')}\\n\\n`;
       }
       if (generated.settings) {
-        previewMsg += `⚡ Settings: temp=${generated.settings.temperature}, tokens=${generated.settings.maxTokens}\\n\\n`;
+        previewMsg += `⚡ Settings: temp=${generated.settings.temperature}, tokens=${generated.settings.maxTokens}`;
+        if (generated.settings.ragEpisodes) {
+          previewMsg += `, RAG episodes=${generated.settings.ragEpisodes}`;
+        }
+        previewMsg += '\\n\\n';
       }
       
       previewMsg += `💡 Reasoning: ${generated.reasoning}\\n\\n`;
@@ -1815,6 +1857,13 @@ JSON format:
           this.addProgressMessage('  ⚙️ Configuring environment (' + generated.environment.runtime + ')...');
           this.config.environment = generated.environment;
           this.renderEnvironment();
+        }
+        
+        if (generated.contextFiles && optimizing.contextFiles && generated.contextFiles.length > 0) {
+          this.addProgressMessage('  📚 Adding ' + generated.contextFiles.length + ' context files...');
+          this.config.contextFiles = generated.contextFiles;
+          // Re-render context files tab
+          this.renderContextFiles();
         }
         
         if (generated.tools && optimizing.tools) {
@@ -1861,6 +1910,12 @@ JSON format:
             const contextValue = document.getElementById('context-value');
             if (contextSlider) contextSlider.value = generated.settings.contextWindow;
             if (contextValue) contextValue.textContent = generated.settings.contextWindow;
+          }
+          
+          if (generated.settings.ragEpisodes !== undefined) {
+            this.config.ragEpisodes = generated.settings.ragEpisodes;
+            const ragInput = document.getElementById('rag-episodes');
+            if (ragInput) ragInput.value = generated.settings.ragEpisodes;
           }
         }
         
