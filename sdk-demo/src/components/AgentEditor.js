@@ -23,6 +23,19 @@ export class AgentEditor {
     this.models = [];
     this.tokenEstimate = { total: 0, fitsGPU: true, cpuRisk: 'low' };
     
+    // Intelligence features activity tracking
+    this.intelligenceActivity = {
+      explicitPlanning: { count: 0, lastRun: null, active: false },
+      explicitReflection: { count: 0, lastRun: null, active: false },
+      chainOfThought: { count: 0, lastRun: null, active: false },
+      toolAnalysis: { count: 0, lastRun: null, active: false },
+      persistentMemory: { count: 0, lastRun: null, active: false },
+      llmValidation: { count: 0, lastRun: null, active: false },
+      strategyPivot: { count: 0, lastRun: null, active: false },
+      smartContext: { count: 0, lastRun: null, active: false },
+      parallelTools: { count: 0, lastRun: null, active: false }
+    };
+    
     this.init();
   }
 
@@ -1789,16 +1802,42 @@ Style:
     this.renderChatInterface(output);
   }
   
-  renderIntelFeatureStatus(name, enabled) {
+  updateIntelStatusPanel() {
+    // Re-render the chat interface to update status panel in real-time
+    const chatContainer = document.getElementById('test-chat-container');
+    if (chatContainer && document.getElementById('intel-status-panel')) {
+      // Save scroll position
+      const messagesContainer = chatContainer.querySelector('[style*="overflow-y: auto"]');
+      const scrollPos = messagesContainer?.scrollTop || 0;
+      
+      // Re-render
+      this.renderChatInterface(chatContainer);
+      
+      // Restore scroll position
+      const newMessagesContainer = chatContainer.querySelector('[style*="overflow-y: auto"]');
+      if (newMessagesContainer) {
+        newMessagesContainer.scrollTop = scrollPos;
+      }
+    }
+  }
+
+  renderIntelFeatureStatus(name, enabled, activityKey) {
+    const activity = this.intelligenceActivity[activityKey] || { count: 0, lastRun: null, active: false };
     const status = enabled ? 'ENABLED' : 'DISABLED';
     const color = enabled ? '#10b981' : '#6b7280';
-    const icon = enabled ? '✅' : '❌';
+    const icon = activity.active ? '🔄' : (enabled ? '✅' : '❌');
+    
+    const lastRunText = activity.lastRun 
+      ? new Date(activity.lastRun).toLocaleTimeString()
+      : 'Never';
+    
     return `
       <div style="display: flex; align-items: center; gap: 6px; padding: 6px; background: #1e1e1e; border-radius: 4px;">
-        <span style="font-size: 14px;">${icon}</span>
+        <span style="font-size: 14px; ${activity.active ? 'animation: spin 1s linear infinite;' : ''}">${icon}</span>
         <div style="flex: 1;">
-          <div style="color: #e0e0e0; font-weight: 500;">${name}</div>
-          <div style="color: ${color}; font-size: 10px; font-weight: 600;">${status}</div>
+          <div style="color: #e0e0e0; font-weight: 500; font-size: 11px;">${name}</div>
+          <div style="color: ${color}; font-size: 9px; font-weight: 600;">${status}</div>
+          <div style="color: #6b7280; font-size: 9px; margin-top: 2px;">Runs: ${activity.count} | Last: ${lastRunText}</div>
         </div>
       </div>
     `;
@@ -1850,18 +1889,24 @@ Style:
         </div>
         
         <!-- Intelligence Features Status Panel -->
+        <style>
+          @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+        </style>
         <div id="intel-status-panel" style="display: none; padding: 16px; background: #2d2d2d; border-bottom: 1px solid #333;">
-          <h4 style="margin: 0 0 12px 0; color: #e0e0e0; font-size: 14px; font-weight: 600;">🧠 Intelligence Features Status</h4>
+          <h4 style="margin: 0 0 12px 0; color: #e0e0e0; font-size: 14px; font-weight: 600;">🧠 Intelligence Features Status <span style="font-size: 11px; color: #6b7280; font-weight: normal;">(Live Activity)</span></h4>
           <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; font-size: 12px;">
-            ${this.renderIntelFeatureStatus('📋 Explicit Planning', this.config.enableExplicitPlanning)}
-            ${this.renderIntelFeatureStatus('🤔 Explicit Reflection', this.config.enableExplicitReflection)}
-            ${this.renderIntelFeatureStatus('💭 Chain of Thought', this.config.enableChainOfThought)}
-            ${this.renderIntelFeatureStatus('🔍 Tool Analysis', this.config.enableToolAnalysis)}
-            ${this.renderIntelFeatureStatus('💾 Persistent Memory', this.config.enablePersistentMemory)}
-            ${this.renderIntelFeatureStatus('✅ LLM Validation', this.config.enableLLMValidation)}
-            ${this.renderIntelFeatureStatus('🎯 Strategy Pivot', this.config.enableStrategyPivot)}
-            ${this.renderIntelFeatureStatus('📊 Smart Context', this.config.enableSmartContext)}
-            ${this.renderIntelFeatureStatus('⚡ Parallel Tools', this.config.parallelToolExecution)}
+            ${this.renderIntelFeatureStatus('📋 Explicit Planning', this.config.enableExplicitPlanning, 'explicitPlanning')}
+            ${this.renderIntelFeatureStatus('🤔 Explicit Reflection', this.config.enableExplicitReflection, 'explicitReflection')}
+            ${this.renderIntelFeatureStatus('💭 Chain of Thought', this.config.enableChainOfThought, 'chainOfThought')}
+            ${this.renderIntelFeatureStatus('🔍 Tool Analysis', this.config.enableToolAnalysis, 'toolAnalysis')}
+            ${this.renderIntelFeatureStatus('💾 Persistent Memory', this.config.enablePersistentMemory, 'persistentMemory')}
+            ${this.renderIntelFeatureStatus('✅ LLM Validation', this.config.enableLLMValidation, 'llmValidation')}
+            ${this.renderIntelFeatureStatus('🎯 Strategy Pivot', this.config.enableStrategyPivot, 'strategyPivot')}
+            ${this.renderIntelFeatureStatus('📊 Smart Context', this.config.enableSmartContext, 'smartContext')}
+            ${this.renderIntelFeatureStatus('⚡ Parallel Tools', this.config.parallelToolExecution, 'parallelTools')}
           </div>
           <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #444; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; font-size: 11px;">
             <div><span style="color: #94a3b8;">Failures:</span> <span style="color: #ef4444; font-weight: 600;">${this.config.failureLog?.length || 0}</span></div>
@@ -2869,6 +2914,13 @@ Respond with JSON: {"valid": true/false, "reason": "why"}\n\nONLY JSON.`;
   async createExplicitPlan(userQuery) {
     if (!this.config.enableExplicitPlanning) return null;
     
+    // Mark as active and log
+    this.intelligenceActivity.explicitPlanning.active = true;
+    this.intelligenceActivity.explicitPlanning.count++;
+    this.intelligenceActivity.explicitPlanning.lastRun = Date.now();
+    console.log('📋 [INTELLIGENCE] Explicit Planning STARTED (Run #' + this.intelligenceActivity.explicitPlanning.count + ')');
+    this.updateIntelStatusPanel();
+    
     // Check if we've solved similar before
     const similarPattern = this.findSimilarSuccessPattern(userQuery);
     
@@ -2929,13 +2981,26 @@ Available Tools: ${this.config.tools.join(', ')}`;
       }
     } catch (e) {
       console.warn('⚠️ Planning failed:', e.message);
+      this.intelligenceActivity.explicitPlanning.active = false;
+      console.log('📋 [INTELLIGENCE] Explicit Planning FAILED:', e.message);
+      this.updateIntelStatusPanel();
     }
     
+    this.intelligenceActivity.explicitPlanning.active = false;
+    console.log('📋 [INTELLIGENCE] Explicit Planning COMPLETED');
+    this.updateIntelStatusPanel();
     return null;
   }
   
   async reflectOnToolResult(toolName, toolResult, userQuery) {
     if (!this.config.enableExplicitReflection) return null;
+    
+    // Mark as active and log
+    this.intelligenceActivity.explicitReflection.active = true;
+    this.intelligenceActivity.explicitReflection.count++;
+    this.intelligenceActivity.explicitReflection.lastRun = Date.now();
+    console.log('🤔 [INTELLIGENCE] Explicit Reflection STARTED (Run #' + this.intelligenceActivity.explicitReflection.count + ')');
+    this.updateIntelStatusPanel();
     
     console.log('🤔 Reflecting on tool result...');
     
@@ -2990,12 +3055,23 @@ Respond with JSON: {"satisfied": true/false, "learning": "what I learned", "next
           timestamp: Date.now()
         };
         
+        // Mark as complete
+        this.intelligenceActivity.explicitReflection.active = false;
+        console.log('🤔 [INTELLIGENCE] Explicit Reflection COMPLETED');
+        this.updateIntelStatusPanel();
+        
         return reflection;
       }
     } catch (e) {
       console.warn('⚠️ Reflection failed:', e.message);
+      this.intelligenceActivity.explicitReflection.active = false;
+      console.log('🤔 [INTELLIGENCE] Explicit Reflection FAILED:', e.message);
+      this.updateIntelStatusPanel();
     }
     
+    this.intelligenceActivity.explicitReflection.active = false;
+    console.log('🤔 [INTELLIGENCE] Explicit Reflection COMPLETED (no match)');
+    this.updateIntelStatusPanel();
     return null;
   }
   
