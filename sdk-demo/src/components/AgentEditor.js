@@ -2019,6 +2019,22 @@ Style:
       // Enhanced prompt - include FULL agent mode instructions
       let enhancedPrompt = this.config.systemPrompt;
       
+      // Add context files FIRST at the very beginning (including library guides)
+      if (this.config.contextFiles && this.config.contextFiles.length > 0) {
+        enhancedPrompt += `\n\n=== REFERENCE GUIDES ===\n`;
+        enhancedPrompt += `Consult these when tools fail:\n\n`;
+        
+        this.config.contextFiles.forEach(file => {
+          enhancedPrompt += `--- ${file.name} ---\n`;
+          enhancedPrompt += `${file.content.substring(0, 2000)}...\n\n`;
+        });
+      }
+      
+      // Add environment info
+      if (this.config.environment.runtime && this.config.environment.dependencies.length > 0) {
+        enhancedPrompt += `\nAVAILABLE PACKAGES: ${this.config.environment.dependencies.join(', ')}\n`;
+      }
+      
       // Add the same agent execution mode instructions as initial message
       if (this.config.tools.length > 0) {
         enhancedPrompt += `\n\n=== CONTINUE AGENT EXECUTION ===\n`;
@@ -2075,22 +2091,6 @@ Style:
         enhancedPrompt += `AFTER:  const html = await page.content(); console.log(html); // RIGHT!\n\n`;
         
         enhancedPrompt += `DO NOT explain, DO NOT retry the same broken code - FIX and retry!\n`;
-      }
-      
-      // Add environment info
-      if (this.config.environment.runtime && this.config.environment.dependencies.length > 0) {
-        enhancedPrompt += `\nAVAILABLE PACKAGES: ${this.config.environment.dependencies.join(', ')}\n`;
-      }
-      
-      // Add context files (including library guides)
-      if (this.config.contextFiles && this.config.contextFiles.length > 0) {
-        enhancedPrompt += `\n=== REFERENCE GUIDES ===\n`;
-        enhancedPrompt += `Consult these when tools fail:\n\n`;
-        
-        this.config.contextFiles.forEach(file => {
-          enhancedPrompt += `--- ${file.name} ---\n`;
-          enhancedPrompt += `${file.content.substring(0, 2000)}...\n\n`;
-        });
       }
       
       console.log('[DEBUG] Continuation prompt preview:', enhancedPrompt.substring(enhancedPrompt.length - 500));
