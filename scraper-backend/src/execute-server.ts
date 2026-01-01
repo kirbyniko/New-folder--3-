@@ -257,9 +257,89 @@ const server = http.createServer(async (req, res) => {
     return;
   }
   
+  // NEW: Generic code runner endpoint for agent testing
+  if (req.url === '/run') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const { code, runtime = 'nodejs' } = JSON.parse(body);
+        
+        if (!code) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ 
+            success: false,
+            error: 'Missing required field: code' 
+          }));
+          return;
+        }
+        
+        console.log(`\n🔧 Executing ${runtime} code (${code.length} chars)`);
+        
+        const startTime = Date.now();
+        const logs: string[] = [];
+        
+        try {
+          // Create mock console to capture output
+          const mockConsole = {
+            log: (...args: any[]) => {
+              logs.push(args.map(a => String(a)).join(' '));
+              console.log('[CODE]', ...args);
+            },
+            error: (...args: any[]) => {
+              logs.push('[ERROR] ' + args.map(a => String(a)).join(' '));
+              console.error('[CODE ERROR]', ...args);
+            }
+          };
+          
+          // Execute code with axios and cheerio available
+          const require = (moduleName: string) => {
+            if (moduleName === 'axios') return axios;
+            if (moduleName === 'cheerio') return cheerio;
+            throw new Error(`Module '${moduleName}' not available. Only axios and cheerio are supported.`);
+          };
+          
+          const scriptFunc = new Function('require', 'console', code);
+          const result = await scriptFunc(require, mockConsole);
+          
+          const duration = Date.now() - startTime;
+          console.log(`✅ Code executed successfully in ${duration}ms`);
+          
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ 
+            success: true,
+            data: result,
+            logs,
+            duration
+          }));
+        } catch (error: any) {
+          const duration = Date.now() - startTime;
+          console.error(`❌ Code execution failed in ${duration}ms:`, error.message);
+          
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ 
+            success: false,
+            error: error.message,
+            stack: error.stack,
+            logs,
+            duration
+          }));
+        }
+      } catch (error: any) {
+        console.error('❌ Request parse error:', error);
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ 
+          success: false,
+          error: `Request parse error: ${error.message}`
+        }));
+      }
+    });
+    return;
+  }
+  
   if (req.url !== '/execute') {
     res.writeHead(404, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: 'Not found. Use POST /execute or POST /fetch-html' }));
+    res.end(JSON.stringify({ error: 'Not found. Use POST /execute, /run, or /fetch-html' }));
     return;
   }
   

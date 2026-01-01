@@ -1890,11 +1890,11 @@ Style:
     
     try {
       if (toolName === 'execute_code') {
-        // Execute code through the backend execute-server
+        // Execute code through the backend execute-server /run endpoint
         const code = params.code || params.script;
         const runtime = params.language || this.config.environment.runtime || 'nodejs';
         
-        const response = await fetch('http://localhost:3002/execute', {
+        const response = await fetch('http://localhost:3002/run', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1903,15 +1903,25 @@ Style:
           })
         });
         
-        if (!response.ok) {
-          throw new Error(`Execution failed: ${response.statusText}`);
-        }
-        
+        // Get detailed error message from response
         const result = await response.json();
         
+        if (!response.ok || !result.success) {
+          const errorDetails = result.error || `HTTP ${response.status}: ${response.statusText}`;
+          const errorLogs = result.logs?.join('\n') || '';
+          const fullError = errorLogs ? `${errorDetails}\n\nLogs:\n${errorLogs}` : errorDetails;
+          
+          return {
+            success: false,
+            output: '',
+            error: fullError,
+            duration: Date.now() - startTime
+          };
+        }
+        
         return {
-          success: result.success,
-          output: result.success ? JSON.stringify(result.data, null, 2) : result.error,
+          success: true,
+          output: result.data ? JSON.stringify(result.data, null, 2) : (result.logs?.join('\n') || 'Success'),
           duration: Date.now() - startTime
         };
       }
