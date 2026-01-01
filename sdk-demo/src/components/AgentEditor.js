@@ -1534,18 +1534,20 @@ ${optimizing.environment ? '- Environment: Runtime and dependencies needed' : ''
 ${optimizing.tools ? '- Tools: Which tools agent needs (execute_code, fetch_url, search_web, read_file)' : ''}
 ${optimizing.settings ? '- Settings: Optimal temperature, tokens, context window' : ''}
 
-Return JSON:
+CRITICAL: Return ONLY valid JSON, nothing else. No explanations before or after.
+
+JSON structure:
 {
   ${optimizing.systemPrompt ? '"systemPrompt": "detailed prompt...",' : ''}
-  ${optimizing.instructions ? '"instructions": [{name:"Step 1", prompt:"...", conditional:false, loop:false}, ...],' : ''}
-  ${optimizing.environment ? '"environment": {runtime:"nodejs|python|deno|browser", dependencies:["pkg@ver"], timeout:30000, memoryLimit:"512MB", sandboxed:true},' : ''}
+  ${optimizing.instructions ? '"instructions": [{"name":"Step 1", "prompt":"...", "conditional":false, "loop":false}],' : ''}
+  ${optimizing.environment ? '"environment": {"runtime":"nodejs", "dependencies":["pkg@ver"], "timeout":30000, "memoryLimit":"512MB", "sandboxed":true},' : ''}
   ${optimizing.tools ? '"tools": ["execute_code", "fetch_url"],' : ''}
-  ${optimizing.settings ? '"settings": {temperature:0.7, topP:0.9, maxTokens:2048, contextWindow:8192},' : ''}
+  ${optimizing.settings ? '"settings": {"temperature":0.7, "topP":0.9, "maxTokens":2048, "contextWindow":8192},' : ''}
   "reasoning": "Why these choices",
   "suggestedName": "Short agent name"
 }
 
-Make it production-ready and practical.`;
+Make it production-ready and practical. Return ONLY the JSON object.`;
 
       const startTime = Date.now();
       const response = await fetch('http://localhost:11434/api/generate', {
@@ -1568,12 +1570,54 @@ Make it production-ready and practical.`;
       const data = await response.json();
       const responseText = data.response;
       
-      const jsonMatch = responseText.match(/\\{[\\s\\S]*\\}/);
-      if (!jsonMatch) {
-        throw new Error('Could not parse AI response');
+      // Try multiple JSON extraction methods
+      let generated = null;
+      
+      // Method 1: Find first complete JSON object
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          generated = JSON.parse(jsonMatch[0]);
+          this.addProgressMessage('✅ Successfully parsed JSON response (method 1)');
+        } catch (e) {
+          this.addProgressMessage('⚠️ Method 1 failed, trying method 2...');
+        }
       }
       
-      const generated = JSON.parse(jsonMatch[0]);
+      // Method 2: Find JSON between code blocks
+      if (!generated) {
+        const codeBlockMatch = responseText.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+        if (codeBlockMatch) {
+          try {
+            generated = JSON.parse(codeBlockMatch[1]);
+            this.addProgressMessage('✅ Successfully parsed JSON response (method 2 - code block)');
+          } catch (e) {
+            this.addProgressMessage('⚠️ Method 2 failed, trying method 3...');
+          }
+        }
+      }
+      
+      // Method 3: Extract everything between first { and last }
+      if (!generated) {
+        const firstBrace = responseText.indexOf('{');
+        const lastBrace = responseText.lastIndexOf('}');
+        if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+          try {
+            const jsonStr = responseText.substring(firstBrace, lastBrace + 1);
+            generated = JSON.parse(jsonStr);
+            this.addProgressMessage('✅ Successfully parsed JSON response (method 3 - braces)');
+          } catch (e) {
+            this.addProgressMessage('⚠️ Method 3 failed');
+          }
+        }
+      }
+      
+      if (!generated) {
+        this.addProgressMessage('');
+        this.addProgressMessage('❌ Could not parse AI response. Raw response:');
+        this.addProgressMessage(responseText.substring(0, 500));
+        throw new Error('Could not parse AI response. The AI may not have returned valid JSON.');
+      }
       
       this.addProgressMessage('✅ Successfully parsed JSON response');
       this.addProgressMessage('');
