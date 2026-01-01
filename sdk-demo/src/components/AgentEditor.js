@@ -1432,7 +1432,13 @@ Style:
           <p style="color: #9ca3af; font-size: 14px; margin-bottom: 12px;">Enter a message to test your agent's response:</p>
           <textarea id="test-prompt-input" 
                     placeholder="Example: Hello, introduce yourself!&#10;Example: What can you help me with?&#10;Example: Analyze this webpage"
-                    style="width: 100%; min-height: 100px; background: #2d2d2d; border: 1px solid #444; border-radius: 6px; color: #e0e0e0; padding: 12px; font-size: 14px; font-family: inherit; resize: vertical; margin-bottom: 16px;">Hello, introduce yourself!</textarea>
+                    style="width: 100%; min-height: 100px; background: #2d2d2d; border: 1px solid #444; border-radius: 6px; color: #e0e0e0; padding: 12px; font-size: 14px; font-family: inherit; resize: vertical; margin-bottom: 12px;">Hello, introduce yourself!</textarea>
+          <div style="margin-bottom: 16px;">
+            <button id="ai-generate-test-btn" style="padding: 8px 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+              <span>✨</span>
+              <span>AI Generate Test Prompt</span>
+            </button>
+          </div>
           <div style="display: flex; gap: 10px; justify-content: flex-end;">
             <button id="test-cancel-btn" style="padding: 10px 20px; background: #374151; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Cancel</button>
             <button id="test-run-btn" style="padding: 10px 20px; background: #7c3aed; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">🚀 Test Agent</button>
@@ -1445,9 +1451,29 @@ Style:
       const input = modal.querySelector('#test-prompt-input');
       const runBtn = modal.querySelector('#test-run-btn');
       const cancelBtn = modal.querySelector('#test-cancel-btn');
+      const aiGenBtn = modal.querySelector('#ai-generate-test-btn');
       
       input.focus();
       input.select();
+      
+      // AI Generate Test Prompt
+      aiGenBtn.onclick = async () => {
+        aiGenBtn.disabled = true;
+        aiGenBtn.innerHTML = '<span>⏳</span><span>Generating...</span>';
+        
+        try {
+          const testPrompt = await this.generateTestPrompt();
+          if (testPrompt) {
+            input.value = testPrompt;
+          }
+        } catch (error) {
+          console.error('Failed to generate test prompt:', error);
+        }
+        
+        aiGenBtn.disabled = false;
+        aiGenBtn.innerHTML = '<span>✨</span><span>AI Generate Test Prompt</span>';
+        input.focus();
+      };
       
       const cleanup = () => {
         modal.remove();
@@ -2678,6 +2704,86 @@ Generate a NEW creative but REALISTIC idea now:`;
       btn.innerHTML = originalText;
     } finally {
       btn.disabled = false;
+    }
+  }
+
+  async generateTestPrompt() {
+    // Analyze the agent's configuration to generate a relevant test prompt
+    const agentPurpose = this.config.systemPrompt.substring(0, 300);
+    const hasInstructions = this.config.instructions.length > 0;
+    const instructionSummary = hasInstructions 
+      ? this.config.instructions.map(i => i.name || i.prompt.substring(0, 50)).join(', ')
+      : 'None';
+    const enabledTools = this.config.tools.length > 0 
+      ? this.config.tools.join(', ') 
+      : 'None';
+    const hasContext = this.config.contextFiles.length > 0;
+    const contextTypes = hasContext 
+      ? this.config.contextFiles.map(f => f.name).join(', ')
+      : 'None';
+    
+    const testPromptGeneration = `You are helping a developer test their AI agent. Generate a SINGLE test message that would effectively demonstrate the agent's capabilities.
+
+AGENT INFORMATION:
+System Prompt: ${agentPurpose}
+Instructions: ${instructionSummary}
+Enabled Tools: ${enabledTools}
+Context Files: ${contextTypes}
+Agent Mode: ${this.config.mode}
+
+Generate ONE test message (1-2 sentences) that:
+- Tests the agent's core functionality
+- Is specific and actionable
+- Would produce a clear, measurable response
+- Matches the agent's purpose and capabilities
+
+If tools are enabled, create a test that would trigger tool use.
+If instructions exist, test one of the instruction flows.
+If it's a web scraper, ask to scrape specific data.
+If it's a code generator, ask for a specific code example.
+
+Respond ONLY with the test message itself. No explanations, no formatting, no quotes.
+
+Example outputs:
+"Scrape the current webpage and extract all product prices, then calculate the average price"
+"Write a Python function that validates email addresses using regex and handles edge cases"
+"Analyze the sentiment of this text: 'The product quality is excellent but shipping was delayed'"
+"Extract all JavaScript functions from the current page and list their names and parameters"
+
+Generate the test message now:`;
+
+    try {
+      const response = await fetch('http://localhost:11434/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: this.config.model || 'qwen2.5-coder:14b',
+          prompt: testPromptGeneration,
+          stream: false,
+          options: {
+            temperature: 0.7,
+            top_p: 0.9,
+            num_predict: 100 // Keep it concise
+          }
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate test prompt');
+      }
+      
+      const data = await response.json();
+      const testPrompt = data.response.trim()
+        .replace(/^["']|["']$/g, '') // Remove quotes
+        .replace(/^Test message:\s*/i, '') // Remove prefix
+        .replace(/^Test:\s*/i, '')
+        .trim();
+      
+      return testPrompt;
+      
+    } catch (error) {
+      console.error('Failed to generate test prompt:', error);
+      throw error;
     }
   }
 }
