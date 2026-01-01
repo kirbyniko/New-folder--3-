@@ -3811,20 +3811,18 @@ JSON format:
         setTimeout(() => {
           this.hideOptimizationPanel();
         }, 2000);
-      } else {
-        this.addProgressMessage('');
-        this.addProgressMessage('❌ User cancelled - no changes applied');
-      }
-      
     } catch (error) {
-      console.error('AI optimization error:', error);
+      console.error('Apply optimization error:', error);
       this.addProgressMessage('');
-      this.addProgressMessage('❌ ERROR: ' + error.message);
-      alert(`Failed to optimize: ${error.message}\n\nPlease check that Ollama is running.`);
+      this.addProgressMessage('❌ ERROR applying changes: ' + error.message);
     } finally {
-      // Re-enable button
-      btn.disabled = false;
-      btn.innerHTML = '🚀 Run AI Optimization';
+      // Clear pending and re-enable button
+      this.pendingOptimizations = null;
+      const btn = document.getElementById('run-ai-optimize');
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '🚀 Run AI Optimization';
+      }
     }
   }
   
