@@ -3666,14 +3666,65 @@ JSON format:
       
       changesMsg += `\n💡 ${suggestions.reasoning}`;
       changesMsg += `\n📊 Estimated Tokens: ${suggestions.estimatedTokens || 'calculating...'}`;
-      changesMsg += `\n\nApply these ${strategy === 'maximize' ? 'power enhancements' : 'optimizations'}?`;
       
       this.addProgressMessage('');
       this.addProgressMessage('💡 ' + suggestions.reasoning);
+      this.addProgressMessage('');
+      this.addProgressMessage('─'.repeat(50));
+      this.addProgressMessage('✅ Ready to apply changes!');
       
-      if (confirm(changesMsg)) {
-        this.addProgressMessage('');
-        this.addProgressMessage('✅ Applying changes...');
+      // Store suggestions for the apply button
+      this.pendingOptimizations = { suggestions, optimizing, strategy };
+      
+      // Show apply/cancel buttons in progress stream
+      const progressContent = document.getElementById('ai-progress-content');
+      if (progressContent) {
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.cssText = 'display: flex; gap: 10px; margin-top: 15px;';
+        buttonContainer.innerHTML = `
+          <button id="apply-optimizations" style="flex: 1; padding: 10px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+            ✅ Apply Changes
+          </button>
+          <button id="cancel-optimizations" style="flex: 1; padding: 10px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+            ❌ Cancel
+          </button>
+        `;
+        progressContent.appendChild(buttonContainer);
+        
+        // Add event listeners
+        document.getElementById('apply-optimizations').addEventListener('click', () => {
+          this.applyOptimizations();
+        });
+        
+        document.getElementById('cancel-optimizations').addEventListener('click', () => {
+          this.addProgressMessage('');
+          this.addProgressMessage('❌ User cancelled - no changes applied');
+          btn.disabled = false;
+          btn.innerHTML = '🚀 Run AI Optimization';
+        });
+      }
+      
+    } catch (error) {
+      console.error('AI optimization error:', error);
+      this.addProgressMessage('');
+      this.addProgressMessage('❌ ERROR: ' + error.message);
+    } finally {
+      // Re-enable button only if no pending optimizations
+      if (!this.pendingOptimizations) {
+        btn.disabled = false;
+        btn.innerHTML = '🚀 Run AI Optimization';
+      }
+    }
+  }
+  
+  async applyOptimizations() {
+    if (!this.pendingOptimizations) return;
+    
+    const { suggestions, optimizing, strategy } = this.pendingOptimizations;
+    const btn = document.getElementById('run-ai-optimize');
+    
+    this.addProgressMessage('');
+    this.addProgressMessage('✅ Applying changes...');
         
         // Apply optimizations
         if (suggestions.systemPrompt && optimizing.systemPrompt) {
@@ -3749,10 +3800,17 @@ JSON format:
         this.addProgressMessage('🎉 Agent optimized successfully!');
         this.addProgressMessage(`📊 New token estimate: ${this.tokenEstimate.total}`);
         
+        // Clear pending and re-enable button
+        this.pendingOptimizations = null;
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '🚀 Run AI Optimization';
+        }
+        
+        // Hide optimization panel after a delay
         setTimeout(() => {
-          alert('✅ Agent optimized successfully!');
           this.hideOptimizationPanel();
-        }, 500);
+        }, 2000);
       } else {
         this.addProgressMessage('');
         this.addProgressMessage('❌ User cancelled - no changes applied');
