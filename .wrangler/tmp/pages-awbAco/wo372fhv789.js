@@ -8,9 +8,9 @@ var define_ROUTES_default = {
 };
 
 // ../AppData/Roaming/npm/node_modules/wrangler/templates/pages-dev-pipeline.ts
-import worker from "C:\\Users\\nikow\\New folder (3)\\.wrangler\\tmp\\pages-za5GgL\\functionsWorker-0.27186345723546657.mjs";
+import worker from "C:\\Users\\nikow\\New folder (3)\\.wrangler\\tmp\\pages-awbAco\\functionsWorker-0.5962417504044613.mjs";
 import { isRoutingRuleMatch } from "C:\\Users\\nikow\\AppData\\Roaming\\npm\\node_modules\\wrangler\\templates\\pages-dev-util.ts";
-export * from "C:\\Users\\nikow\\New folder (3)\\.wrangler\\tmp\\pages-za5GgL\\functionsWorker-0.27186345723546657.mjs";
+export * from "C:\\Users\\nikow\\New folder (3)\\.wrangler\\tmp\\pages-awbAco\\functionsWorker-0.5962417504044613.mjs";
 var routes = define_ROUTES_default;
 var pages_dev_pipeline_default = {
   fetch(request, env, context) {
@@ -35,4 +35,4 @@ var pages_dev_pipeline_default = {
 export {
   pages_dev_pipeline_default as default
 };
-//# sourceMappingURL=kbw44yop4ok.js.map
+//# sourceMappingURL=wo372fhv789.js.map

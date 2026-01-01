@@ -1752,6 +1752,21 @@ Style:
     this.renderChatInterface(output);
   }
   
+  renderIntelFeatureStatus(name, enabled) {
+    const status = enabled ? 'ENABLED' : 'DISABLED';
+    const color = enabled ? '#10b981' : '#6b7280';
+    const icon = enabled ? '✅' : '❌';
+    return `
+      <div style="display: flex; align-items: center; gap: 6px; padding: 6px; background: #1e1e1e; border-radius: 4px;">
+        <span style="font-size: 14px;">${icon}</span>
+        <div style="flex: 1;">
+          <div style="color: #e0e0e0; font-weight: 500;">${name}</div>
+          <div style="color: ${color}; font-size: 10px; font-weight: 600;">${status}</div>
+        </div>
+      </div>
+    `;
+  }
+
   renderChatInterface(container) {
     // Calculate iteration progress
     const iterationPercent = this.config.maxIterations > 0 
@@ -1759,6 +1774,19 @@ Style:
       : 0;
     
     const isIterating = this.testConversation.some(msg => msg.loading);
+    
+    // Debug: Log config values when rendering UI
+    console.log('🖥️ [RENDER DEBUG] Intelligence Features Config:', {
+      enableExplicitPlanning: this.config.enableExplicitPlanning,
+      enableExplicitReflection: this.config.enableExplicitReflection,
+      enableChainOfThought: this.config.enableChainOfThought,
+      enableToolAnalysis: this.config.enableToolAnalysis,
+      enablePersistentMemory: this.config.enablePersistentMemory,
+      enableLLMValidation: this.config.enableLLMValidation,
+      enableStrategyPivot: this.config.enableStrategyPivot,
+      enableSmartContext: this.config.enableSmartContext,
+      parallelToolExecution: this.config.parallelToolExecution
+    });
     
     container.innerHTML = `
       <div style="display: flex; flex-direction: column; height: 100%; background: #1e1e1e;">
@@ -1778,8 +1806,30 @@ Style:
             ` : ''}
           </div>
           <div style="display: flex; gap: 8px;">
+            <button id="toggle-intel-status-btn" style="padding: 8px 16px; background: #6366f1; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">🧠 Intelligence Status</button>
             <button id="continue-iteration-btn" style="padding: 8px 16px; background: #0e7490; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; display: ${this.testConversation.length > 0 && !isIterating ? 'block' : 'none'};">🔄 Continue Iteration</button>
             <button id="clear-chat-btn" style="padding: 8px 16px; background: #374151; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">🗑️ Clear Chat</button>
+          </div>
+        </div>
+        
+        <!-- Intelligence Features Status Panel -->
+        <div id="intel-status-panel" style="display: none; padding: 16px; background: #2d2d2d; border-bottom: 1px solid #333;">
+          <h4 style="margin: 0 0 12px 0; color: #e0e0e0; font-size: 14px; font-weight: 600;">🧠 Intelligence Features Status</h4>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; font-size: 12px;">
+            ${this.renderIntelFeatureStatus('📋 Explicit Planning', this.config.enableExplicitPlanning)}
+            ${this.renderIntelFeatureStatus('🤔 Explicit Reflection', this.config.enableExplicitReflection)}
+            ${this.renderIntelFeatureStatus('💭 Chain of Thought', this.config.enableChainOfThought)}
+            ${this.renderIntelFeatureStatus('🔍 Tool Analysis', this.config.enableToolAnalysis)}
+            ${this.renderIntelFeatureStatus('💾 Persistent Memory', this.config.enablePersistentMemory)}
+            ${this.renderIntelFeatureStatus('✅ LLM Validation', this.config.enableLLMValidation)}
+            ${this.renderIntelFeatureStatus('🎯 Strategy Pivot', this.config.enableStrategyPivot)}
+            ${this.renderIntelFeatureStatus('📊 Smart Context', this.config.enableSmartContext)}
+            ${this.renderIntelFeatureStatus('⚡ Parallel Tools', this.config.parallelToolExecution)}
+          </div>
+          <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #444; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; font-size: 11px;">
+            <div><span style="color: #94a3b8;">Failures:</span> <span style="color: #ef4444; font-weight: 600;">${this.config.failureLog?.length || 0}</span></div>
+            <div><span style="color: #94a3b8;">Successes:</span> <span style="color: #10b981; font-weight: 600;">${this.config.successPatterns?.length || 0}</span></div>
+            <div><span style="color: #94a3b8;">Tokens:</span> <span style="color: #f59e0b; font-weight: 600;">${this.config.totalTokensUsed || 0}</span></div>
           </div>
         </div>
         
@@ -1866,6 +1916,16 @@ Style:
       this.config.currentIteration = 0;
       this.renderChatInterface(container);
     };
+    
+    const toggleIntelBtn = container.querySelector('#toggle-intel-status-btn');
+    const intelPanel = container.querySelector('#intel-status-panel');
+    if (toggleIntelBtn && intelPanel) {
+      toggleIntelBtn.onclick = () => {
+        const isVisible = intelPanel.style.display !== 'none';
+        intelPanel.style.display = isVisible ? 'none' : 'block';
+        toggleIntelBtn.textContent = isVisible ? '🧠 Intelligence Status' : '✖️ Hide Status';
+      };
+    }
     
     const continueBtn = container.querySelector('#continue-iteration-btn');
     if (continueBtn) {
