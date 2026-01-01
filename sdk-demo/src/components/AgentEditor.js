@@ -3505,85 +3505,92 @@ try {
       this.testConversation.push({
         role: 'error',
         content: isAgentDown 
-          ? '\ud83d\udea8 LangChain agent server is not running.\\n\\nStart it with:\\ncd scraper-backend\\nnpm run agent'
+          ? '🚨 LangChain agent server is not running.\n\nStart it with:\ncd scraper-backend\nnpm run agent'
           : errorMsg,
         error: true,
-        console.log('📋 [DEBUG] Starting planning phase...');
-        const plan = await this.createExplicitPlan(message);
-        console.log('📋 [DEBUG] Plan result:', plan);
-        if (plan && plan.steps) {
-          this.testConversation = this.testConversation.filter(msg => !msg.loading);
-          this.testConversation.push({
-            role: 'assistant',
-            content: `📋 **Created Plan:**\n${plan.steps.map(s => `${s.step}. ${s.action} - ${s.reason}`).join('\n')}`,
-            metadata: '🧠 Planning Phase'
-          });
-          this.renderChatInterface(container);
-          messagesDiv.scrollTop = messagesDiv.scrollHeight;
-          
-          // Add loading for execution
-          this.testConversation.push({
-            role: 'assistant',
-            content: '⏳ Executing plan...',
-            loading: true
-          });
-          this.renderChatInterface(container);
-          messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        }
-      }
+        metadata: `⏱️ ${duration}ms`
+      });
       
-      // Build conversation history for context (without role labels to prevent LLM from roleplaying)
-      const conversationContext = this.testConversation
-        .filter(msg => !msg.loading && !msg.error)
-        .map(msg => {
-          if (msg.role === 'user') {
-            return `TASK: ${msg.content}`;
-          } else if (msg.role === 'system' && msg.content.includes('Tool:')) {
-            return msg.content; // Keep tool results as-is
-          } else {
-            // Skip assistant's previous responses to prevent pattern repetition
-            return null;
-          }
-        })
-        .filter(msg => msg !== null)
-        .join('\n\n');
+      // Track failed execution
+      MetricsService.trackAgentExecution(
+        this.config.name || 'Unnamed Agent',
+        false,
+        duration,
+        error
+      );
+    }
+    
+    // Re-render with response
+    this.renderChatInterface(container);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  }
+  
+  // Deprecated - LangChain handles iteration internally
+  async continueWithToolResults(container) {
+    console.warn('continueWithToolResults is deprecated - LangChain handles autonomous iteration');
+    return;
+  }
+  
+  // Helper to show non-blocking test prompt modal (DEPRECATED - now using chat interface)
+  showTestPromptModal() {
+    return new Promise((resolve) => {
+      // Deprecated - just resolve immediately
+      resolve('');
+    });
+  }
+  
+  // Old agent methods - now deprecated, LangChain handles these
+  async createExplicitPlan(message) {
+    console.warn('createExplicitPlan is deprecated - LangChain handles planning');
+    return null;
+  }
+  
+  async reflectOnToolResult(tool, result, query) {
+    console.warn('reflectOnToolResult is deprecated - LangChain handles reflection');
+    return null;
+  }
+  
+  async suggestStrategyPivot(approach, failures) {
+    console.warn('suggestStrategyPivot is deprecated - LangChain handles strategy');
+    return '';
+  }
+  
+  selectRelevantContext(context) {
+    // Still useful for local context filtering
+    if (!this.config.enableSmartContext) return [];
+    
+    // Simple keyword matching for now
+    const keywords = context.toLowerCase().match(/\b\w+\b/g) || [];
+    return this.config.contextFiles.filter(file => {
+      const fileContent = file.content.toLowerCase();
+      return keywords.some(kw => fileContent.includes(kw));
+    }).slice(0, 3);
+  }
+  
+  summarizeContext(context) {
+    // Simple truncation for now
+    return context.substring(0, 500) + '...';
+  }
+  
+  estimateTokens(text) {
+    // Rough estimate: ~4 characters per token
+    return Math.ceil((text?.length || 0) / 4);
+  }
+  
+  // Build enhanced system prompt with tools and environment info
+  buildEnhancedPrompt_DEPRECATED() {
+    // This is now handled by LangChain server
+    console.warn('buildEnhancedPrompt is deprecated - LangChain handles prompts');
+    return this.config.systemPrompt;
+  }
+  
+  // Helper to show non-blocking test prompt modal (DEPRECATED - now using chat interface)
+  showTestPromptModal() {
+    return new Promise((resolve) => {
+      const modal = document.createElement('div');
+      modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 10000;';
       
-      // Context window management - summarize if too large
-      let contextToUse = conversationContext;
-      const estimatedTokens = this.estimateTokens(conversationContext);
-      this.config.totalTokensUsed = estimatedTokens;
-      
-      if (estimatedTokens > this.config.maxContextTokens) {
-        console.log(`📊 Context too large (${estimatedTokens} tokens), summarizing...`);
-        
-        // Split into old (to summarize) and recent (keep as-is)
-        const messages = this.testConversation.filter(msg => !msg.loading && !msg.error);
-        const recentCount = Math.min(5, Math.floor(messages.length / 2));
-        const oldMessages = messages.slice(0, -recentCount);
-        const recentMessages = messages.slice(-recentCount);
-        
-        const oldContext = oldMessages.map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`).join('\n\n');
-        const summary = await this.summarizeContext(oldContext);
-        
-        this.config.contextSummaries.push({
-          summary: summary,
-          messageCount: oldMessages.length,
-          timestamp: Date.now()
-        });
-        
-        // Rebuild context with summary + recent messages
-        contextToUse = `[Earlier conversation summary: ${summary}]\n\n`;
-        contextToUse += recentMessages.map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`).join('\n\n');
-        
-        console.log(`✅ Context reduced to ${this.estimateTokens(contextToUse)} tokens`);
-      }
-      
-      // Build enhanced system prompt with tools and environment info
-      let enhancedPrompt = this.config.systemPrompt;
-      
-      // Add tool descriptions if tools are enabled
-      if (this.config.tools.length > 0) {
-        enhancedPrompt += `\n\n=== AGENT EXECUTION MODE ===\n`;
+      modal.innerHTML = `
         enhancedPrompt += `You are an AUTONOMOUS AGENT. You MUST respond with ONLY valid JSON tool calls until the task is complete.\n\n`;
         
         enhancedPrompt += `CRITICAL RULES:\n`;
