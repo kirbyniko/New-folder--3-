@@ -1879,6 +1879,9 @@ Style:
   async sendChatMessage(message, container) {
     console.log('[Agent] Starting chat message with tools:', this.config.tools);
     
+    // Reset iteration counter for new user question
+    this.config.currentIteration = 0;
+    
     // Add user message to conversation
     this.testConversation.push({
       role: 'user',
@@ -2063,13 +2066,13 @@ Style:
           this.testConversation.push({
             role: 'assistant',
             content: `🛠️ Executing: ${toolCallMatch.tool}(${JSON.stringify(toolCallMatch.params).substring(0, 100)}...)`,
-            metadata: `⏱️ ${duration}ms`
+            metadata: `⏱️ ${duration}ms • 🔄 Iteration ${this.config.currentIteration || 1}/${this.config.maxIterations}`
           });
           
           this.testConversation.push({
             role: 'system',
             content: `Tool Result:\n${toolResult.success ? toolResult.output : 'Error: ' + toolResult.error}`,
-            metadata: `⏱️ ${toolResult.duration}ms`
+            metadata: `⏱️ ${toolResult.duration}ms • 🔄 Iteration ${this.config.currentIteration || 1}/${this.config.maxIterations}`
           });
           
           // Re-render to show tool execution
@@ -2350,6 +2353,17 @@ Style:
     
     // Update config
     this.config = {...template};
+    
+    // Load max iterations from localStorage
+    const savedIterations = localStorage.getItem('agentEditor_maxIterations');
+    if (savedIterations) {
+      this.config.maxIterations = parseInt(savedIterations);
+    } else {
+      this.config.maxIterations = 10; // Default
+    }
+    
+    // Initialize iteration counter
+    this.config.currentIteration = 0;
     
     // Update UI with null checks
     const setValueIfExists = (id, value) => {
