@@ -2047,11 +2047,30 @@ Style:
         
         // SUPER STRONG MESSAGE if last tool had empty output
         if (hadEmptyOutput) {
+          // Extract the last code that failed
+          const lastToolCall = this.testConversation
+            .filter(msg => msg.role === 'assistant' && msg.content && msg.content.includes('execute_code'))
+            .slice(-1)[0];
+          
+          let failedCode = '';
+          if (lastToolCall) {
+            const match = lastToolCall.content.match(/"code":\s*"([^"]+)"/);
+            if (match) failedCode = match[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
+          }
+          
           enhancedPrompt += `\n🚨🚨🚨 CRITICAL ERROR: YOUR LAST CODE HAD NO OUTPUT! 🚨🚨🚨\n`;
-          enhancedPrompt += `The code you just ran returned NOTHING because you forgot console.log()!\n`;
+          enhancedPrompt += `The code you just ran returned NOTHING because you forgot console.log()!\n\n`;
+          
+          if (failedCode) {
+            enhancedPrompt += `YOUR BROKEN CODE:\n${failedCode}\n\n`;
+            enhancedPrompt += `FIX IT BY ADDING .then(r => console.log(r.data)) or similar!\n`;
+            enhancedPrompt += `EXAMPLE FIX:\n`;
+            enhancedPrompt += `axios.get('url', {headers: {...}}).then(r => console.log(r.data));\n\n`;
+          }
+          
           enhancedPrompt += `YOU MUST IMMEDIATELY RETRY WITH A NEW TOOL CALL!\n`;
           enhancedPrompt += `DO NOT respond with text - respond with JSON tool call!\n`;
-          enhancedPrompt += `FIX THE CODE AND RETRY: {"tool": "execute_code", "params": {"code": "...WITH console.log()..."}}\n\n`;
+          enhancedPrompt += `GENERATE: {"tool": "execute_code", "params": {"code": "...FIXED CODE WITH console.log()..."}}\n\n`;
         }
         
         enhancedPrompt += `EMPTY OUTPUT = FAILURE:\n`;
@@ -3227,7 +3246,7 @@ Respond with JSON: {"satisfied": true/false, "learning": "what I learned", "next
           options: {
             temperature: this.config.temperature,
             top_p: this.config.topP,
-            num_predict: this.config.maxTokens
+            num_predict: 1024  // Increased to allow longer code generation
           },
           stream: false
         })
