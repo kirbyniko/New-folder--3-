@@ -3418,7 +3418,7 @@ try {
   }
 
   async sendChatMessage(message, container) {
-    console.log('[Agent] Starting chat message with tools:', this.config.tools);
+    console.log('[Agent] Starting chat message with LangChain agent');
     
     // Reset iteration counter for new user question
     this.config.currentIteration = 0;
@@ -3439,7 +3439,7 @@ try {
     // Add loading indicator
     this.testConversation.push({
       role: 'assistant',
-      content: '⏳ Thinking...',
+      content: '⏳ LangChain agent processing...',
       loading: true
     });
     this.renderChatInterface(container);
@@ -3448,14 +3448,66 @@ try {
     const startTime = Date.now();
     
     try {
-      // EXPLICIT PLANNING PHASE (if enabled)
-      console.log('🔍 [DEBUG] Planning check:', {
-        enableExplicitPlanning: this.config.enableExplicitPlanning,
-        toolsLength: this.config.tools.length,
-        tools: this.config.tools
+      // Call LangChain agent API
+      const response = await fetch('http://localhost:3003/agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          task: message,
+          config: {
+            model: this.config.model || 'qwen2.5-coder:14b',
+            temperature: this.config.temperature,
+            tools: this.config.tools,
+            systemPrompt: this.config.systemPrompt
+          }
+        })
       });
       
-      if (this.config.enableExplicitPlanning && this.config.tools.length > 0) {
+      if (!response.ok) {
+        throw new Error(`LangChain agent returned ${response.status}: ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      const duration = Date.now() - startTime;
+      
+      // Remove loading message
+      this.testConversation = this.testConversation.filter(msg => !msg.loading);
+      
+      if (result.success) {
+        console.log('[Agent] LangChain result:', result.result);
+        
+        // Add assistant message with result
+        this.testConversation.push({
+          role: 'assistant',
+          content: result.result,
+          metadata: `\u23f1\ufe0f ${duration}ms \u2022 \ud83e\udd16 LangChain ReAct Agent`
+        });
+        
+        // Track successful execution
+        MetricsService.trackAgentExecution(
+          this.config.name || 'Unnamed Agent',
+          true,
+          duration
+        );
+      } else {
+        throw new Error(result.error || 'Unknown error from LangChain agent');
+      }
+      
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      const errorMsg = error.message || String(error);
+      const isAgentDown = errorMsg.includes('Failed to fetch') || errorMsg.includes('ECONNREFUSED');
+      
+      // Remove loading message
+      this.testConversation = this.testConversation.filter(msg => !msg.loading);
+      
+      // Add error message
+      this.testConversation.push({
+        role: 'error',
+        content: isAgentDown 
+          ? '\ud83d\udea8 LangChain agent server is not running.\\n\\nStart it with:\\ncd scraper-backend\\nnpm run agent'
+          : errorMsg,
+        error: true,
         console.log('📋 [DEBUG] Starting planning phase...');
         const plan = await this.createExplicitPlan(message);
         console.log('📋 [DEBUG] Plan result:', plan);
