@@ -2471,14 +2471,16 @@ Style:
           metadata: `⏱️ ${duration}ms • 📊 ~${Math.ceil(result.response.length / 4)} tokens • ${isValidResponse ? '✅ Task Complete' : '⚠️ May Need Improvement'}`
         });
         
+        // Extract tools used (for both success tracking and conversation history)
+        const toolsUsed = this.testConversation
+          .filter(msg => msg.role === 'system' && msg.content.includes('Tool:'))
+          .map(msg => {
+            const match = msg.content.match(/Tool: (\w+)/);
+            return match ? match[1] : 'unknown';
+          });
+        
         // Track successful completion
         if (this.config.successPatterns && this.config.currentIteration > 0) {
-          const toolsUsed = this.testConversation
-            .filter(msg => msg.role === 'system' && msg.content.includes('Tool:'))
-            .map(msg => {
-              const match = msg.content.match(/Tool: (\w+)/);
-              return match ? match[1] : 'unknown';
-            });
           
           if (toolsUsed.length > 0) {
             this.config.successPatterns.push({
