@@ -40,7 +40,18 @@ export class AgentEditor {
       useKnowledge: true,
       contextFiles: [],
       tools: [],
-      enabledGuides: ['basic-selectors', 'error-handling']
+      enabledGuides: ['basic-selectors', 'error-handling'],
+      // Multi-step instructions
+      instructions: [],
+      // Coding environment
+      environment: {
+        runtime: 'nodejs',  // nodejs, python, deno, browser
+        dependencies: [],
+        environmentVars: {},
+        sandboxed: true,
+        timeout: 30000,
+        memoryLimit: '512MB'
+      }
     };
   }
 
@@ -229,12 +240,77 @@ export class AgentEditor {
           <div class="code-panel">
             <div class="editor-tabs">
               <button class="editor-tab active" data-tab="prompt">System Prompt</button>
+              <button class="editor-tab" data-tab="instructions">📋 Instructions</button>
+              <button class="editor-tab" data-tab="environment">⚙️ Environment</button>
               <button class="editor-tab" data-tab="context">Context Files</button>
               <button class="editor-tab" data-tab="output">Test Output</button>
             </div>
             
             <!-- Monaco Editor Container -->
             <div id="monaco-editor" class="monaco-container"></div>
+            
+            <!-- Instructions UI (hidden by default) -->
+            <div id="instructions-ui" style="display: none; padding: 15px; background: #1e1e1e; height: 100%; overflow-y: auto;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin: 0; color: #e0e0e0;">📋 Agent Instructions</h3>
+                <button id="add-instruction-btn" style="padding: 8px 16px; background: #0e7490; color: white; border: none; border-radius: 4px; cursor: pointer;">+ Add Step</button>
+              </div>
+              <p style="color: #9ca3af; font-size: 13px; margin-bottom: 15px;">
+                Define multi-step workflows for your agent to follow. Each step executes in order.
+              </p>
+              <div id="instructions-list"></div>
+            </div>
+            
+            <!-- Environment UI (hidden by default) -->
+            <div id="environment-ui" style="display: none; padding: 15px; background: #1e1e1e; height: 100%; overflow-y: auto;">
+              <h3 style="color: #e0e0e0; margin-bottom: 15px;">⚙️ Coding Environment</h3>
+              
+              <div style="margin-bottom: 20px;">
+                <label style="display: block; color: #9ca3af; font-size: 13px; margin-bottom: 5px;">Runtime</label>
+                <select id="env-runtime" style="width: 100%; padding: 8px; background: #2d2d2d; color: #e0e0e0; border: 1px solid #404040; border-radius: 4px;">
+                  <option value="nodejs">Node.js</option>
+                  <option value="python">Python</option>
+                  <option value="deno">Deno</option>
+                  <option value="browser">Browser (Puppeteer)</option>
+                </select>
+              </div>
+              
+              <div style="margin-bottom: 20px;">
+                <label style="display: block; color: #9ca3af; font-size: 13px; margin-bottom: 5px;">Dependencies</label>
+                <textarea id="env-dependencies" placeholder="axios@1.6.0\nlodash@4.17.21\ncheerio@1.0.0" style="width: 100%; height: 100px; padding: 8px; background: #2d2d2d; color: #e0e0e0; border: 1px solid #404040; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 12px;"></textarea>
+                <small style="color: #6b7280; font-size: 11px;">One per line: package@version</small>
+              </div>
+              
+              <div style="margin-bottom: 20px;">
+                <label style="display: block; color: #9ca3af; font-size: 13px; margin-bottom: 5px;">
+                  <input type="checkbox" id="env-sandboxed" checked> Sandboxed Execution
+                </label>
+                <small style="color: #6b7280; font-size: 11px; display: block; margin-left: 20px;">
+                  Isolate code execution for security
+                </small>
+              </div>
+              
+              <div style="margin-bottom: 20px;">
+                <label style="display: block; color: #9ca3af; font-size: 13px; margin-bottom: 5px;">Timeout (seconds)</label>
+                <input type="number" id="env-timeout" value="30" min="5" max="300" style="width: 100%; padding: 8px; background: #2d2d2d; color: #e0e0e0; border: 1px solid #404040; border-radius: 4px;" />
+              </div>
+              
+              <div style="margin-bottom: 20px;">
+                <label style="display: block; color: #9ca3af; font-size: 13px; margin-bottom: 5px;">Memory Limit</label>
+                <select id="env-memory" style="width: 100%; padding: 8px; background: #2d2d2d; color: #e0e0e0; border: 1px solid #404040; border-radius: 4px;">
+                  <option value="256MB">256 MB</option>
+                  <option value="512MB" selected>512 MB</option>
+                  <option value="1GB">1 GB</option>
+                  <option value="2GB">2 GB</option>
+                </select>
+              </div>
+              
+              <div style="margin-bottom: 20px;">
+                <label style="display: block; color: #9ca3af; font-size: 13px; margin-bottom: 5px;">Environment Variables</label>
+                <div id="env-vars-list"></div>
+                <button id="add-env-var-btn" style="padding: 6px 12px; background: #374151; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; margin-top: 8px;">+ Add Variable</button>
+              </div>
+            </div>
             
             <!-- Test Output (hidden by default) -->
             <div id="test-output" class="test-output" style="display: none;">
@@ -378,6 +454,40 @@ export class AgentEditor {
           this.config.tools = this.config.tools.filter(t => t !== toolName);
         }
       });
+    });
+    
+    // Instructions
+    document.getElementById('add-instruction-btn')?.addEventListener('click', () => {
+      this.addInstruction();
+    });
+    
+    // Environment
+    document.getElementById('env-runtime')?.addEventListener('change', (e) => {
+      this.config.environment.runtime = e.target.value;
+      this.updateDependenciesPlaceholder();
+    });
+    
+    document.getElementById('env-dependencies')?.addEventListener('input', (e) => {
+      this.config.environment.dependencies = e.target.value
+        .split('\\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
+    });
+    
+    document.getElementById('env-sandboxed')?.addEventListener('change', (e) => {
+      this.config.environment.sandboxed = e.target.checked;
+    });
+    
+    document.getElementById('env-timeout')?.addEventListener('input', (e) => {
+      this.config.environment.timeout = parseInt(e.target.value) * 1000; // Convert to ms
+    });
+    
+    document.getElementById('env-memory')?.addEventListener('change', (e) => {
+      this.config.environment.memoryLimit = e.target.value;
+    });
+    
+    document.getElementById('add-env-var-btn')?.addEventListener('click', () => {
+      this.addEnvironmentVariable();
     });
 
     // Actions
@@ -526,13 +636,25 @@ Style:
   switchEditorTab(tab) {
     const monacoContainer = document.getElementById('monaco-editor');
     const testOutput = document.getElementById('test-output');
+    const instructionsUI = document.getElementById('instructions-ui');
+    const environmentUI = document.getElementById('environment-ui');
+    
+    // Hide all
+    monacoContainer.style.display = 'none';
+    testOutput.style.display = 'none';
+    if (instructionsUI) instructionsUI.style.display = 'none';
+    if (environmentUI) environmentUI.style.display = 'none';
     
     if (tab === 'output') {
-      monacoContainer.style.display = 'none';
       testOutput.style.display = 'block';
+    } else if (tab === 'instructions') {
+      instructionsUI.style.display = 'block';
+      this.renderInstructions();
+    } else if (tab === 'environment') {
+      environmentUI.style.display = 'block';
+      this.renderEnvironment();
     } else {
       monacoContainer.style.display = 'block';
-      testOutput.style.display = 'none';
       
       if (tab === 'context') {
         // Show context files content
@@ -913,4 +1035,183 @@ return data.response;`
   getConfig() {
     return this.config;
   }
+  
+  // Instructions Management
+  renderInstructions() {
+    const listContainer = document.getElementById('instructions-list');
+    if (!listContainer) return;
+    
+    if (this.config.instructions.length === 0) {
+      listContainer.innerHTML = `
+        <div style="text-align: center; padding: 40px; color: #6b7280;">
+          <p>No instructions added yet.</p>
+          <p style="font-size: 12px;">Click "+ Add Step" to create your first instruction.</p>
+        </div>
+      `;
+      return;
+    }
+    
+    listContainer.innerHTML = this.config.instructions.map((instruction, index) => `
+      <div class="instruction-item" style="background: #2d2d2d; border: 1px solid #404040; border-radius: 6px; padding: 12px; margin-bottom: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="background: #0e7490; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">Step ${index + 1}</span>
+            <input type="text" class="instruction-name" data-index="${index}" value="${instruction.name || ''}" placeholder="Step name..." style="background: transparent; border: none; color: #e0e0e0; font-weight: 500; font-size: 14px; outline: none; flex: 1;" />
+          </div>
+          <button class="remove-instruction" data-index="${index}" style="background: #7f1d1d; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px;">✖</button>
+        </div>
+        <textarea class="instruction-prompt" data-index="${index}" placeholder="Enter instruction prompt..." style="width: 100%; min-height: 80px; padding: 8px; background: #1e1e1e; color: #e0e0e0; border: 1px solid #404040; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 12px; resize: vertical;">${instruction.prompt || ''}</textarea>
+        <div style="display: flex; gap: 10px; margin-top: 8px; font-size: 12px;">
+          <label style="color: #9ca3af;">
+            <input type="checkbox" class="instruction-conditional" data-index="${index}" ${instruction.conditional ? 'checked' : ''}> 
+            Conditional
+          </label>
+          <label style="color: #9ca3af;">
+            <input type="checkbox" class="instruction-loop" data-index="${index}" ${instruction.loop ? 'checked' : ''}> 
+            Loop until complete
+          </label>
+        </div>
+      </div>
+    `).join('');
+    
+    // Attach event listeners
+    listContainer.querySelectorAll('.instruction-name').forEach(input => {
+      input.addEventListener('input', (e) => {
+        const index = parseInt(e.target.dataset.index);
+        this.config.instructions[index].name = e.target.value;
+      });
+    });
+    
+    listContainer.querySelectorAll('.instruction-prompt').forEach(textarea => {
+      textarea.addEventListener('input', (e) => {
+        const index = parseInt(e.target.dataset.index);
+        this.config.instructions[index].prompt = e.target.value;
+      });
+    });
+    
+    listContainer.querySelectorAll('.instruction-conditional').forEach(checkbox => {
+      checkbox.addEventListener('change', (e) => {
+        const index = parseInt(e.target.dataset.index);
+        this.config.instructions[index].conditional = e.target.checked;
+      });
+    });
+    
+    listContainer.querySelectorAll('.instruction-loop').forEach(checkbox => {
+      checkbox.addEventListener('change', (e) => {
+        const index = parseInt(e.target.dataset.index);
+        this.config.instructions[index].loop = e.target.checked;
+      });
+    });
+    
+    listContainer.querySelectorAll('.remove-instruction').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const index = parseInt(e.target.dataset.index);
+        if (confirm(`Remove step ${index + 1}?`)) {
+          this.config.instructions.splice(index, 1);
+          this.renderInstructions();
+        }
+      });
+    });
+  }
+  
+  addInstruction() {
+    this.config.instructions.push({
+      name: '',
+      prompt: '',
+      conditional: false,
+      loop: false
+    });
+    this.renderInstructions();
+  }
+  
+  // Environment Management
+  renderEnvironment() {
+    const runtimeSelect = document.getElementById('env-runtime');
+    const dependenciesTextarea = document.getElementById('env-dependencies');
+    const sandboxedCheckbox = document.getElementById('env-sandboxed');
+    const timeoutInput = document.getElementById('env-timeout');
+    const memorySelect = document.getElementById('env-memory');
+    
+    if (runtimeSelect) runtimeSelect.value = this.config.environment.runtime;
+    if (dependenciesTextarea) dependenciesTextarea.value = this.config.environment.dependencies.join('\\n');
+    if (sandboxedCheckbox) sandboxedCheckbox.checked = this.config.environment.sandboxed;
+    if (timeoutInput) timeoutInput.value = this.config.environment.timeout / 1000;
+    if (memorySelect) memorySelect.value = this.config.environment.memoryLimit;
+    
+    this.renderEnvironmentVariables();
+  }
+  
+  renderEnvironmentVariables() {
+    const listContainer = document.getElementById('env-vars-list');
+    if (!listContainer) return;
+    
+    const envVars = this.config.environment.environmentVars || {};
+    const entries = Object.entries(envVars);
+    
+    if (entries.length === 0) {
+      listContainer.innerHTML = '<p style="color: #6b7280; font-size: 12px; margin: 8px 0;">No environment variables</p>';
+      return;
+    }
+    
+    listContainer.innerHTML = entries.map(([key, value]) => `
+      <div style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
+        <input type="text" class="env-var-key" value="${key}" placeholder="KEY" style="flex: 1; padding: 6px; background: #2d2d2d; color: #e0e0e0; border: 1px solid #404040; border-radius: 4px; font-size: 12px;" />
+        <span style="color: #6b7280;">=</span>
+        <input type="text" class="env-var-value" data-key="${key}" value="${value}" placeholder="value" style="flex: 2; padding: 6px; background: #2d2d2d; color: #e0e0e0; border: 1px solid #404040; border-radius: 4px; font-size: 12px;" />
+        <button class="remove-env-var" data-key="${key}" style="padding: 4px 8px; background: #374151; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;">✖</button>
+      </div>
+    `).join('');
+    
+    // Attach event listeners
+    listContainer.querySelectorAll('.env-var-key').forEach((input, index) => {
+      const oldKey = entries[index][0];
+      input.addEventListener('change', (e) => {
+        const newKey = e.target.value.trim();
+        if (newKey && newKey !== oldKey) {
+          const value = this.config.environment.environmentVars[oldKey];
+          delete this.config.environment.environmentVars[oldKey];
+          this.config.environment.environmentVars[newKey] = value;
+          this.renderEnvironmentVariables();
+        }
+      });
+    });
+    
+    listContainer.querySelectorAll('.env-var-value').forEach(input => {
+      input.addEventListener('input', (e) => {
+        const key = e.target.dataset.key;
+        this.config.environment.environmentVars[key] = e.target.value;
+      });
+    });
+    
+    listContainer.querySelectorAll('.remove-env-var').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const key = e.target.dataset.key;
+        delete this.config.environment.environmentVars[key];
+        this.renderEnvironmentVariables();
+      });
+    });
+  }
+  
+  addEnvironmentVariable() {
+    const key = prompt('Environment variable name:');
+    if (key && key.trim()) {
+      this.config.environment.environmentVars[key.trim()] = '';
+      this.renderEnvironmentVariables();
+    }
+  }
+  
+  updateDependenciesPlaceholder() {
+    const textarea = document.getElementById('env-dependencies');
+    if (!textarea) return;
+    
+    const placeholders = {
+      'nodejs': 'axios@1.6.0\\nlodash@4.17.21\\ncheerio@1.0.0',
+      'python': 'requests==2.31.0\\nbeautifulsoup4==4.12.0\\npandas==2.0.0',
+      'deno': 'https://deno.land/x/oak@v12.6.1/mod.ts\\nhttps://esm.sh/cheerio@1.0.0',
+      'browser': 'puppeteer@21.0.0\\ncheerio@1.0.0'
+    };
+    
+    textarea.placeholder = placeholders[this.config.environment.runtime] || '';
+  }
 }
+
