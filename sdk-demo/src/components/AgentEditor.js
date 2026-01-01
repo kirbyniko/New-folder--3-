@@ -263,7 +263,15 @@ export class AgentEditor {
             
             <!-- Environment UI (hidden by default) -->
             <div id="environment-ui" style="display: none; padding: 15px; background: #1e1e1e; height: 100%; overflow-y: auto;">
-              <h3 style="color: #e0e0e0; margin-bottom: 15px;">⚙️ Coding Environment</h3>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="color: #e0e0e0; margin: 0;">⚙️ Coding Environment</h3>
+                <button id="auto-configure-env-btn" style="padding: 8px 16px; background: #7c3aed; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 500;">
+                  ✨ Auto-Configure
+                </button>
+              </div>
+              <p style="color: #9ca3af; font-size: 12px; margin-bottom: 15px;">
+                Let AI analyze your prompts to suggest optimal runtime and dependencies
+              </p>
               
               <div style="margin-bottom: 20px;">
                 <label style="display: block; color: #9ca3af; font-size: 13px; margin-bottom: 5px;">Runtime</label>
@@ -488,6 +496,10 @@ export class AgentEditor {
     
     document.getElementById('add-env-var-btn')?.addEventListener('click', () => {
       this.addEnvironmentVariable();
+    });
+    
+    document.getElementById('auto-configure-env-btn')?.addEventListener('click', () => {
+      this.autoConfigureEnvironment();
     });
 
     // Actions
@@ -1212,6 +1224,113 @@ return data.response;`
     };
     
     textarea.placeholder = placeholders[this.config.environment.runtime] || '';
+  }
+  
+  async autoConfigureEnvironment() {
+    const btn = document.getElementById('auto-configure-env-btn');
+    if (!btn) return;
+    
+    // Disable button and show loading
+    btn.disabled = true;
+    btn.innerHTML = '⏳ Analyzing...';
+    
+    try {
+      // Gather context from agent configuration
+      const context = {
+        systemPrompt: this.config.systemPrompt,
+        instructions: this.config.instructions,
+        mode: this.config.mode,
+        tools: this.config.tools
+      };
+      
+      // Create analysis prompt
+      const analysisPrompt = `Analyze this AI agent configuration and suggest the optimal coding environment:
+
+**Agent Mode:** ${context.mode}
+
+**System Prompt:**
+${context.systemPrompt}
+
+**Instructions:**
+${context.instructions.map((inst, i) => `${i + 1}. ${inst.name}: ${inst.prompt}`).join('\\n')}
+
+**Available Tools:** ${context.tools.join(', ') || 'None'}
+
+Based on this, determine:
+1. Best runtime (nodejs/python/deno/browser)
+2. Required dependencies with exact versions
+3. Recommended timeout (5-300 seconds)
+4. Recommended memory limit (256MB/512MB/1GB/2GB)
+5. Whether sandboxing should be enabled
+
+Respond ONLY with valid JSON in this format:
+{
+  "runtime": "nodejs",
+  "dependencies": ["axios@1.6.0", "cheerio@1.0.0"],
+  "timeout": 30,
+  "memoryLimit": "512MB",
+  "sandboxed": true,
+  "reasoning": "Short explanation of choices"
+}`;
+
+      // Call Ollama API
+      const response = await fetch('http://localhost:11434/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: this.config.model || 'qwen2.5-coder:14b',
+          prompt: analysisPrompt,
+          stream: false
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to get AI recommendation');
+      }
+      
+      const data = await response.json();
+      const responseText = data.response;
+      
+      // Extract JSON from response
+      const jsonMatch = responseText.match(/\\{[\\s\\S]*\\}/);
+      if (!jsonMatch) {
+        throw new Error('Could not parse AI response');
+      }
+      
+      const suggestion = JSON.parse(jsonMatch[0]);
+      
+      // Apply suggestions with confirmation
+      const confirmMsg = `AI suggests:\\n\\n` +
+        `Runtime: ${suggestion.runtime}\\n` +
+        `Dependencies: ${suggestion.dependencies.join(', ')}\\n` +
+        `Timeout: ${suggestion.timeout}s\\n` +
+        `Memory: ${suggestion.memoryLimit}\\n` +
+        `Sandboxed: ${suggestion.sandboxed}\\n\\n` +
+        `Reasoning: ${suggestion.reasoning}\\n\\n` +
+        `Apply these settings?`;
+      
+      if (confirm(confirmMsg)) {
+        // Apply configuration
+        this.config.environment.runtime = suggestion.runtime;
+        this.config.environment.dependencies = suggestion.dependencies;
+        this.config.environment.timeout = suggestion.timeout * 1000;
+        this.config.environment.memoryLimit = suggestion.memoryLimit;
+        this.config.environment.sandboxed = suggestion.sandboxed;
+        
+        // Re-render environment UI
+        this.renderEnvironment();
+        
+        alert('✅ Environment auto-configured successfully!');
+      }
+      
+    } catch (error) {
+      console.error('Auto-configure error:', error);
+      alert(`Failed to auto-configure: ${error.message}\\n\\nPlease configure manually or check that Ollama is running.`);
+    } finally {
+      // Re-enable button
+      btn.disabled = false;
+      btn.innerHTML = '✨ Auto-Configure';
+    }
   }
 }
 
