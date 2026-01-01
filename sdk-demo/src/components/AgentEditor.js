@@ -2126,10 +2126,42 @@ Style:
             const match = response.match(/```\s*([\s\S]*?)```/);
             if (match) jsonStr = match[1].trim();
           }
-          // Look for JSON object anywhere in response
+          // Look for JSON object anywhere in response - use brace counting to handle nested objects
           else {
-            const match = response.match(/\{[\s\S]*?"tool"[\s\S]*?"params"[\s\S]*?\}/);
-            if (match) jsonStr = match[0];
+            const startIdx = response.indexOf('{');
+            if (startIdx !== -1) {
+              let braceCount = 0;
+              let inString = false;
+              let escapeNext = false;
+              
+              for (let i = startIdx; i < response.length; i++) {
+                const char = response[i];
+                
+                if (escapeNext) {
+                  escapeNext = false;
+                  continue;
+                }
+                
+                if (char === '\\') {
+                  escapeNext = true;
+                  continue;
+                }
+                
+                if (char === '"' && !inString) {
+                  inString = true;
+                } else if (char === '"' && inString) {
+                  inString = false;
+                } else if (!inString) {
+                  if (char === '{') braceCount++;
+                  if (char === '}') braceCount--;
+                  
+                  if (braceCount === 0) {
+                    jsonStr = response.substring(startIdx, i + 1);
+                    break;
+                  }
+                }
+              }
+            }
           }
           
           if (jsonStr) {
@@ -3227,19 +3259,41 @@ Respond with JSON: {"satisfied": true/false, "learning": "what I learned", "next
             // Find the opening { before "tool"
             let start = result.response.lastIndexOf('{', toolIndex);
             if (start !== -1) {
-              // Find matching closing }
+              // Find matching closing } using proper brace counting (handle strings)
               let braceCount = 0;
+              let inString = false;
+              let escapeNext = false;
               let end = -1;
+              
               for (let i = start; i < result.response.length; i++) {
-                if (result.response[i] === '{') braceCount++;
-                if (result.response[i] === '}') {
-                  braceCount--;
-                  if (braceCount === 0) {
-                    end = i + 1;
-                    break;
+                const char = result.response[i];
+                
+                if (escapeNext) {
+                  escapeNext = false;
+                  continue;
+                }
+                
+                if (char === '\\') {
+                  escapeNext = true;
+                  continue;
+                }
+                
+                if (char === '"' && !inString) {
+                  inString = true;
+                } else if (char === '"' && inString) {
+                  inString = false;
+                } else if (!inString) {
+                  if (char === '{') braceCount++;
+                  if (char === '}') {
+                    braceCount--;
+                    if (braceCount === 0) {
+                      end = i + 1;
+                      break;
+                    }
                   }
                 }
               }
+              
               if (end !== -1) {
                 jsonStr = result.response.substring(start, end);
               }
