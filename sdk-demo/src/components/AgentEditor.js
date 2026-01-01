@@ -82,7 +82,13 @@ export class AgentEditor {
       enableChainOfThought: true,        // Show reasoning steps
       enableToolAnalysis: true,          // Analyze tool results
       enablePersistentMemory: true,      // Remember across sessions
-      conversationHistory: []            // Full history for learning
+      enableLLMValidation: false,        // LLM-powered validation (slower but accurate)
+      conversationHistory: [],           // Full history for learning
+      // Runtime tracking
+      currentPlan: null,                 // Active plan
+      planProgress: [],                  // Plan execution tracking
+      toolEffectiveness: {},             // Success rate per tool
+      lastReflection: null               // Last reflection for context continuity
     };
   }
 
@@ -2137,6 +2143,29 @@ Style:
               metadata: `⏱️ ${toolResult.duration}ms`
             });
             
+            // Track plan progress
+            if (this.config.currentPlan && this.config.planProgress) {
+              const step = this.config.planProgress.find(s => 
+                s.action === toolCallMatch.tool && !s.completed
+              );
+              if (step) {
+                step.completed = true;
+                step.result = toolResult.success ? 'success' : 'failed';
+                console.log(`📋 Plan progress: Step ${step.step} (${step.action}) - ${step.result}`);
+              }
+            }
+            
+            // Track tool effectiveness
+            if (this.config.enableToolAnalysis) {
+              if (!this.config.toolEffectiveness[toolCallMatch.tool]) {
+                this.config.toolEffectiveness[toolCallMatch.tool] = { attempts: 0, successes: 0 };
+              }
+              this.config.toolEffectiveness[toolCallMatch.tool].attempts++;
+              if (toolResult.success) {
+                this.config.toolEffectiveness[toolCallMatch.tool].successes++;
+              }
+            }
+            
             // EXPLICIT REFLECTION (if enabled)
             if (this.config.enableExplicitReflection) {
               this.renderChatInterface(container);
@@ -2313,10 +2342,9 @@ Style:
   }
   
   async validateResponse(response, conversation) {
-    // Simple validation heuristics (avoid calling LLM for speed)
     const userQuery = conversation.find(m => m.role === 'user')?.content || '';
     
-    // Check 1: Response is not too short (at least 20 chars)
+    // Quick heuristic checks first
     if (response.length < 20) {
       console.log('⚠️ Validation: Response too short');
       return false;
@@ -2343,25 +2371,95 @@ Style:
       return false;
     }
     
+    // LLM-powered validation for quality (optional, slower)
+    if (this.config.enableLLMValidation && this.config.currentIteration > 2) {
+      console.log('🔍 Running LLM validation...');
+      try {
+        const validationPrompt = `Validate if this response properly answers the user's question.
+
+User Question: ${userQuery}
+Agent Response: ${response}
+
+Respond with JSON: {"valid": true/false, "reason": "why"}\n\nONLY JSON.`;
+        
+        const validationResult = await fetch('http://localhost:11434/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: this.config.model || 'qwen2.5-coder:14b',
+            prompt: validationPrompt,
+            options: { temperature: 0.2, num_predict: 128 },
+            stream: false
+          })
+        });
+        
+        const result = await validationResult.json();
+        const match = result.response.match(/\{[\s\S]*"valid"[\s\S]*\}/);
+        
+        if (match) {
+          const validation = JSON.parse(match[0]);
+          console.log(`🔍 LLM Validation: ${validation.valid ? '✅' : '❌'} - ${validation.reason}`);
+          return validation.valid;
+        }
+      } catch (e) {
+        console.warn('⚠️ LLM validation failed:', e.message);
+      }
+    }
+    
     console.log('✅ Validation: Response appears complete');
     return true;
+  }
+  
+  findSimilarSuccessPattern(userQuery) {
+    if (!this.config.successPatterns || this.config.successPatterns.length === 0) {
+      return null;
+    }
+    
+    // Simple similarity: keyword matching
+    const queryWords = userQuery.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+    
+    let bestMatch = null;
+    let bestScore = 0;
+    
+    this.config.successPatterns.forEach(pattern => {
+      const patternWords = pattern.task.toLowerCase().split(/\s+/);
+      const matches = queryWords.filter(w => patternWords.some(pw => pw.includes(w) || w.includes(pw)));
+      const score = matches.length / queryWords.length;
+      
+      if (score > bestScore && score > 0.3) {
+        bestScore = score;
+        bestMatch = pattern;
+      }
+    });
+    
+    if (bestMatch) {
+      console.log(`💡 Found similar past success: "${bestMatch.task}" (${Math.round(bestScore * 100)}% match)`);
+      console.log(`   Approach used: ${bestMatch.approach.join(' → ')}`);
+    }
+    
+    return bestMatch;
   }
   
   async createExplicitPlan(userQuery) {
     if (!this.config.enableExplicitPlanning) return null;
     
+    // Check if we've solved similar before
+    const similarPattern = this.findSimilarSuccessPattern(userQuery);
+    
     console.log('📋 Creating explicit plan...');
     
-    const planningPrompt = `You are a strategic planner. Analyze this user request and create a step-by-step plan.
+    let planningPrompt = `You are a strategic planner. Analyze this user request and create a step-by-step plan.
 
 User Request: ${userQuery}
 
-Available Tools: ${this.config.tools.join(', ')}
-
-Create a JSON plan with this format:
-{"steps": [{"step": 1, "action": "tool_name", "reason": "why this step"}]}
-
-Respond with ONLY the JSON.`;
+Available Tools: ${this.config.tools.join(', ')}`;
+    
+    // Include similar successful approach if found
+    if (similarPattern) {
+      planningPrompt += `\n\nPREVIOUS SUCCESS: For similar query "${similarPattern.task}", this approach worked:\n${similarPattern.approach.join(' → ')} (${similarPattern.iterations} iterations)\nConsider using a similar strategy.`;
+    }
+    
+    planningPrompt += `\n\nCreate a JSON plan with this format:\n{"steps": [{"step": 1, "action": "tool_name", "reason": "why this step"}]}\n\nRespond with ONLY the JSON.`;
     
     try {
       const response = await fetch('http://localhost:11434/api/generate', {
@@ -2381,6 +2479,16 @@ Respond with ONLY the JSON.`;
       if (planMatch) {
         const plan = JSON.parse(planMatch[0]);
         console.log('📋 Plan created:', plan);
+        
+        // Store plan for tracking execution
+        this.config.currentPlan = plan;
+        this.config.planProgress = plan.steps.map(s => ({
+          step: s.step,
+          action: s.action,
+          completed: false,
+          result: null
+        }));
+        
         return plan;
       }
     } catch (e) {
@@ -2426,6 +2534,16 @@ Respond with JSON: {"satisfied": true/false, "learning": "what I learned", "next
       if (reflectionMatch) {
         const reflection = JSON.parse(reflectionMatch[0]);
         console.log('🤔 Reflection:', reflection);
+        
+        // Store reflection for use in next iteration
+        this.config.lastReflection = {
+          tool: toolName,
+          learning: reflection.learning,
+          nextAction: reflection.nextAction,
+          satisfied: reflection.satisfied,
+          timestamp: Date.now()
+        };
+        
         return reflection;
       }
     } catch (e) {
@@ -2685,10 +2803,19 @@ Respond with JSON: {"satisfied": true/false, "learning": "what I learned", "next
         }
       }
       
+      // Add last reflection to maintain context
+      if (this.config.lastReflection) {
+        enhancedPrompt += `\n\n=== YOUR LAST REFLECTION ===\n`;
+        enhancedPrompt += `Tool: ${this.config.lastReflection.tool}\n`;
+        enhancedPrompt += `Learning: ${this.config.lastReflection.learning}\n`;
+        enhancedPrompt += `Planned Next: ${this.config.lastReflection.nextAction}\n`;
+        enhancedPrompt += `Satisfied: ${this.config.lastReflection.satisfied ? 'Yes' : 'No'}\n\n`;
+      }
+      
       // Add learning history (failures and successes)
       if (this.config.failureLog && this.config.failureLog.length > 0) {
         const recentFailures = this.config.failureLog.slice(-3);
-        enhancedPrompt += `\n\n=== PREVIOUS FAILURES (AVOID THESE) ===\n`;
+        enhancedPrompt += `=== PREVIOUS FAILURES (AVOID THESE) ===\n`;
         recentFailures.forEach((failure, idx) => {
           enhancedPrompt += `${idx + 1}. Tool: ${failure.tool}, Error: ${failure.error}\n`;
         });
