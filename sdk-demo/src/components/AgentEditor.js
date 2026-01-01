@@ -2782,6 +2782,10 @@ Available Tools: ${this.config.tools.join(', ')}`;
     planningPrompt += `\n\nCreate a JSON plan with this format:\n{"steps": [{"step": 1, "action": "tool_name", "reason": "why this step"}]}\n\nRespond with ONLY the JSON.`;
     
     try {
+      console.log('📋 [DEBUG] Fetching from Ollama for planning...');
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
+      
       const response = await fetch('http://localhost:11434/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -2790,10 +2794,16 @@ Available Tools: ${this.config.tools.join(', ')}`;
           prompt: planningPrompt,
           options: { temperature: 0.3, num_predict: 512 },
           stream: false
-        })
+        }),
+        signal: controller.signal
       });
       
+      clearTimeout(timeout);
+      console.log('📋 [DEBUG] Got response from Ollama');
+      
       const result = await response.json();
+      console.log('📋 [DEBUG] Response text length:', result.response?.length);
+      
       const planMatch = result.response.match(/\{[\s\S]*"steps"[\s\S]*\}/);
       
       if (planMatch) {
@@ -2837,6 +2847,10 @@ Reflect:
 Respond with JSON: {"satisfied": true/false, "learning": "what I learned", "nextAction": "what to do next"}`;
     
     try {
+      console.log('🤔 [DEBUG] Fetching from Ollama for reflection...');
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 20000); // 20s timeout
+      
       const response = await fetch('http://localhost:11434/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -2845,10 +2859,16 @@ Respond with JSON: {"satisfied": true/false, "learning": "what I learned", "next
           prompt: reflectionPrompt,
           options: { temperature: 0.3, num_predict: 256 },
           stream: false
-        })
+        }),
+        signal: controller.signal
       });
       
+      clearTimeout(timeout);
+      console.log('🤔 [DEBUG] Got response from Ollama');
+      
       const result = await response.json();
+      console.log('🤔 [DEBUG] Response text length:', result.response?.length);
+      
       const reflectionMatch = result.response.match(/\{[\s\S]*"satisfied"[\s\S]*\}/);
       
       if (reflectionMatch) {
@@ -3079,8 +3099,16 @@ Respond with JSON: {"satisfied": true/false, "learning": "what I learned", "next
     
     try {
       // EXPLICIT PLANNING PHASE (if enabled)
+      console.log('🔍 [DEBUG] Planning check:', {
+        enableExplicitPlanning: this.config.enableExplicitPlanning,
+        toolsLength: this.config.tools.length,
+        tools: this.config.tools
+      });
+      
       if (this.config.enableExplicitPlanning && this.config.tools.length > 0) {
+        console.log('📋 [DEBUG] Starting planning phase...');
         const plan = await this.createExplicitPlan(message);
+        console.log('📋 [DEBUG] Plan result:', plan);
         if (plan && plan.steps) {
           this.testConversation = this.testConversation.filter(msg => !msg.loading);
           this.testConversation.push({
