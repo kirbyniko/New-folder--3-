@@ -71,6 +71,9 @@ export class AgentEditor {
           <input type="text" id="agent-name" class="agent-name-input" 
                  value="${this.config.name}" placeholder="Agent Name">
           <div class="editor-actions">
+            <button id="ai-optimize-all-btn" class="btn" style="background: #7c3aed; color: white; font-weight: 500;">
+              ✨ AI Optimize All
+            </button>
             <button id="template-btn" class="btn btn-secondary">
               📋 Templates
             </button>
@@ -88,6 +91,63 @@ export class AgentEditor {
             </button>
           </div>
         </div>
+        
+        <!-- AI Optimization Panel (Global, shown as modal) -->
+        <div id="ai-optimize-panel" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #2d2d2d; border: 2px solid #7c3aed; border-radius: 8px; padding: 20px; z-index: 1000; box-shadow: 0 10px 40px rgba(0,0,0,0.5); min-width: 500px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="margin: 0; color: #e0e0e0; font-size: 18px;">🤖 AI Optimization</h3>
+            <button id="close-optimize-panel" style="background: transparent; border: none; color: #9ca3af; cursor: pointer; font-size: 20px; padding: 0; width: 30px; height: 30px;">✖</button>
+          </div>
+          
+          <p style="color: #9ca3af; font-size: 13px; margin-bottom: 15px;">
+            Select which aspects of your agent AI should analyze and optimize:
+          </p>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+            <label style="display: flex; align-items: center; gap: 8px; color: #e0e0e0; font-size: 14px; cursor: pointer; padding: 8px; background: #1e1e1e; border-radius: 4px;">
+              <input type="checkbox" id="opt-system-prompt" checked style="cursor: pointer; width: 16px; height: 16px;">
+              📝 System Prompt
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; color: #e0e0e0; font-size: 14px; cursor: pointer; padding: 8px; background: #1e1e1e; border-radius: 4px;">
+              <input type="checkbox" id="opt-instructions" checked style="cursor: pointer; width: 16px; height: 16px;">
+              📋 Instructions
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; color: #e0e0e0; font-size: 14px; cursor: pointer; padding: 8px; background: #1e1e1e; border-radius: 4px;">
+              <input type="checkbox" id="opt-environment" checked style="cursor: pointer; width: 16px; height: 16px;">
+              ⚙️ Environment
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; color: #e0e0e0; font-size: 14px; cursor: pointer; padding: 8px; background: #1e1e1e; border-radius: 4px;">
+              <input type="checkbox" id="opt-context-files" style="cursor: pointer; width: 16px; height: 16px;">
+              📁 Context Files
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; color: #e0e0e0; font-size: 14px; cursor: pointer; padding: 8px; background: #1e1e1e; border-radius: 4px;">
+              <input type="checkbox" id="opt-tools" checked style="cursor: pointer; width: 16px; height: 16px;">
+              🛠️ Tools
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; color: #e0e0e0; font-size: 14px; cursor: pointer; padding: 8px; background: #1e1e1e; border-radius: 4px;">
+              <input type="checkbox" id="opt-settings" checked style="cursor: pointer; width: 16px; height: 16px;">
+              ⚡ Settings
+            </label>
+          </div>
+          
+          <div style="background: #1e1e1e; border-radius: 6px; padding: 12px; margin-bottom: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="color: #9ca3af; font-size: 13px;">Token Impact:</span>
+              <span id="token-impact" style="color: #10b981; font-size: 14px; font-weight: 600;">Calculating...</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="color: #9ca3af; font-size: 13px;">Current Tokens:</span>
+              <span id="current-tokens-display" style="color: #e0e0e0; font-size: 13px; font-weight: 500;">0</span>
+            </div>
+          </div>
+          
+          <button id="run-ai-optimize" style="width: 100%; padding: 12px; background: #7c3aed; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px;">
+            🚀 Run AI Optimization
+          </button>
+        </div>
+        
+        <!-- Modal backdrop -->
+        <div id="ai-optimize-backdrop" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 999;"></div>
 
         <!-- Main Layout -->
         <div class="editor-layout">
@@ -263,65 +323,9 @@ export class AgentEditor {
             
             <!-- Environment UI (hidden by default) -->
             <div id="environment-ui" style="display: none; padding: 15px; background: #1e1e1e; height: 100%; overflow-y: auto;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h3 style="color: #e0e0e0; margin: 0;">⚙️ Coding Environment</h3>
-                <button id="auto-configure-env-btn" style="padding: 8px 16px; background: #7c3aed; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 500;">
-                  ✨ AI Optimize All
-                </button>
-              </div>
-              
-              <!-- AI Optimization Panel -->
-              <div id="ai-optimize-panel" style="display: none; background: #2d2d2d; border: 1px solid #7c3aed; border-radius: 6px; padding: 15px; margin-bottom: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                  <h4 style="margin: 0; color: #e0e0e0; font-size: 14px;">🤖 What should AI optimize?</h4>
-                  <button id="close-optimize-panel" style="background: transparent; border: none; color: #9ca3af; cursor: pointer; font-size: 18px; padding: 0;">✖</button>
-                </div>
-                
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px;">
-                  <label style="display: flex; align-items: center; gap: 6px; color: #e0e0e0; font-size: 13px; cursor: pointer;">
-                    <input type="checkbox" id="opt-system-prompt" checked style="cursor: pointer;">
-                    System Prompt
-                  </label>
-                  <label style="display: flex; align-items: center; gap: 6px; color: #e0e0e0; font-size: 13px; cursor: pointer;">
-                    <input type="checkbox" id="opt-instructions" checked style="cursor: pointer;">
-                    Instructions
-                  </label>
-                  <label style="display: flex; align-items: center; gap: 6px; color: #e0e0e0; font-size: 13px; cursor: pointer;">
-                    <input type="checkbox" id="opt-environment" checked style="cursor: pointer;">
-                    Environment
-                  </label>
-                  <label style="display: flex; align-items: center; gap: 6px; color: #e0e0e0; font-size: 13px; cursor: pointer;">
-                    <input type="checkbox" id="opt-context-files" style="cursor: pointer;">
-                    Context Files
-                  </label>
-                  <label style="display: flex; align-items: center; gap: 6px; color: #e0e0e0; font-size: 13px; cursor: pointer;">
-                    <input type="checkbox" id="opt-tools" checked style="cursor: pointer;">
-                    Tools
-                  </label>
-                  <label style="display: flex; align-items: center; gap: 6px; color: #e0e0e0; font-size: 13px; cursor: pointer;">
-                    <input type="checkbox" id="opt-settings" checked style="cursor: pointer;">
-                    Settings (temp, tokens)
-                  </label>
-                </div>
-                
-                <div style="background: #1e1e1e; border-radius: 4px; padding: 10px; margin-bottom: 12px;">
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                    <span style="color: #9ca3af; font-size: 12px;">Token Impact:</span>
-                    <span id="token-impact" style="color: #10b981; font-size: 13px; font-weight: 600;">Calculating...</span>
-                  </div>
-                  <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="color: #9ca3af; font-size: 12px;">Current Tokens:</span>
-                    <span id="current-tokens-display" style="color: #e0e0e0; font-size: 12px;">0</span>
-                  </div>
-                </div>
-                
-                <button id="run-ai-optimize" style="width: 100%; padding: 10px; background: #7c3aed; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">
-                  🚀 Run AI Optimization
-                </button>
-              </div>
-              
+              <h3 style="color: #e0e0e0; margin-bottom: 15px;">⚙️ Coding Environment</h3>
               <p style="color: #9ca3af; font-size: 12px; margin-bottom: 15px;">
-                Let AI analyze your prompts to suggest optimal runtime and dependencies
+                Configure the runtime environment for code execution
               </p>
               
               <div style="margin-bottom: 20px;">
@@ -550,12 +554,16 @@ export class AgentEditor {
     });
     
     // AI Optimization
-    document.getElementById('auto-configure-env-btn')?.addEventListener('click', () => {
+    document.getElementById('ai-optimize-all-btn')?.addEventListener('click', () => {
       this.showOptimizationPanel();
     });
     
     document.getElementById('close-optimize-panel')?.addEventListener('click', () => {
-      document.getElementById('ai-optimize-panel').style.display = 'none';
+      this.hideOptimizationPanel();
+    });
+    
+    document.getElementById('ai-optimize-backdrop')?.addEventListener('click', () => {
+      this.hideOptimizationPanel();
     });
     
     document.getElementById('run-ai-optimize')?.addEventListener('click', () => {
@@ -1295,10 +1303,19 @@ return data.response;`
   
   showOptimizationPanel() {
     const panel = document.getElementById('ai-optimize-panel');
-    if (panel) {
+    const backdrop = document.getElementById('ai-optimize-backdrop');
+    if (panel && backdrop) {
       panel.style.display = 'block';
+      backdrop.style.display = 'block';
       this.updateTokenImpact();
     }
+  }
+  
+  hideOptimizationPanel() {
+    const panel = document.getElementById('ai-optimize-panel');
+    const backdrop = document.getElementById('ai-optimize-backdrop');
+    if (panel) panel.style.display = 'none';
+    if (backdrop) backdrop.style.display = 'none';
   }
   
   updateTokenImpact() {
@@ -1526,7 +1543,7 @@ Provide optimized configuration as JSON:
         
         this.updateTokenEstimate();
         alert('✅ Agent optimized successfully!');
-        document.getElementById('ai-optimize-panel').style.display = 'none';
+        this.hideOptimizationPanel();
       }
       
     } catch (error) {
