@@ -74,20 +74,36 @@ class AgentStudio {
     // Listen for template selection
     window.addEventListener('template-selected', (e) => {
       const template = e.detail;
-      console.log('📋 Template selected:', template);
+      console.log('📋 Template selected event received:', template);
       
       // Switch to Builder tab
-      document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
-      document.querySelector('[data-tab="builder"]').classList.add('active');
+      console.log('🔄 Switching to Builder tab...');
+      document.querySelectorAll('.sidebar-tab').forEach(t => {
+        console.log('  Tab:', t.dataset.tab, 'removing active');
+        t.classList.remove('active');
+      });
+      const builderTab = document.querySelector('[data-tab="builder"]');
+      console.log('  Builder tab element:', builderTab);
+      if (builderTab) {
+        builderTab.classList.add('active');
+      }
+      
       document.querySelectorAll('.sidebar-content').forEach(c => c.style.display = 'none');
-      document.getElementById('builder-tab').style.display = 'block';
+      const builderContent = document.getElementById('builder-tab');
+      console.log('  Builder content element:', builderContent);
+      if (builderContent) {
+        builderContent.style.display = 'block';
+      }
       
       // Populate builder fields with template data
       const urlInput = document.getElementById('scraper-url');
       const selectorsTextarea = document.getElementById('scraper-selectors');
       
+      console.log('📝 Populating fields:', { urlInput, selectorsTextarea });
+      
       if (urlInput && template.example_url) {
         urlInput.value = template.example_url;
+        console.log('  ✅ URL set to:', template.example_url);
       }
       
       if (selectorsTextarea && template.selectors) {
@@ -96,10 +112,12 @@ class AgentStudio {
           ? JSON.parse(template.selectors) 
           : template.selectors;
         selectorsTextarea.value = JSON.stringify(selectorsObj, null, 2);
+        console.log('  ✅ Selectors populated');
       }
       
       // Show success message
       console.log('✅ Builder populated with template data');
+      alert(`✅ Template "${template.name}" loaded! Check the Builder tab.`);
     });
   }
 

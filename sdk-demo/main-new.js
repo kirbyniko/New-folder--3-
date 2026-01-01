@@ -5,14 +5,15 @@
  */
 
 import { UniversalAgent, SystemCapabilityDetector } from 'universal-agent-sdk';
-import { AgentEditor } from './src/components/AgentEditor.js';
+// AgentEditor removed - not used in new UI
+// import { AgentEditor } from './src/components/AgentEditor.js';
 import { ChatInterface } from './src/components/ChatInterface.js';
 import { FileManager } from './src/components/FileManager.js';
 import { ScraperBuilder } from './src/components/ScraperBuilder.js';
 import { MetricsDashboard } from './src/components/MetricsDashboard.js';
 
 // Global instances
-let agentEditor = null;
+// let agentEditor = null; // Removed - not used in new UI
 let chatInterface = null;
 let fileManager = null;
 let scraperBuilder = null;
@@ -43,9 +44,7 @@ function initializeNavigation() {
         
         // Initialize component if needed
         switch(tab) {
-          case 'agent-editor':
-            if (!agentEditor) initAgentEditor();
-            break;
+          // case 'agent-editor': removed - not used in new UI
           case 'chat':
             if (!chatInterface) initChatInterface();
             break;
@@ -69,24 +68,25 @@ function initializeComponents() {
   console.log('🚀 SDK Demo initialized - navigate through tabs to explore features');
 }
 
-function initAgentEditor() {
-  console.log('Initializing Agent Editor...');
-  agentEditor = new AgentEditor('agent-editor-container');
-  
-  // Update chat interface when agent config changes
-  window.addEventListener('agent-config-updated', (e) => {
-    currentAgentConfig = e.detail;
-    if (chatInterface) {
-      chatInterface.agentConfig = currentAgentConfig;
-    }
-  });
-}
+// AgentEditor initialization removed - not used in new UI
+// function initAgentEditor() {
+//   console.log('Initializing Agent Editor...');
+//   agentEditor = new AgentEditor('agent-editor-container');
+//   
+//   // Update chat interface when agent config changes
+//   window.addEventListener('agent-config-updated', (e) => {
+//     currentAgentConfig = e.detail;
+//     if (chatInterface) {
+//       chatInterface.agentConfig = currentAgentConfig;
+//     }
+//   });
+// }
 
 function initChatInterface() {
   console.log('Initializing Chat Interface...');
   
   // Use current agent config or default
-  const config = currentAgentConfig || agentEditor?.getConfig() || {
+  const config = currentAgentConfig || {
     systemPrompt: 'You are a helpful AI assistant.',
     model: 'qwen2.5-coder:14b',
     temperature: 0.7,

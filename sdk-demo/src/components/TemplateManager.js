@@ -314,12 +314,20 @@ export class TemplateManager {
     container.querySelectorAll('.use-template-btn').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();
+        e.preventDefault();
         const id = btn.dataset.id;
-        const template = this.templates.find(t => t.id === id);
+        console.log('🔍 Use template clicked, ID:', id, 'Type:', typeof id);
+        // Convert to number for comparison if needed
+        const template = this.templates.find(t => String(t.id) === String(id));
+        console.log('📋 Found template:', template);
         if (template) {
           // Emit event for builder to use
+          console.log('📤 Dispatching template-selected event');
           window.dispatchEvent(new CustomEvent('template-selected', { detail: template }));
-          alert(`✅ Template "${template.name}" loaded! Switch to the Builder tab to configure your scraper.`);
+          console.log('✅ Event dispatched successfully');
+        } else {
+          console.error('❌ Template not found for ID:', id);
+          console.error('Available templates:', this.templates.map(t => ({ id: t.id, name: t.name })));
         }
       });
     });
@@ -328,8 +336,9 @@ export class TemplateManager {
     container.querySelectorAll('.delete-template-btn').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();
+        e.preventDefault();
         const id = btn.dataset.id;
-        const template = this.templates.find(t => t.id === id);
+        const template = this.templates.find(t => String(t.id) === String(id));
         
         if (confirm(`Delete template "${template.name}"?`)) {
           try {
@@ -340,7 +349,7 @@ export class TemplateManager {
           }
           
           // Remove from local array
-          this.templates = this.templates.filter(t => t.id !== id);
+          this.templates = this.templates.filter(t => String(t.id) !== String(id));
           this.saveTemplates();
           this.renderTemplatesList();
         }
