@@ -3173,6 +3173,26 @@ Respond with JSON: {"satisfied": true/false, "learning": "what I learned", "next
         if (!response.ok || !result.success) {
           const errorDetails = result.error || `HTTP ${response.status}: ${response.statusText}`;
           const errorLogs = result.logs?.join('\n') || '';
+          
+          // Special handling for require() error - provide clear guidance
+          if (errorDetails.includes('already been declared') || errorDetails.includes('require')) {
+            const fixedError = `❌ ERROR: You tried to use require() but axios/cheerio are ALREADY AVAILABLE!\n\n` +
+              `DO NOT USE:\n` +
+              `  const axios = require('axios');  // ❌ WRONG\n` +
+              `  const cheerio = require('cheerio');  // ❌ WRONG\n\n` +
+              `CORRECT USAGE:\n` +
+              `  const response = await axios.get(url);  // ✅ axios is pre-loaded\n` +
+              `  const $ = cheerio.load(html);  // ✅ cheerio is pre-loaded\n\n` +
+              `Rewrite your code WITHOUT require() statements.`;
+            
+            return {
+              success: false,
+              output: '',
+              error: fixedError,
+              duration: Date.now() - startTime
+            };
+          }
+          
           const fullError = errorLogs ? `${errorDetails}\n\nLogs:\n${errorLogs}` : errorDetails;
           
           // Track failure
@@ -3563,6 +3583,9 @@ try {
         
         if (this.config.tools.includes('execute_code')) {
           enhancedPrompt += `- execute_code: Run ${this.config.environment.runtime} code. ALWAYS console.log() results!\n`;
+          enhancedPrompt += `  IMPORTANT: axios and cheerio are already available - DO NOT use require()!\n`;
+          enhancedPrompt += `  WRONG: const axios = require('axios'); // Will fail!\n`;
+          enhancedPrompt += `  RIGHT: const response = await axios.get(url); // axios is pre-loaded\n`;
           enhancedPrompt += `  Example: {"tool": "execute_code", "params": {"code": "const x = 5 + 3; console.log(x);"}}\n`;
         }
         if (this.config.tools.includes('fetch_url')) {
