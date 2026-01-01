@@ -2047,16 +2047,8 @@ Style:
         
         // SUPER STRONG MESSAGE if last tool had empty output
         if (hadEmptyOutput) {
-          // Extract the last code that failed
-          const lastToolCall = this.testConversation
-            .filter(msg => msg.role === 'assistant' && msg.content && msg.content.includes('execute_code'))
-            .slice(-1)[0];
-          
-          let failedCode = '';
-          if (lastToolCall) {
-            const match = lastToolCall.content.match(/"code":\s*"([^"]+)"/);
-            if (match) failedCode = match[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
-          }
+          // Get the failed code from the stored location
+          const failedCode = this.config.lastFailedCode || '';
           
           enhancedPrompt += `\n🚨🚨🚨 CRITICAL ERROR: YOUR LAST CODE HAD NO OUTPUT! 🚨🚨🚨\n`;
           enhancedPrompt += `The code you just ran returned NOTHING because you forgot console.log()!\n\n`;
@@ -2073,7 +2065,7 @@ Style:
           enhancedPrompt += `GENERATE: {"tool": "execute_code", "params": {"code": "...FIXED CODE WITH console.log()..."}}\n\n`;
           
           console.log('🚨 [DEBUG] Empty output detected! Alert injected into prompt.');
-          console.log('🚨 [DEBUG] Failed code:', failedCode.substring(0, 100));
+          console.log('🚨 [DEBUG] Failed code:', failedCode.substring(0, 150));
         }
         
         enhancedPrompt += `EMPTY OUTPUT = FAILURE:\n`;
@@ -2936,11 +2928,15 @@ Respond with JSON: {"satisfied": true/false, "learning": "what I learned", "next
         if (output === 'Code executed successfully (no output)') {
           console.warn('⚠️ Code executed but produced no output - likely missing console.log()');
           
+          // Store the failed code for the alert
+          this.config.lastFailedCode = code;
+          
           // Track as failure to trigger recovery strategies
           if (this.config.failureLog) {
             this.config.failureLog.push({
               tool: 'execute_code',
               params: params,
+              code: code,  // Store the actual code
               error: 'Empty output - missing console.log()',
               timestamp: Date.now()
             });
