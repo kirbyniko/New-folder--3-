@@ -75,11 +75,38 @@ export class AgentEditor {
       enablePlanning: true,
       enableSmartContext: true,
       parallelToolExecution: true,
-      currentIteration: 0
+      currentIteration: 0,
+      // Advanced intelligence features
+      enableExplicitPlanning: true,      // Dedicated planning phase with LLM
+      enableExplicitReflection: true,    // Dedicated reflection after tools
+      enableChainOfThought: true,        // Show reasoning steps
+      enableToolAnalysis: true,          // Analyze tool results
+      enablePersistentMemory: true,      // Remember across sessions
+      conversationHistory: []            // Full history for learning
     };
   }
 
   async init() {
+    // Load persistent memory from localStorage
+    if (this.config.enablePersistentMemory) {
+      const savedMemory = localStorage.getItem('agentMemory');
+      if (savedMemory) {
+        try {
+          const memory = JSON.parse(savedMemory);
+          this.config.failureLog = memory.failureLog || [];
+          this.config.successPatterns = memory.successPatterns || [];
+          this.config.conversationHistory = memory.conversationHistory || [];
+          console.log('📚 Loaded persistent memory:', {
+            failures: this.config.failureLog.length,
+            successes: this.config.successPatterns.length,
+            conversations: this.config.conversationHistory.length
+          });
+        } catch (e) {
+          console.warn('Failed to load persistent memory:', e);
+        }
+      }
+    }
+    
     // Recalculate token limit based on current hardware and model
     this.config.hardware.tokenLimit = this.calculateTokenLimit(this.config.hardware.gpuVRAM);
     
@@ -2109,6 +2136,23 @@ Style:
               content: `Tool Result:\n${toolResult.success ? toolResult.output : 'Error: ' + toolResult.error}`,
               metadata: `⏱️ ${toolResult.duration}ms`
             });
+            
+            // EXPLICIT REFLECTION (if enabled)
+            if (this.config.enableExplicitReflection) {
+              this.renderChatInterface(container);
+              messagesDiv.scrollTop = messagesDiv.scrollHeight;
+              
+              const userQuery = this.testConversation.find(m => m.role === 'user')?.content || '';
+              const reflection = await this.reflectOnToolResult(toolCallMatch.tool, toolResult, userQuery);
+              
+              if (reflection) {
+                this.testConversation.push({
+                  role: 'assistant',
+                  content: `🤔 **Reflection:**\n${reflection.learning}\n\n**Next:** ${reflection.nextAction}`,
+                  metadata: '💭 Reflection Phase'
+                });
+              }
+            }
           }
           
           this.renderChatInterface(container);
@@ -2154,6 +2198,25 @@ Style:
             console.log(`📚 Learned successful pattern: ${toolsUsed.join(' → ')}`);
           }
         }
+        
+        // Store conversation in history for learning
+        if (this.config.conversationHistory) {
+          this.config.conversationHistory.push({
+            userQuery: this.testConversation.find(m => m.role === 'user')?.content || '',
+            toolsUsed: toolsUsed,
+            success: true,
+            iterations: this.config.currentIteration,
+            timestamp: Date.now()
+          });
+          
+          // Keep only last 50 conversations
+          if (this.config.conversationHistory.length > 50) {
+            this.config.conversationHistory = this.config.conversationHistory.slice(-50);
+          }
+        }
+        
+        // Save to persistent storage
+        this.savePersistentMemory();
         
         // Add completion message
         if (this.config.currentIteration > 1) {
@@ -2236,6 +2299,19 @@ Style:
     return await Promise.all(promises);
   }
   
+  savePersistentMemory() {
+    if (this.config.enablePersistentMemory) {
+      const memory = {
+        failureLog: this.config.failureLog,
+        successPatterns: this.config.successPatterns,
+        conversationHistory: this.config.conversationHistory.slice(-50), // Keep last 50
+        lastUpdated: Date.now()
+      };
+      localStorage.setItem('agentMemory', JSON.stringify(memory));
+      console.log('💾 Saved persistent memory');
+    }
+  }
+  
   async validateResponse(response, conversation) {
     // Simple validation heuristics (avoid calling LLM for speed)
     const userQuery = conversation.find(m => m.role === 'user')?.content || '';
@@ -2269,6 +2345,94 @@ Style:
     
     console.log('✅ Validation: Response appears complete');
     return true;
+  }
+  
+  async createExplicitPlan(userQuery) {
+    if (!this.config.enableExplicitPlanning) return null;
+    
+    console.log('📋 Creating explicit plan...');
+    
+    const planningPrompt = `You are a strategic planner. Analyze this user request and create a step-by-step plan.
+
+User Request: ${userQuery}
+
+Available Tools: ${this.config.tools.join(', ')}
+
+Create a JSON plan with this format:
+{"steps": [{"step": 1, "action": "tool_name", "reason": "why this step"}]}
+
+Respond with ONLY the JSON.`;
+    
+    try {
+      const response = await fetch('http://localhost:11434/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: this.config.model || 'qwen2.5-coder:14b',
+          prompt: planningPrompt,
+          options: { temperature: 0.3, num_predict: 512 },
+          stream: false
+        })
+      });
+      
+      const result = await response.json();
+      const planMatch = result.response.match(/\{[\s\S]*"steps"[\s\S]*\}/);
+      
+      if (planMatch) {
+        const plan = JSON.parse(planMatch[0]);
+        console.log('📋 Plan created:', plan);
+        return plan;
+      }
+    } catch (e) {
+      console.warn('⚠️ Planning failed:', e.message);
+    }
+    
+    return null;
+  }
+  
+  async reflectOnToolResult(toolName, toolResult, userQuery) {
+    if (!this.config.enableExplicitReflection) return null;
+    
+    console.log('🤔 Reflecting on tool result...');
+    
+    const reflectionPrompt = `You are analyzing a tool execution result. Reflect on what happened and decide next action.
+
+User Query: ${userQuery}
+Tool Used: ${toolName}
+Result: ${toolResult.success ? toolResult.output.substring(0, 500) : 'Error: ' + toolResult.error}
+
+Reflect:
+1. Did this give me what I needed?
+2. What did I learn?
+3. What should I do next?
+
+Respond with JSON: {"satisfied": true/false, "learning": "what I learned", "nextAction": "what to do next"}`;
+    
+    try {
+      const response = await fetch('http://localhost:11434/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: this.config.model || 'qwen2.5-coder:14b',
+          prompt: reflectionPrompt,
+          options: { temperature: 0.3, num_predict: 256 },
+          stream: false
+        })
+      });
+      
+      const result = await response.json();
+      const reflectionMatch = result.response.match(/\{[\s\S]*"satisfied"[\s\S]*\}/);
+      
+      if (reflectionMatch) {
+        const reflection = JSON.parse(reflectionMatch[0]);
+        console.log('🤔 Reflection:', reflection);
+        return reflection;
+      }
+    } catch (e) {
+      console.warn('⚠️ Reflection failed:', e.message);
+    }
+    
+    return null;
   }
   
   async executeTool(toolName, params) {
@@ -2417,6 +2581,30 @@ Style:
     const startTime = Date.now();
     
     try {
+      // EXPLICIT PLANNING PHASE (if enabled)
+      if (this.config.enableExplicitPlanning && this.config.tools.length > 0) {
+        const plan = await this.createExplicitPlan(message);
+        if (plan && plan.steps) {
+          this.testConversation = this.testConversation.filter(msg => !msg.loading);
+          this.testConversation.push({
+            role: 'assistant',
+            content: `📋 **Created Plan:**\n${plan.steps.map(s => `${s.step}. ${s.action} - ${s.reason}`).join('\n')}`,
+            metadata: '🧠 Planning Phase'
+          });
+          this.renderChatInterface(container);
+          messagesDiv.scrollTop = messagesDiv.scrollHeight;
+          
+          // Add loading for execution
+          this.testConversation.push({
+            role: 'assistant',
+            content: '⏳ Executing plan...',
+            loading: true
+          });
+          this.renderChatInterface(container);
+          messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+      }
+      
       // Build conversation history for context
       const conversationContext = this.testConversation
         .filter(msg => !msg.loading && !msg.error)
@@ -2439,7 +2627,7 @@ Style:
         enhancedPrompt += `5. Keep using tools until you have a complete answer\n`;
         enhancedPrompt += `6. ONLY after getting final results, respond with plain text summary\n\n`;
         
-        if (this.config.enablePlanning) {
+        if (this.config.enablePlanning && !this.config.enableExplicitPlanning) {
           enhancedPrompt += `PLANNING PHASE:\n`;
           enhancedPrompt += `Before your first tool call, create a mental plan:\n`;
           enhancedPrompt += `- What information do I need?\n`;
@@ -2448,25 +2636,7 @@ Style:
           enhancedPrompt += `Then proceed with tool execution.\n\n`;
         }
         
-        if (this.config.enableReflection) {
-          enhancedPrompt += `REFLECTION AFTER EACH TOOL:\n`;
-          enhancedPrompt += `After each tool result, reflect:\n`;
-          enhancedPrompt += `- Did this give me what I needed?\n`;
-          enhancedPrompt += `- What's the next logical step?\n`;
-          enhancedPrompt += `- Should I try a different approach?\n`;
-          enhancedPrompt += `- Do I have enough info to answer the user?\n\n`;
-        }
-        
-        if (this.config.enablePlanning) {
-          enhancedPrompt += `PLANNING PHASE:\n`;
-          enhancedPrompt += `Before your first tool call, create a mental plan:\n`;
-          enhancedPrompt += `- What information do I need?\n`;
-          enhancedPrompt += `- Which tools will I use and in what order?\n`;
-          enhancedPrompt += `- What's my expected outcome?\n`;
-          enhancedPrompt += `Then proceed with tool execution.\n\n`;
-        }
-        
-        if (this.config.enableReflection) {
+        if (this.config.enableReflection && !this.config.enableExplicitReflection) {
           enhancedPrompt += `REFLECTION AFTER EACH TOOL:\n`;
           enhancedPrompt += `After each tool result, reflect:\n`;
           enhancedPrompt += `- Did this give me what I needed?\n`;
