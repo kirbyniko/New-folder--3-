@@ -2868,8 +2868,19 @@ Respond with JSON: {"satisfied": true/false, "learning": "what I learned", "next
     try {
       if (toolName === 'execute_code') {
         // Execute code through the backend execute-server /run endpoint
-        const code = params.code || params.script;
+        let code = params.code || params.script;
         const runtime = params.language || this.config.environment.runtime || 'nodejs';
+        
+        // 🔧 AUTOMATIC FIX: Strip async IIFE wrapper if LLM added it
+        // Matches: (async () => { ... })() or (async function() { ... })()
+        const asyncIIFEPattern = /^\s*\(async\s*(?:\(\)\s*=>|function\s*\(\))\s*\{([\s\S]*)\}\)\s*\(\)\s*;?\s*$/;
+        const asyncIIFEMatch = code.match(asyncIIFEPattern);
+        
+        if (asyncIIFEMatch) {
+          code = asyncIIFEMatch[1].trim(); // Extract inner code
+          console.log('🔧 [AUTO-FIX] Stripped async IIFE wrapper from LLM code');
+          console.log('📝 [UNWRAPPED CODE]:', code.substring(0, 200));
+        }
         
         const response = await fetch('http://localhost:3002/run', {
           method: 'POST',
