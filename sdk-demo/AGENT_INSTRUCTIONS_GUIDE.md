@@ -4,6 +4,83 @@
 
 The Agent Editor now supports **multi-step instructions** and **coding environment configuration**, allowing you to create sophisticated agents that can execute complex workflows with custom execution environments.
 
+## 🤖 AI-Powered Agent Creation
+
+### Two Modes: Generate or Optimize
+
+The **✨ AI Optimize All** button (purple, always visible in header) has two intelligent modes:
+
+#### 🎨 Generation Mode (Empty Agent)
+
+When your agent is empty or mostly default, AI switches to **generation mode**:
+
+1. Click **✨ AI Optimize All**
+2. AI detects empty agent and prompts: "What should your agent do?"
+3. Describe your intent in natural language:
+   - "scrape e-commerce sites for product prices"
+   - "analyze CSV files and generate reports"
+   - "monitor RSS feeds and send alerts"
+4. Click OK
+5. AI generates complete agent:
+   - ✅ System prompt optimized for task
+   - ✅ Multi-step instructions (3-5 steps)
+   - ✅ Environment configuration (runtime + dependencies)
+   - ✅ Tool selection (only what's needed)
+   - ✅ Optimal settings (temperature, tokens)
+6. Preview with reasoning
+7. Accept or cancel
+
+**Example**:
+```
+User: "scrape product data from Shopify stores"
+
+AI Generates:
+- System Prompt: "You are a web scraping specialist focused on e-commerce platforms..."
+- Instructions:
+  1. Fetch store page HTML
+  2. Parse product listings with CSS selectors
+  3. Extract prices, titles, stock status
+  4. Handle pagination
+  5. Format as structured JSON
+- Environment: nodejs, cheerio@1.0.0, axios@1.6.0
+- Tools: execute_code, fetch_url
+- Settings: temp=0.5 (deterministic), tokens=2048
+```
+
+#### ⚡ Optimization Mode (Existing Agent)
+
+When your agent has content, AI switches to **optimization mode**:
+
+1. Click **✨ AI Optimize All**
+2. Modal shows 6 checkboxes:
+   - 📝 System Prompt
+   - 📋 Instructions
+   - ⚙️ Environment
+   - 📁 Context Files
+   - 🛠️ Tools
+   - ⚡ Settings
+3. Select what to optimize (all checked by default)
+4. View real-time token impact estimate
+5. Click **🚀 Run AI Optimization**
+6. AI refines selected aspects
+7. Review and accept changes
+
+**Token Reduction**: Typically 10-30% depending on verbosity
+
+### How Detection Works
+
+Generation mode triggers when:
+- System prompt is empty/default ("You are a helpful AI assistant")
+- System prompt < 50 characters
+- No instructions defined
+
+Otherwise: Optimization mode
+
+### Use Cases
+
+**Start from scratch**: Describe what you want → Get working agent
+**Refine existing**: Already built agent → Make it more efficient
+
 ## 📋 Multi-Step Instructions
 
 ### What are Instructions?

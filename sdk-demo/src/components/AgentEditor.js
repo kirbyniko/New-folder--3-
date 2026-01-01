@@ -1387,6 +1387,179 @@ return data.response;`
       return;
     }
     
+    // Detect if this is generation mode (empty agent) or optimization mode
+    const isEmpty = !this.config.systemPrompt || 
+                    this.config.systemPrompt.trim() === 'You are a helpful AI assistant.' ||
+                    this.config.systemPrompt.trim().length < 50;
+    
+    const hasNoInstructions = !this.config.instructions || this.config.instructions.length === 0;
+    
+    const isGenerationMode = isEmpty && hasNoInstructions;
+    
+    if (isGenerationMode) {
+      // Ask user what they want to build
+      const userIntent = prompt(
+        '🤖 AI Agent Generator\\n\\n' +
+        'Describe what you want your agent to do:\\n' +
+        '(e.g., "scrape e-commerce sites for prices", "analyze CSV data", "monitor news feeds")'
+      );
+      
+      if (!userIntent || userIntent.trim().length === 0) {
+        return; // User cancelled
+      }
+      
+      await this.generateAgentFromScratch(userIntent, optimizing);
+      return;
+    }
+    
+    // Normal optimization mode
+    this.optimizeExistingAgent(optimizing, btn);
+  }
+  
+  async generateAgentFromScratch(userIntent, optimizing) {
+    const btn = document.getElementById('run-ai-optimize');
+    if (!btn) return;
+    
+    btn.disabled = true;
+    btn.innerHTML = '⏳ AI is generating agent...';
+    
+    try {
+      const generationPrompt = `You are an AI agent architect. Create a complete agent configuration from this user intent.
+
+**User Intent:** ${userIntent}
+
+**Generate these components (based on selection):**
+${optimizing.systemPrompt ? '- System Prompt: Clear, focused prompt defining agent role and capabilities' : ''}
+${optimizing.instructions ? '- Instructions: Step-by-step workflow (3-5 steps recommended)' : ''}
+${optimizing.environment ? '- Environment: Runtime and dependencies needed' : ''}
+${optimizing.tools ? '- Tools: Which tools agent needs (execute_code, fetch_url, search_web, read_file)' : ''}
+${optimizing.settings ? '- Settings: Optimal temperature, tokens, context window' : ''}
+
+Return JSON:
+{
+  ${optimizing.systemPrompt ? '"systemPrompt": "detailed prompt...",' : ''}
+  ${optimizing.instructions ? '"instructions": [{name:"Step 1", prompt:"...", conditional:false, loop:false}, ...],' : ''}
+  ${optimizing.environment ? '"environment": {runtime:"nodejs|python|deno|browser", dependencies:["pkg@ver"], timeout:30000, memoryLimit:"512MB", sandboxed:true},' : ''}
+  ${optimizing.tools ? '"tools": ["execute_code", "fetch_url"],' : ''}
+  ${optimizing.settings ? '"settings": {temperature:0.7, topP:0.9, maxTokens:2048, contextWindow:8192},' : ''}
+  "reasoning": "Why these choices",
+  "suggestedName": "Short agent name"
+}
+
+Make it production-ready and practical.`;
+
+      const response = await fetch('http://localhost:11434/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: this.config.model || 'qwen2.5-coder:14b',
+          prompt: generationPrompt,
+          stream: false
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate agent');
+      }
+      
+      const data = await response.json();
+      const responseText = data.response;
+      
+      const jsonMatch = responseText.match(/\\{[\\s\\S]*\\}/);
+      if (!jsonMatch) {
+        throw new Error('Could not parse AI response');
+      }
+      
+      const generated = JSON.parse(jsonMatch[0]);
+      
+      // Show preview
+      let previewMsg = `🤖 AI Generated Agent: "${generated.suggestedName || 'New Agent'}"\\n\\n`;
+      
+      if (generated.systemPrompt) {
+        previewMsg += `📝 System Prompt: ${generated.systemPrompt.substring(0, 100)}...\\n\\n`;
+      }
+      if (generated.instructions) {
+        previewMsg += `📋 Instructions: ${generated.instructions.length} steps\\n`;
+        generated.instructions.forEach((inst, i) => {
+          previewMsg += `   ${i + 1}. ${inst.name}\\n`;
+        });
+        previewMsg += '\\n';
+      }
+      if (generated.environment) {
+        previewMsg += `⚙️ Environment: ${generated.environment.runtime}\\n`;
+        previewMsg += `   Dependencies: ${generated.environment.dependencies.slice(0, 3).join(', ')}\\n\\n`;
+      }
+      if (generated.tools) {
+        previewMsg += `🛠️ Tools: ${generated.tools.join(', ')}\\n\\n`;
+      }
+      if (generated.settings) {
+        previewMsg += `⚡ Settings: temp=${generated.settings.temperature}, tokens=${generated.settings.maxTokens}\\n\\n`;
+      }
+      
+      previewMsg += `💡 Reasoning: ${generated.reasoning}\\n\\n`;
+      previewMsg += `Create this agent?`;
+      
+      if (confirm(previewMsg)) {
+        // Apply generated configuration
+        if (generated.suggestedName) {
+          this.config.name = generated.suggestedName;
+          document.getElementById('agent-name').value = generated.suggestedName;
+        }
+        
+        if (generated.systemPrompt && optimizing.systemPrompt) {
+          this.config.systemPrompt = generated.systemPrompt;
+          if (this.editor) this.editor.setValue(generated.systemPrompt);
+        }
+        
+        if (generated.instructions && optimizing.instructions) {
+          this.config.instructions = generated.instructions;
+        }
+        
+        if (generated.environment && optimizing.environment) {
+          this.config.environment = generated.environment;
+          this.renderEnvironment();
+        }
+        
+        if (generated.tools && optimizing.tools) {
+          this.config.tools = generated.tools;
+          ['execute-code', 'fetch-url', 'search-web', 'read-file'].forEach(tool => {
+            const toolName = tool.replace('-', '_');
+            const checkbox = document.getElementById(`tool-${tool}`);
+            if (checkbox) checkbox.checked = generated.tools.includes(toolName);
+          });
+        }
+        
+        if (generated.settings && optimizing.settings) {
+          this.config.temperature = generated.settings.temperature;
+          this.config.topP = generated.settings.topP;
+          this.config.maxTokens = generated.settings.maxTokens;
+          this.config.contextWindow = generated.settings.contextWindow;
+          
+          document.getElementById('temperature').value = generated.settings.temperature;
+          document.getElementById('temp-value').textContent = generated.settings.temperature;
+          document.getElementById('top-p').value = generated.settings.topP;
+          document.getElementById('topp-value').textContent = generated.settings.topP;
+          document.getElementById('max-tokens').value = generated.settings.maxTokens;
+          document.getElementById('maxtoken-value').textContent = generated.settings.maxTokens;
+          document.getElementById('context-window').value = generated.settings.contextWindow;
+          document.getElementById('context-value').textContent = generated.settings.contextWindow;
+        }
+        
+        this.updateTokenEstimate();
+        alert('✅ Agent generated successfully! Review and save when ready.');
+        this.hideOptimizationPanel();
+      }
+      
+    } catch (error) {
+      console.error('Generation error:', error);
+      alert(`Failed to generate agent: ${error.message}\\n\\nPlease check that Ollama is running.`);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '🚀 Run AI Optimization';
+    }
+  }
+  
+  async optimizeExistingAgent(optimizing, btn) {
     // Disable button and show loading
     btn.disabled = true;
     btn.innerHTML = '⏳ AI is analyzing...';
