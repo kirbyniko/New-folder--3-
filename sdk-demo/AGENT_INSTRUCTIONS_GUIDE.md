@@ -56,6 +56,21 @@ Step 3: Validate
 
 The environment configuration defines how your agent's code will execute, including runtime, dependencies, security settings, and resource limits.
 
+### ✨ Auto-Configure (NEW!)
+
+**Let AI do the work!** Click the **✨ Auto-Configure** button in the Environment tab to have AI analyze your system prompt and instructions, then automatically suggest:
+- Best runtime for your use case
+- Required dependencies with exact versions
+- Optimal timeout and memory settings
+- Security recommendations
+
+The AI examines your agent's purpose and tools to make intelligent recommendations. You can review and accept/reject the suggestions.
+
+**Example:**
+- Agent about web scraping → Suggests `browser` runtime with `puppeteer`
+- Agent about data analysis → Suggests `python` with `pandas` + `numpy`
+- Agent making API calls → Suggests `nodejs` with `axios`
+
 ### Configuration Options
 
 #### 1. **Runtime**
@@ -191,8 +206,8 @@ The agent uses **instructions** to define what to do, and **environment** to def
 3. Fill in step names and prompts
 4. Enable conditional/loop as needed
 5. Switch to **⚙️ Environment** tab
-6. Select runtime and add dependencies
-7. Configure resource limits
+6. **Click ✨ Auto-Configure** (or configure manually)
+7. Review AI suggestions and accept
 8. Add any environment variables
 9. **Save Agent** to persist configuration
 10. Test in **Chat** tab or use in **Workflows**
