@@ -2071,6 +2071,9 @@ Style:
           enhancedPrompt += `YOU MUST IMMEDIATELY RETRY WITH A NEW TOOL CALL!\n`;
           enhancedPrompt += `DO NOT respond with text - respond with JSON tool call!\n`;
           enhancedPrompt += `GENERATE: {"tool": "execute_code", "params": {"code": "...FIXED CODE WITH console.log()..."}}\n\n`;
+          
+          console.log('🚨 [DEBUG] Empty output detected! Alert injected into prompt.');
+          console.log('🚨 [DEBUG] Failed code:', failedCode.substring(0, 100));
         }
         
         enhancedPrompt += `EMPTY OUTPUT = FAILURE:\n`;
@@ -2097,6 +2100,8 @@ Style:
           enhancedPrompt += `${file.content.substring(0, 2000)}...\n\n`;
         });
       }
+      
+      console.log('[DEBUG] Continuation prompt preview:', enhancedPrompt.substring(enhancedPrompt.length - 500));
       
       const response = await fetch('http://localhost:11434/api/generate', {
         method: 'POST',
