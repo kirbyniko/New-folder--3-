@@ -58,18 +58,65 @@ The environment configuration defines how your agent's code will execute, includ
 
 ### ✨ Auto-Configure (NEW!)
 
-**Let AI do the work!** Click the **✨ Auto-Configure** button in the Environment tab to have AI analyze your system prompt and instructions, then automatically suggest:
-- Best runtime for your use case
-- Required dependencies with exact versions
-- Optimal timeout and memory settings
-- Security recommendations
+**Let AI do the work!** Click the **✨ AI Optimize All** button in the Environment tab to open the comprehensive optimization panel.
 
-The AI examines your agent's purpose and tools to make intelligent recommendations. You can review and accept/reject the suggestions.
+#### What Can AI Optimize?
 
-**Example:**
-- Agent about web scraping → Suggests `browser` runtime with `puppeteer`
-- Agent about data analysis → Suggests `python` with `pandas` + `numpy`
-- Agent making API calls → Suggests `nodejs` with `axios`
+Select exactly what you want AI to improve using checkboxes:
+
+1. **✅ System Prompt** - Refine clarity, reduce tokens, improve effectiveness
+2. **✅ Instructions** - Streamline workflow steps, remove redundancy
+3. **✅ Environment** - Choose optimal runtime and dependencies
+4. **⬜ Context Files** - Suggest which files to add for better performance
+5. **✅ Tools** - Recommend which tools to enable/disable
+6. **✅ Settings** - Optimize temperature, tokens, and memory limits
+
+#### Real-Time Token Impact
+
+As you select/deselect options, the panel shows:
+- **Current Tokens**: Your agent's current token count
+- **Token Impact**: Estimated reduction from optimization
+- **Live Updates**: Changes as you toggle checkboxes
+
+#### How It Works
+
+```
+1. Click "✨ AI Optimize All"
+2. Optimization panel opens
+3. Select what to optimize (checkboxes)
+4. View token impact estimation
+5. Click "🚀 Run AI Optimization"
+6. AI analyzes your entire configuration
+7. Review suggested changes
+8. Accept or reject optimizations
+9. Agent updated automatically!
+```
+
+#### Example Scenarios
+
+**Scenario 1: Token Budget Exceeded**
+- Current: 8,500 tokens
+- Check: System Prompt ✓, Instructions ✓
+- Impact: -850 tokens (estimated)
+- Result: Streamlined prompts fit in context window
+
+**Scenario 2: Wrong Runtime**
+- Agent doing web scraping but using Node.js
+- Check: Environment ✓
+- AI suggests: Switch to Browser (Puppeteer)
+- Result: Better performance and reliability
+
+**Scenario 3: Missing Tools**
+- Agent needs to execute code but tools not enabled
+- Check: Tools ✓
+- AI suggests: Add execute_code, read_file
+- Result: Agent can now run generated scripts
+
+**Scenario 4: Suboptimal Settings**
+- Temperature too high for deterministic tasks
+- Check: Settings ✓
+- AI suggests: temp=0.3 (down from 0.7)
+- Result: More consistent outputs
 
 ### Configuration Options
 
