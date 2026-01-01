@@ -3278,12 +3278,93 @@ Respond with JSON: {"satisfied": true/false, "learning": "what I learned", "next
       }
       
       if (toolName === 'search_web') {
-        // Mock search for now
-        return {
-          success: true,
-          output: `Search results for: ${params.query}\n(Web search not fully implemented in test mode)`,
-          duration: Date.now() - startTime
-        };
+        // Use DuckDuckGo search via execute_code backend
+        const searchCode = `
+const axios = require('axios');
+
+async function search() {
+  try {
+    // DuckDuckGo HTML search
+    const query = ${JSON.stringify(params.query)};
+    const url = \`https://html.duckduckgo.com/html/?q=\${encodeURIComponent(query)}\`;
+    
+    const response = await axios.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    });
+    
+    const html = response.data;
+    
+    // Extract results using regex (simple parsing)
+    const results = [];
+    const resultRegex = /<a[^>]+class="result__a"[^>]+href="([^"]+)"[^>]*>([^<]+)</g;
+    const snippetRegex = /<a[^>]+class="result__snippet"[^>]*>([^<]+)</g;
+    
+    let match;
+    let count = 0;
+    while ((match = resultRegex.exec(html)) && count < 5) {
+      const url = match[1];
+      const title = match[2];
+      results.push({ url, title });
+      count++;
+    }
+    
+    if (results.length === 0) {
+      console.log(\`No results found for: \${query}\`);
+    } else {
+      console.log(\`Found \${results.length} results:\\n\`);
+      results.forEach((r, i) => {
+        console.log(\`\${i+1}. \${r.title}\`);
+        console.log(\`   \${r.url}\\n\`);
+      });
+    }
+  } catch (error) {
+    console.log(\`Search error: \${error.message}\`);
+  }
+}
+
+search();
+`;
+
+        try {
+          const response = await fetch('http://localhost:3002/execute', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code: searchCode, language: 'javascript' })
+          });
+          
+          const result = await response.json();
+          
+          if (result.error) {
+            return {
+              success: false,
+              error: `Search failed: ${result.error}`,
+              duration: Date.now() - startTime
+            };
+          }
+          
+          let output = '';
+          if (result.data) {
+            output = JSON.stringify(result.data, null, 2);
+          } else if (result.logs && result.logs.length > 0) {
+            output = result.logs.join('\n');
+          } else {
+            output = 'Search completed (no results)';
+          }
+          
+          return {
+            success: true,
+            output: output,
+            duration: Date.now() - startTime
+          };
+        } catch (error) {
+          return {
+            success: false,
+            error: `Search execution failed: ${error.message}. Make sure execute server is running on port 3002.`,
+            duration: Date.now() - startTime
+          };
+        }
       }
       
       throw new Error(`Unknown tool: ${toolName}`);
@@ -3464,8 +3545,9 @@ Respond with JSON: {"satisfied": true/false, "learning": "what I learned", "next
           enhancedPrompt += `  Example: {"tool": "fetch_url", "params": {"url": "https://example.com"}}\n`;
         }
         if (this.config.tools.includes('search_web')) {
-          enhancedPrompt += `- search_web: Search for info\n`;
+          enhancedPrompt += `- search_web: Search the web for URLs and information\n`;
           enhancedPrompt += `  Example: {"tool": "search_web", "params": {"query": "latest news"}}\n`;
+          enhancedPrompt += `  Returns: List of URLs and snippets from search results\n`;
         }
         
         enhancedPrompt += `\nRESPONSE FORMAT:\n`;
