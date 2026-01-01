@@ -1803,16 +1803,20 @@ Style:
     if (this.config.currentIteration > this.config.maxIterations) {
       this.testConversation.push({
         role: 'system',
-        content: `⚠️ Reached maximum iterations (${this.config.maxIterations}). Agent stopped.\n\nTo continue, increase Max Iterations in settings or reset the conversation.`,
+        content: `⚠️ **Reached maximum iterations (${this.config.maxIterations})**\n\nThe agent has performed ${this.config.maxIterations} iterations.\n\n**Options:**\n• Send another message to continue\n• Increase Max Iterations in settings\n• Reset conversation to start fresh`,
         metadata: `🔄 Iteration ${this.config.currentIteration}/${this.config.maxIterations}`
       });
+      
+      // Reset iteration counter so user can continue if they want
+      this.config.currentIteration = 0;
+      
       this.renderChatInterface(container);
       const messagesDiv = container.querySelector('#chat-messages');
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
       return;
     }
     
-    // Track recent tool calls to detect loops
+    // Track recent tool calls to detect loops (compare full signatures)
     this.recentToolCalls = this.recentToolCalls || [];
     const lastToolCall = this.testConversation
       .slice(-5)
@@ -1820,19 +1824,19 @@ Style:
       .find(msg => msg.role === 'assistant' && msg.content.includes('🛠️ Executing:'));
     
     if (lastToolCall) {
-      // Extract tool name and first 100 chars of params for comparison
-      const toolSignature = lastToolCall.content.substring(0, 150);
+      // Extract full tool signature (tool name + params) for accurate comparison
+      const toolSignature = lastToolCall.content;
       this.recentToolCalls.push(toolSignature);
       if (this.recentToolCalls.length > 5) this.recentToolCalls.shift();
       
-      // Check for repeated actions (same tool call 3+ times in a row)
+      // Check for repeated IDENTICAL actions (exact same tool call 3+ times in a row)
       const lastThree = this.recentToolCalls.slice(-3);
       if (lastThree.length === 3 && 
           lastThree[0] === lastThree[1] && 
           lastThree[1] === lastThree[2]) {
         this.testConversation.push({
           role: 'system',
-          content: `⚠️ **Loop Detected!** Agent is repeating the same action 3 times:\n\n${lastThree[0]}\n\n**Possible reasons:**\n• Tool is not returning expected output\n• Code has errors but returns "Success"\n• Agent needs different approach\n\n**Stopping to prevent infinite loop.**`,
+          content: `⚠️ **Loop Detected!** Agent is repeating the exact same action 3 times:\n\n${lastThree[0].substring(0, 200)}...\n\n**Possible reasons:**\n• Tool is not returning expected output\n• Code has errors but returns "Success"\n• Agent needs different approach\n\n**Stopping to prevent infinite loop.**`,
           metadata: `🔄 Iteration ${this.config.currentIteration}/${this.config.maxIterations}`
         });
         this.renderChatInterface(container);
