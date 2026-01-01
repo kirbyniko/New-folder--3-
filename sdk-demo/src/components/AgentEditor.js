@@ -1511,13 +1511,12 @@ Style:
       
       // Add the same agent execution mode instructions as initial message
       if (this.config.tools.length > 0) {
-        enhancedPrompt += `\n\n=== AGENT EXECUTION MODE ===\n`;
-        enhancedPrompt += `You are an AUTONOMOUS AGENT. You just received tool results.\n\n`;
-        enhancedPrompt += `CONTINUE WORKING:\n`;
-        enhancedPrompt += `1. Analyze the tool results above\n`;
-        enhancedPrompt += `2. Either use another tool (respond with JSON) OR present findings\n`;
-        enhancedPrompt += `3. DO NOT ask what to do next - keep executing!\n`;
-        enhancedPrompt += `4. DO NOT give instructions - take action or show results\n\n`;
+        enhancedPrompt += `\n\n=== CONTINUE AGENT EXECUTION ===\n`;
+        enhancedPrompt += `You just received tool results. You MUST continue with another tool OR present final results.\n\n`;
+        
+        enhancedPrompt += `YOUR NEXT RESPONSE MUST BE:\n`;
+        enhancedPrompt += `- JSON tool call if more work needed: {"tool": "...", "params": {...}}\n`;
+        enhancedPrompt += `- Plain text summary if task complete\n\n`;
         
         enhancedPrompt += `AVAILABLE TOOLS:\n`;
         if (this.config.tools.includes('execute_code')) {
@@ -1529,15 +1528,18 @@ Style:
         if (this.config.tools.includes('search_web')) {
           enhancedPrompt += `- {"tool": "search_web", "params": {"query": "..."}}\n`;
         }
+        
+        enhancedPrompt += `\nEXAMPLE:\n`;
+        enhancedPrompt += `[Tool Result: HTML with error]\n`;
+        enhancedPrompt += `You: {"tool": "execute_code", "params": {"code": "const axios = require('axios'); axios.get('url').then(r => console.log(r.data));"}}\n\n`;
+        
+        enhancedPrompt += `DO NOT explain or describe - just execute the next tool!\n`;
       }
       
       // Add environment info
       if (this.config.environment.runtime && this.config.environment.dependencies.length > 0) {
         enhancedPrompt += `\nAVAILABLE PACKAGES: ${this.config.environment.dependencies.join(', ')}\n`;
       }
-      enhancedPrompt += `2. Analyze results and proceed to next step\n`;
-      enhancedPrompt += `3. Present final results if task is complete\n\n`;
-      enhancedPrompt += `DO NOT ask what to do next - keep working!\n`;
       
       const response = await fetch('http://localhost:11434/api/generate', {
         method: 'POST',
@@ -1727,52 +1729,44 @@ Style:
       // Add tool descriptions if tools are enabled
       if (this.config.tools.length > 0) {
         enhancedPrompt += `\n\n=== AGENT EXECUTION MODE ===\n`;
-        enhancedPrompt += `You are an AUTONOMOUS AGENT that TAKES ACTION, not a tutorial writer.\n\n`;
+        enhancedPrompt += `You are an AUTONOMOUS AGENT. You MUST respond with ONLY valid JSON tool calls until the task is complete.\n\n`;
+        
         enhancedPrompt += `CRITICAL RULES:\n`;
-        enhancedPrompt += `1. DO NOT explain steps or give instructions\n`;
-        enhancedPrompt += `2. DO NOT say "you can" or "we will" or "here's how"\n`;
-        enhancedPrompt += `3. IMMEDIATELY use tools to accomplish the task\n`;
-        enhancedPrompt += `4. Execute code, fetch URLs, and show ACTUAL RESULTS\n`;
-        enhancedPrompt += `5. Build complete, working solutions iteratively\n`;
-        enhancedPrompt += `6. If something fails, fix it and try again automatically\n\n`;
+        enhancedPrompt += `1. Respond with JSON ONLY - no explanations, no text before or after\n`;
+        enhancedPrompt += `2. Chain multiple tools together to complete tasks\n`;
+        enhancedPrompt += `3. If a tool fails, try a different approach with another tool\n`;
+        enhancedPrompt += `4. Keep using tools until you have a complete answer\n`;
+        enhancedPrompt += `5. ONLY after getting final results, respond with plain text summary\n\n`;
         
         enhancedPrompt += `AVAILABLE TOOLS:\n`;
         
         if (this.config.tools.includes('execute_code')) {
-          enhancedPrompt += `- execute_code: Run ${this.config.environment.runtime} code and get real output\n`;
-          enhancedPrompt += `  Format: {"tool": "execute_code", "params": {"code": "const x = 1; console.log(x);"}}\n`;
+          enhancedPrompt += `- execute_code: Run ${this.config.environment.runtime} code\n`;
+          enhancedPrompt += `  Example: {"tool": "execute_code", "params": {"code": "console.log('hello');"}}\n`;
         }
         if (this.config.tools.includes('fetch_url')) {
-          enhancedPrompt += `- fetch_url: Fetch actual webpage content\n`;
-          enhancedPrompt += `  Format: {"tool": "fetch_url", "params": {"url": "https://example.com"}}\n`;
+          enhancedPrompt += `- fetch_url: Get webpage HTML\n`;
+          enhancedPrompt += `  Example: {"tool": "fetch_url", "params": {"url": "https://example.com"}}\n`;
         }
         if (this.config.tools.includes('search_web')) {
-          enhancedPrompt += `- search_web: Search the web for information\n`;
-          enhancedPrompt += `  Format: {"tool": "search_web", "params": {"query": "latest news"}}\n`;
-        }
-        if (this.config.tools.includes('read_file')) {
-          enhancedPrompt += `- read_file: Read file contents\n`;
-          enhancedPrompt += `  Format: {"tool": "read_file", "params": {"path": "data.txt"}}\n`;
+          enhancedPrompt += `- search_web: Search for info\n`;
+          enhancedPrompt += `  Example: {"tool": "search_web", "params": {"query": "latest news"}}\n`;
         }
         
-        enhancedPrompt += `\nWORKFLOW:\n`;
-        enhancedPrompt += `1. User asks for something → You use tools IMMEDIATELY\n`;
-        enhancedPrompt += `2. Tool returns results → You analyze and continue\n`;
-        enhancedPrompt += `3. Build solution step-by-step with REAL code execution\n`;
-        enhancedPrompt += `4. Show actual outputs, not pseudo-code or examples\n\n`;
+        enhancedPrompt += `\nRESPONSE FORMAT:\n`;
+        enhancedPrompt += `- During task: {"tool": "...", "params": {...}}\n`;
+        enhancedPrompt += `- Task complete: Plain text with results\n\n`;
         
-        enhancedPrompt += `EXAMPLE GOOD BEHAVIOR:\n`;
-        enhancedPrompt += `User: "Scrape Hacker News headlines"\n`;
+        enhancedPrompt += `WORKFLOW EXAMPLE:\n`;
+        enhancedPrompt += `User: "Get top news headlines"\n`;
         enhancedPrompt += `You: {"tool": "fetch_url", "params": {"url": "https://news.ycombinator.com"}}\n`;
-        enhancedPrompt += `[System returns HTML]\n`;
-        enhancedPrompt += `You: {"tool": "execute_code", "params": {"code": "const cheerio = require('cheerio'); const $ = cheerio.load(html); const headlines = $('.titleline').map((i, el) => $(el).text()).get(); console.log(headlines.slice(0,5));"}}\n`;
-        enhancedPrompt += `[System returns actual headlines]\n`;
-        enhancedPrompt += `You: "Found 5 top headlines: [list]"\n\n`;
+        enhancedPrompt += `[HTML returned]\n`;
+        enhancedPrompt += `You: {"tool": "execute_code", "params": {"code": "const cheerio = require('cheerio'); const $ = cheerio.load(html); console.log($('.titleline').slice(0,5).text());"}}\n`;
+        enhancedPrompt += `[Headlines returned]\n`;
+        enhancedPrompt += `You: "Top 5 headlines: [actual list from results]"\n\n`;
         
-        enhancedPrompt += `EXAMPLE BAD BEHAVIOR (NEVER DO THIS):\n`;
-        enhancedPrompt += `User: "Scrape Hacker News"\n`;
-        enhancedPrompt += `You: "To scrape Hacker News, follow these steps: 1. Use axios to fetch..."\n`;
-        enhancedPrompt += `^ This is WRONG - you must USE TOOLS, not explain them!\n\n`;
+        enhancedPrompt += `ERROR HANDLING:\n`;
+        enhancedPrompt += `If fetch fails (401, 403, etc), try a different URL or use execute_code with axios and different headers.\n\n`;
       }
       
       // Add environment info
