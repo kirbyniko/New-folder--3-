@@ -292,11 +292,12 @@ const server = http.createServer(async (req, res) => {
             }
           };
           
-          // Execute code with axios and cheerio available
+          // Execute code with axios, cheerio, and puppeteer available
           const require = (moduleName: string) => {
             if (moduleName === 'axios') return axios;
             if (moduleName === 'cheerio') return cheerio;
-            throw new Error(`Module '${moduleName}' not available. Only axios and cheerio are supported.`);
+            if (moduleName === 'puppeteer') return puppeteer;
+            throw new Error(`Module '${moduleName}' not available. Supported: axios, cheerio, puppeteer`);
           };
           
           // Wrap code to handle async patterns and capture return value
