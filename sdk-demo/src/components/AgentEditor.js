@@ -388,9 +388,9 @@ export class AgentEditor {
               
               <label style="font-size: 12px; color: #9ca3af; margin-bottom: 8px; display: block;">GPU Preset:</label>
               <select id="gpu-preset" style="width: 100%; padding: 6px 8px; background: #2a2a2a; border: 1px solid #404040; border-radius: 4px; color: #e0e0e0; font-size: 13px; margin-bottom: 12px;">
-                <option value="consumer" ${(this.config.hardware?.preset || 'consumer') === 'consumer' ? 'selected' : ''}>🎮 Consumer (RTX 3060, M1/M2) - 8GB (~700 tokens)</option>
-                <option value="midrange" ${(this.config.hardware?.preset || 'consumer') === 'midrange' ? 'selected' : ''}>🚀 Mid-Range (RTX 4070, M3 Pro) - 12GB (~3k tokens)</option>
-                <option value="highend" ${(this.config.hardware?.preset || 'consumer') === 'highend' ? 'selected' : ''}>⚡ High-End (RTX 4090, M3 Max) - 24GB (~11k tokens)</option>
+                <option value="consumer" ${(this.config.hardware?.preset || 'consumer') === 'consumer' ? 'selected' : ''}>🎮 Consumer (RTX 3060, M1/M2) - 8GB (need 9GB min)</option>
+                <option value="midrange" ${(this.config.hardware?.preset || 'consumer') === 'midrange' ? 'selected' : ''}>🚀 Mid-Range (RTX 4070, M3 Pro) - 12GB (~12k tokens)</option>
+                <option value="highend" ${(this.config.hardware?.preset || 'consumer') === 'highend' ? 'selected' : ''}>⚡ High-End (RTX 4090, M3 Max) - 24GB (~32k full)</option>
                 <option value="cpu" ${(this.config.hardware?.preset || 'consumer') === 'cpu' ? 'selected' : ''}>🐌 CPU Only - 32k tokens (Slow)</option>
                 <option value="custom" ${(this.config.hardware?.preset || 'consumer') === 'custom' ? 'selected' : ''}>⚙️ Custom</option>
               </select>
@@ -403,10 +403,11 @@ export class AgentEditor {
               <div style="background: #2a2a2a; padding: 10px; border-radius: 4px; font-size: 12px;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
                   <span style="color: #9ca3af;">VRAM Token Limit:</span>
-                  <strong style="color: #10b981;" id="hardware-token-limit">${this.config.hardware?.tokenLimit || 666}</strong>
+                  <strong style="color: #10b981;" id="hardware-token-limit">${this.config.hardware?.tokenLimit || 0}</strong>
                 </div>
                 <div style="font-size: 11px; color: #6b7280; margin-top: 6px; line-height: 1.4;">
-                  <strong>For 16GB VRAM: ~6,000 tokens</strong> fit in VRAM. Model supports 32k total (excess uses CPU - slower but works).
+                  Varies by model. Current model (<strong id="current-model-name">${(this.config.model || 'qwen2.5-coder:14b').split(':')[0]}</strong>): 
+                  <strong id="model-context-window">32k</strong> max context.
                 </div>
               </div>
             </div>
@@ -592,6 +593,40 @@ export class AgentEditor {
     // Model
     document.getElementById('agent-model').addEventListener('change', (e) => {
       this.config.model = e.target.value;
+      
+      // Update token limit display based on new model
+      this.config.hardware.tokenLimit = this.calculateTokenLimit(this.config.hardware.gpuVRAM);
+      const limitEl = document.getElementById('hardware-token-limit');
+      if (limitEl) {
+        limitEl.textContent = this.config.hardware.tokenLimit.toLocaleString();
+      }
+      
+      // Update model name display
+      const modelNameEl = document.getElementById('current-model-name');
+      if (modelNameEl) {
+        modelNameEl.textContent = e.target.value.split(':')[0];
+      }
+      
+      // Update context window display
+      const modelSpecs = {
+        'qwen2.5-coder:14b': 32768,
+        'qwen2.5-coder:7b': 32768,
+        'qwen2.5-coder:32b': 32768,
+        'deepseek-coder:6.7b': 16384,
+        'codellama:7b': 16384,
+        'codellama:13b': 16384,
+        'codellama:34b': 16384,
+        'llama3.1:8b': 131072,
+        'llama3.1:70b': 131072,
+        'mistral:7b': 32768,
+        'mixtral:8x7b': 32768,
+      };
+      const contextWindow = modelSpecs[e.target.value] || 32768;
+      const contextEl = document.getElementById('model-context-window');
+      if (contextEl) {
+        contextEl.textContent = contextWindow >= 100000 ? '128k' : contextWindow >= 32000 ? '32k' : '16k';
+      }
+      
       this.updateTokenEstimate();
     });
 
@@ -694,7 +729,7 @@ export class AgentEditor {
       
       const limitEl = document.getElementById('hardware-token-limit');
       if (limitEl) {
-        limitEl.textContent = this.config.hardware.tokenLimit;
+        limitEl.textContent = this.config.hardware.tokenLimit.toLocaleString();
       }
       
       this.updateTokenEstimate();
@@ -869,23 +904,35 @@ Style:
   }
   
   calculateTokenLimit(vramGB) {
-    // Accurate formula for qwen2.5-coder:14b (32k context window)
-    // Model uses ~7GB base, remaining VRAM for KV cache
-    // ~1.5GB VRAM per 1000 tokens of context
-    // Formula: (VRAM - 7GB) / 1.5 * 1000 = usable tokens
-    // Examples:
-    //   8GB:  (8-7)/1.5*1000 =    666 tokens (minimal, CPU fallback needed)
-    //  12GB: (12-7)/1.5*1000 =  3,333 tokens 
-    //  16GB: (16-7)/1.5*1000 =  6,000 tokens (pure VRAM)
-    //  24GB: (24-7)/1.5*1000 = 11,333 tokens
-    // Note: Model supports 32k context, excess goes to CPU (slower but works)
-    const baseModelVRAM = 7; // GB for model weights + base overhead
-    const vramPerKTokens = 1.5; // GB per 1000 tokens of context
-    const availableVRAM = Math.max(0, vramGB - baseModelVRAM);
-    const tokens = Math.floor((availableVRAM / vramPerKTokens) * 1000);
+    // Dynamic calculation based on selected model
+    const model = this.config.model || 'qwen2.5-coder:14b';
     
-    // Cap at model's context window (32k for qwen2.5-coder)
-    return Math.min(tokens, 32000);
+    // Model database: {baseVRAM in GB, kvCacheGB per 1k tokens, maxContext}
+    const modelSpecs = {
+      'qwen2.5-coder:14b': { base: 9, kvCache: 0.25, maxContext: 32768 },     // Q4_K_M: ~8-9GB base
+      'qwen2.5-coder:7b': { base: 5, kvCache: 0.15, maxContext: 32768 },      // Q4_K_M: ~4-5GB base
+      'qwen2.5-coder:32b': { base: 20, kvCache: 0.4, maxContext: 32768 },     // Q4_K_M: ~18-20GB base
+      'deepseek-coder:6.7b': { base: 4.5, kvCache: 0.15, maxContext: 16384 }, // Q4_K_M: ~4GB base
+      'codellama:7b': { base: 5, kvCache: 0.15, maxContext: 16384 },          // Q4_K_M: ~4-5GB base
+      'codellama:13b': { base: 8.5, kvCache: 0.25, maxContext: 16384 },       // Q4_K_M: ~8GB base
+      'codellama:34b': { base: 20, kvCache: 0.4, maxContext: 16384 },         // Q4_K_M: ~18-20GB base
+      'llama3.1:8b': { base: 5.5, kvCache: 0.15, maxContext: 131072 },        // Q4_K_M: ~5GB base
+      'llama3.1:70b': { base: 40, kvCache: 0.8, maxContext: 131072 },         // Q4_K_M: ~38-40GB base
+      'mistral:7b': { base: 5, kvCache: 0.15, maxContext: 32768 },            // Q4_K_M: ~4-5GB base
+      'mixtral:8x7b': { base: 26, kvCache: 0.5, maxContext: 32768 },          // Q4_K_M: ~24-26GB base
+    };
+    
+    // Default to qwen2.5-coder:14b if model not found
+    const specs = modelSpecs[model] || modelSpecs['qwen2.5-coder:14b'];
+    
+    // Calculate available VRAM for KV cache
+    const availableVRAM = Math.max(0, vramGB - specs.base);
+    
+    // Calculate tokens that fit in available VRAM
+    const tokens = Math.floor((availableVRAM / specs.kvCache) * 1000);
+    
+    // Cap at model's actual context window
+    return Math.min(tokens, specs.maxContext);
   }
 
   showSavedIndicator(elementId) {
