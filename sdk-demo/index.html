@@ -3,31 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Universal Agent SDK - Interactive Demo</title>
-  <link rel="stylesheet" href="/style.css">
+  <title>LangChain Agent Demo</title>
 </head>
 <body>
-  <div class="container">
-    <!-- Header -->
-    <header class="header">
-      <div class="header-content">
-        <h1>🤖 Universal Agent SDK</h1>
-        <p class="subtitle">Hardware-Aware AI Agent Platform</p>
-        <div class="header-badges">
-          <span class="badge">TypeScript</span>
-          <span class="badge">Hardware Detection</span>
-          <span class="badge">Multi-Model</span>
-          <span class="badge">RAG Memory</span>
-        </div>
-      </div>
-    </header>
-
-    <!-- Navigation -->
-    <nav class="nav">
-      <button class="nav-btn" data-tab="overview">Overview</button>
-      <button class="nav-btn active" data-tab="agent-editor">🎛️ Agent Editor</button>
-      <button class="nav-btn" data-tab="chat">💬 Iterative Chat</button>
-      <button class="nav-btn" data-tab="files">📁 File Manager</button>
+  <div id="app"></div>
+  <script type="module" src="/src/main-langchain.js"></script>
+</body>
+</html>
       <button class="nav-btn" data-tab="scraper">🕷️ Scraper Builder</button>
       <button class="nav-btn" data-tab="metrics">📊 Metrics</button>
       <button class="nav-btn" data-tab="hardware">Hardware Detection</button>
