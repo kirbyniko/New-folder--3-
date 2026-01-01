@@ -17,4 +17,7 @@ export default defineConfig({
   optimizeDeps: {
     include: ['monaco-editor'],
   },
+  worker: {
+    format: 'es' // Use ES module format for workers
+  }
 });
