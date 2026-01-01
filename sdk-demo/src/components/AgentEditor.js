@@ -29,7 +29,15 @@ export class AgentEditor {
   getDefaultConfig() {
     // Load hardware config from localStorage if available
     const savedHardware = localStorage.getItem('agentEditor_hardware');
-    const hardware = savedHardware ? JSON.parse(savedHardware) : { preset: 'consumer', gpuVRAM: 8, tokenLimit: 4096 };
+    const defaultHardware = { preset: 'consumer', gpuVRAM: 8, tokenLimit: 0 };
+    const hardware = savedHardware ? JSON.parse(savedHardware) : defaultHardware;
+    
+    // Recalculate token limit based on current model and VRAM
+    // (will be properly calculated in init after model is set)
+    const tempConfig = {
+      model: 'qwen2.5-coder:14b',
+      hardware: hardware
+    };
     
     return {
       name: 'New Agent',
@@ -58,21 +66,30 @@ export class AgentEditor {
         timeout: 30000,
         memoryLimit: '512MB'
       },
-      // Hardware configuration
-      hardware: {
-        gpuVRAM: 8,  // GB of VRAM
-        tokenLimit: 4096,  // Calculated safe token limit
-        preset: 'consumer'  // consumer, midrange, highend, cpu
-      }
+      // Hardware configuration (duplicate removed below)
+      maxIterations: parseInt(localStorage.getItem('agentEditor_maxIterations')) || 10
     };
   }
 
   async init() {
+    // Recalculate token limit based on current hardware and model
+    this.config.hardware.tokenLimit = this.calculateTokenLimit(this.config.hardware.gpuVRAM);
+    
+    // Save the updated hardware config
+    localStorage.setItem('agentEditor_hardware', JSON.stringify(this.config.hardware));
+    
     this.render();
     await this.initMonaco();
     await this.loadAvailableModels();
     this.attachEventListeners();
     this.updateTokenEstimate();
+    
+    // Update UI to show correct token limit
+    const limitEl = document.getElementById('hardware-token-limit');
+    if (limitEl) {
+      const preset = this.config.hardware.preset;
+      limitEl.textContent = preset === 'cpu' ? '32k' : this.config.hardware.tokenLimit.toLocaleString();
+    }
   }
 
   render() {
@@ -987,11 +1004,29 @@ Style:
     const outputTokens = this.config.maxTokens;
     
     const total = promptTokens + instructionTokens + contextTokens + ragTokens + knowledgeTokens + outputTokens;
-    const percentage = (total / this.config.contextWindow) * 100;
     
     // Use hardware config for limits
     const gpuTokenLimit = this.config.hardware?.tokenLimit || 0;
-    const modelMaxContext = this.config.contextWindow || 32768;
+    
+    // Get model's actual max context from specs
+    const model = this.config.model || 'qwen2.5-coder:14b';
+    const modelSpecs = {
+      'qwen2.5-coder:14b': { base: 9, kvCache: 0.25, maxContext: 32768 },
+      'qwen2.5-coder:7b': { base: 5, kvCache: 0.15, maxContext: 32768 },
+      'qwen2.5-coder:32b': { base: 20, kvCache: 0.4, maxContext: 32768 },
+      'qwen2.5-coder:3b': { base: 2, kvCache: 0.1, maxContext: 32768 },
+      'llama3.1:8b': { base: 6, kvCache: 0.2, maxContext: 131072 },
+      'llama3.1:70b': { base: 40, kvCache: 0.5, maxContext: 131072 },
+      'deepseek-coder-v2:16b': { base: 10, kvCache: 0.3, maxContext: 163840 },
+      'codellama:13b': { base: 8, kvCache: 0.25, maxContext: 16384 },
+      'mistral:7b': { base: 5, kvCache: 0.15, maxContext: 32768 },
+      'mixtral:8x7b': { base: 26, kvCache: 0.35, maxContext: 32768 },
+      'phi3:14b': { base: 9, kvCache: 0.25, maxContext: 131072 }
+    };
+    const specs = modelSpecs[model] || modelSpecs['qwen2.5-coder:14b'];
+    const modelMaxContext = specs.maxContext;
+    
+    const percentage = (total / modelMaxContext) * 100;
     
     this.tokenEstimate.total = total;
     this.tokenEstimate.fitsGPU = total <= gpuTokenLimit;
