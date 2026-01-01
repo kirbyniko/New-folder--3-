@@ -749,6 +749,476 @@ body {
   border-radius: 10px;
 }
 
+/* Workflow Builder */
+.workflow-builder {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.workflow-header {
+  margin-bottom: 24px;
+}
+
+.workflow-title-input {
+  width: 100%;
+  font-size: 24px;
+  font-weight: 600;
+  padding: 12px;
+  background: var(--bg-message);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
+.workflow-title-input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.workflow-description-input {
+  width: 100%;
+  padding: 12px;
+  background: var(--bg-message);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  color: var(--text);
+  resize: vertical;
+  min-height: 60px;
+}
+
+.workflow-description-input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.workflow-config,
+.workflow-section {
+  background: var(--bg-message);
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.workflow-config h3,
+.workflow-section h3 {
+  margin-bottom: 16px;
+  font-size: 16px;
+}
+
+.config-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.config-row label {
+  min-width: 150px;
+  font-size: 13px;
+}
+
+.config-row select,
+.config-row input[type="number"] {
+  padding: 8px 12px;
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.config-row .hint {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-left: 8px;
+}
+
+.context-files-list,
+.steps-list {
+  margin-top: 16px;
+}
+
+.context-file-item,
+.step-item {
+  background: var(--bg-dark);
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.file-icon {
+  font-size: 20px;
+}
+
+.file-info {
+  flex: 1;
+}
+
+.file-name {
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.file-size {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.btn-remove {
+  padding: 4px 8px;
+  background: var(--danger);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.btn-remove:hover {
+  opacity: 0.8;
+}
+
+.step-item {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.step-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.step-number {
+  width: 32px;
+  height: 32px;
+  background: var(--primary);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.step-name {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.step-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-icon {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+}
+
+.btn-icon:hover {
+  opacity: 0.7;
+}
+
+.step-details {
+  padding-left: 44px;
+}
+
+.step-prompt {
+  color: var(--text-dim);
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.step-tools,
+.step-deps {
+  font-size: 11px;
+  color: var(--secondary);
+  margin-top: 4px;
+}
+
+.workflow-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.btn-execute {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, var(--success), #059669);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-execute:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.btn-primary {
+  padding: 10px 20px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
+}
+
+.btn-secondary {
+  padding: 10px 20px;
+  background: var(--bg-hover);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background: var(--border);
+}
+
+.empty-state {
+  padding: 40px;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 14px;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal-content {
+  background: var(--bg-sidebar);
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.modal-content h2 {
+  margin-bottom: 20px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.form-group input[type="text"],
+.form-group textarea,
+.form-group select {
+  width: 100%;
+  padding: 10px;
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.form-group textarea {
+  resize: vertical;
+}
+
+.form-group select[multiple] {
+  height: 120px;
+}
+
+.tool-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tool-checkboxes label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background: var(--bg-dark);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.tool-checkboxes label:hover {
+  background: var(--bg-hover);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+/* Results */
+.workflow-results {
+  margin-top: 24px;
+  padding: 20px;
+  background: var(--bg-message);
+  border-radius: 12px;
+}
+
+.executing,
+.progress {
+  padding: 20px;
+  text-align: center;
+}
+
+.results-success h3 {
+  color: var(--success);
+  margin-bottom: 16px;
+}
+
+.results-stats {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.stat {
+  flex: 1;
+  padding: 16px;
+  background: var(--bg-dark);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.stat-label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  display: block;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.iteration-chart {
+  margin: 16px 0;
+}
+
+.iteration-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.iteration-label {
+  min-width: 60px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.iteration-progress {
+  height: 24px;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  border-radius: 4px;
+  transition: width 0.3s;
+}
+
+.iteration-score {
+  min-width: 50px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.step-results {
+  margin-top: 20px;
+}
+
+.step-result {
+  background: var(--bg-dark);
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.step-result h5 {
+  margin-bottom: 12px;
+  color: var(--secondary);
+}
+
+.step-result pre {
+  background: var(--bg-sidebar);
+  padding: 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.tool-results {
+  margin-top: 12px;
+  font-size: 12px;
+}
+
+.tool-result {
+  padding: 4px 8px;
+  background: var(--bg-sidebar);
+  border-radius: 4px;
+  display: inline-block;
+  margin-right: 8px;
+  margin-top: 4px;
+}
+
+.error {
+  padding: 20px;
+  background: rgba(239, 68, 68, 0.1);
+  border-left: 4px solid var(--danger);
+  border-radius: 8px;
+}
+
+.error h3 {
+  color: var(--danger);
+  margin-bottom: 12px;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .sidebar {

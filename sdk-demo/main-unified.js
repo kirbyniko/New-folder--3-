@@ -12,6 +12,7 @@ import { UniversalAgent } from 'universal-agent-sdk';
 import MetricsService from './src/services/MetricsService.js';
 import { TemplateManager } from './src/components/TemplateManager.js';
 import { AgentOrchestrator } from './src/agents/AgentOrchestrator.js';
+import { WorkflowBuilder } from './src/components/WorkflowBuilder.js';
 
 class AgentStudio {
   constructor() {
@@ -21,6 +22,7 @@ class AgentStudio {
     this.isGenerating = false;
     this.currentStream = null;
     this.templateManager = null;
+    this.workflowBuilder = null;
     
     // Initialize Agent Orchestrator
     this.orchestrator = new AgentOrchestrator({
@@ -186,6 +188,11 @@ class AgentStudio {
           content.style.display = 'none';
         });
         document.getElementById(`${tabName}-tab`).style.display = 'block';
+        
+        // Initialize workflows tab on first open
+        if (tabName === 'workflows' && !this.workflowBuilder) {
+          this.workflowBuilder = new WorkflowBuilder('workflow-builder-container');
+        }
       });
     });
 
