@@ -2366,6 +2366,23 @@ Style:
             console.log('[Agent] Parsed tool call from continuation:', toolCallMatch);
           } else {
             console.log('[Agent] No JSON found in continuation response');
+            
+            // Detect if agent is providing tutorial/explanation instead of tool call
+            if (result.response.includes('Here is') || 
+                result.response.includes('You can') || 
+                result.response.includes('I can guide') ||
+                result.response.includes("I'm unable") ||
+                result.response.includes('step-by-step') ||
+                result.response.length > 1000) {
+              console.warn('⚠️ Agent is providing explanation instead of tool call!');
+              this.testConversation.push({
+                role: 'system',
+                content: `⚠️ ERROR: You provided an explanation/tutorial instead of a JSON tool call. You MUST respond with ONLY JSON tool calls. If you don't know a URL, use search_web first!`,
+                error: true
+              });
+              this.renderChatInterface(container);
+              return;
+            }
           }
         } catch (e) {
           console.log('[Agent] Failed to parse tool call in continuation:', e.message);
@@ -3398,14 +3415,16 @@ Respond with JSON: {"satisfied": true/false, "learning": "what I learned", "next
         enhancedPrompt += `You are an AUTONOMOUS AGENT. You MUST respond with ONLY valid JSON tool calls until the task is complete.\n\n`;
         
         enhancedPrompt += `CRITICAL RULES:\n`;
-        enhancedPrompt += `1. Respond with JSON ONLY - no explanations, no text before or after\n`;
-        enhancedPrompt += `2. In execute_code, ALWAYS END WITH console.log() or the result will be EMPTY!\n`;
+        enhancedPrompt += `1. Respond with JSON ONLY - no explanations, no text, no code examples!\n`;
+        enhancedPrompt += `2. If you don't know a URL, use search_web to find one FIRST\n`;
+        enhancedPrompt += `3. In execute_code, ALWAYS END WITH console.log() or the result will be EMPTY!\n`;
         enhancedPrompt += `   WRONG: await page.content(); // No output!\n`;
         enhancedPrompt += `   RIGHT: const html = await page.content(); console.log(html);\n`;
-        enhancedPrompt += `3. Chain multiple tools together to complete tasks\n`;
-        enhancedPrompt += `4. If a tool fails, try a different approach with another tool\n`;
-        enhancedPrompt += `5. Keep using tools until you have a complete answer\n`;
-        enhancedPrompt += `6. ONLY after getting final results, respond with plain text summary\n\n`;
+        enhancedPrompt += `4. Chain multiple tools together to complete tasks\n`;
+        enhancedPrompt += `5. If a tool fails, try a different approach with another tool\n`;
+        enhancedPrompt += `6. NEVER give up - keep trying different tools until you succeed\n`;
+        enhancedPrompt += `7. NEVER provide code examples or tutorials - execute tools instead!\n`;
+        enhancedPrompt += `8. ONLY after getting final results, respond with plain text summary\n\n`;
         
         if (this.config.enablePlanning && !this.config.enableExplicitPlanning) {
           this.intelligenceActivity.basicPlanning.count++;
