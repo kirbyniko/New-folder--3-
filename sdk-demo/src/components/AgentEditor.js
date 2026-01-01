@@ -2059,8 +2059,11 @@ Style:
         enhancedPrompt += `\nCRITICAL ERROR HANDLING:\n`;
         enhancedPrompt += `If you see CORS, 403, or 401 errors, DO NOT retry fetch_url!\n`;
         enhancedPrompt += `Instead, use execute_code with axios and AWAIT:\n`;
-        enhancedPrompt += `{"tool": "execute_code", "params": {"code": "const axios = require('axios'); const res = await axios.get('URL', {headers: {'User-Agent': 'Mozilla/5.0'}}); console.log(res.data);"}}\n`;
-        enhancedPrompt += `IMPORTANT: Code is auto-wrapped in async function - DON'T add (async () => {...})()!\n\n`;
+        enhancedPrompt += `{"tool": "execute_code", "params": {"code": "const axios = require('axios'); const res = await axios.get('URL', {headers: {'User-Agent': 'Mozilla/5.0'}}); console.log(res.data);"}}\n\n`;
+        enhancedPrompt += `⛔ WRONG (double-wrapped):\n`;
+        enhancedPrompt += `{"tool": "execute_code", "params": {"code": "(async () => { const res = await axios.get(...); })()"}}\n\n`;
+        enhancedPrompt += `✅ RIGHT (server wraps it):\n`;
+        enhancedPrompt += `{"tool": "execute_code", "params": {"code": "const res = await axios.get(...); console.log(res.data);"}}\n\n`;
         
         // SUPER STRONG MESSAGE if last tool had empty output
         if (hadEmptyOutput) {
@@ -2070,11 +2073,15 @@ Style:
           enhancedPrompt += `\n🚨🚨🚨 CRITICAL ERROR: YOUR LAST CODE HAD NO OUTPUT! 🚨🚨🚨\n`;
           enhancedPrompt += `The code returned NOTHING - missing console.log() OR forgot AWAIT!\n\n`;
           
+          enhancedPrompt += `⛔ NEVER WRAP CODE IN (async () => {...})() ⛔\n`;
+          enhancedPrompt += `The execute server ALREADY wraps your code in async IIFE!\n`;
+          enhancedPrompt += `Writing bare await statements WITHOUT wrapping!\n\n`;
+          
           if (failedCode) {
             enhancedPrompt += `YOUR BROKEN CODE:\n${failedCode}\n\n`;
             enhancedPrompt += `REQUIRED FIXES:\n`;
-            enhancedPrompt += `1. USE AWAIT: const res = await axios.get(...); console.log(res.data);\n`;
-            enhancedPrompt += `2. DON'T wrap in (async () => {...})() - already auto-wrapped!\n`;
+            enhancedPrompt += `1. REMOVE (async () => {...})() wrapper - server adds it!\n`;
+            enhancedPrompt += `2. USE AWAIT: const res = await axios.get(...); console.log(res.data);\n`;
             enhancedPrompt += `3. ALWAYS add console.log() to see output!\n\n`;
           }
           
