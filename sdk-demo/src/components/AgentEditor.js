@@ -1523,31 +1523,45 @@ return data.response;`
     try {
       this.addProgressMessage('🤖 Sending request to AI (qwen2.5-coder:14b)...');
       
-      const generationPrompt = `You are an AI agent architect. Create a complete agent configuration from this user intent.
+      // Get current token limits from config
+      const currentMaxTokens = this.config.maxTokens || 2048;
+      const currentContextWindow = this.config.contextWindow || 8192;
+      
+      const generationPrompt = `You are an AI agent architect. Create a complete, production-ready agent configuration.
 
 **User Intent:** ${userIntent}
 
-**Generate these components (based on selection):**
-${optimizing.systemPrompt ? '- System Prompt: Clear, focused prompt defining agent role and capabilities' : ''}
-${optimizing.instructions ? '- Instructions: Step-by-step workflow (3-5 steps recommended)' : ''}
-${optimizing.environment ? '- Environment: Runtime and dependencies needed' : ''}
-${optimizing.tools ? '- Tools: Which tools agent needs (execute_code, fetch_url, search_web, read_file)' : ''}
-${optimizing.settings ? '- Settings: Optimal temperature, tokens, context window' : ''}
+**Current Token Budget:**
+- Max Output Tokens: ${currentMaxTokens}
+- Context Window: ${currentContextWindow}
+- Your configuration MUST fit within these limits
 
-CRITICAL: Return ONLY valid JSON, nothing else. No explanations before or after.
+**Required Components:**
+${optimizing.systemPrompt ? '- System Prompt: Concise, focused (200-500 tokens). Define role, capabilities, constraints.' : ''}
+${optimizing.instructions ? '- Instructions: 3-5 actionable steps. Each step: clear name + specific prompt (50-100 tokens each).' : ''}
+${optimizing.environment ? '- Environment: Choose runtime (nodejs/python/deno/browser). List ONLY essential dependencies with versions.' : ''}
+${optimizing.tools ? '- Tools: Select from [execute_code, fetch_url, search_web, read_file]. Only what agent truly needs.' : ''}
+${optimizing.settings ? '- Settings: Optimize temperature (0.1-1.0), topP (0.1-1.0), maxTokens, contextWindow for this use case.' : ''}
 
-JSON structure:
+**Quality Guidelines:**
+1. System prompt: Be specific about agent's expertise and limitations
+2. Instructions: Each step should be atomic and testable
+3. Dependencies: Use stable versions, avoid bloat
+4. Tools: Minimal set - only what's needed for the task
+5. Settings: Lower temperature (0.3-0.5) for factual tasks, higher (0.7-0.9) for creative ones
+
+CRITICAL: Return ONLY valid JSON. No markdown, no code blocks, no explanations.
+
+JSON format:
 {
-  ${optimizing.systemPrompt ? '"systemPrompt": "detailed prompt...",' : ''}
-  ${optimizing.instructions ? '"instructions": [{"name":"Step 1", "prompt":"...", "conditional":false, "loop":false}],' : ''}
-  ${optimizing.environment ? '"environment": {"runtime":"nodejs", "dependencies":["pkg@ver"], "timeout":30000, "memoryLimit":"512MB", "sandboxed":true},' : ''}
+  ${optimizing.systemPrompt ? '"systemPrompt": "Concise, focused system prompt defining role and capabilities",' : ''}
+  ${optimizing.instructions ? '"instructions": [{"name":"Clear step name", "prompt":"Specific action to take", "conditional":false, "loop":false}],' : ''}
+  ${optimizing.environment ? '"environment": {"runtime":"nodejs", "dependencies":["axios@1.6.0"], "timeout":30000, "memoryLimit":"512MB", "sandboxed":true},' : ''}
   ${optimizing.tools ? '"tools": ["execute_code", "fetch_url"],' : ''}
   ${optimizing.settings ? '"settings": {"temperature":0.7, "topP":0.9, "maxTokens":2048, "contextWindow":8192},' : ''}
-  "reasoning": "Why these choices",
-  "suggestedName": "Short agent name"
-}
-
-Make it production-ready and practical. Return ONLY the JSON object.`;
+  "reasoning": "Brief explanation of design decisions",
+  "suggestedName": "AgentName"
+}`;
 
       const startTime = Date.now();
       const response = await fetch('http://localhost:11434/api/generate', {
@@ -1693,12 +1707,21 @@ Make it production-ready and practical. Return ONLY the JSON object.`;
         if (generated.systemPrompt && optimizing.systemPrompt) {
           this.addProgressMessage('  📝 Applying system prompt...');
           this.config.systemPrompt = generated.systemPrompt;
-          if (this.editor) this.editor.setValue(generated.systemPrompt);
+          if (this.editor) {
+            this.editor.setValue(generated.systemPrompt);
+          } else {
+            // If editor not initialized yet, set it when tab loads
+            setTimeout(() => {
+              if (this.editor) this.editor.setValue(generated.systemPrompt);
+            }, 100);
+          }
         }
         
         if (generated.instructions && optimizing.instructions) {
           this.addProgressMessage('  📋 Creating ' + generated.instructions.length + ' instruction steps...');
           this.config.instructions = generated.instructions;
+          // Re-render instructions tab to show new steps
+          this.renderInstructions();
         }
         
         if (generated.environment && optimizing.environment) {
@@ -1719,19 +1742,39 @@ Make it production-ready and practical. Return ONLY the JSON object.`;
         
         if (generated.settings && optimizing.settings) {
           this.addProgressMessage('  ⚡ Applying optimal settings...');
-          this.config.temperature = generated.settings.temperature;
-          this.config.topP = generated.settings.topP;
-          this.config.maxTokens = generated.settings.maxTokens;
-          this.config.contextWindow = generated.settings.contextWindow;
           
-          document.getElementById('temperature').value = generated.settings.temperature;
-          document.getElementById('temp-value').textContent = generated.settings.temperature;
-          document.getElementById('top-p').value = generated.settings.topP;
-          document.getElementById('topp-value').textContent = generated.settings.topP;
-          document.getElementById('max-tokens').value = generated.settings.maxTokens;
-          document.getElementById('maxtoken-value').textContent = generated.settings.maxTokens;
-          document.getElementById('context-window').value = generated.settings.contextWindow;
-          document.getElementById('context-value').textContent = generated.settings.contextWindow;
+          // Apply to config
+          if (generated.settings.temperature !== undefined) {
+            this.config.temperature = generated.settings.temperature;
+            const tempSlider = document.getElementById('temperature');
+            const tempValue = document.getElementById('temp-value');
+            if (tempSlider) tempSlider.value = generated.settings.temperature;
+            if (tempValue) tempValue.textContent = generated.settings.temperature;
+          }
+          
+          if (generated.settings.topP !== undefined) {
+            this.config.topP = generated.settings.topP;
+            const topPSlider = document.getElementById('top-p');
+            const topPValue = document.getElementById('topp-value');
+            if (topPSlider) topPSlider.value = generated.settings.topP;
+            if (topPValue) topPValue.textContent = generated.settings.topP;
+          }
+          
+          if (generated.settings.maxTokens !== undefined) {
+            this.config.maxTokens = generated.settings.maxTokens;
+            const maxTokenSlider = document.getElementById('max-tokens');
+            const maxTokenValue = document.getElementById('maxtoken-value');
+            if (maxTokenSlider) maxTokenSlider.value = generated.settings.maxTokens;
+            if (maxTokenValue) maxTokenValue.textContent = generated.settings.maxTokens;
+          }
+          
+          if (generated.settings.contextWindow !== undefined) {
+            this.config.contextWindow = generated.settings.contextWindow;
+            const contextSlider = document.getElementById('context-window');
+            const contextValue = document.getElementById('context-value');
+            if (contextSlider) contextSlider.value = generated.settings.contextWindow;
+            if (contextValue) contextValue.textContent = generated.settings.contextWindow;
+          }
         }
         
         this.updateTokenEstimate();
