@@ -2038,12 +2038,13 @@ Style:
         enhancedPrompt += `Instead, use execute_code with axios and custom headers:\n`;
         enhancedPrompt += `{"tool": "execute_code", "params": {"code": "const axios = require('axios'); axios.get('URL', {headers: {'User-Agent': 'Mozilla/5.0'}}).then(r => console.log(r.data));"}}\n\n`;
         
-        enhancedPrompt += `EMPTY OUTPUT HANDLING:\n`;
-        enhancedPrompt += `If execute_code returns "Code executed successfully (no output)", it means you forgot console.log()!\n`;
-        enhancedPrompt += `Fix your code to include console.log() to see the actual results.\n`;
-        enhancedPrompt += `Example: const data = await fetchSomething(); console.log(JSON.stringify(data));\n\n`;
+        enhancedPrompt += `EMPTY OUTPUT = FAILURE:\n`;
+        enhancedPrompt += `If execute_code returns "NO OUTPUT", you MUST rewrite the code with console.log()!\n`;
+        enhancedPrompt += `NEVER repeat the same code that produced no output - FIX IT!\n`;
+        enhancedPrompt += `BEFORE: await page.content(); // WRONG - No output!\n`;
+        enhancedPrompt += `AFTER:  const html = await page.content(); console.log(html); // RIGHT!\n\n`;
         
-        enhancedPrompt += `DO NOT explain, DO NOT retry the same tool - switch to execute_code!\n`;
+        enhancedPrompt += `DO NOT explain, DO NOT retry the same broken code - FIX and retry!\n`;
       }
       
       // Add environment info
@@ -2859,11 +2860,27 @@ Respond with JSON: {"satisfied": true/false, "learning": "what I learned", "next
           output = 'Code executed successfully (no output)';
         }
         
-        // Detect empty output - likely missing console.log()
+        // Detect empty output - treat as FAILURE to force retry with console.log()
         if (output === 'Code executed successfully (no output)') {
           console.warn('⚠️ Code executed but produced no output - likely missing console.log()');
-          // Don't fail, but provide helpful context
-          output += '\n\n⚠️ Note: Code ran but printed nothing. If you expected output, add console.log() to your code.';
+          
+          // Track as failure to trigger recovery strategies
+          if (this.config.failureLog) {
+            this.config.failureLog.push({
+              tool: 'execute_code',
+              params: params,
+              error: 'Empty output - missing console.log()',
+              timestamp: Date.now()
+            });
+            this.config.recentFailures++;
+          }
+          
+          return {
+            success: false,
+            output: '',
+            error: 'Code executed but produced NO OUTPUT. You must add console.log() to see results!\n\nExample fixes:\n• await page.content() → const html = await page.content(); console.log(html);\n• scrapeData() → const data = await scrapeData(); console.log(JSON.stringify(data));',
+            duration: Date.now() - startTime
+          };
         }
         
         // Reset failure counter on success
@@ -3026,7 +3043,9 @@ Respond with JSON: {"satisfied": true/false, "learning": "what I learned", "next
         
         enhancedPrompt += `CRITICAL RULES:\n`;
         enhancedPrompt += `1. Respond with JSON ONLY - no explanations, no text before or after\n`;
-        enhancedPrompt += `2. In execute_code, ALWAYS console.log() the final result\n`;
+        enhancedPrompt += `2. In execute_code, ALWAYS END WITH console.log() or the result will be EMPTY!\n`;
+        enhancedPrompt += `   WRONG: await page.content(); // No output!\n`;
+        enhancedPrompt += `   RIGHT: const html = await page.content(); console.log(html);\n`;
         enhancedPrompt += `3. Chain multiple tools together to complete tasks\n`;
         enhancedPrompt += `4. If a tool fails, try a different approach with another tool\n`;
         enhancedPrompt += `5. Keep using tools until you have a complete answer\n`;
