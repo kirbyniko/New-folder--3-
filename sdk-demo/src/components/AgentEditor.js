@@ -835,7 +835,7 @@ return data.response;`
     }
     
     // Update token estimation
-    this.updateTokenEstimation();
+    this.updateTokenEstimate();
     
     // Close modal
     document.querySelector('.template-modal').remove();
