@@ -1534,8 +1534,27 @@ Style:
         }
         
         const index = parseInt(card.dataset.index);
-        const agent = agents[index];
-        this.config = JSON.parse(JSON.stringify(agent)); // Deep clone
+        const agent = JSON.parse(JSON.stringify(agents[index])); // Deep clone
+        
+        // CRITICAL FIX: Merge saved agent with default config to preserve new features
+        const defaultConfig = this.getDefaultConfig();
+        this.config = {
+          ...defaultConfig,  // Start with full default config
+          ...agent,          // Override with saved agent data
+          // Ensure intelligence features are present (in case old save)
+          enableExplicitPlanning: agent.enableExplicitPlanning !== undefined ? agent.enableExplicitPlanning : defaultConfig.enableExplicitPlanning,
+          enableExplicitReflection: agent.enableExplicitReflection !== undefined ? agent.enableExplicitReflection : defaultConfig.enableExplicitReflection,
+          enableChainOfThought: agent.enableChainOfThought !== undefined ? agent.enableChainOfThought : defaultConfig.enableChainOfThought,
+          enableToolAnalysis: agent.enableToolAnalysis !== undefined ? agent.enableToolAnalysis : defaultConfig.enableToolAnalysis,
+          enableStrategyPivot: agent.enableStrategyPivot !== undefined ? agent.enableStrategyPivot : defaultConfig.enableStrategyPivot
+        };
+        
+        console.log('✅ [LOAD FIX] Loaded agent with intelligence features:', {
+          name: agent.name,
+          enableExplicitPlanning: this.config.enableExplicitPlanning,
+          enableExplicitReflection: this.config.enableExplicitReflection
+        });
+        
         this.init();
         modal.remove();
         this.showNotification(`✅ Agent "${agent.name}" loaded successfully!`, 'success');
@@ -1705,7 +1724,25 @@ Style:
     document.body.appendChild(modal);
     
     modal.querySelector('#confirm-import').addEventListener('click', () => {
-      this.config = imported;
+      // CRITICAL FIX: Merge imported agent with default config to preserve new features
+      const defaultConfig = this.getDefaultConfig();
+      this.config = {
+        ...defaultConfig,  // Start with full default config
+        ...imported,       // Override with imported agent data
+        // Ensure intelligence features are present (in case old export)
+        enableExplicitPlanning: imported.enableExplicitPlanning !== undefined ? imported.enableExplicitPlanning : defaultConfig.enableExplicitPlanning,
+        enableExplicitReflection: imported.enableExplicitReflection !== undefined ? imported.enableExplicitReflection : defaultConfig.enableExplicitReflection,
+        enableChainOfThought: imported.enableChainOfThought !== undefined ? imported.enableChainOfThought : defaultConfig.enableChainOfThought,
+        enableToolAnalysis: imported.enableToolAnalysis !== undefined ? imported.enableToolAnalysis : defaultConfig.enableToolAnalysis,
+        enableStrategyPivot: imported.enableStrategyPivot !== undefined ? imported.enableStrategyPivot : defaultConfig.enableStrategyPivot
+      };
+      
+      console.log('✅ [IMPORT FIX] Imported agent with intelligence features:', {
+        name: imported.name,
+        enableExplicitPlanning: this.config.enableExplicitPlanning,
+        enableExplicitReflection: this.config.enableExplicitReflection
+      });
+      
       this.init();
       modal.remove();
       this.showNotification(`✅ Agent "${imported.name}" imported successfully!`, 'success');
@@ -3756,8 +3793,39 @@ Respond with JSON: {"satisfied": true/false, "learning": "what I learned", "next
   applyTemplate(templateId) {
     const template = AgentTemplates.getTemplate(templateId);
     
-    // Update config
-    this.config = {...template};
+    // CRITICAL FIX: Merge template with default config instead of replacing
+    // Templates don't have intelligence features, so we need to preserve them
+    const defaultConfig = this.getDefaultConfig();
+    this.config = {
+      ...defaultConfig,        // Start with full default config (has all intelligence features)
+      ...template,             // Override with template specifics (name, systemPrompt, model, etc.)
+      // Preserve intelligence features explicitly
+      enableReflection: defaultConfig.enableReflection,
+      enablePlanning: defaultConfig.enablePlanning,
+      enableSmartContext: defaultConfig.enableSmartContext,
+      parallelToolExecution: defaultConfig.parallelToolExecution,
+      enableExplicitPlanning: defaultConfig.enableExplicitPlanning,
+      enableExplicitReflection: defaultConfig.enableExplicitReflection,
+      enableChainOfThought: defaultConfig.enableChainOfThought,
+      enableToolAnalysis: defaultConfig.enableToolAnalysis,
+      enablePersistentMemory: defaultConfig.enablePersistentMemory,
+      enableLLMValidation: defaultConfig.enableLLMValidation,
+      enableStrategyPivot: defaultConfig.enableStrategyPivot,
+      conversationHistory: defaultConfig.conversationHistory,
+      currentPlan: defaultConfig.currentPlan,
+      planProgress: defaultConfig.planProgress,
+      toolEffectiveness: defaultConfig.toolEffectiveness,
+      contextSummaries: defaultConfig.contextSummaries,
+      learningMetrics: defaultConfig.learningMetrics,
+      failureLog: defaultConfig.failureLog,
+      successPatterns: defaultConfig.successPatterns
+    };
+    
+    console.log('✅ [TEMPLATE FIX] Applied template with intelligence features preserved:', {
+      templateId,
+      enableExplicitPlanning: this.config.enableExplicitPlanning,
+      enableExplicitReflection: this.config.enableExplicitReflection
+    });
     
     // Load max iterations from localStorage
     const savedIterations = localStorage.getItem('agentEditor_maxIterations');
