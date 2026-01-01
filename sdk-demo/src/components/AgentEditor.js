@@ -3343,10 +3343,20 @@ Respond with JSON: {"satisfied": true/false, "learning": "what I learned", "next
         }
       }
       
-      // Build conversation history for context
+      // Build conversation history for context (without role labels to prevent LLM from roleplaying)
       const conversationContext = this.testConversation
         .filter(msg => !msg.loading && !msg.error)
-        .map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
+        .map(msg => {
+          if (msg.role === 'user') {
+            return `TASK: ${msg.content}`;
+          } else if (msg.role === 'system' && msg.content.includes('Tool:')) {
+            return msg.content; // Keep tool results as-is
+          } else {
+            // Skip assistant's previous responses to prevent pattern repetition
+            return null;
+          }
+        })
+        .filter(msg => msg !== null)
         .join('\n\n');
       
       // Context window management - summarize if too large
