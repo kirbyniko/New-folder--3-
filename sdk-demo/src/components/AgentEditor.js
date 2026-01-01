@@ -1492,19 +1492,52 @@ Style:
   }
   
   renderChatInterface(container) {
+    // Calculate iteration progress
+    const iterationPercent = this.config.maxIterations > 0 
+      ? Math.min(100, (this.config.currentIteration / this.config.maxIterations) * 100) 
+      : 0;
+    
+    const isIterating = this.testConversation.some(msg => msg.loading);
+    
     container.innerHTML = `
       <div style="display: flex; flex-direction: column; height: 100%; background: #1e1e1e;">
         <!-- Chat Header -->
         <div style="padding: 16px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center;">
-          <div>
+          <div style="flex: 1;">
             <h3 style="margin: 0; color: #e0e0e0; font-size: 16px; font-weight: 600;">🧪 Agent Test Chat</h3>
             <p style="margin: 4px 0 0 0; color: #9ca3af; font-size: 12px;">Test your agent interactively • Iteration ${this.config.currentIteration || 0}/${this.config.maxIterations || 10}</p>
+            
+            <!-- Iteration Progress Bar -->
+            ${this.config.currentIteration > 0 ? `
+              <div style="margin-top: 8px;">
+                <div style="width: 100%; height: 4px; background: #2d2d2d; border-radius: 2px; overflow: hidden;">
+                  <div style="width: ${iterationPercent}%; height: 100%; background: ${iterationPercent >= 100 ? '#ef4444' : '#0e7490'}; transition: width 0.3s ease;"></div>
+                </div>
+              </div>
+            ` : ''}
           </div>
           <div style="display: flex; gap: 8px;">
-            <button id="continue-iteration-btn" style="padding: 8px 16px; background: #0e7490; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; display: ${this.testConversation.length > 0 ? 'block' : 'none'};">🔄 Continue Iteration</button>
+            <button id="continue-iteration-btn" style="padding: 8px 16px; background: #0e7490; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; display: ${this.testConversation.length > 0 && !isIterating ? 'block' : 'none'};">🔄 Continue Iteration</button>
             <button id="clear-chat-btn" style="padding: 8px 16px; background: #374151; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">🗑️ Clear Chat</button>
           </div>
         </div>
+        
+        <!-- Iteration Status Banner -->
+        ${isIterating ? `
+          <div style="padding: 12px 16px; background: linear-gradient(90deg, #0e7490 0%, #0369a1 100%); border-bottom: 1px solid #0c5273; display: flex; align-items: center; gap: 12px;">
+            <div style="width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+            <div style="flex: 1;">
+              <div style="color: white; font-weight: 600; font-size: 13px;">🔄 Agent Iterating...</div>
+              <div style="color: rgba(255,255,255,0.8); font-size: 11px; margin-top: 2px;">Trying different approaches • Iteration ${this.config.currentIteration}/${this.config.maxIterations}</div>
+            </div>
+            <div style="color: rgba(255,255,255,0.6); font-size: 11px;">⏱️ Working...</div>
+          </div>
+          <style>
+            @keyframes spin {
+              to { transform: rotate(360deg); }
+            }
+          </style>
+        ` : ''}
         
         <!-- Chat Messages -->
         <div id="chat-messages" style="flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
@@ -1608,6 +1641,7 @@ Style:
     const isUser = msg.role === 'user';
     const isSystem = msg.role === 'system';
     const isError = msg.error;
+    const isLoading = msg.loading;
     
     return `
       <div style="display: flex; ${isUser ? 'justify-content: flex-end;' : 'justify-content: flex-start;'}">
@@ -1618,16 +1652,19 @@ Style:
               ? 'background: #1e3a8a; color: #93c5fd; border: 1px solid #1e40af;'
             : isError
               ? 'background: #7f1d1d; color: #fca5a5; border: 1px solid #991b1b;'
+            : isLoading
+              ? 'background: #0e7490; color: white; border: 1px solid #0c5273;'
               : 'background: #2d2d2d; color: #e0e0e0; border: 1px solid #404040;'
         }">
-          <div style="font-size: 10px; margin-bottom: 4px; opacity: 0.7; text-transform: uppercase; font-weight: 600;">
-            ${isUser ? '👤 You' : isSystem ? '🔧 System' : isError ? '❌ Error' : '🤖 Agent'}
+          <div style="font-size: 10px; margin-bottom: 4px; opacity: 0.7; text-transform: uppercase; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+            ${isUser ? '👤 You' : isSystem ? '🔧 System' : isError ? '❌ Error' : isLoading ? '⏳ Agent Working' : '🤖 Agent'}
+            ${isLoading ? '<div style="width: 8px; height: 8px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>' : ''}
           </div>
           <div style="white-space: pre-wrap; word-wrap: break-word; font-size: 14px; line-height: 1.5; font-family: ${isSystem ? "'Courier New', monospace" : 'inherit'};">
             ${this.escapeHtml(msg.content)}
           </div>
           ${msg.metadata ? `
-            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid ${isUser ? 'rgba(255,255,255,0.2)' : '#404040'}; font-size: 11px; opacity: 0.7;">
+            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid ${isUser ? 'rgba(255,255,255,0.2)' : isLoading ? 'rgba(255,255,255,0.2)' : '#404040'}; font-size: 11px; opacity: 0.7;">
               ${msg.metadata}
             </div>
           ` : ''}
@@ -1813,12 +1850,21 @@ Style:
           return;
         }
         
-        // Regular response
+        // Regular response (task complete)
         this.testConversation.push({
           role: 'assistant',
           content: result.response,
-          metadata: `⏱️ ${duration}ms • 📊 ~${Math.ceil(result.response.length / 4)} tokens`
+          metadata: `⏱️ ${duration}ms • 📊 ~${Math.ceil(result.response.length / 4)} tokens • ✅ Task Complete`
         });
+        
+        // Add completion message
+        if (this.config.currentIteration > 1) {
+          this.testConversation.push({
+            role: 'system',
+            content: `✅ Agent completed task after ${this.config.currentIteration} iterations`,
+            metadata: `🔄 Total Iterations: ${this.config.currentIteration}/${this.config.maxIterations}`
+          });
+        }
         
         console.log('[Agent] Continue cycle complete, response:', result.response.substring(0, 100));
       } else {
