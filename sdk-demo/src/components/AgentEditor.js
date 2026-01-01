@@ -367,6 +367,7 @@ export class AgentEditor {
                 <div>GPU Fit: <strong id="token-gpu">✅</strong></div>
                 <div>CPU Risk: <span id="token-risk" class="badge">Low</span></div>
               </div>
+              <div id="token-warning" style="display: none; background: rgba(245, 158, 11, 0.1); border-left: 3px solid #f59e0b; padding: 10px; margin-top: 10px; border-radius: 4px; font-size: 12px; color: #fbbf24;"></div>
             </div>
           </div>
 
@@ -577,6 +578,7 @@ export class AgentEditor {
       }
       e.target.value = ''; // Reset input
       this.renderContextFiles();
+      this.updateTokenEstimate(); // Update token count after adding files
     });
     
     // Tools
@@ -715,28 +717,70 @@ Style:
   updateTokenEstimate() {
     // Rough estimation: ~4 chars per token
     const promptTokens = Math.ceil(this.config.systemPrompt.length / 4);
+    
+    // Count instruction tokens
+    const instructionTokens = this.config.instructions.reduce((total, inst) => {
+      return total + Math.ceil(inst.prompt.length / 4);
+    }, 0);
+    
+    // Count context file tokens
+    const contextTokens = this.config.contextFiles.reduce((total, file) => {
+      const content = file.content || '';
+      return total + Math.ceil(content.length / 4);
+    }, 0);
+    
     const ragTokens = this.config.useRAG ? this.config.ragEpisodes * 500 : 0;
     const knowledgeTokens = this.config.useKnowledge ? 1000 : 0;
     const outputTokens = this.config.maxTokens;
     
-    const total = promptTokens + ragTokens + knowledgeTokens + outputTokens;
+    const total = promptTokens + instructionTokens + contextTokens + ragTokens + knowledgeTokens + outputTokens;
     const percentage = (total / this.config.contextWindow) * 100;
     
+    // GPU limits (typical consumer GPUs)
+    const GPU_SAFE_LIMIT = 4096;  // Safe for most GPUs
+    const GPU_WARNING_LIMIT = 8192; // Risky, might need CPU fallback
+    
     this.tokenEstimate.total = total;
-    this.tokenEstimate.fitsGPU = total <= 4096;
-    this.tokenEstimate.cpuRisk = total < 2000 ? 'low' : total < 6000 ? 'medium' : 'high';
+    this.tokenEstimate.fitsGPU = total <= GPU_SAFE_LIMIT;
+    this.tokenEstimate.cpuRisk = total <= GPU_SAFE_LIMIT ? 'low' : total <= GPU_WARNING_LIMIT ? 'medium' : 'high';
     
     // Update UI
-    document.getElementById('token-total').textContent = total;
-    document.getElementById('token-bar').style.width = `${Math.min(percentage, 100)}%`;
-    document.getElementById('token-bar').className = `token-bar-fill ${
-      percentage < 50 ? 'success' : percentage < 80 ? 'warning' : 'danger'
-    }`;
-    document.getElementById('token-gpu').textContent = this.tokenEstimate.fitsGPU ? '✅' : '❌';
+    const tokenTotalEl = document.getElementById('token-total');
+    const tokenBarEl = document.getElementById('token-bar');
+    const tokenGpuEl = document.getElementById('token-gpu');
+    const tokenRiskEl = document.getElementById('token-risk');
     
-    const riskBadge = document.getElementById('token-risk');
-    riskBadge.textContent = this.tokenEstimate.cpuRisk.toUpperCase();
-    riskBadge.className = `badge badge-${this.tokenEstimate.cpuRisk}`;
+    if (tokenTotalEl) tokenTotalEl.textContent = total;
+    
+    if (tokenBarEl) {
+      tokenBarEl.style.width = `${Math.min(percentage, 100)}%`;
+      tokenBarEl.className = `token-bar-fill ${
+        percentage < 50 ? 'success' : percentage < 80 ? 'warning' : 'danger'
+      }`;
+    }
+    
+    if (tokenGpuEl) {
+      tokenGpuEl.textContent = this.tokenEstimate.fitsGPU ? '✅ GPU Safe' : '⚠️ CPU Fallback';
+      tokenGpuEl.style.color = this.tokenEstimate.fitsGPU ? '#10b981' : '#f59e0b';
+    }
+    
+    if (tokenRiskEl) {
+      tokenRiskEl.textContent = this.tokenEstimate.cpuRisk.toUpperCase();
+      tokenRiskEl.className = `badge badge-${this.tokenEstimate.cpuRisk}`;
+    }
+    
+    // Show warning if exceeds GPU limits
+    const warningEl = document.getElementById('token-warning');
+    if (warningEl) {
+      if (total > GPU_SAFE_LIMIT) {
+        warningEl.style.display = 'block';
+        warningEl.innerHTML = total > GPU_WARNING_LIMIT 
+          ? `⚠️ <strong>CPU Processing Required:</strong> ${total} tokens exceeds GPU capacity (${GPU_WARNING_LIMIT}+). Expect slower performance.`
+          : `💡 <strong>GPU Caution:</strong> ${total} tokens may require CPU fallback on some GPUs. Consider reducing context or max tokens.`;
+      } else {
+        warningEl.style.display = 'none';
+      }
+    }
   }
   
   renderContextFilesList() {
@@ -744,21 +788,28 @@ Style:
       return '<p style="font-size: 12px; color: #9ca3af; text-align: center; padding: 12px;">No context files added</p>';
     }
     
-    return this.config.contextFiles.map((file, index) => `
+    return this.config.contextFiles.map((file, index) => {
+      // Calculate size from content if size property doesn't exist
+      const sizeKB = file.size 
+        ? (file.size / 1024).toFixed(1) 
+        : ((file.content?.length || 0) / 1024).toFixed(1);
+      
+      return `
       <div class="context-file-item" style="display: flex; align-items: center; justify-content: space-between; padding: 8px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 6px;">
         <div style="flex: 1; min-width: 0;">
           <div style="font-size: 12px; font-weight: 500; color: #111827; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
             📄 ${file.name}
           </div>
           <div style="font-size: 11px; color: #6b7280;">
-            ${(file.size / 1024).toFixed(1)} KB
+            ${sizeKB} KB • ~${Math.ceil((file.content?.length || 0) / 4)} tokens
           </div>
         </div>
         <button class="remove-context-file" data-index="${index}" style="padding: 4px 8px; background: #fee; color: #dc2626; border: 1px solid #fecaca; border-radius: 4px; cursor: pointer; font-size: 11px;">
           ✖
         </button>
       </div>
-    `).join('');
+    `;
+    }).join('');
   }
   
   renderContextFiles() {
@@ -798,6 +849,7 @@ Style:
     if (confirm(`Remove "${file.name}" from context?`)) {
       this.config.contextFiles.splice(index, 1);
       this.renderContextFiles();
+      this.updateTokenEstimate(); // Update token count after removing files
       console.log(`🗑️ Removed context file: ${file.name}`);
     }
   }
