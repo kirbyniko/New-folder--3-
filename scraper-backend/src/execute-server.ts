@@ -253,10 +253,20 @@ const server = http.createServer(async (req, res) => {
         };
         
         try {
-          // Execute code with access to axios, cheerio, console
+          // Create a safe execution environment
+          // Make axios and cheerio available as globals so code can use them directly
+          // OR the LLM can use require() syntax (we'll provide a mock require)
+          
+          const mockRequire = (moduleName: string) => {
+            if (moduleName === 'axios') return axios;
+            if (moduleName === 'cheerio') return cheerio;
+            throw new Error(`Module '${moduleName}' is not available. Only 'axios' and 'cheerio' are supported.`);
+          };
+          
+          // Execute code with modules available
           const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
-          const fn = new AsyncFunction('axios', 'cheerio', 'console', request.code);
-          await fn(axios, cheerio, mockConsole);
+          const fn = new AsyncFunction('axios', 'cheerio', 'console', 'require', request.code);
+          await fn(axios, cheerio, mockConsole, mockRequire);
           
           const duration = Date.now() - startTime;
           console.log(`✅ Code executed successfully in ${duration}ms`);
