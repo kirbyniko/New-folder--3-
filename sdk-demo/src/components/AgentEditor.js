@@ -25,6 +25,8 @@ export class AgentEditor {
     
     // Intelligence features activity tracking
     this.intelligenceActivity = {
+      basicReflection: { count: 0, lastRun: null, active: false },
+      basicPlanning: { count: 0, lastRun: null, active: false },
       explicitPlanning: { count: 0, lastRun: null, active: false },
       explicitReflection: { count: 0, lastRun: null, active: false },
       chainOfThought: { count: 0, lastRun: null, active: false },
@@ -1896,8 +1898,10 @@ Style:
           }
         </style>
         <div id="intel-status-panel" style="display: none; padding: 16px; background: #2d2d2d; border-bottom: 1px solid #333;">
-          <h4 style="margin: 0 0 12px 0; color: #e0e0e0; font-size: 14px; font-weight: 600;">🧠 Intelligence Features Status <span style="font-size: 11px; color: #6b7280; font-weight: normal;">(Live Activity)</span></h4>
+          <h4 style="margin: 0 0 12px 0; color: #e0e0e0; font-size: 14px; font-weight: 600;">🧠 Intelligence Features Status <span style="font-size: 11px; color: #6b7280; font-weight: normal;">(Live Activity - 11 Features)</span></h4>
           <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; font-size: 12px;">
+            ${this.renderIntelFeatureStatus('🧩 Basic Reflection', this.config.enableReflection, 'basicReflection')}
+            ${this.renderIntelFeatureStatus('🗺️ Basic Planning', this.config.enablePlanning, 'basicPlanning')}
             ${this.renderIntelFeatureStatus('📋 Explicit Planning', this.config.enableExplicitPlanning, 'explicitPlanning')}
             ${this.renderIntelFeatureStatus('🤔 Explicit Reflection', this.config.enableExplicitReflection, 'explicitReflection')}
             ${this.renderIntelFeatureStatus('💭 Chain of Thought', this.config.enableChainOfThought, 'chainOfThought')}
@@ -3383,6 +3387,10 @@ Respond with JSON: {"satisfied": true/false, "learning": "what I learned", "next
         enhancedPrompt += `6. ONLY after getting final results, respond with plain text summary\n\n`;
         
         if (this.config.enablePlanning && !this.config.enableExplicitPlanning) {
+          this.intelligenceActivity.basicPlanning.count++;
+          this.intelligenceActivity.basicPlanning.lastRun = Date.now();
+          console.log(`🗺️ [INTELLIGENCE] Basic Planning ACTIVATED (Run #${this.intelligenceActivity.basicPlanning.count})`);
+          
           enhancedPrompt += `PLANNING PHASE:\n`;
           enhancedPrompt += `Before your first tool call, create a mental plan:\n`;
           enhancedPrompt += `- What information do I need?\n`;
@@ -3392,6 +3400,10 @@ Respond with JSON: {"satisfied": true/false, "learning": "what I learned", "next
         }
         
         if (this.config.enableReflection && !this.config.enableExplicitReflection) {
+          this.intelligenceActivity.basicReflection.count++;
+          this.intelligenceActivity.basicReflection.lastRun = Date.now();
+          console.log(`🧩 [INTELLIGENCE] Basic Reflection ACTIVATED (Run #${this.intelligenceActivity.basicReflection.count})`);
+          
           enhancedPrompt += `REFLECTION AFTER EACH TOOL:\n`;
           enhancedPrompt += `After each tool result, reflect:\n`;
           enhancedPrompt += `- Did this give me what I needed?\n`;
