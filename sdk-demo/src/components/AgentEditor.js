@@ -1498,9 +1498,12 @@ Style:
         <div style="padding: 16px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center;">
           <div>
             <h3 style="margin: 0; color: #e0e0e0; font-size: 16px; font-weight: 600;">🧪 Agent Test Chat</h3>
-            <p style="margin: 4px 0 0 0; color: #9ca3af; font-size: 12px;">Test your agent interactively with multi-turn conversations</p>
+            <p style="margin: 4px 0 0 0; color: #9ca3af; font-size: 12px;">Test your agent interactively • Iteration ${this.config.currentIteration || 0}/${this.config.maxIterations || 10}</p>
           </div>
-          <button id="clear-chat-btn" style="padding: 8px 16px; background: #374151; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">🗑️ Clear Chat</button>
+          <div style="display: flex; gap: 8px;">
+            <button id="continue-iteration-btn" style="padding: 8px 16px; background: #0e7490; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; display: ${this.testConversation.length > 0 ? 'block' : 'none'};">🔄 Continue Iteration</button>
+            <button id="clear-chat-btn" style="padding: 8px 16px; background: #374151; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">🗑️ Clear Chat</button>
+          </div>
         </div>
         
         <!-- Chat Messages -->
@@ -1566,8 +1569,19 @@ Style:
     
     clearBtn.onclick = () => {
       this.testConversation = [];
+      this.config.currentIteration = 0;
       this.renderChatInterface(container);
     };
+    
+    const continueBtn = container.querySelector('#continue-iteration-btn');
+    if (continueBtn) {
+      continueBtn.onclick = async () => {
+        continueBtn.disabled = true;
+        continueBtn.textContent = '⏳ Continuing...';
+        await this.continueWithToolResults(container);
+        this.renderChatInterface(container);
+      };
+    }
     
     aiGenBtn.onclick = async () => {
       aiGenBtn.disabled = true;
@@ -1737,14 +1751,43 @@ Style:
       this.testConversation = this.testConversation.filter(msg => !msg.loading);
       
       if (result.response) {
-        // Check for another tool call
+        // Check for another tool call - improved extraction
         let toolCallMatch = null;
+        let jsonStr = null;
+        
         try {
-          const jsonMatch = result.response.match(/\{[\s\S]*?"tool"[\s\S]*?\}/);
-          if (jsonMatch) {
-            toolCallMatch = JSON.parse(jsonMatch[0]);
+          const response = result.response.trim();
+          console.log('[Agent] Continue response:', response.substring(0, 200));
+          
+          // Try direct JSON first
+          if (response.startsWith('{')) {
+            jsonStr = response;
           }
-        } catch (e) {}
+          // Extract from markdown code blocks
+          else if (response.includes('```json')) {
+            const match = response.match(/```json\s*([\s\S]*?)```/);
+            if (match) jsonStr = match[1].trim();
+          }
+          else if (response.includes('```')) {
+            const match = response.match(/```\s*([\s\S]*?)```/);
+            if (match) jsonStr = match[1].trim();
+          }
+          // Look for JSON object anywhere in response
+          else {
+            const match = response.match(/\{[\s\S]*?"tool"[\s\S]*?"params"[\s\S]*?\}/);
+            if (match) jsonStr = match[0];
+          }
+          
+          if (jsonStr) {
+            console.log('[Agent] Extracted JSON from continuation:', jsonStr.substring(0, 200));
+            toolCallMatch = JSON.parse(jsonStr);
+            console.log('[Agent] Parsed tool call from continuation:', toolCallMatch);
+          } else {
+            console.log('[Agent] No JSON found in continuation response');
+          }
+        } catch (e) {
+          console.log('[Agent] Failed to parse tool call in continuation:', e.message);
+        }
         
         if (toolCallMatch && this.config.tools.includes(toolCallMatch.tool)) {
           // Execute next tool
