@@ -411,6 +411,24 @@ export class AgentEditor {
               </div>
             </div>
 
+            <!-- Iteration Controls -->
+            <div class="settings-section">
+              <h4 style="margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px;">
+                <span>🔄</span> Iteration Limits <span style="color: #6b7280; font-size: 12px; font-weight: normal;">(💾 Auto-saved)</span>
+              </h4>
+              
+              <label style="font-size: 12px; color: #9ca3af; margin-bottom: 8px; display: block;">
+                Max Iterations: <strong style="color: #10b981;" id="max-iterations-display">${this.config.maxIterations || 10}</strong>
+              </label>
+              <input type="range" id="max-iterations" min="1" max="50" step="1" value="${this.config.maxIterations || 10}" style="width: 100%; margin-bottom: 12px;">
+              
+              <div style="background: #2a2a2a; padding: 10px; border-radius: 4px; font-size: 11px; color: #9ca3af; line-height: 1.4;">
+                <div style="margin-bottom: 6px;">⚡ <strong style="color: #e0e0e0;">Speed Advantage:</strong> Try multiple approaches</div>
+                <div style="margin-bottom: 6px;">🎯 Higher iterations = more problem-solving attempts</div>
+                <div>💡 Agent will iterate until success or limit reached</div>
+              </div>
+            </div>
+
             <!-- Token Estimate -->
             <div class="token-estimate">
               <h4>📊 Token Estimate</h4>
@@ -680,6 +698,23 @@ export class AgentEditor {
       }
       
       this.updateTokenEstimate();
+    });
+    
+    // Max Iterations
+    document.getElementById('max-iterations')?.addEventListener('input', (e) => {
+      const iterations = parseInt(e.target.value);
+      this.config.maxIterations = iterations;
+      
+      // Save to localStorage
+      localStorage.setItem('agentEditor_maxIterations', iterations);
+      
+      // Show "Saved!" indicator
+      this.showSavedIndicator('max-iterations');
+      
+      const displayEl = document.getElementById('max-iterations-display');
+      if (displayEl) {
+        displayEl.textContent = iterations;
+      }
     });
     
     // Context Files
@@ -1588,13 +1623,29 @@ Style:
   }
   
   async continueWithToolResults(container) {
+    // Increment iteration counter
+    this.config.currentIteration = (this.config.currentIteration || 0) + 1;
+    
+    // Check if we've exceeded max iterations
+    if (this.config.currentIteration > this.config.maxIterations) {
+      this.testConversation.push({
+        role: 'system',
+        content: `⚠️ Reached maximum iterations (${this.config.maxIterations}). Agent stopped.\n\nTo continue, increase Max Iterations in settings or reset the conversation.`,
+        metadata: `🔄 Iteration ${this.config.currentIteration}/${this.config.maxIterations}`
+      });
+      this.renderChatInterface(container);
+      const messagesDiv = container.querySelector('#chat-messages');
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      return;
+    }
+    
     // Agent continues autonomously after receiving tool results
     const messagesDiv = container.querySelector('#chat-messages');
     
-    // Add loading indicator
+    // Add loading indicator with iteration count
     this.testConversation.push({
       role: 'assistant',
-      content: '⏳ Processing results...',
+      content: `⏳ Processing results... (Iteration ${this.config.currentIteration}/${this.config.maxIterations})`,
       loading: true
     });
     this.renderChatInterface(container);
