@@ -4,22 +4,22 @@
  * Integrates all components into a unified AI Agent Control Center
  */
 
-// Configure Monaco Editor environment BEFORE any imports
-window.MonacoEnvironment = {
-  getWorkerUrl: function (moduleId, label) {
+// Configure Monaco Editor environment for Vite
+self.MonacoEnvironment = {
+  getWorker(_, label) {
     if (label === 'json') {
-      return './monaco-editor/esm/vs/language/json/json.worker.js';
+      return new Worker(new URL('monaco-editor/esm/vs/language/json/json.worker', import.meta.url), { type: 'module' });
     }
     if (label === 'css' || label === 'scss' || label === 'less') {
-      return './monaco-editor/esm/vs/language/css/css.worker.js';
+      return new Worker(new URL('monaco-editor/esm/vs/language/css/css.worker', import.meta.url), { type: 'module' });
     }
     if (label === 'html' || label === 'handlebars' || label === 'razor') {
-      return './monaco-editor/esm/vs/language/html/html.worker.js';
+      return new Worker(new URL('monaco-editor/esm/vs/language/html/html.worker', import.meta.url), { type: 'module' });
     }
     if (label === 'typescript' || label === 'javascript') {
-      return './monaco-editor/esm/vs/language/typescript/ts.worker.js';
+      return new Worker(new URL('monaco-editor/esm/vs/language/typescript/ts.worker', import.meta.url), { type: 'module' });
     }
-    return './monaco-editor/esm/vs/editor/editor.worker.js';
+    return new Worker(new URL('monaco-editor/esm/vs/editor/editor.worker', import.meta.url), { type: 'module' });
   }
 };
 
