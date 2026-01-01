@@ -96,7 +96,15 @@ export class AgentEditor {
       // Strategy adjustment
       recentFailures: 0,                 // Count consecutive failures
       enableStrategyPivot: true,         // Allow alternative approaches
-      stuckThreshold: 3                  // Trigger pivot after N failures
+      stuckThreshold: 3,                 // Trigger pivot after N failures
+      // Learning optimization
+      learningMetrics: {                 // Track what agent learns from
+        successLearningRate: 0.8,        // Weight for success patterns
+        failureLearningRate: 1.0,        // Weight for failures (learn more from mistakes)
+        recentSuccessCount: 0,
+        recentFailureCount: 0,
+        adaptiveLearning: true           // Adjust learning rates based on performance
+      }
     };
   }
 
@@ -2227,9 +2235,24 @@ Style:
               timestamp: Date.now()
             });
             
-            // Keep only last 10 successes
-            if (this.config.successPatterns.length > 10) {
-              this.config.successPatterns = this.config.successPatterns.slice(-10);
+            // Adaptive learning: adjust retention based on performance
+            if (this.config.learningMetrics?.adaptiveLearning) {
+              this.config.learningMetrics.recentSuccessCount++;
+              
+              // If succeeding frequently, keep more successes (up to 15)
+              const successRate = this.config.learningMetrics.recentSuccessCount / 
+                (this.config.learningMetrics.recentSuccessCount + this.config.learningMetrics.recentFailureCount || 1);
+              
+              const maxSuccesses = successRate > 0.7 ? 15 : 10;
+              
+              if (this.config.successPatterns.length > maxSuccesses) {
+                this.config.successPatterns = this.config.successPatterns.slice(-maxSuccesses);
+              }
+            } else {
+              // Keep only last 10 successes (default)
+              if (this.config.successPatterns.length > 10) {
+                this.config.successPatterns = this.config.successPatterns.slice(-10);
+              }
             }
             
             console.log(`📚 Learned successful pattern: ${toolsUsed.join(' → ')}`);
@@ -2381,9 +2404,53 @@ Style:
     }
   }
 
+  // Advanced error recovery strategies
+  async suggestErrorRecovery(toolName, error, attemptedParams) {
+    const strategies = [];
+    
+    // Strategy 1: Tool substitution
+    if (toolName === 'fetch_url' && error.includes('CORS')) {
+      strategies.push({ type: 'substitute', suggestion: 'Use execute_code with axios instead', tool: 'execute_code' });
+    } else if (toolName === 'execute_code' && error.includes('timeout')) {
+      strategies.push({ type: 'simplify', suggestion: 'Break into smaller code chunks', tool: toolName });
+    }
+    
+    // Strategy 2: Parameter adjustment
+    if (error.includes('Invalid') || error.includes('parse')) {
+      strategies.push({ type: 'adjust_params', suggestion: 'Simplify parameters or fix syntax', tool: toolName });
+    }
+    
+    // Strategy 3: Approach simplification
+    if (this.config.recentFailures >= 2) {
+      strategies.push({ type: 'simplify', suggestion: 'Start with simpler goal, build up gradually', tool: null });
+    }
+    
+    // Strategy 4: Ask for help (provide more context to LLM)
+    if (this.config.recentFailures >= this.config.stuckThreshold) {
+      strategies.push({ type: 'context', suggestion: 'Review available tools and documentation again', tool: null });
+    }
+    
+    return strategies;
+  }
+
   // Check if agent is stuck and suggest alternative strategy
   async suggestStrategyPivot(currentApproach, failureHistory) {
     try {
+      // Get heuristic recovery strategies first
+      const lastFailure = failureHistory[failureHistory.length - 1];
+      const recoveryStrategies = await this.suggestErrorRecovery(
+        lastFailure?.tool,
+        lastFailure?.error || '',
+        lastFailure?.params
+      );
+      
+      if (recoveryStrategies.length > 0) {
+        const strategy = recoveryStrategies[0];
+        console.log(`🔧 Recovery strategy: ${strategy.type} - ${strategy.suggestion}`);
+        return strategy.suggestion;
+      }
+      
+      // Fallback to LLM suggestion
       const failureSummary = failureHistory.slice(-3).map(f => 
         `Tool: ${f.tool}, Error: ${f.error}`
       ).join('\n');
@@ -2412,20 +2479,51 @@ Style:
     }
   }
   
+  // Multi-layer validation system
   async validateResponse(response, conversation) {
     const userQuery = conversation.find(m => m.role === 'user')?.content || '';
     
-    // Quick heuristic checks first
+    // Layer 1: Syntax and format checks
     if (response.length < 20) {
-      console.log('⚠️ Validation: Response too short');
+      console.log('⚠️ Validation Layer 1: Response too short');
       return false;
     }
     
-    // Check 2: Response is not just an error message
     if (response.toLowerCase().includes('error:') || response.toLowerCase().includes('failed to')) {
-      console.log('⚠️ Validation: Response contains error');
+      console.log('⚠️ Validation Layer 1: Response contains error');
       return false;
     }
+    
+    // Layer 2: Semantic coherence (does response relate to query?)
+    const queryVector = this.getSemanticVector(userQuery);
+    const responseVector = this.getSemanticVector(response);
+    const relevance = this.cosineSimilarity(queryVector, responseVector);
+    
+    if (relevance < 0.15) {
+      console.log(`⚠️ Validation Layer 2: Low semantic relevance (${Math.round(relevance * 100)}%)`);
+      return false;
+    }
+    
+    // Layer 3: Completeness score (does it feel complete?)
+    const completenessSignals = [
+      response.includes('successfully'),
+      response.includes('result'),
+      response.includes('found'),
+      response.includes('shows'),
+      response.includes('data'),
+      response.match(/\d+/), // Contains numbers/data
+      response.length > 100,
+      !response.includes('unable to'),
+      !response.includes('could not')
+    ];
+    const completenessScore = completenessSignals.filter(Boolean).length / completenessSignals.length;
+    
+    if (completenessScore < 0.4) {
+      console.log(`⚠️ Validation Layer 3: Low completeness (${Math.round(completenessScore * 100)}%)`);
+      return false;
+    }
+    
+    console.log(`✅ Multi-layer validation passed: relevance=${Math.round(relevance * 100)}%, completeness=${Math.round(completenessScore * 100)}%`);
     
     // Check 3: Response contains some keywords from query (relevance check)
     const queryWords = userQuery.toLowerCase().split(/\s+/).filter(w => w.length > 4);
@@ -2481,30 +2579,77 @@ Respond with JSON: {"valid": true/false, "reason": "why"}\n\nONLY JSON.`;
     return true;
   }
   
+  // Simple word embedding using character n-grams (semantic approximation)
+  getSemanticVector(text) {
+    const words = text.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+    const vector = new Map();
+    
+    words.forEach(word => {
+      // Add word itself
+      vector.set(word, (vector.get(word) || 0) + 1);
+      
+      // Add character trigrams for semantic similarity
+      for (let i = 0; i < word.length - 2; i++) {
+        const trigram = word.substring(i, i + 3);
+        vector.set(trigram, (vector.get(trigram) || 0) + 0.5);
+      }
+    });
+    
+    return vector;
+  }
+  
+  // Cosine similarity between two semantic vectors
+  cosineSimilarity(vec1, vec2) {
+    let dotProduct = 0;
+    let mag1 = 0;
+    let mag2 = 0;
+    
+    const allKeys = new Set([...vec1.keys(), ...vec2.keys()]);
+    
+    allKeys.forEach(key => {
+      const v1 = vec1.get(key) || 0;
+      const v2 = vec2.get(key) || 0;
+      dotProduct += v1 * v2;
+      mag1 += v1 * v1;
+      mag2 += v2 * v2;
+    });
+    
+    if (mag1 === 0 || mag2 === 0) return 0;
+    return dotProduct / (Math.sqrt(mag1) * Math.sqrt(mag2));
+  }
+
   findSimilarSuccessPattern(userQuery) {
     if (!this.config.successPatterns || this.config.successPatterns.length === 0) {
       return null;
     }
     
-    // Simple similarity: keyword matching
-    const queryWords = userQuery.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+    // Semantic similarity using vector embeddings
+    const queryVector = this.getSemanticVector(userQuery);
     
     let bestMatch = null;
     let bestScore = 0;
     
     this.config.successPatterns.forEach(pattern => {
-      const patternWords = pattern.task.toLowerCase().split(/\s+/);
-      const matches = queryWords.filter(w => patternWords.some(pw => pw.includes(w) || w.includes(pw)));
-      const score = matches.length / queryWords.length;
+      const patternVector = this.getSemanticVector(pattern.task);
+      const semanticScore = this.cosineSimilarity(queryVector, patternVector);
       
-      if (score > bestScore && score > 0.3) {
+      // Fallback to keyword matching for additional boost
+      const queryWords = userQuery.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+      const patternWords = pattern.task.toLowerCase().split(/\s+/);
+      const keywordMatches = queryWords.filter(w => patternWords.some(pw => pw.includes(w) || w.includes(pw)));
+      const keywordScore = keywordMatches.length / queryWords.length;
+      
+      // Combined score (70% semantic, 30% keyword)
+      const score = (semanticScore * 0.7) + (keywordScore * 0.3);
+      
+      if (score > bestScore && score > 0.25) {
         bestScore = score;
         bestMatch = pattern;
       }
     });
     
     if (bestMatch) {
-      console.log(`💡 Found similar past success: "${bestMatch.task}" (${Math.round(bestScore * 100)}% match)`);
+      console.log(`💡 Found semantically similar past success: "${bestMatch.task}" (${Math.round(bestScore * 100)}% similarity)`);
       console.log(`   Approach used: ${bestMatch.approach.join(' → ')}`);
     }
     
@@ -2666,6 +2811,21 @@ Respond with JSON: {"satisfied": true/false, "learning": "what I learned", "next
             
             // Track consecutive failures for stuck detection
             this.config.recentFailures++;
+            
+            // Adaptive learning: track failures
+            if (this.config.learningMetrics?.adaptiveLearning) {
+              this.config.learningMetrics.recentFailureCount++;
+              
+              // If failing frequently, keep more failures (up to 30 for better learning)
+              const failureRate = this.config.learningMetrics.recentFailureCount / 
+                (this.config.learningMetrics.recentSuccessCount + this.config.learningMetrics.recentFailureCount || 1);
+              
+              const maxFailures = failureRate > 0.4 ? 30 : 20;
+              
+              if (this.config.failureLog.length > maxFailures) {
+                this.config.failureLog = this.config.failureLog.slice(-maxFailures);
+              }
+            }
           }
           
           return {
