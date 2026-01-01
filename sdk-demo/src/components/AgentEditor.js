@@ -11,6 +11,7 @@
 
 import AgentTemplates from '../lib/AgentTemplates.js';
 import MetricsService from '../services/MetricsService.js';
+import contextLibrary from '../context-library.js';
 
 import * as monaco from 'monaco-editor';
 
@@ -332,11 +333,23 @@ export class AgentEditor {
             <div class="config-section">
               <h4>📁 Context Files</h4>
               <p style="font-size: 12px; color: #6b7280; margin-bottom: 8px;">
-                Upload files to give your agent context and knowledge
+                Add pre-loaded guides or upload custom files
               </p>
+              
+              <!-- Pre-loaded Library -->
+              <details style="margin-bottom: 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 8px;">
+                <summary style="cursor: pointer; font-weight: 500; font-size: 13px; color: #111827; user-select: none;">
+                  📚 Pre-loaded Guides
+                </summary>
+                <div id="library-guides" style="margin-top: 8px; display: grid; gap: 6px;">
+                  ${this.renderLibraryGuides()}
+                </div>
+              </details>
+              
+              <!-- Custom Files -->
               <input type="file" id="context-file-input" multiple style="display: none;" />
               <button id="add-context-file" class="btn btn-secondary" style="width: 100%; margin-bottom: 8px;">
-                + Add Context Files
+                + Upload Custom Files
               </button>
               <div id="context-files-list" class="context-files-list">
                 ${this.renderContextFilesList()}
@@ -678,6 +691,9 @@ export class AgentEditor {
       this.updateTokenEstimate(); // Update token count after adding files
     });
     
+    // Library Guides
+    this.attachLibraryGuideListeners();
+    
     // Tools
     ['execute-code', 'fetch-url', 'search-web', 'read-file'].forEach(tool => {
       document.getElementById(`tool-${tool}`)?.addEventListener('change', (e) => {
@@ -916,6 +932,21 @@ Style:
     }).join('');
   }
   
+  renderLibraryGuides() {
+    return Object.entries(contextLibrary).map(([key, guide]) => {
+      const isSelected = this.config.contextFiles.some(f => f.name === guide.name);
+      return `
+        <label style="display: flex; align-items: start; gap: 8px; padding: 6px; background: white; border: 1px solid ${isSelected ? '#3b82f6' : '#e5e7eb'}; border-radius: 4px; cursor: pointer; transition: all 0.2s;">
+          <input type="checkbox" class="library-guide-checkbox" data-guide-key="${key}" ${isSelected ? 'checked' : ''} style="margin-top: 2px;">
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-size: 12px; font-weight: 500; color: #111827;">${guide.name}</div>
+            <div style="font-size: 11px; color: #6b7280;">${guide.description}</div>
+          </div>
+        </label>
+      `;
+    }).join('');
+  }
+  
   renderContextFiles() {
     const listContainer = document.getElementById('context-files-list');
     if (listContainer) {
@@ -929,6 +960,44 @@ Style:
         });
       });
     }
+    
+    // Re-render library guides to update checked state
+    const libraryContainer = document.getElementById('library-guides');
+    if (libraryContainer) {
+      libraryContainer.innerHTML = this.renderLibraryGuides();
+      this.attachLibraryGuideListeners();
+    }
+  }
+  
+  attachLibraryGuideListeners() {
+    document.querySelectorAll('.library-guide-checkbox').forEach(checkbox => {
+      checkbox.addEventListener('change', (e) => {
+        const guideKey = e.target.dataset.guideKey;
+        const guide = contextLibrary[guideKey];
+        
+        if (e.target.checked) {
+          // Add guide to context files
+          this.config.contextFiles.push({
+            name: guide.name,
+            size: guide.content.length,
+            content: guide.content,
+            addedAt: new Date().toISOString(),
+            isLibraryGuide: true
+          });
+          console.log(`✅ Added library guide: ${guide.name}`);
+        } else {
+          // Remove guide from context files
+          const index = this.config.contextFiles.findIndex(f => f.name === guide.name);
+          if (index !== -1) {
+            this.config.contextFiles.splice(index, 1);
+            console.log(`🗑️ Removed library guide: ${guide.name}`);
+          }
+        }
+        
+        this.renderContextFiles();
+        this.updateTokenEstimate();
+      });
+    });
   }
   
   async addContextFile(file) {
