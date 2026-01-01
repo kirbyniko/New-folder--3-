@@ -2025,8 +2025,9 @@ Style:
         enhancedPrompt += `You just received tool results. You MUST continue with another tool OR present final results.\n\n`;
         
         enhancedPrompt += `YOUR NEXT RESPONSE MUST BE:\n`;
-        enhancedPrompt += `- JSON tool call if more work needed: {"tool": "...", "params": {...}}\n`;
-        enhancedPrompt += `- Plain text summary if task complete\n\n`;
+        enhancedPrompt += `- JSON tool call if more work needed OR if last tool failed: {"tool": "...", "params": {...}}\n`;
+        enhancedPrompt += `- Plain text summary ONLY if task is successfully complete\n`;
+        enhancedPrompt += `- IF LAST TOOL HAD ERROR: You MUST retry with JSON tool call, NOT plain text!\n\n`;
         
         enhancedPrompt += `AVAILABLE TOOLS:\n`;
         if (this.config.tools.includes('execute_code')) {
@@ -2046,10 +2047,11 @@ Style:
         
         // SUPER STRONG MESSAGE if last tool had empty output
         if (hadEmptyOutput) {
-          enhancedPrompt += `\n🚨🚨🚨 CRITICAL: YOUR LAST CODE HAD NO OUTPUT! 🚨🚨🚨\n`;
+          enhancedPrompt += `\n🚨🚨🚨 CRITICAL ERROR: YOUR LAST CODE HAD NO OUTPUT! 🚨🚨🚨\n`;
           enhancedPrompt += `The code you just ran returned NOTHING because you forgot console.log()!\n`;
-          enhancedPrompt += `YOU MUST REWRITE IT WITH console.log() AT THE END!\n`;
-          enhancedPrompt += `DO NOT generate the same code again - ADD console.log() or use different approach!\n\n`;
+          enhancedPrompt += `YOU MUST IMMEDIATELY RETRY WITH A NEW TOOL CALL!\n`;
+          enhancedPrompt += `DO NOT respond with text - respond with JSON tool call!\n`;
+          enhancedPrompt += `FIX THE CODE AND RETRY: {"tool": "execute_code", "params": {"code": "...WITH console.log()..."}}\n\n`;
         }
         
         enhancedPrompt += `EMPTY OUTPUT = FAILURE:\n`;
