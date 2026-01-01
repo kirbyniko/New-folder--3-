@@ -3591,7 +3591,8 @@ try {
       modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 10000;';
       
       modal.innerHTML = `
-        enhancedPrompt += `You are an AUTONOMOUS AGENT. You MUST respond with ONLY valid JSON tool calls until the task is complete.\n\n`;
+        <div style="background: #1e1e1e; border-radius: 8px; padding: 24px; min-width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+          <h3 style="margin: 0 0 16px 0; color: #e0e0e0; font-size: 18px;">🧪 Test Agent</h3> You MUST respond with ONLY valid JSON tool calls until the task is complete.\n\n`;
         
         enhancedPrompt += `CRITICAL RULES:\n`;
         enhancedPrompt += `1. Respond with JSON ONLY - no explanations, no text, no code examples!\n`;
