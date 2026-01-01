@@ -67,7 +67,15 @@ export class AgentEditor {
         memoryLimit: '512MB'
       },
       // Hardware configuration (duplicate removed below)
-      maxIterations: parseInt(localStorage.getItem('agentEditor_maxIterations')) || 10
+      maxIterations: parseInt(localStorage.getItem('agentEditor_maxIterations')) || 10,
+      // Learning systems
+      failureLog: [],
+      successPatterns: [],
+      enableReflection: true,
+      enablePlanning: true,
+      enableSmartContext: true,
+      parallelToolExecution: true,
+      currentIteration: 0
     };
   }
 
@@ -1221,6 +1229,88 @@ Style:
       console.log(`🗑️ Removed context file: ${file.name}`);
     }
   }
+  
+  selectRelevantContext(userMessage) {
+    if (!this.config.enableSmartContext || !this.config.contextFiles || this.config.contextFiles.length === 0) {
+      return this.config.contextFiles || [];
+    }
+    
+    // Extract keywords from user message
+    const keywords = userMessage.toLowerCase().split(/\s+/);
+    
+    // Score each context file based on relevance
+    const scored = this.config.contextFiles.map(file => {
+      let score = 0;
+      const fileContent = (file.name + ' ' + file.content).toLowerCase();
+      
+      // Check for keyword matches
+      keywords.forEach(keyword => {
+        if (keyword.length > 3 && fileContent.includes(keyword)) {
+          score += 1;
+        }
+      });
+      
+      // Boost scores for common libraries mentioned
+      if (userMessage.includes('axios') && file.name.includes('axios')) score += 5;
+      if (userMessage.includes('cheerio') && file.name.includes('cheerio')) score += 5;
+      if (userMessage.includes('puppeteer') && file.name.includes('puppeteer')) score += 5;
+      if (userMessage.includes('error') && file.name.includes('error')) score += 3;
+      if (userMessage.includes('fetch') && file.name.includes('api')) score += 3;
+      
+      return { file, score };
+    });
+    
+    // Return top 3 most relevant files, or all if less than 5 total
+    if (this.config.contextFiles.length <= 5) {
+      return this.config.contextFiles;
+    }
+    
+    return scored
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3)
+      .map(item => item.file);
+  }
+  
+  selectRelevantContext(userMessage) {
+    if (!this.config.enableSmartContext || !this.config.contextFiles || this.config.contextFiles.length === 0) {
+      return this.config.contextFiles || [];
+    }
+    
+    // Extract keywords from user message
+    const keywords = userMessage.toLowerCase().split(/\s+/);
+    
+    // Score each context file based on relevance
+    const scored = this.config.contextFiles.map(file => {
+      let score = 0;
+      const fileContent = (file.name + ' ' + file.content).toLowerCase();
+      
+      // Check for keyword matches
+      keywords.forEach(keyword => {
+        if (keyword.length > 3 && fileContent.includes(keyword)) {
+          score += 1;
+        }
+      });
+      
+      // Boost scores for common libraries mentioned
+      if (userMessage.includes('axios') && file.name.includes('axios')) score += 5;
+      if (userMessage.includes('cheerio') && file.name.includes('cheerio')) score += 5;
+      if (userMessage.includes('puppeteer') && file.name.includes('puppeteer')) score += 5;
+      if (userMessage.includes('error') && file.name.includes('error')) score += 3;
+      if (userMessage.includes('fetch') && file.name.includes('api')) score += 3;
+      
+      return { file, score };
+    });
+    
+    // Return top 3 most relevant files, or all if less than 5 total
+    if (this.config.contextFiles.length <= 5) {
+      return this.config.contextFiles;
+    }
+    
+    return scored
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3)
+      .map(item => item.file);
+  }
 
   switchEditorTab(tab) {
     const monacoContainer = document.getElementById('monaco-editor');
@@ -1983,20 +2073,43 @@ Style:
         }
         
         if (toolCallMatch && this.config.tools.includes(toolCallMatch.tool)) {
-          // Execute next tool
-          const toolResult = await this.executeTool(toolCallMatch.tool, toolCallMatch.params);
+          // Check if this is an array of tool calls (parallel execution)
+          const toolCalls = Array.isArray(toolCallMatch) ? toolCallMatch : [toolCallMatch];
           
-          this.testConversation.push({
-            role: 'assistant',
-            content: `🛠️ Executing: ${toolCallMatch.tool}(${JSON.stringify(toolCallMatch.params).substring(0, 100)}...)`,
-            metadata: `⏱️ ${duration}ms`
-          });
-          
-          this.testConversation.push({
-            role: 'system',
-            content: `Tool Result:\n${toolResult.success ? toolResult.output : 'Error: ' + toolResult.error}`,
-            metadata: `⏱️ ${toolResult.duration}ms`
-          });
+          if (toolCalls.length > 1) {
+            // Execute tools in parallel
+            console.log(`⚡ Executing ${toolCalls.length} tools in parallel`);
+            const results = await this.executeToolsInParallel(toolCalls);
+            
+            results.forEach(({ tool, result }) => {
+              this.testConversation.push({
+                role: 'assistant',
+                content: `🛠️ Executed: ${tool}`,
+                metadata: `⏱️ ${result.duration}ms`
+              });
+              
+              this.testConversation.push({
+                role: 'system',
+                content: `Tool Result:\n${result.success ? result.output : 'Error: ' + result.error}`,
+                metadata: `⏱️ ${result.duration}ms`
+              });
+            });
+          } else {
+            // Execute single tool
+            const toolResult = await this.executeTool(toolCallMatch.tool, toolCallMatch.params);
+            
+            this.testConversation.push({
+              role: 'assistant',
+              content: `🛠️ Executing: ${toolCallMatch.tool}(${JSON.stringify(toolCallMatch.params).substring(0, 100)}...)`,
+              metadata: `⏱️ ${duration}ms`
+            });
+            
+            this.testConversation.push({
+              role: 'system',
+              content: `Tool Result:\n${toolResult.success ? toolResult.output : 'Error: ' + toolResult.error}`,
+              metadata: `⏱️ ${toolResult.duration}ms`
+            });
+          }
           
           this.renderChatInterface(container);
           messagesDiv.scrollTop = messagesDiv.scrollHeight;
@@ -2007,11 +2120,40 @@ Style:
         }
         
         // Regular response (task complete)
+        // Validate if response actually answers the question
+        const isValidResponse = await this.validateResponse(result.response, this.testConversation);
+        
         this.testConversation.push({
           role: 'assistant',
           content: result.response,
-          metadata: `⏱️ ${duration}ms • 📊 ~${Math.ceil(result.response.length / 4)} tokens • ✅ Task Complete`
+          metadata: `⏱️ ${duration}ms • 📊 ~${Math.ceil(result.response.length / 4)} tokens • ${isValidResponse ? '✅ Task Complete' : '⚠️ May Need Improvement'}`
         });
+        
+        // Track successful completion
+        if (this.config.successPatterns && this.config.currentIteration > 0) {
+          const toolsUsed = this.testConversation
+            .filter(msg => msg.role === 'system' && msg.content.includes('Tool:'))
+            .map(msg => {
+              const match = msg.content.match(/Tool: (\w+)/);
+              return match ? match[1] : 'unknown';
+            });
+          
+          if (toolsUsed.length > 0) {
+            this.config.successPatterns.push({
+              task: this.testConversation.find(m => m.role === 'user')?.content || 'unknown',
+              approach: toolsUsed,
+              iterations: this.config.currentIteration,
+              timestamp: Date.now()
+            });
+            
+            // Keep only last 10 successes
+            if (this.config.successPatterns.length > 10) {
+              this.config.successPatterns = this.config.successPatterns.slice(-10);
+            }
+            
+            console.log(`📚 Learned successful pattern: ${toolsUsed.join(' → ')}`);
+          }
+        }
         
         // Add completion message
         if (this.config.currentIteration > 1) {
@@ -2041,6 +2183,94 @@ Style:
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
   }
   
+  parseToolCalls(response) {
+    // Try to parse multiple tool calls from response (for parallel execution)
+    const toolCalls = [];
+    
+    // Try parsing as JSON array first
+    try {
+      const parsed = JSON.parse(response);
+      if (Array.isArray(parsed)) {
+        return parsed;
+      } else if (parsed.tool) {
+        return [parsed];
+      }
+    } catch (e) {
+      // Not JSON array, try finding individual tool calls
+    }
+    
+    // Find all JSON objects in response
+    const jsonMatches = response.matchAll(/\{[^{}]*"tool"[^{}]*\}/g);
+    for (const match of jsonMatches) {
+      try {
+        const toolCall = JSON.parse(match[0]);
+        if (toolCall.tool) {
+          toolCalls.push(toolCall);
+        }
+      } catch (e) {
+        // Invalid JSON, skip
+      }
+    }
+    
+    return toolCalls.length > 0 ? toolCalls : null;
+  }
+  
+  async executeToolsInParallel(toolCalls) {
+    if (!this.config.parallelToolExecution || toolCalls.length === 1) {
+      // Execute sequentially
+      const results = [];
+      for (const call of toolCalls) {
+        const result = await this.executeTool(call.tool, call.params);
+        results.push({ tool: call.tool, result });
+      }
+      return results;
+    }
+    
+    // Execute in parallel
+    console.log(`⚡ Executing ${toolCalls.length} tools in parallel`);
+    const promises = toolCalls.map(call => 
+      this.executeTool(call.tool, call.params)
+        .then(result => ({ tool: call.tool, result }))
+    );
+    
+    return await Promise.all(promises);
+  }
+  
+  async validateResponse(response, conversation) {
+    // Simple validation heuristics (avoid calling LLM for speed)
+    const userQuery = conversation.find(m => m.role === 'user')?.content || '';
+    
+    // Check 1: Response is not too short (at least 20 chars)
+    if (response.length < 20) {
+      console.log('⚠️ Validation: Response too short');
+      return false;
+    }
+    
+    // Check 2: Response is not just an error message
+    if (response.toLowerCase().includes('error:') || response.toLowerCase().includes('failed to')) {
+      console.log('⚠️ Validation: Response contains error');
+      return false;
+    }
+    
+    // Check 3: Response contains some keywords from query (relevance check)
+    const queryWords = userQuery.toLowerCase().split(/\s+/).filter(w => w.length > 4);
+    const hasRelevance = queryWords.some(word => response.toLowerCase().includes(word));
+    
+    if (!hasRelevance && queryWords.length > 0) {
+      console.log('⚠️ Validation: Response may not be relevant to query');
+    }
+    
+    // Check 4: If query asks for data/list, check response has it
+    if ((userQuery.includes('get') || userQuery.includes('find') || userQuery.includes('list')) &&
+        response.length < 50) {
+      console.log('⚠️ Validation: Query asks for data but response is minimal');
+      return false;
+    }
+    
+    console.log('✅ Validation: Response appears complete');
+    return true;
+  }
+  
   async executeTool(toolName, params) {
     const startTime = Date.now();
     
@@ -2066,6 +2296,21 @@ Style:
           const errorDetails = result.error || `HTTP ${response.status}: ${response.statusText}`;
           const errorLogs = result.logs?.join('\n') || '';
           const fullError = errorLogs ? `${errorDetails}\n\nLogs:\n${errorLogs}` : errorDetails;
+          
+          // Track failure
+          if (this.config.failureLog) {
+            this.config.failureLog.push({
+              tool: toolName,
+              params: params,
+              error: errorDetails,
+              timestamp: Date.now()
+            });
+            
+            // Keep only last 20 failures
+            if (this.config.failureLog.length > 20) {
+              this.config.failureLog = this.config.failureLog.slice(-20);
+            }
+          }
           
           return {
             success: false,
@@ -2194,6 +2439,42 @@ Style:
         enhancedPrompt += `5. Keep using tools until you have a complete answer\n`;
         enhancedPrompt += `6. ONLY after getting final results, respond with plain text summary\n\n`;
         
+        if (this.config.enablePlanning) {
+          enhancedPrompt += `PLANNING PHASE:\n`;
+          enhancedPrompt += `Before your first tool call, create a mental plan:\n`;
+          enhancedPrompt += `- What information do I need?\n`;
+          enhancedPrompt += `- Which tools will I use and in what order?\n`;
+          enhancedPrompt += `- What's my expected outcome?\n`;
+          enhancedPrompt += `Then proceed with tool execution.\n\n`;
+        }
+        
+        if (this.config.enableReflection) {
+          enhancedPrompt += `REFLECTION AFTER EACH TOOL:\n`;
+          enhancedPrompt += `After each tool result, reflect:\n`;
+          enhancedPrompt += `- Did this give me what I needed?\n`;
+          enhancedPrompt += `- What's the next logical step?\n`;
+          enhancedPrompt += `- Should I try a different approach?\n`;
+          enhancedPrompt += `- Do I have enough info to answer the user?\n\n`;
+        }
+        
+        if (this.config.enablePlanning) {
+          enhancedPrompt += `PLANNING PHASE:\n`;
+          enhancedPrompt += `Before your first tool call, create a mental plan:\n`;
+          enhancedPrompt += `- What information do I need?\n`;
+          enhancedPrompt += `- Which tools will I use and in what order?\n`;
+          enhancedPrompt += `- What's my expected outcome?\n`;
+          enhancedPrompt += `Then proceed with tool execution.\n\n`;
+        }
+        
+        if (this.config.enableReflection) {
+          enhancedPrompt += `REFLECTION AFTER EACH TOOL:\n`;
+          enhancedPrompt += `After each tool result, reflect:\n`;
+          enhancedPrompt += `- Did this give me what I needed?\n`;
+          enhancedPrompt += `- What's the next logical step?\n`;
+          enhancedPrompt += `- Should I try a different approach?\n`;
+          enhancedPrompt += `- Do I have enough info to answer the user?\n\n`;
+        }
+        
         enhancedPrompt += `AVAILABLE TOOLS:\n`;
         
         if (this.config.tools.includes('execute_code')) {
@@ -2234,12 +2515,32 @@ Style:
         }
       }
       
-      // Add context files (including library guides)
-      if (this.config.contextFiles && this.config.contextFiles.length > 0) {
-        enhancedPrompt += `\n\n=== REFERENCE DOCUMENTATION ===\n`;
+      // Add learning history (failures and successes)
+      if (this.config.failureLog && this.config.failureLog.length > 0) {
+        const recentFailures = this.config.failureLog.slice(-3);
+        enhancedPrompt += `\n\n=== PREVIOUS FAILURES (AVOID THESE) ===\n`;
+        recentFailures.forEach((failure, idx) => {
+          enhancedPrompt += `${idx + 1}. Tool: ${failure.tool}, Error: ${failure.error}\n`;
+        });
+        enhancedPrompt += `\n`;
+      }
+      
+      if (this.config.successPatterns && this.config.successPatterns.length > 0) {
+        const recentSuccesses = this.config.successPatterns.slice(-2);
+        enhancedPrompt += `=== SUCCESSFUL APPROACHES (TRY THESE) ===\n`;
+        recentSuccesses.forEach((success, idx) => {
+          enhancedPrompt += `${idx + 1}. For "${success.task.substring(0, 50)}...", used: ${success.approach.join(' → ')}\n`;
+        });
+        enhancedPrompt += `\n`;
+      }
+      
+      // Add smart context selection (only relevant files)
+      const relevantContext = this.selectRelevantContext(conversationContext);
+      if (relevantContext && relevantContext.length > 0) {
+        enhancedPrompt += `\n=== REFERENCE DOCUMENTATION ===\n`;
         enhancedPrompt += `You have access to these guides and references. Use them when encountering errors:\n\n`;
         
-        this.config.contextFiles.forEach(file => {
+        relevantContext.forEach(file => {
           enhancedPrompt += `--- ${file.name} ---\n`;
           enhancedPrompt += `${file.content}\n\n`;
         });
