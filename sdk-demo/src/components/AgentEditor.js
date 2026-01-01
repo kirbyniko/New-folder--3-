@@ -2478,7 +2478,22 @@ Style:
         
         // Regular response (task complete or asking for help)
         // Check if agent is asking for user input/help
-        const askingForHelp = result.response.match(/please provide|provide a valid|i need|can you provide|give me|what is the|which|help me/i);
+        const askingForHelp = result.response.match(/please provide|please select|provide a valid|i need|can you provide|give me|which one|pick one|help me|let me know|if you need help|you choose|select a specific/i);
+        
+        // If asking for help, force continuation with instruction to be autonomous
+        if (askingForHelp) {
+          console.warn('⚠️ Agent is asking for user input - forcing autonomous behavior');
+          
+          this.testConversation.push({
+            role: 'system',
+            content: `⚠️ ERROR: You asked the user for input. You are an AUTONOMOUS agent - you must make decisions yourself!\n\nREMINDER:\n- NEVER ask "please provide" or "please select"\n- When you have search results with URLs, PICK ONE and use it immediately\n- Make educated guesses when needed\n- Be self-sufficient and decisive\n\nNow proceed with the task autonomously. If you just got search results, use the FIRST URL from those results.`,
+            error: true
+          });
+          
+          this.renderChatInterface(container);
+          await this.continueWithToolResults(container);
+          return;
+        }
         
         // Validate if response actually answers the question
         // Skip validation for tool calls (JSON responses) or if asking for help
@@ -3299,9 +3314,23 @@ try {
   let match;
   let count = 0;
   while ((match = resultRegex.exec(html)) && count < 5) {
-    const url = match[1];
+    let rawUrl = match[1];
     const title = match[2].replace(/&amp;/g, '&').replace(/&quot;/g, '"');
-    results.push({ url, title });
+    
+    // Extract actual URL from DuckDuckGo redirect
+    if (rawUrl.includes('uddg=')) {
+      const urlMatch = rawUrl.match(/uddg=([^&]+)/);
+      if (urlMatch) {
+        rawUrl = decodeURIComponent(urlMatch[1]);
+      }
+    }
+    
+    // Clean up URL (add https if missing)
+    if (rawUrl.startsWith('//')) {
+      rawUrl = 'https:' + rawUrl;
+    }
+    
+    results.push({ url: rawUrl, title });
     count++;
   }
   
@@ -3311,7 +3340,7 @@ try {
     console.log('Found ' + results.length + ' results:\\n');
     results.forEach((r, i) => {
       console.log((i+1) + '. ' + r.title);
-      console.log('   ' + r.url + '\\n');
+      console.log('   URL: ' + r.url + '\\n');
     });
   }
 } catch (error) {
@@ -3489,16 +3518,20 @@ try {
         
         enhancedPrompt += `CRITICAL RULES:\n`;
         enhancedPrompt += `1. Respond with JSON ONLY - no explanations, no text, no code examples!\n`;
-        enhancedPrompt += `2. NEVER GUESS URLs! If you need a URL, ALWAYS use search_web FIRST to find real URLs\n`;
-        enhancedPrompt += `3. If you don't know a URL, use search_web to find one FIRST\n`;
-        enhancedPrompt += `4. In execute_code, ALWAYS END WITH console.log() or the result will be EMPTY!\n`;
+        enhancedPrompt += `2. NEVER ask the user to pick or provide information - YOU make decisions!\n`;
+        enhancedPrompt += `3. When search_web returns URLs, IMMEDIATELY use one (pick the first or most relevant)\n`;
+        enhancedPrompt += `4. NEVER say "please provide" or "please select" - be autonomous!\n`;
+        enhancedPrompt += `5. In execute_code, ALWAYS END WITH console.log() or the result will be EMPTY!\n`;
         enhancedPrompt += `   WRONG: await page.content(); // No output!\n`;
         enhancedPrompt += `   RIGHT: const html = await page.content(); console.log(html);\n`;
-        enhancedPrompt += `5. Chain multiple tools together to complete tasks\n`;
-        enhancedPrompt += `6. If a tool fails, try a different approach with another tool\n`;
-        enhancedPrompt += `7. NEVER give up - keep trying different tools until you succeed\n`;
-        enhancedPrompt += `8. NEVER provide code examples or tutorials - execute tools instead!\n`;
-        enhancedPrompt += `9. ONLY after getting final results, respond with plain text summary\n\n`;
+        enhancedPrompt += `6. Chain multiple tools together to complete tasks\n`;
+        enhancedPrompt += `7. If a tool fails, try a different approach with another tool\n`;
+        enhancedPrompt += `8. NEVER give up - keep trying different tools until you succeed\n`;
+        enhancedPrompt += `9. NEVER provide code examples or tutorials - execute tools instead!\n`;
+        enhancedPrompt += `10. ONLY after getting final results, respond with plain text summary\n\n`;
+        enhancedPrompt += `AUTONOMY RULE: You are a self-sufficient agent. Never ask for user input!\n`;
+        enhancedPrompt += `If search returns multiple options, pick the best one yourself.\n`;
+        enhancedPrompt += `If you're unsure, make an educated guess and proceed.\n\n`;
         
         if (this.config.enablePlanning && !this.config.enableExplicitPlanning) {
           this.intelligenceActivity.basicPlanning.count++;
