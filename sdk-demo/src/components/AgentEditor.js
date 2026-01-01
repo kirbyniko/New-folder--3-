@@ -1812,6 +1812,36 @@ Style:
       return;
     }
     
+    // Track recent tool calls to detect loops
+    this.recentToolCalls = this.recentToolCalls || [];
+    const lastToolCall = this.testConversation
+      .slice(-5)
+      .reverse()
+      .find(msg => msg.role === 'assistant' && msg.content.includes('🛠️ Executing:'));
+    
+    if (lastToolCall) {
+      // Extract tool name and first 100 chars of params for comparison
+      const toolSignature = lastToolCall.content.substring(0, 150);
+      this.recentToolCalls.push(toolSignature);
+      if (this.recentToolCalls.length > 5) this.recentToolCalls.shift();
+      
+      // Check for repeated actions (same tool call 3+ times in a row)
+      const lastThree = this.recentToolCalls.slice(-3);
+      if (lastThree.length === 3 && 
+          lastThree[0] === lastThree[1] && 
+          lastThree[1] === lastThree[2]) {
+        this.testConversation.push({
+          role: 'system',
+          content: `⚠️ **Loop Detected!** Agent is repeating the same action 3 times:\n\n${lastThree[0]}\n\n**Possible reasons:**\n• Tool is not returning expected output\n• Code has errors but returns "Success"\n• Agent needs different approach\n\n**Stopping to prevent infinite loop.**`,
+          metadata: `🔄 Iteration ${this.config.currentIteration}/${this.config.maxIterations}`
+        });
+        this.renderChatInterface(container);
+        const messagesDiv = container.querySelector('#chat-messages');
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        return;
+      }
+    }
+    
     // Agent continues autonomously after receiving tool results
     const messagesDiv = container.querySelector('#chat-messages');
     
@@ -2041,9 +2071,19 @@ Style:
           };
         }
         
+        // Return the actual output
+        let output = '';
+        if (result.data) {
+          output = JSON.stringify(result.data, null, 2);
+        } else if (result.logs && result.logs.length > 0) {
+          output = result.logs.join('\n');
+        } else {
+          output = 'Code executed successfully (no output)';
+        }
+        
         return {
           success: true,
-          output: result.data ? JSON.stringify(result.data, null, 2) : (result.logs?.join('\n') || 'Success'),
+          output: output,
           duration: Date.now() - startTime
         };
       }
