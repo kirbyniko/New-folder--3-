@@ -2459,16 +2459,19 @@ Style:
           return;
         }
         
-        // Regular response (task complete)
+        // Regular response (task complete or asking for help)
+        // Check if agent is asking for user input/help
+        const askingForHelp = result.response.match(/please provide|provide a valid|i need|can you provide|give me|what is the|which|help me/i);
+        
         // Validate if response actually answers the question
-        // Skip validation for tool calls (JSON responses)
+        // Skip validation for tool calls (JSON responses) or if asking for help
         const isToolCall = result.response.includes('"tool"') && result.response.includes('"params"');
-        const isValidResponse = isToolCall ? true : await this.validateResponse(result.response, this.testConversation);
+        const isValidResponse = (isToolCall || askingForHelp) ? true : await this.validateResponse(result.response, this.testConversation);
         
         this.testConversation.push({
           role: 'assistant',
           content: result.response,
-          metadata: `⏱️ ${duration}ms • 📊 ~${Math.ceil(result.response.length / 4)} tokens • ${isValidResponse ? '✅ Task Complete' : '⚠️ May Need Improvement'}`
+          metadata: `⏱️ ${duration}ms • 📊 ~${Math.ceil(result.response.length / 4)} tokens • ${askingForHelp ? '❓ Needs Input' : isValidResponse ? '✅ Task Complete' : '⚠️ May Need Improvement'}`
         });
         
         // Extract tools used (for both success tracking and conversation history)
@@ -2533,12 +2536,18 @@ Style:
         // Save to persistent storage
         this.savePersistentMemory();
         
-        // Add completion message
-        if (this.config.currentIteration > 1) {
+        // Add completion message only if not asking for help
+        if (this.config.currentIteration > 1 && !askingForHelp) {
           this.testConversation.push({
             role: 'system',
             content: `✅ Agent completed task after ${this.config.currentIteration} iterations`,
             metadata: `🔄 Total Iterations: ${this.config.currentIteration}/${this.config.maxIterations}`
+          });
+        } else if (askingForHelp) {
+          this.testConversation.push({
+            role: 'system',
+            content: `❓ Agent needs additional information to continue`,
+            metadata: `🔄 Iterations: ${this.config.currentIteration}/${this.config.maxIterations}`
           });
         }
         
