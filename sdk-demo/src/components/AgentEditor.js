@@ -3592,36 +3592,85 @@ try {
       
       modal.innerHTML = `
         <div style="background: #1e1e1e; border-radius: 8px; padding: 24px; min-width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
-          <h3 style="margin: 0 0 16px 0; color: #e0e0e0; font-size: 18px;">🧪 Test Agent</h3> You MUST respond with ONLY valid JSON tool calls until the task is complete.\n\n`;
+          <h3 style="margin: 0 0 16px 0; color: #e0e0e0; font-size: 18px;">🧪 Test Agent</h3>
+          <p style="color: #9ca3af; font-size: 14px; margin-bottom: 12px;">Enter a message to test your agent's response:</p>
+          <textarea id="test-prompt-input" 
+                    placeholder="Example: Hello, introduce yourself!&#10;Example: What can you help me with?&#10;Example: Analyze this webpage"
+                    style="width: 100%; min-height: 100px; background: #2d2d2d; border: 1px solid #444; border-radius: 6px; color: #e0e0e0; padding: 12px; font-size: 14px; font-family: inherit; resize: vertical; margin-bottom: 12px;">Hello, introduce yourself!</textarea>
+          <div style="margin-bottom: 16px;">
+            <button id="ai-generate-test-btn" style="padding: 8px 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+              <span>✨</span>
+              <span>AI Generate Test Prompt</span>
+            </button>
+          </div>
+          <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button id="test-cancel-btn" style="padding: 10px 20px; background: #374151; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Cancel</button>
+            <button id="test-run-btn" style="padding: 10px 20px; background: #7c3aed; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">🚀 Test Agent</button>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      
+      const input = modal.querySelector('#test-prompt-input');
+      const runBtn = modal.querySelector('#test-run-btn');
+      const cancelBtn = modal.querySelector('#test-cancel-btn');
+      const aiGenBtn = modal.querySelector('#ai-generate-test-btn');
+      
+      input.focus();
+      input.select();
+      
+      // AI Generate Test Prompt
+      aiGenBtn.onclick = async () => {
+        aiGenBtn.disabled = true;
+        aiGenBtn.innerHTML = '<span>⏳</span><span>Generating...</span>';
         
-        enhancedPrompt += `CRITICAL RULES:\n`;
-        enhancedPrompt += `1. Respond with JSON ONLY - no explanations, no text, no code examples!\n`;
-        enhancedPrompt += `2. NEVER ask the user to pick or provide information - YOU make decisions!\n`;
-        enhancedPrompt += `3. When search_web returns URLs, IMMEDIATELY use one (pick the first or most relevant)\n`;
-        enhancedPrompt += `4. NEVER say "please provide" or "please select" - be autonomous!\n`;
-        enhancedPrompt += `5. In execute_code, ALWAYS END WITH console.log() or the result will be EMPTY!\n`;
-        enhancedPrompt += `   WRONG: await page.content(); // No output!\n`;
-        enhancedPrompt += `   RIGHT: const html = await page.content(); console.log(html);\n`;
-        enhancedPrompt += `6. Chain multiple tools together to complete tasks\n`;
-        enhancedPrompt += `7. If a tool fails, try a different approach with another tool\n`;
-        enhancedPrompt += `8. NEVER give up - keep trying different tools until you succeed\n`;
-        enhancedPrompt += `9. NEVER provide code examples or tutorials - execute tools instead!\n`;
-        enhancedPrompt += `10. ONLY after getting final results, respond with plain text summary\n\n`;
-        enhancedPrompt += `AUTONOMY RULE: You are a self-sufficient agent. Never ask for user input!\n`;
-        enhancedPrompt += `If search returns multiple options, pick the best one yourself.\n`;
-        enhancedPrompt += `If you're unsure, make an educated guess and proceed.\n\n`;
+        try {
+          const testPrompt = await this.generateTestPrompt();
+          if (testPrompt) {
+            input.value = testPrompt;
+          }
+        } catch (error) {
+          console.error('Failed to generate test prompt:', error);
+        }
         
-        if (this.config.enablePlanning && !this.config.enableExplicitPlanning) {
-          this.intelligenceActivity.basicPlanning.count++;
-          this.intelligenceActivity.basicPlanning.lastRun = Date.now();
-          console.log(`🗺️ [INTELLIGENCE] Basic Planning ACTIVATED (Run #${this.intelligenceActivity.basicPlanning.count})`);
-          
-          enhancedPrompt += `PLANNING PHASE:\n`;
-          enhancedPrompt += `Before your first tool call, create a mental plan:\n`;
-          enhancedPrompt += `- What information do I need?\n`;
-          enhancedPrompt += `- Which tools will I use and in what order?\n`;
-          enhancedPrompt += `- What's my expected outcome?\n`;
-          enhancedPrompt += `Then proceed with tool execution.\n\n`;
+        aiGenBtn.disabled = false;
+        aiGenBtn.innerHTML = '<span>✨</span><span>AI Generate Test Prompt</span>';
+      };
+      
+      // Cancel button
+      cancelBtn.onclick = () => {
+        document.body.removeChild(modal);
+        resolve('');
+      };
+      
+      // Run button
+      runBtn.onclick = () => {
+        const message = input.value.trim();
+        if (message) {
+          document.body.removeChild(modal);
+          resolve(message);
+        }
+      };
+      
+      // Enter key
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          const message = input.value.trim();
+          if (message) {
+            document.body.removeChild(modal);
+            resolve(message);
+          }
+        }
+      });
+    });
+  }
+  
+  // Generate test prompt using AI
+  async generateTestPrompt() {
+    try {
+      const response = await fetch('http://localhost:11434/api/generate', {
         }
         
         if (this.config.enableReflection && !this.config.enableExplicitReflection) {
