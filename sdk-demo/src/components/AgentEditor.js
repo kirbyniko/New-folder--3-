@@ -2128,6 +2128,8 @@ Style:
         try {
           const response = result.response.trim();
           console.log('[Agent] Continue response:', response.substring(0, 200));
+          console.log('🔍 [DEBUG] Full response length:', response.length);
+          console.log('🔍 [DEBUG] Response ending:', response.substring(response.length - 100));
           
           // Try direct JSON first
           if (response.startsWith('{')) {
