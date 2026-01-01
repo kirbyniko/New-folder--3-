@@ -1598,11 +1598,12 @@ Style:
           enhancedPrompt += `- {"tool": "search_web", "params": {"query": "..."}}\n`;
         }
         
-        enhancedPrompt += `\nEXAMPLE:\n`;
-        enhancedPrompt += `[Tool Result: HTML with error]\n`;
-        enhancedPrompt += `You: {"tool": "execute_code", "params": {"code": "const axios = require('axios'); axios.get('url').then(r => console.log(r.data));"}}\n\n`;
+        enhancedPrompt += `\nCRITICAL ERROR HANDLING:\n`;
+        enhancedPrompt += `If you see CORS, 403, or 401 errors, DO NOT retry fetch_url!\n`;
+        enhancedPrompt += `Instead, use execute_code with axios and custom headers:\n`;
+        enhancedPrompt += `{"tool": "execute_code", "params": {"code": "const axios = require('axios'); axios.get('URL', {headers: {'User-Agent': 'Mozilla/5.0'}}).then(r => console.log(r.data));"}}\n\n`;
         
-        enhancedPrompt += `DO NOT explain or describe - just execute the next tool!\n`;
+        enhancedPrompt += `DO NOT explain, DO NOT retry the same tool - switch to execute_code!\n`;
       }
       
       // Add environment info
@@ -1739,14 +1740,31 @@ Style:
       
       if (toolName === 'fetch_url') {
         const url = params.url;
-        const response = await fetch(url);
-        const content = await response.text();
-        
-        return {
-          success: true,
-          output: content.substring(0, 5000) + (content.length > 5000 ? '...\n(truncated)' : ''),
-          duration: Date.now() - startTime
-        };
+        try {
+          const response = await fetch(url);
+          
+          if (!response.ok) {
+            return {
+              success: false,
+              error: `HTTP ${response.status} ${response.statusText} from ${url}. This usually means authentication required or access denied. Try using execute_code with axios and custom headers instead.`,
+              duration: Date.now() - startTime
+            };
+          }
+          
+          const content = await response.text();
+          
+          return {
+            success: true,
+            output: content.substring(0, 5000) + (content.length > 5000 ? '...\n(truncated)' : ''),
+            duration: Date.now() - startTime
+          };
+        } catch (error) {
+          return {
+            success: false,
+            error: `CORS or network error accessing ${url}: ${error.message}. Browser blocked this request. Use execute_code with axios/puppeteer instead.`,
+            duration: Date.now() - startTime
+          };
+        }
       }
       
       if (toolName === 'search_web') {
