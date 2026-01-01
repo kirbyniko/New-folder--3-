@@ -88,7 +88,15 @@ export class AgentEditor {
       currentPlan: null,                 // Active plan
       planProgress: [],                  // Plan execution tracking
       toolEffectiveness: {},             // Success rate per tool
-      lastReflection: null               // Last reflection for context continuity
+      lastReflection: null,              // Last reflection for context continuity
+      // Context management
+      totalTokensUsed: 0,                // Track token usage
+      contextSummaries: [],              // Summarized old context
+      maxContextTokens: 20000,           // Summarize when exceeded
+      // Strategy adjustment
+      recentFailures: 0,                 // Count consecutive failures
+      enableStrategyPivot: true,         // Allow alternative approaches
+      stuckThreshold: 3                  // Trigger pivot after N failures
     };
   }
 
@@ -2341,6 +2349,69 @@ Style:
     }
   }
   
+  // Estimate token count (rough approximation: 1 token ≈ 4 characters)
+  estimateTokens(text) {
+    return Math.ceil(text.length / 4);
+  }
+
+  // Summarize old context to free up tokens
+  async summarizeContext(contextToSummarize) {
+    try {
+      const prompt = `Summarize this conversation context in 200 words or less. Keep critical details like errors, successful approaches, and important findings:\n\n${contextToSummarize}`;
+      
+      const response = await fetch('http://localhost:11434/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: this.config.model,
+          prompt: prompt,
+          stream: false,
+          options: {
+            temperature: 0.3,
+            num_predict: 300
+          }
+        })
+      });
+
+      const data = await response.json();
+      return data.response || contextToSummarize;
+    } catch (error) {
+      console.error('Failed to summarize context:', error);
+      return contextToSummarize.substring(0, 500) + '...'; // Fallback truncation
+    }
+  }
+
+  // Check if agent is stuck and suggest alternative strategy
+  async suggestStrategyPivot(currentApproach, failureHistory) {
+    try {
+      const failureSummary = failureHistory.slice(-3).map(f => 
+        `Tool: ${f.tool}, Error: ${f.error}`
+      ).join('\n');
+      
+      const prompt = `The agent is stuck after ${failureHistory.length} failures. Current approach:\n${currentApproach}\n\nRecent failures:\n${failureSummary}\n\nSuggest ONE alternative strategy (different tool or approach) in 50 words max:`;
+      
+      const response = await fetch('http://localhost:11434/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: this.config.model,
+          prompt: prompt,
+          stream: false,
+          options: {
+            temperature: 0.7,
+            num_predict: 100
+          }
+        })
+      });
+
+      const data = await response.json();
+      return data.response || 'Try a different tool or break the problem into smaller steps.';
+    } catch (error) {
+      console.error('Failed to suggest pivot:', error);
+      return 'Try a different approach or tool.';
+    }
+  }
+  
   async validateResponse(response, conversation) {
     const userQuery = conversation.find(m => m.role === 'user')?.content || '';
     
@@ -2592,6 +2663,9 @@ Respond with JSON: {"satisfied": true/false, "learning": "what I learned", "next
             if (this.config.failureLog.length > 20) {
               this.config.failureLog = this.config.failureLog.slice(-20);
             }
+            
+            // Track consecutive failures for stuck detection
+            this.config.recentFailures++;
           }
           
           return {
@@ -2611,6 +2685,9 @@ Respond with JSON: {"satisfied": true/false, "learning": "what I learned", "next
         } else {
           output = 'Code executed successfully (no output)';
         }
+        
+        // Reset failure counter on success
+        this.config.recentFailures = 0;
         
         return {
           success: true,
@@ -2729,6 +2806,36 @@ Respond with JSON: {"satisfied": true/false, "learning": "what I learned", "next
         .map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
         .join('\n\n');
       
+      // Context window management - summarize if too large
+      let contextToUse = conversationContext;
+      const estimatedTokens = this.estimateTokens(conversationContext);
+      this.config.totalTokensUsed = estimatedTokens;
+      
+      if (estimatedTokens > this.config.maxContextTokens) {
+        console.log(`📊 Context too large (${estimatedTokens} tokens), summarizing...`);
+        
+        // Split into old (to summarize) and recent (keep as-is)
+        const messages = this.testConversation.filter(msg => !msg.loading && !msg.error);
+        const recentCount = Math.min(5, Math.floor(messages.length / 2));
+        const oldMessages = messages.slice(0, -recentCount);
+        const recentMessages = messages.slice(-recentCount);
+        
+        const oldContext = oldMessages.map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`).join('\n\n');
+        const summary = await this.summarizeContext(oldContext);
+        
+        this.config.contextSummaries.push({
+          summary: summary,
+          messageCount: oldMessages.length,
+          timestamp: Date.now()
+        });
+        
+        // Rebuild context with summary + recent messages
+        contextToUse = `[Earlier conversation summary: ${summary}]\n\n`;
+        contextToUse += recentMessages.map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`).join('\n\n');
+        
+        console.log(`✅ Context reduced to ${this.estimateTokens(contextToUse)} tokens`);
+      }
+      
       // Build enhanced system prompt with tools and environment info
       let enhancedPrompt = this.config.systemPrompt;
       
@@ -2810,6 +2917,26 @@ Respond with JSON: {"satisfied": true/false, "learning": "what I learned", "next
         enhancedPrompt += `Learning: ${this.config.lastReflection.learning}\n`;
         enhancedPrompt += `Planned Next: ${this.config.lastReflection.nextAction}\n`;
         enhancedPrompt += `Satisfied: ${this.config.lastReflection.satisfied ? 'Yes' : 'No'}\n\n`;
+      }
+      
+      // Add tool effectiveness stats
+      if (this.config.toolEffectiveness && Object.keys(this.config.toolEffectiveness).length > 0) {
+        enhancedPrompt += `=== TOOL EFFECTIVENESS ===\n`;
+        Object.entries(this.config.toolEffectiveness).forEach(([tool, stats]) => {
+          const successRate = stats.attempts > 0 ? Math.round((stats.successes / stats.attempts) * 100) : 0;
+          enhancedPrompt += `${tool}: ${successRate}% success (${stats.successes}/${stats.attempts})\n`;
+        });
+        enhancedPrompt += `\n`;
+      }
+      
+      // Check if agent is stuck and suggest pivot
+      if (this.config.enableStrategyPivot && this.config.recentFailures >= this.config.stuckThreshold) {
+        const currentApproach = this.config.currentPlan ? 
+          this.config.currentPlan.steps.map(s => s.action).join(', ') : 
+          'current approach';
+        const suggestion = await this.suggestStrategyPivot(currentApproach, this.config.failureLog);
+        enhancedPrompt += `\n⚠️ STUCK DETECTION: ${this.config.recentFailures} consecutive failures.\n`;
+        enhancedPrompt += `SUGGESTED PIVOT: ${suggestion}\n\n`;
       }
       
       // Add learning history (failures and successes)
