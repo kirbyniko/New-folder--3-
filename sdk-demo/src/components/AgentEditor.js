@@ -109,6 +109,18 @@ export class AgentEditor {
               🎨 <strong style="color: #e0e0e0;">Generation Mode:</strong> Your agent is empty. Describe what you want it to do and AI will create everything for you!
             </p>
             
+            <div style="background: #1e3a8a; border-left: 4px solid #3b82f6; padding: 12px; border-radius: 6px; margin-bottom: 15px;">
+              <div style="color: #93c5fd; font-size: 12px; font-weight: 600; margin-bottom: 6px;">ℹ️ What These Agents Can Do:</div>
+              <div style="color: #bfdbfe; font-size: 11px; line-height: 1.5;">
+                ✅ Scrape data from websites you visit<br>
+                ✅ Extract and analyze web content<br>
+                ✅ Search and fetch public URLs<br>
+                ✅ Process and transform data<br>
+                ❌ Cannot access databases or external APIs<br>
+                ❌ Cannot send emails or store data permanently
+              </div>
+            </div>
+            
             <div style="margin-bottom: 15px;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                 <label style="display: block; color: #e0e0e0; font-size: 14px; font-weight: 500;">
@@ -119,7 +131,7 @@ export class AgentEditor {
                 </button>
               </div>
               <textarea id="agent-purpose-input" 
-                        placeholder="Example: scrape e-commerce sites for product prices&#10;Example: analyze CSV files and generate reports&#10;Example: monitor RSS feeds and send alerts&#10;&#10;Or click 'AI Generate Idea' to get inspiration!"
+                        placeholder="Example: scrape real estate listings and compare price per square foot&#10;Example: extract job postings and rank by skills match&#10;Example: track product prices and identify trends&#10;&#10;Or click 'AI Generate Idea' for inspiration!"
                         style="width: 100%; min-height: 100px; background: #1e1e1e; border: 1px solid #444; border-radius: 6px; color: #e0e0e0; padding: 12px; font-size: 14px; font-family: inherit; resize: vertical;"></textarea>
             </div>
           </div>
@@ -2150,29 +2162,40 @@ Provide optimized configuration as JSON:
     
     try {
       // Create a prompt to generate agent ideas
-      const ideaPrompt = `You are a creative AI assistant helping users brainstorm AI agent ideas.
+      const ideaPrompt = `You are a creative AI assistant helping users brainstorm AI agent ideas for a Chrome extension.
 
-Generate ONE specific, practical, and interesting AI agent idea. The idea should be:
-- Actionable (something that can actually be built)
-- Useful (solves a real problem)
-- Specific (not vague like "help with tasks")
-- Creative (not too obvious)
+IMPORTANT CONTEXT: These agents run in a Chrome extension and can:
+✅ Scrape and analyze the current webpage
+✅ Extract data from web pages (text, tables, links, images)
+✅ Search the web and fetch public URLs
+✅ Execute JavaScript code for processing
+✅ Analyze and transform text/data
+❌ Cannot access databases or persistent storage
+❌ Cannot integrate with most external APIs (CORS restrictions)
+❌ Cannot send emails or notifications outside the browser
 
-Consider these categories for inspiration:
-- Data processing (web scraping, analysis, transformation)
-- Automation (monitoring, alerts, scheduled tasks)
-- Content creation (summarization, generation, translation)
-- Research (information gathering, comparison, synthesis)
-- Development tools (code analysis, testing, documentation)
-- Business (reporting, tracking, integration)
+Generate ONE specific, practical, and realistic agent idea. The idea should be:
+- Actually buildable in a Chrome extension
+- Focused on web scraping, data extraction, or content analysis
+- Solves a real problem for someone browsing the web
+- Specific about what data it extracts and how it processes it
+
+Consider these realistic categories:
+- Price tracking (scrape product pages, compare prices across sites)
+- Content extraction (pull specific data from news sites, forums, marketplaces)
+- Research automation (gather info from multiple sources, summarize findings)
+- Data validation (check links, verify information, detect changes)
+- Content analysis (readability scores, SEO checks, accessibility audits)
+- Comparison tools (side-by-side product/service comparisons from multiple pages)
 
 Respond with ONLY the agent description in 1-2 sentences. No JSON, no extra formatting.
 Examples:
-"Monitor GitHub repositories for security vulnerabilities and send weekly digest emails with severity ratings and patch recommendations"
-"Analyze customer support tickets using sentiment analysis, automatically categorize them, and route urgent issues to senior staff"
-"Track competitor pricing across multiple e-commerce sites, detect price changes over 10%, and send alerts with historical comparison charts"
+"Scrape real estate listings from Zillow and Redfin, extract price/sqft/features, calculate price per square foot, and identify undervalued properties based on neighborhood averages"
+"Extract job postings from LinkedIn/Indeed, analyze required skills vs your resume, and rank opportunities by match percentage and salary range"
+"Monitor e-commerce product pages for price drops, track historical pricing, and calculate the best time to buy based on 30-day trends"
+"Scrape restaurant menus from delivery sites, extract nutritional info when available, and highlight high-protein low-calorie options based on your dietary goals"
 
-Generate a NEW creative idea now:`;
+Generate a NEW creative but REALISTIC idea now:`;
 
       const response = await fetch('http://localhost:11434/api/generate', {
         method: 'POST',
