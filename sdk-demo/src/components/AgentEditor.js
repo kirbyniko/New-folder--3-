@@ -51,6 +51,12 @@ export class AgentEditor {
         sandboxed: true,
         timeout: 30000,
         memoryLimit: '512MB'
+      },
+      // Hardware configuration
+      hardware: {
+        gpuVRAM: 8,  // GB of VRAM
+        tokenLimit: 4096,  // Calculated safe token limit
+        preset: 'consumer'  // consumer, midrange, highend, cpu
       }
     };
   }
@@ -356,6 +362,37 @@ export class AgentEditor {
               </label>
             </div>
 
+            <!-- Hardware Configuration -->
+            <div class="settings-section">
+              <h4 style="margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px;">
+                <span>💻</span> Hardware Limits
+              </h4>
+              
+              <label style="font-size: 12px; color: #9ca3af; margin-bottom: 8px; display: block;">GPU Preset:</label>
+              <select id="gpu-preset" style="width: 100%; padding: 6px 8px; background: #2a2a2a; border: 1px solid #404040; border-radius: 4px; color: #e0e0e0; font-size: 13px; margin-bottom: 12px;">
+                <option value="consumer" ${(this.config.hardware?.preset || 'consumer') === 'consumer' ? 'selected' : ''}>🎮 Consumer GPU (RTX 3060, M1/M2) - 8GB</option>
+                <option value="midrange" ${(this.config.hardware?.preset || 'consumer') === 'midrange' ? 'selected' : ''}>🚀 Mid-Range GPU (RTX 4070, M3 Pro) - 12GB</option>
+                <option value="highend" ${(this.config.hardware?.preset || 'consumer') === 'highend' ? 'selected' : ''}>⚡ High-End GPU (RTX 4090, M3 Max) - 24GB+</option>
+                <option value="cpu" ${(this.config.hardware?.preset || 'consumer') === 'cpu' ? 'selected' : ''}>🐌 CPU Only - Unlimited (Slow)</option>
+                <option value="custom" ${(this.config.hardware?.preset || 'consumer') === 'custom' ? 'selected' : ''}>⚙️ Custom</option>
+              </select>
+
+              <div id="custom-vram-section" style="display: ${(this.config.hardware?.preset || 'consumer') === 'custom' ? 'block' : 'none'};">
+                <label style="font-size: 12px; color: #9ca3af; margin-bottom: 4px; display: block;">VRAM (GB):</label>
+                <input type="number" id="gpu-vram" min="1" max="80" step="1" value="${this.config.hardware?.gpuVRAM || 8}" style="width: 100%; padding: 6px 8px; background: #2a2a2a; border: 1px solid #404040; border-radius: 4px; color: #e0e0e0; font-size: 13px; margin-bottom: 12px;">
+              </div>
+
+              <div style="background: #2a2a2a; padding: 10px; border-radius: 4px; font-size: 12px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                  <span style="color: #9ca3af;">Safe Token Limit:</span>
+                  <strong style="color: #10b981;" id="hardware-token-limit">${this.config.hardware?.tokenLimit || 4096}</strong>
+                </div>
+                <div style="font-size: 11px; color: #6b7280; margin-top: 6px; line-height: 1.4;">
+                  Based on your GPU capacity. Stay below this for best performance.
+                </div>
+              </div>
+            </div>
+
             <!-- Token Estimate -->
             <div class="token-estimate">
               <h4>📊 Token Estimate</h4>
@@ -564,6 +601,55 @@ export class AgentEditor {
     // Knowledge Base
     document.getElementById('use-knowledge').addEventListener('change', (e) => {
       this.config.useKnowledge = e.target.checked;
+      this.updateTokenEstimate();
+    });
+    
+    // Hardware Configuration
+    document.getElementById('gpu-preset')?.addEventListener('change', (e) => {
+      const preset = e.target.value;
+      this.config.hardware = this.config.hardware || {};
+      this.config.hardware.preset = preset;
+      
+      // Show/hide custom VRAM input
+      const customSection = document.getElementById('custom-vram-section');
+      if (customSection) {
+        customSection.style.display = preset === 'custom' ? 'block' : 'none';
+      }
+      
+      // Set VRAM and token limits based on preset
+      const presets = {
+        consumer: { vram: 8, tokens: 4096 },
+        midrange: { vram: 12, tokens: 6144 },
+        highend: { vram: 24, tokens: 12288 },
+        cpu: { vram: 0, tokens: 999999 },
+        custom: { vram: this.config.hardware.gpuVRAM || 8, tokens: this.calculateTokenLimit(this.config.hardware.gpuVRAM || 8) }
+      };
+      
+      const config = presets[preset];
+      this.config.hardware.gpuVRAM = config.vram;
+      this.config.hardware.tokenLimit = config.tokens;
+      
+      // Update display
+      const limitEl = document.getElementById('hardware-token-limit');
+      if (limitEl) {
+        limitEl.textContent = preset === 'cpu' ? '∞' : config.tokens;
+      }
+      
+      this.updateTokenEstimate();
+    });
+    
+    document.getElementById('gpu-vram')?.addEventListener('input', (e) => {
+      const vram = parseInt(e.target.value);
+      this.config.hardware = this.config.hardware || {};
+      this.config.hardware.gpuVRAM = vram;
+      this.config.hardware.tokenLimit = this.calculateTokenLimit(vram);
+      
+      const limitEl = document.getElementById('hardware-token-limit');
+      if (limitEl) {
+        limitEl.textContent = this.config.hardware.tokenLimit;
+      }
+      
+      this.updateTokenEstimate();
     });
     
     // Context Files
@@ -713,6 +799,13 @@ Style:
     this.config.systemPrompt = templates[this.config.mode] || templates.general;
     this.editor.setValue(this.config.systemPrompt);
   }
+  
+  calculateTokenLimit(vramGB) {
+    // Rough formula: VRAM (GB) * 512 tokens per GB
+    // This accounts for model overhead, attention cache, etc.
+    // Conservative estimate to ensure stability
+    return Math.floor(vramGB * 512);
+  }
 
   updateTokenEstimate() {
     // Rough estimation: ~4 chars per token
@@ -736,9 +829,9 @@ Style:
     const total = promptTokens + instructionTokens + contextTokens + ragTokens + knowledgeTokens + outputTokens;
     const percentage = (total / this.config.contextWindow) * 100;
     
-    // GPU limits (typical consumer GPUs)
-    const GPU_SAFE_LIMIT = 4096;  // Safe for most GPUs
-    const GPU_WARNING_LIMIT = 8192; // Risky, might need CPU fallback
+    // Use hardware config for limits
+    const GPU_SAFE_LIMIT = this.config.hardware?.tokenLimit || 4096;
+    const GPU_WARNING_LIMIT = GPU_SAFE_LIMIT * 2; // 2x safe limit = warning
     
     this.tokenEstimate.total = total;
     this.tokenEstimate.fitsGPU = total <= GPU_SAFE_LIMIT;
