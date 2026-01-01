@@ -1439,6 +1439,7 @@ Style:
   
   renderChatMessage(msg, idx) {
     const isUser = msg.role === 'user';
+    const isSystem = msg.role === 'system';
     const isError = msg.error;
     
     return `
@@ -1446,14 +1447,16 @@ Style:
         <div style="max-width: 80%; padding: 12px 16px; border-radius: 12px; ${
           isUser 
             ? 'background: #7c3aed; color: white;' 
+            : isSystem
+              ? 'background: #1e3a8a; color: #93c5fd; border: 1px solid #1e40af;'
             : isError
               ? 'background: #7f1d1d; color: #fca5a5; border: 1px solid #991b1b;'
               : 'background: #2d2d2d; color: #e0e0e0; border: 1px solid #404040;'
         }">
           <div style="font-size: 10px; margin-bottom: 4px; opacity: 0.7; text-transform: uppercase; font-weight: 600;">
-            ${isUser ? '👤 You' : isError ? '❌ Error' : '🤖 Agent'}
+            ${isUser ? '👤 You' : isSystem ? '🔧 System' : isError ? '❌ Error' : '🤖 Agent'}
           </div>
-          <div style="white-space: pre-wrap; word-wrap: break-word; font-size: 14px; line-height: 1.5;">
+          <div style="white-space: pre-wrap; word-wrap: break-word; font-size: 14px; line-height: 1.5; font-family: ${isSystem ? "'Courier New', monospace" : 'inherit'};">
             ${this.escapeHtml(msg.content)}
           </div>
           ${msg.metadata ? `
@@ -1466,6 +1469,69 @@ Style:
     `;
   }
   
+  async executeTool(toolName, params) {
+    const startTime = Date.now();
+    
+    try {
+      if (toolName === 'execute_code') {
+        // Execute code through the backend
+        const code = params.code || params.script;
+        const runtime = params.language || this.config.environment.runtime || 'nodejs';
+        
+        const response = await fetch('http://localhost:3001/api/execute', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            scriptCode: code,
+            targetUrl: params.url || 'https://example.com'
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Execution failed: ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        
+        return {
+          success: result.success,
+          output: result.success ? JSON.stringify(result.data, null, 2) : result.error,
+          duration: Date.now() - startTime
+        };
+      }
+      
+      if (toolName === 'fetch_url') {
+        const url = params.url;
+        const response = await fetch(url);
+        const content = await response.text();
+        
+        return {
+          success: true,
+          output: content.substring(0, 5000) + (content.length > 5000 ? '...\n(truncated)' : ''),
+          duration: Date.now() - startTime
+        };
+      }
+      
+      if (toolName === 'search_web') {
+        // Mock search for now
+        return {
+          success: true,
+          output: `Search results for: ${params.query}\n(Web search not fully implemented in test mode)`,
+          duration: Date.now() - startTime
+        };
+      }
+      
+      throw new Error(`Unknown tool: ${toolName}`);
+      
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+        duration: Date.now() - startTime
+      };
+    }
+  }
+
   async sendChatMessage(message, container) {
     // Add user message to conversation
     this.testConversation.push({
@@ -1498,13 +1564,45 @@ Style:
         .map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
         .join('\n\n');
       
+      // Build enhanced system prompt with tools and environment info
+      let enhancedPrompt = this.config.systemPrompt;
+      
+      // Add tool descriptions if tools are enabled
+      if (this.config.tools.length > 0) {
+        enhancedPrompt += `\n\nAVAILABLE TOOLS:\n`;
+        
+        if (this.config.tools.includes('execute_code')) {
+          enhancedPrompt += `- execute_code(language, code): Execute ${this.config.environment.runtime} code. Returns output and results.\n`;
+        }
+        if (this.config.tools.includes('fetch_url')) {
+          enhancedPrompt += `- fetch_url(url): Fetch content from a URL. Returns HTML/text content.\n`;
+        }
+        if (this.config.tools.includes('search_web')) {
+          enhancedPrompt += `- search_web(query): Search the web. Returns search results with titles and snippets.\n`;
+        }
+        if (this.config.tools.includes('read_file')) {
+          enhancedPrompt += `- read_file(path): Read file contents from the environment.\n`;
+        }
+        
+        enhancedPrompt += `\nTo use a tool, respond with JSON: {"tool": "tool_name", "params": {...}}\n`;
+        enhancedPrompt += `After using a tool, you'll receive the results and can continue the conversation.\n`;
+      }
+      
+      // Add environment info
+      if (this.config.environment.runtime) {
+        enhancedPrompt += `\n\nRUNTIME ENVIRONMENT: ${this.config.environment.runtime}`;
+        if (this.config.environment.dependencies.length > 0) {
+          enhancedPrompt += `\nAVAILABLE PACKAGES: ${this.config.environment.dependencies.join(', ')}`;
+        }
+      }
+      
       // Call Ollama with full conversation context
       const response = await fetch('http://localhost:11434/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: this.config.model || 'qwen2.5-coder:14b',
-          prompt: `${this.config.systemPrompt}\n\n${conversationContext}`,
+          prompt: `${enhancedPrompt}\n\n${conversationContext}`,
           options: {
             temperature: this.config.temperature,
             top_p: this.config.topP,
@@ -1525,7 +1623,45 @@ Style:
       this.testConversation = this.testConversation.filter(msg => !msg.loading);
       
       if (result.response) {
-        // Check for tool mentions
+        // Check if the response contains a tool call
+        let toolCallMatch = null;
+        try {
+          // Try to parse JSON tool call
+          const jsonMatch = result.response.match(/\{[\s\S]*?"tool"[\s\S]*?\}/);
+          if (jsonMatch) {
+            toolCallMatch = JSON.parse(jsonMatch[0]);
+          }
+        } catch (e) {
+          // Not a tool call, treat as regular response
+        }
+        
+        if (toolCallMatch && this.config.tools.includes(toolCallMatch.tool)) {
+          // Execute the tool
+          const toolResult = await this.executeTool(toolCallMatch.tool, toolCallMatch.params);
+          
+          // Add tool execution to conversation
+          this.testConversation.push({
+            role: 'assistant',
+            content: `🛠️ Executing: ${toolCallMatch.tool}(${JSON.stringify(toolCallMatch.params)})`,
+            metadata: `⏱️ ${duration}ms`
+          });
+          
+          this.testConversation.push({
+            role: 'system',
+            content: `Tool Result:\n${toolResult.success ? toolResult.output : 'Error: ' + toolResult.error}`,
+            metadata: `⏱️ ${toolResult.duration}ms`
+          });
+          
+          // Re-render to show tool execution
+          this.renderChatInterface(container);
+          messagesDiv.scrollTop = messagesDiv.scrollHeight;
+          
+          // Continue conversation with tool results
+          await this.sendChatMessage(`Continue based on the tool results above.`, container);
+          return;
+        }
+        
+        // Check for tool mentions but tools not enabled
         const toolMentions = [];
         if (/execute_code|run code|execute.*code/i.test(result.response) && !this.config.tools.includes('execute_code')) {
           toolMentions.push('execute_code');
