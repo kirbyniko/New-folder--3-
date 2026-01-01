@@ -383,7 +383,7 @@ export class AgentEditor {
             <!-- Hardware Configuration -->
             <div class="settings-section">
               <h4 style="margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px;">
-                <span>💻</span> Hardware Limits
+                <span>💻</span> Hardware Limits <span style="color: #6b7280; font-size: 12px; font-weight: normal;">(💾 Auto-saved)</span>
               </h4>
               
               <label style="font-size: 12px; color: #9ca3af; margin-bottom: 8px; display: block;">GPU Preset:</label>
@@ -650,6 +650,9 @@ export class AgentEditor {
       // Save to localStorage
       localStorage.setItem('agentEditor_hardware', JSON.stringify(this.config.hardware));
       
+      // Show "Saved!" indicator
+      this.showSavedIndicator('gpu-preset');
+      
       // Update display
       const limitEl = document.getElementById('hardware-token-limit');
       if (limitEl) {
@@ -667,6 +670,9 @@ export class AgentEditor {
       
       // Save to localStorage
       localStorage.setItem('agentEditor_hardware', JSON.stringify(this.config.hardware));
+      
+      // Show "Saved!" indicator
+      this.showSavedIndicator('gpu-vram');
       
       const limitEl = document.getElementById('hardware-token-limit');
       if (limitEl) {
@@ -832,6 +838,38 @@ Style:
     // This accounts for model overhead, attention cache, etc.
     // Conservative estimate to ensure stability
     return Math.floor(vramGB * 512);
+  }
+
+  showSavedIndicator(elementId) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    // Remove existing indicator if present
+    const existingIndicator = element.parentElement.querySelector('.saved-indicator');
+    if (existingIndicator) {
+      existingIndicator.remove();
+    }
+    
+    // Create new indicator
+    const indicator = document.createElement('span');
+    indicator.className = 'saved-indicator';
+    indicator.innerHTML = '✓ Saved';
+    indicator.style.cssText = `
+      color: #10b981;
+      font-size: 12px;
+      margin-left: 8px;
+      animation: fadeIn 0.3s ease-in;
+    `;
+    
+    // Add after the element
+    element.parentElement.insertBefore(indicator, element.nextSibling);
+    
+    // Fade out and remove after 2 seconds
+    setTimeout(() => {
+      indicator.style.transition = 'opacity 0.5s ease-out';
+      indicator.style.opacity = '0';
+      setTimeout(() => indicator.remove(), 500);
+    }, 2000);
   }
 
   updateTokenEstimate() {
@@ -1712,16 +1750,16 @@ Style:
     
     try {
       if (toolName === 'execute_code') {
-        // Execute code through the backend
+        // Execute code through the backend execute-server
         const code = params.code || params.script;
         const runtime = params.language || this.config.environment.runtime || 'nodejs';
         
-        const response = await fetch('http://localhost:3001/api/execute', {
+        const response = await fetch('http://localhost:3002/execute', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            scriptCode: code,
-            targetUrl: params.url || 'https://example.com'
+            code: code,
+            runtime: runtime
           })
         });
         
