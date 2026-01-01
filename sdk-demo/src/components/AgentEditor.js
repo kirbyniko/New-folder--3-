@@ -1957,10 +1957,19 @@ Style:
     const toggleIntelBtn = container.querySelector('#toggle-intel-status-btn');
     const intelPanel = container.querySelector('#intel-status-panel');
     if (toggleIntelBtn && intelPanel) {
+      let firstToggle = true;
       toggleIntelBtn.onclick = () => {
         const isVisible = intelPanel.style.display !== 'none';
         intelPanel.style.display = isVisible ? 'none' : 'block';
         toggleIntelBtn.textContent = isVisible ? '🧠 Intelligence Status' : '✖️ Hide Status';
+        
+        // Show helpful message on first toggle
+        if (firstToggle && !isVisible) {
+          firstToggle = false;
+          console.log('💡 Intelligence Status Panel: Shows all 19 intelligence features and their current state');
+          console.log('✅ = ENABLED | ❌ = DISABLED');
+          console.log('If features show as DISABLED, reload the page or re-apply a template');
+        }
       };
     }
     
