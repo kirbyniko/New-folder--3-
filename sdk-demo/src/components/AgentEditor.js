@@ -862,47 +862,200 @@ Style:
     
     localStorage.setItem('saved_agents', JSON.stringify(agents));
     
-    // Show detailed save confirmation
+    // Show notification instead of alert
     const configSize = JSON.stringify(this.config).length;
-    const details = `
-✅ Agent "${this.config.name}" saved to browser storage!
-
-📊 Configuration Details:
-• System Prompt: ${this.config.systemPrompt.length} chars
-• Instructions: ${this.config.instructions.length} steps
-• Environment: ${this.config.environment.runtime}
-• Dependencies: ${this.config.environment.dependencies.length}
-• Context Files: ${this.config.contextFiles.length}
-• Tools: ${this.config.tools.length}
-• Total Size: ${(configSize / 1024).toFixed(2)} KB
-
-💡 Tip: Use "📤 Export" to save as a file for backup or sharing.`;
-    
-    alert(details);
+    this.showNotification(
+      `Agent "${this.config.name}" saved! ${this.config.instructions.length} steps, ${(configSize / 1024).toFixed(1)} KB`,
+      'success'
+    );
   }
 
   loadAgent() {
     const agents = JSON.parse(localStorage.getItem('saved_agents') || '[]');
     if (agents.length === 0) {
-      alert('❌ No saved agents found.\n\nTip: Save an agent first with the "💾 Save" button, or use "📥 Import" to load from a file.');
+      this.showNotification('❌ No saved agents found. Save an agent first with the "💾 Save" button.', 'error');
       return;
     }
     
-    // Create a better selection UI
-    const agentList = agents.map((a, i) => `${i + 1}. ${a.name} (${a.instructions.length} steps, ${a.tools.length} tools)`).join('\n');
-    const agentName = prompt(`📂 Available Agents (${agents.length} saved):\n\n${agentList}\n\nEnter the agent name to load:`);
+    // Show modal with agent list
+    this.showLoadAgentModal(agents);
+  }
+  
+  showLoadAgentModal(agents) {
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 10000; animation: fadeIn 0.2s;';
     
-    if (!agentName) return;
+    modal.innerHTML = `
+      <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 12px; padding: 0; min-width: 600px; max-width: 800px; max-height: 80vh; box-shadow: 0 8px 32px rgba(0,0,0,0.8); display: flex; flex-direction: column; overflow: hidden;">
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0; color: white; font-size: 20px; font-weight: 600; display: flex; align-items: center; gap: 10px;">
+              📂 Load Agent
+            </h3>
+            <button id="close-load-modal" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 6px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
+              ✖
+            </button>
+          </div>
+          <p style="color: rgba(255,255,255,0.8); margin: 8px 0 0 0; font-size: 14px;">${agents.length} saved agent${agents.length === 1 ? '' : 's'} • Click to load</p>
+        </div>
+        
+        <!-- Agent List -->
+        <div style="flex: 1; overflow-y: auto; padding: 16px;">
+          <div id="agent-list" style="display: flex; flex-direction: column; gap: 10px;">
+            ${agents.map((agent, index) => `
+              <div class="agent-card" data-index="${index}" style="background: #1e293b; border: 2px solid #334155; border-radius: 8px; padding: 16px; cursor: pointer; transition: all 0.2s;">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                  <div style="flex: 1;">
+                    <h4 style="margin: 0 0 6px 0; color: #e0e0e0; font-size: 16px; font-weight: 600;">${this.escapeHtml(agent.name)}</h4>
+                    <p style="margin: 0; color: #94a3b8; font-size: 13px; line-height: 1.4;">${this.escapeHtml(agent.systemPrompt?.substring(0, 120) || 'No description')}${agent.systemPrompt?.length > 120 ? '...' : ''}</p>
+                  </div>
+                  <button class="delete-agent-btn" data-index="${index}" style="background: #dc2626; border: none; color: white; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; margin-left: 12px;">
+                    🗑️ Delete
+                  </button>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px;">
+                  <div style="background: rgba(79, 70, 229, 0.15); padding: 8px; border-radius: 6px; border-left: 3px solid #4f46e5;">
+                    <div style="color: #94a3b8; font-size: 11px; margin-bottom: 2px;">Instructions</div>
+                    <div style="color: #e0e0e0; font-size: 16px; font-weight: 600;">${agent.instructions?.length || 0}</div>
+                  </div>
+                  <div style="background: rgba(16, 185, 129, 0.15); padding: 8px; border-radius: 6px; border-left: 3px solid #10b981;">
+                    <div style="color: #94a3b8; font-size: 11px; margin-bottom: 2px;">Tools</div>
+                    <div style="color: #e0e0e0; font-size: 16px; font-weight: 600;">${agent.tools?.length || 0}</div>
+                  </div>
+                  <div style="background: rgba(245, 158, 11, 0.15); padding: 8px; border-radius: 6px; border-left: 3px solid #f59e0b;">
+                    <div style="color: #94a3b8; font-size: 11px; margin-bottom: 2px;">Context Files</div>
+                    <div style="color: #e0e0e0; font-size: 16px; font-weight: 600;">${agent.contextFiles?.length || 0}</div>
+                  </div>
+                  <div style="background: rgba(124, 58, 237, 0.15); padding: 8px; border-radius: 6px; border-left: 3px solid #7c3aed;">
+                    <div style="color: #94a3b8; font-size: 11px; margin-bottom: 2px;">Dependencies</div>
+                    <div style="color: #e0e0e0; font-size: 16px; font-weight: 600;">${agent.environment?.dependencies?.length || 0}</div>
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        
+        <!-- Footer -->
+        <div style="background: #0f172a; padding: 16px 24px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
+          <div style="color: #94a3b8; font-size: 13px;">
+            💡 Tip: Hover over a card to see the load button
+          </div>
+          <button id="cancel-load" style="padding: 10px 20px; background: #374151; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+            Cancel
+          </button>
+        </div>
+      </div>
+    `;
     
-    const agent = agents.find(a => a.name.toLowerCase() === agentName.toLowerCase());
+    document.body.appendChild(modal);
     
-    if (agent) {
-      this.config = JSON.parse(JSON.stringify(agent)); // Deep clone
-      this.init();
-      alert(`✅ Agent "${agentName}" loaded successfully!\n\n📊 Loaded:\n• ${agent.instructions.length} instructions\n• ${agent.environment.dependencies.length} dependencies\n• ${agent.contextFiles.length} context files\n• ${agent.tools.length} tools`);
-    } else {
-      alert(`❌ Agent "${agentName}" not found.\n\nAvailable agents:\n${agents.map(a => '• ' + a.name).join('\n')}`);
-    }
+    // Add hover effects and load functionality
+    const agentCards = modal.querySelectorAll('.agent-card');
+    agentCards.forEach(card => {
+      card.addEventListener('mouseenter', () => {
+        card.style.borderColor = '#4f46e5';
+        card.style.background = '#1e3a8a';
+        card.style.transform = 'translateY(-2px)';
+        card.style.boxShadow = '0 4px 12px rgba(79, 70, 229, 0.3)';
+      });
+      
+      card.addEventListener('mouseleave', () => {
+        card.style.borderColor = '#334155';
+        card.style.background = '#1e293b';
+        card.style.transform = 'translateY(0)';
+        card.style.boxShadow = 'none';
+      });
+      
+      card.addEventListener('click', (e) => {
+        if (e.target.classList.contains('delete-agent-btn') || e.target.closest('.delete-agent-btn')) {
+          return; // Don't load if clicking delete button
+        }
+        
+        const index = parseInt(card.dataset.index);
+        const agent = agents[index];
+        this.config = JSON.parse(JSON.stringify(agent)); // Deep clone
+        this.init();
+        modal.remove();
+        this.showNotification(`✅ Agent "${agent.name}" loaded successfully!`, 'success');
+      });
+    });
+    
+    // Delete button handlers
+    modal.querySelectorAll('.delete-agent-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const index = parseInt(btn.dataset.index);
+        const agent = agents[index];
+        
+        if (confirm(`🗑️ Delete "${agent.name}"?\n\nThis action cannot be undone.`)) {
+          agents.splice(index, 1);
+          localStorage.setItem('saved_agents', JSON.stringify(agents));
+          
+          if (agents.length === 0) {
+            modal.remove();
+            this.showNotification('All agents deleted', 'info');
+          } else {
+            // Refresh the modal
+            modal.remove();
+            this.showLoadAgentModal(agents);
+          }
+        }
+      });
+    });
+    
+    // Close handlers
+    modal.querySelector('#close-load-modal').addEventListener('click', () => modal.remove());
+    modal.querySelector('#cancel-load').addEventListener('click', () => modal.remove());
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.remove();
+    });
+  }
+  
+  // Notification system for non-blocking messages
+  showNotification(message, type = 'info') {
+    const colors = {
+      success: { bg: '#10b981', icon: '✅' },
+      error: { bg: '#ef4444', icon: '❌' },
+      warning: { bg: '#f59e0b', icon: '⚠️' },
+      info: { bg: '#3b82f6', icon: 'ℹ️' }
+    };
+    
+    const color = colors[type] || colors.info;
+    
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: ${color.bg};
+      color: white;
+      padding: 16px 24px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 10001;
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: slideIn 0.3s ease-out;
+      max-width: 400px;
+    `;
+    
+    notification.innerHTML = `
+      <span style="font-size: 18px;">${color.icon}</span>
+      <span>${this.escapeHtml(message)}</span>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+      notification.style.animation = 'slideOut 0.3s ease-out';
+      setTimeout(() => notification.remove(), 300);
+    }, 3000);
   }
 
   importAgent(event) {
@@ -919,33 +1072,90 @@ Style:
           throw new Error('Invalid agent configuration file');
         }
         
-        // Ask for confirmation with details
-        const details = `
-📥 Import Agent Configuration
-
-📛 Name: ${imported.name}
-📝 System Prompt: ${imported.systemPrompt.substring(0, 100)}...
-📋 Instructions: ${imported.instructions?.length || 0} steps
-⚙️ Environment: ${imported.environment?.runtime || 'nodejs'}
-📦 Dependencies: ${imported.environment?.dependencies?.length || 0}
-📁 Context Files: ${imported.contextFiles?.length || 0}
-🛠️ Tools: ${imported.tools?.length || 0}
-
-Import this configuration?`;
+        // Show import preview modal
+        this.showImportPreviewModal(imported);
         
-        if (confirm(details)) {
-          this.config = imported;
-          this.init();
-          alert(`✅ Agent "${imported.name}" imported successfully!`);
-        }
       } catch (error) {
-        alert(`❌ Failed to import agent:\n\n${error.message}\n\nMake sure the file is a valid agent configuration JSON.`);
+        this.showNotification(`Failed to import: ${error.message}`, 'error');
       }
     };
     reader.readAsText(file);
     
     // Reset file input so same file can be imported again
     event.target.value = '';
+  }
+  
+  showImportPreviewModal(imported) {
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 10000;';
+    
+    modal.innerHTML = `
+      <div style="background: #1e293b; border-radius: 12px; padding: 24px; min-width: 500px; max-width: 600px; box-shadow: 0 8px 32px rgba(0,0,0,0.8);">
+        <h3 style="margin: 0 0 16px 0; color: #e0e0e0; font-size: 20px; font-weight: 600;">📥 Import Agent</h3>
+        
+        <div style="background: #0f172a; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+          <div style="margin-bottom: 12px;">
+            <div style="color: #94a3b8; font-size: 12px; margin-bottom: 4px;">NAME</div>
+            <div style="color: #e0e0e0; font-size: 16px; font-weight: 600;">${this.escapeHtml(imported.name)}</div>
+          </div>
+          
+          <div style="margin-bottom: 12px;">
+            <div style="color: #94a3b8; font-size: 12px; margin-bottom: 4px;">SYSTEM PROMPT</div>
+            <div style="color: #e0e0e0; font-size: 14px; max-height: 80px; overflow-y: auto;">${this.escapeHtml(imported.systemPrompt.substring(0, 200))}${imported.systemPrompt.length > 200 ? '...' : ''}</div>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+            <div>
+              <div style="color: #94a3b8; font-size: 12px; margin-bottom: 4px;">📋 INSTRUCTIONS</div>
+              <div style="color: #e0e0e0; font-size: 16px; font-weight: 600;">${imported.instructions?.length || 0} steps</div>
+            </div>
+            <div>
+              <div style="color: #94a3b8; font-size: 12px; margin-bottom: 4px;">🛠️ TOOLS</div>
+              <div style="color: #e0e0e0; font-size: 16px; font-weight: 600;">${imported.tools?.length || 0} enabled</div>
+            </div>
+            <div>
+              <div style="color: #94a3b8; font-size: 12px; margin-bottom: 4px;">⚙️ RUNTIME</div>
+              <div style="color: #e0e0e0; font-size: 16px; font-weight: 600;">${imported.environment?.runtime || 'nodejs'}</div>
+            </div>
+            <div>
+              <div style="color: #94a3b8; font-size: 12px; margin-bottom: 4px;">📦 DEPENDENCIES</div>
+              <div style="color: #e0e0e0; font-size: 16px; font-weight: 600;">${imported.environment?.dependencies?.length || 0}</div>
+            </div>
+            <div>
+              <div style="color: #94a3b8; font-size: 12px; margin-bottom: 4px;">📁 CONTEXT FILES</div>
+              <div style="color: #e0e0e0; font-size: 16px; font-weight: 600;">${imported.contextFiles?.length || 0}</div>
+            </div>
+            <div>
+              <div style="color: #94a3b8; font-size: 12px; margin-bottom: 4px;">🎚️ TEMPERATURE</div>
+              <div style="color: #e0e0e0; font-size: 16px; font-weight: 600;">${imported.temperature || 0.7}</div>
+            </div>
+          </div>
+        </div>
+        
+        <div style="display: flex; gap: 12px; justify-content: flex-end;">
+          <button id="cancel-import" style="padding: 12px 24px; background: #374151; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+            Cancel
+          </button>
+          <button id="confirm-import" style="padding: 12px 24px; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+            📥 Import Agent
+          </button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    modal.querySelector('#confirm-import').addEventListener('click', () => {
+      this.config = imported;
+      this.init();
+      modal.remove();
+      this.showNotification(`✅ Agent "${imported.name}" imported successfully!`, 'success');
+    });
+    
+    modal.querySelector('#cancel-import').addEventListener('click', () => modal.remove());
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.remove();
+    });
   }
 
   exportAgent() {
@@ -963,7 +1173,10 @@ Import this configuration?`;
     URL.revokeObjectURL(url);
     
     const configSize = JSON.stringify(this.config).length;
-    alert(`✅ Agent "${this.config.name}" exported!\n\n💾 File: ${this.config.name.replace(/\s+/g, '_')}_agent.json\n📊 Size: ${(configSize / 1024).toFixed(2)} KB\n\n✨ Complete configuration saved including:\n• System prompt\n• ${this.config.instructions.length} instruction steps\n• Environment & dependencies\n• ${this.config.contextFiles.length} context files\n• ${this.config.tools.length} tools\n• All settings`);
+    this.showNotification(
+      `Exported ${this.config.name.replace(/\s+/g, '_')}_agent.json (${(configSize / 1024).toFixed(1)} KB)`,
+      'success'
+    );
   }
 
   async testAgent() {
