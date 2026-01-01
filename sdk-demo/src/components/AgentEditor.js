@@ -2010,6 +2010,9 @@ Style:
         })
         .join('\n\n');
       
+      // Extract original user query for task reminder
+      const originalQuery = this.testConversation.find(msg => msg.role === 'user')?.content || '';
+      
       // Check if last error was empty output
       const lastSystemMsg = this.testConversation
         .filter(msg => msg.role === 'system' && msg.content.includes('Tool Result'))
@@ -2037,8 +2040,16 @@ Style:
       
       // Add the same agent execution mode instructions as initial message
       if (this.config.tools.length > 0) {
-        enhancedPrompt += `\n\n=== CONTINUE AGENT EXECUTION ===\n`;
+        enhancedPrompt += `\n\n=== ORIGINAL TASK (DO NOT FORGET) ===\n`;
+        enhancedPrompt += `${originalQuery}\n\n`;
+        enhancedPrompt += `=== CONTINUE AGENT EXECUTION ===\n`;
         enhancedPrompt += `You just received tool results. You MUST continue with another tool OR present final results.\n\n`;
+        
+        enhancedPrompt += `TASK COMPLETION CRITERIA:\n`;
+        enhancedPrompt += `- Did you extract ALL data the user asked for?\n`;
+        enhancedPrompt += `- If you got HTML, did you PARSE it to extract specific data?\n`;
+        enhancedPrompt += `- If task asks for "extract X", have you actually extracted X?\n`;
+        enhancedPrompt += `- NEVER just describe data - actually extract and present it!\n\n`;
         
         enhancedPrompt += `YOUR NEXT RESPONSE MUST BE:\n`;
         enhancedPrompt += `- JSON tool call if more work needed OR if last tool failed: {"tool": "...", "params": {...}}\n`;
