@@ -2010,6 +2010,12 @@ Style:
         })
         .join('\n\n');
       
+      // Check if last error was empty output
+      const lastSystemMsg = this.testConversation
+        .filter(msg => msg.role === 'system' && msg.content.includes('Tool Result'))
+        .slice(-1)[0];
+      const hadEmptyOutput = lastSystemMsg && lastSystemMsg.content.includes('NO OUTPUT');
+      
       // Enhanced prompt - include FULL agent mode instructions
       let enhancedPrompt = this.config.systemPrompt;
       
@@ -2037,6 +2043,14 @@ Style:
         enhancedPrompt += `If you see CORS, 403, or 401 errors, DO NOT retry fetch_url!\n`;
         enhancedPrompt += `Instead, use execute_code with axios and custom headers:\n`;
         enhancedPrompt += `{"tool": "execute_code", "params": {"code": "const axios = require('axios'); axios.get('URL', {headers: {'User-Agent': 'Mozilla/5.0'}}).then(r => console.log(r.data));"}}\n\n`;
+        
+        // SUPER STRONG MESSAGE if last tool had empty output
+        if (hadEmptyOutput) {
+          enhancedPrompt += `\n🚨🚨🚨 CRITICAL: YOUR LAST CODE HAD NO OUTPUT! 🚨🚨🚨\n`;
+          enhancedPrompt += `The code you just ran returned NOTHING because you forgot console.log()!\n`;
+          enhancedPrompt += `YOU MUST REWRITE IT WITH console.log() AT THE END!\n`;
+          enhancedPrompt += `DO NOT generate the same code again - ADD console.log() or use different approach!\n\n`;
+        }
         
         enhancedPrompt += `EMPTY OUTPUT = FAILURE:\n`;
         enhancedPrompt += `If execute_code returns "NO OUTPUT", you MUST rewrite the code with console.log()!\n`;
@@ -2072,7 +2086,7 @@ Style:
           options: {
             temperature: this.config.temperature,
             top_p: this.config.topP,
-            num_predict: this.config.maxTokens
+            num_predict: 1024  // Increased from maxTokens to allow longer code
           },
           stream: false
         })
