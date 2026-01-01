@@ -172,6 +172,22 @@ export class AgentEditor {
             </p>
           </div>
           
+          <!-- Optimization Strategy Selector -->
+          <div id="optimization-strategy" style="margin-bottom: 15px;">
+            <label style="display: block; color: #e0e0e0; font-size: 14px; font-weight: 500; margin-bottom: 8px;">
+              🎯 Optimization Strategy
+            </label>
+            <select id="opt-strategy" style="width: 100%; padding: 10px; background: #1e1e1e; border: 1px solid #444; border-radius: 6px; color: #e0e0e0; font-size: 14px; cursor: pointer;">
+              <option value="balanced">⚖️ Balanced - General improvements</option>
+              <option value="maximize">💪 Maximize Power - Use full token budget for capabilities</option>
+              <option value="efficiency">⚡ Efficiency - Reduce tokens, maintain quality</option>
+              <option value="specialized">🎯 Specialized - Optimize for specific task</option>
+            </select>
+            <p id="strategy-description" style="color: #9ca3af; font-size: 12px; margin-top: 6px; line-height: 1.4;">
+              General improvements to your agent's capabilities
+            </p>
+          </div>
+          
           <!-- Checkboxes (always shown) -->
           <div id="optimization-checkboxes">
             <p style="color: #9ca3af; font-size: 13px; margin-bottom: 10px;">
@@ -854,6 +870,11 @@ export class AgentEditor {
     
     document.getElementById('ai-generate-idea-btn')?.addEventListener('click', () => {
       this.generateAgentIdea();
+    });
+    
+    // Optimization strategy selector
+    document.getElementById('opt-strategy')?.addEventListener('change', (e) => {
+      this.updateStrategyDescription(e.target.value);
     });
     
     // Update token impact when checkboxes change
@@ -3361,12 +3382,43 @@ JSON format:
     }
   }
   
+  updateStrategyDescription(strategy) {
+    const descriptions = {
+      balanced: 'General improvements to your agent\'s capabilities',
+      maximize: 'Use full token budget to add powerful features, context, and capabilities',
+      efficiency: 'Reduce token usage while maintaining or improving quality',
+      specialized: 'Optimize specifically for the agent\'s current task'
+    };
+    
+    const descEl = document.getElementById('strategy-description');
+    if (descEl) {
+      descEl.textContent = descriptions[strategy] || descriptions.balanced;
+    }
+  }
+  
   async optimizeExistingAgent(optimizing, btn) {
+    // Get selected strategy
+    const strategy = document.getElementById('opt-strategy')?.value || 'balanced';
+    
     // Disable button and show loading
     btn.disabled = true;
     btn.innerHTML = '⏳ AI is analyzing...';
     
+    // Show progress stream
+    this.showProgressStream();
+    this.addProgressMessage(`🎯 Strategy: ${strategy}`);
+    this.addProgressMessage('📊 Analyzing current configuration...');
+    
     try {
+      // Get hardware limits
+      const vramTokenLimit = this.config.hardware?.tokenLimit || 8192;
+      const model = this.config.model || 'qwen2.5-coder:14b';
+      const modelSpecs = {
+        'qwen2.5-coder:14b': { maxContext: 32768 },
+        'qwen2.5-coder:7b': { maxContext: 32768 },
+        'qwen2.5-coder:32b': { maxContext: 32768 }
+      };
+      const maxContext = modelSpecs[model]?.maxContext || 32768;
       // Gather current configuration
       const context = {
         systemPrompt: this.config.systemPrompt,
@@ -3383,40 +3435,85 @@ JSON format:
         mode: this.config.mode
       };
       
+      this.addProgressMessage('📋 Current tokens: ' + this.tokenEstimate.total);
+      this.addProgressMessage('💪 VRAM limit: ' + vramTokenLimit + ' tokens');
+      this.addProgressMessage('🎯 Model max: ' + maxContext + ' tokens');
+      
+      // Strategy-specific instructions
+      const strategyInstructions = {
+        balanced: 'Make general improvements. Keep token usage similar (±10%).',
+        maximize: `MAXIMIZE POWER - Use as much of the ${vramTokenLimit} token VRAM budget as possible:
+- Increase maxTokens to 4096-8192 for longer, more detailed responses
+- Increase contextWindow to 16384-24576 for handling larger contexts
+- Add comprehensive context files (3-5 detailed guides, 1000-2000 words each)
+- Add more detailed instructions (5-8 steps with thorough prompts)
+- Enhance system prompt with extensive capabilities and examples
+- Increase environment resources (timeout: 120-180s, memoryLimit: 2GB)
+- Enable ALL relevant tools
+- Target: Use 70-90% of ${vramTokenLimit} token budget (currently ${this.tokenEstimate.total})`,
+        efficiency: 'REDUCE tokens by 20-40%: Compress prompts, remove redundancy, keep only essential context.',
+        specialized: 'Optimize for the specific task. Add domain-specific context and tools.'
+      };
+      
       // Build optimization prompt
-      const optimizationPrompt = `You are an AI agent optimization expert. Analyze this agent configuration and suggest improvements.
+      const optimizationPrompt = `You are an AI agent optimization expert. Analyze this agent and ${strategy === 'maximize' ? 'MAXIMIZE its capabilities' : 'optimize it'}.
 
 **Current Configuration:**
 
-System Prompt:
+System Prompt (${context.systemPrompt.length} chars):
 ${context.systemPrompt}
 
 Instructions (${context.instructions.length} steps):
-${context.instructions.map((inst, i) => `${i + 1}. ${inst.name}: ${inst.prompt}`).join('\\n')}
+${context.instructions.map((inst, i) => `${i + 1}. ${inst.name}: ${inst.prompt}`).join('\n')}
 
 Context Files (${context.contextFiles.length}):
-${context.contextFiles.map(f => f.name).join(', ') || 'None'}
+${context.contextFiles.map(f => `${f.name} - ${(f.content?.length || 0)} chars`).join(', ') || 'None'}
 
 Tools: ${context.tools.join(', ') || 'None'}
 
-Environment: ${context.environment.runtime}, Dependencies: ${context.environment.dependencies.join(', ') || 'None'}
+Environment: ${context.environment.runtime}, timeout=${context.environment.timeout}ms, memory=${context.environment.memoryLimit}, deps=[${context.environment.dependencies.join(', ') || 'None'}]
 
-Settings: temp=${context.settings.temperature}, topP=${context.settings.topP}, maxTokens=${context.settings.maxTokens}
+Settings: temp=${context.settings.temperature}, topP=${context.settings.topP}, maxTokens=${context.settings.maxTokens}, contextWindow=${context.settings.contextWindow}
+
+**Hardware Limits:**
+- VRAM Token Limit: ${vramTokenLimit} tokens (fits in GPU)
+- Model Max Context: ${maxContext} tokens
+- Current Token Usage: ${this.tokenEstimate.total} tokens
+
+**Strategy: ${strategy.toUpperCase()}**
+${strategyInstructions[strategy]}
 
 **Optimize these aspects:** ${Object.entries(optimizing).filter(([k, v]) => v).map(([k]) => k).join(', ')}
 
-Provide optimized configuration as JSON:
+${strategy === 'maximize' ? `
+**MAXIMIZE GUIDELINES:**
+1. System Prompt: Expand to 500-1000 chars with detailed capabilities, examples, and edge cases
+2. Instructions: Add 5-8 comprehensive steps with detailed prompts (150-200 tokens each)
+3. Context Files: Generate 3-5 DETAILED guides (1000-2000 words each):
+   - For web scrapers: "Advanced Web Scraping.md" (selectors, JS rendering, rate limits), "Error Recovery Patterns.md", "Data Validation Guide.md"
+   - For data analysis: "Statistical Methods.md", "Data Cleaning.md", "Visualization Techniques.md"  
+   - For coding: "Code Review Checklist.md", "Refactoring Patterns.md", "Performance Optimization.md"
+4. Environment: timeout=120-180s, memoryLimit=2GB, add useful dependencies
+5. Tools: Enable ALL relevant tools (execute_code, fetch_url, search_web, read_file)
+6. Settings: maxTokens=4096-8192, contextWindow=16384-24576, temperature optimal for task
+7. GOAL: Use 70-90% of ${vramTokenLimit} token budget` : ''}
+
+CRITICAL: Return ONLY valid JSON. No markdown, no explanations outside JSON.
+
+JSON format:
 {
-  ${optimizing.systemPrompt ? '"systemPrompt": "improved prompt",' : ''}
-  ${optimizing.instructions ? '"instructions": [{name:"...", prompt:"...", conditional:false, loop:false}],' : ''}
-  ${optimizing.environment ? '"environment": {runtime:"nodejs", dependencies:["pkg@1.0"], timeout:30000, memoryLimit:"512MB", sandboxed:true},' : ''}
-  ${optimizing.contextFiles ? '"contextFileSuggestions": ["file1.md", "file2.txt"],' : ''}
+  ${optimizing.systemPrompt ? '"systemPrompt": "enhanced prompt",' : ''}
+  ${optimizing.instructions ? '"instructions": [{name:"step name", prompt:"detailed action", conditional:false, loop:false}],' : ''}
+  ${optimizing.environment ? '"environment": {runtime:"nodejs", dependencies:["pkg@version"], timeout:30000, memoryLimit:"512MB", sandboxed:true},' : ''}
+  ${optimizing.contextFiles ? '"contextFiles": [{name:"Guide.md", content:"detailed markdown guide content", type:"text/markdown"}],' : ''}
   ${optimizing.tools ? '"tools": ["execute_code", "fetch_url"],' : ''}
-  ${optimizing.settings ? '"settings": {temperature:0.7, topP:0.9, maxTokens:2048, contextWindow:8192},' : ''}
-  "reasoning": "explanation of changes",
-  "tokenReduction": 123
+  ${optimizing.settings ? '"settings": {temperature:0.7, topP:0.9, maxTokens:2048, contextWindow:8192, ragEpisodes:3},' : ''}
+  "reasoning": "explanation of key changes",
+  "estimatedTokens": ${strategy === 'maximize' ? Math.floor(vramTokenLimit * 0.8) : this.tokenEstimate.total}
 }`;
 
+      this.addProgressMessage('🤖 Calling AI...');
+      
       // Call Ollama API
       const response = await fetch('http://localhost:11434/api/generate', {
         method: 'POST',
@@ -3432,61 +3529,99 @@ Provide optimized configuration as JSON:
         throw new Error('Failed to get AI optimization');
       }
       
+      this.addProgressMessage('✅ AI response received');
+      this.addProgressMessage('📝 Parsing suggestions...');
+      
       const data = await response.json();
       const responseText = data.response;
       
       // Extract JSON from response
-      const jsonMatch = responseText.match(/\\{[\\s\\S]*\\}/);
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
+        this.addProgressMessage('❌ Could not parse AI response');
         throw new Error('Could not parse AI response');
       }
       
       const suggestions = JSON.parse(jsonMatch[0]);
       
+      this.addProgressMessage('');
+      this.addProgressMessage('✨ AI Suggestions:');
+      this.addProgressMessage('─'.repeat(50));
+      
       // Show confirmation dialog
-      let changesMsg = 'AI suggests the following changes:\\n\\n';
+      let changesMsg = `${strategy === 'maximize' ? '💪 MAXIMIZED' : '⚡ Optimized'} Configuration:\n\n`;
       
       if (suggestions.systemPrompt && optimizing.systemPrompt) {
-        changesMsg += `📝 System Prompt: Updated (${suggestions.systemPrompt.length} chars)\\n`;
+        changesMsg += `📝 System Prompt: ${suggestions.systemPrompt.length} chars (was ${context.systemPrompt.length})\n`;
+        this.addProgressMessage(`📝 System Prompt: ${suggestions.systemPrompt.length} chars`);
       }
       if (suggestions.instructions && optimizing.instructions) {
-        changesMsg += `📋 Instructions: ${suggestions.instructions.length} steps\\n`;
+        changesMsg += `📋 Instructions: ${suggestions.instructions.length} steps (was ${context.instructions.length})\n`;
+        this.addProgressMessage(`📋 Instructions: ${suggestions.instructions.length} steps`);
       }
       if (suggestions.environment && optimizing.environment) {
-        changesMsg += `⚙️ Environment: ${suggestions.environment.runtime} with ${suggestions.environment.dependencies.length} dependencies\\n`;
+        changesMsg += `⚙️ Environment: ${suggestions.environment.runtime}, timeout=${suggestions.environment.timeout}ms, memory=${suggestions.environment.memoryLimit}\n`;
+        this.addProgressMessage(`⚙️ Environment updated`);
       }
-      if (suggestions.contextFileSuggestions && optimizing.contextFiles) {
-        changesMsg += `📁 Context: Suggested ${suggestions.contextFileSuggestions.length} files\\n`;
+      if (suggestions.contextFiles && optimizing.contextFiles) {
+        const totalChars = suggestions.contextFiles.reduce((sum, f) => sum + (f.content?.length || 0), 0);
+        changesMsg += `📁 Context: ${suggestions.contextFiles.length} files, ${Math.floor(totalChars / 1024)}KB total\n`;
+        this.addProgressMessage(`📁 Context: ${suggestions.contextFiles.length} files`);
+        suggestions.contextFiles.forEach(f => {
+          this.addProgressMessage(`   • ${f.name} - ${Math.floor((f.content?.length || 0) / 1024)}KB`);
+        });
       }
       if (suggestions.tools && optimizing.tools) {
-        changesMsg += `🛠️ Tools: ${suggestions.tools.join(', ')}\\n`;
+        changesMsg += `🛠️ Tools: ${suggestions.tools.join(', ')}\n`;
+        this.addProgressMessage(`🛠️ Tools: ${suggestions.tools.join(', ')}`);
       }
       if (suggestions.settings && optimizing.settings) {
-        changesMsg += `⚡ Settings: temp=${suggestions.settings.temperature}, tokens=${suggestions.settings.maxTokens}\\n`;
+        changesMsg += `⚡ Settings: temp=${suggestions.settings.temperature}, maxTokens=${suggestions.settings.maxTokens}, context=${suggestions.settings.contextWindow}\n`;
+        this.addProgressMessage(`⚡ Settings optimized`);
       }
       
-      changesMsg += `\\n💡 Reasoning: ${suggestions.reasoning}`;
-      changesMsg += `\\n📊 Token Reduction: ~${suggestions.tokenReduction || 0}`;
-      changesMsg += `\\n\\nApply these optimizations?`;
+      changesMsg += `\n💡 ${suggestions.reasoning}`;
+      changesMsg += `\n📊 Estimated Tokens: ${suggestions.estimatedTokens || 'calculating...'}`;
+      changesMsg += `\n\nApply these ${strategy === 'maximize' ? 'power enhancements' : 'optimizations'}?`;
+      
+      this.addProgressMessage('');
+      this.addProgressMessage('💡 ' + suggestions.reasoning);
       
       if (confirm(changesMsg)) {
+        this.addProgressMessage('');
+        this.addProgressMessage('✅ Applying changes...');
+        
         // Apply optimizations
         if (suggestions.systemPrompt && optimizing.systemPrompt) {
           this.config.systemPrompt = suggestions.systemPrompt;
           if (this.editor) this.editor.setValue(suggestions.systemPrompt);
+          this.addProgressMessage('✓ System prompt updated');
         }
         
         if (suggestions.instructions && optimizing.instructions) {
           this.config.instructions = suggestions.instructions;
+          this.addProgressMessage('✓ Instructions updated');
         }
         
         if (suggestions.environment && optimizing.environment) {
           this.config.environment = suggestions.environment;
           this.renderEnvironment();
+          this.addProgressMessage('✓ Environment updated');
         }
         
-        if (suggestions.contextFileSuggestions && optimizing.contextFiles) {
-          alert(`Context file suggestions:\\n${suggestions.contextFileSuggestions.join('\\n')}`);
+        if (suggestions.contextFiles && optimizing.contextFiles) {
+          // Add new context files from AI
+          suggestions.contextFiles.forEach(file => {
+            this.config.contextFiles.push({
+              name: file.name,
+              content: file.content,
+              size: file.content.length,
+              addedAt: new Date().toISOString(),
+              isLibraryGuide: false
+            });
+          });
+          this.renderContextFiles();
+          this.addProgressMessage(`✓ Added ${suggestions.contextFiles.length} context files`);
         }
         
         if (suggestions.tools && optimizing.tools) {
@@ -3497,6 +3632,7 @@ Provide optimized configuration as JSON:
             const checkbox = document.getElementById(`tool-${tool}`);
             if (checkbox) checkbox.checked = suggestions.tools.includes(toolName);
           });
+          this.addProgressMessage('✓ Tools updated');
         }
         
         if (suggestions.settings && optimizing.settings) {
@@ -3504,6 +3640,9 @@ Provide optimized configuration as JSON:
           this.config.topP = suggestions.settings.topP;
           this.config.maxTokens = suggestions.settings.maxTokens;
           this.config.contextWindow = suggestions.settings.contextWindow;
+          if (suggestions.settings.ragEpisodes) {
+            this.config.ragEpisodes = suggestions.settings.ragEpisodes;
+          }
           
           // Update UI
           document.getElementById('temperature').value = suggestions.settings.temperature;
@@ -3514,16 +3653,32 @@ Provide optimized configuration as JSON:
           document.getElementById('maxtoken-value').textContent = suggestions.settings.maxTokens;
           document.getElementById('context-window').value = suggestions.settings.contextWindow;
           document.getElementById('context-value').textContent = suggestions.settings.contextWindow;
+          if (suggestions.settings.ragEpisodes) {
+            document.getElementById('rag-episodes').value = suggestions.settings.ragEpisodes;
+            document.getElementById('rag-value').textContent = suggestions.settings.ragEpisodes;
+          }
+          this.addProgressMessage('✓ Settings updated');
         }
         
         this.updateTokenEstimate();
-        alert('✅ Agent optimized successfully!');
-        this.hideOptimizationPanel();
+        this.addProgressMessage('');
+        this.addProgressMessage('🎉 Agent optimized successfully!');
+        this.addProgressMessage(`📊 New token estimate: ${this.tokenEstimate.total}`);
+        
+        setTimeout(() => {
+          alert('✅ Agent optimized successfully!');
+          this.hideOptimizationPanel();
+        }, 500);
+      } else {
+        this.addProgressMessage('');
+        this.addProgressMessage('❌ User cancelled - no changes applied');
       }
       
     } catch (error) {
       console.error('AI optimization error:', error);
-      alert(`Failed to optimize: ${error.message}\\n\\nPlease check that Ollama is running.`);
+      this.addProgressMessage('');
+      this.addProgressMessage('❌ ERROR: ' + error.message);
+      alert(`Failed to optimize: ${error.message}\n\nPlease check that Ollama is running.`);
     } finally {
       // Re-enable button
       btn.disabled = false;
