@@ -2058,8 +2058,8 @@ Style:
         
         enhancedPrompt += `\nCRITICAL ERROR HANDLING:\n`;
         enhancedPrompt += `If you see CORS, 403, or 401 errors, DO NOT retry fetch_url!\n`;
-        enhancedPrompt += `Instead, use execute_code with axios and custom headers:\n`;
-        enhancedPrompt += `{"tool": "execute_code", "params": {"code": "const axios = require('axios'); axios.get('URL', {headers: {'User-Agent': 'Mozilla/5.0'}}).then(r => console.log(r.data));"}}\n\n`;
+        enhancedPrompt += `Instead, use execute_code with axios and AWAIT:\n`;
+        enhancedPrompt += `{"tool": "execute_code", "params": {"code": "const axios = require('axios'); const res = await axios.get('URL', {headers: {'User-Agent': 'Mozilla/5.0'}}); console.log(res.data);"}}\n\n`;
         
         // SUPER STRONG MESSAGE if last tool had empty output
         if (hadEmptyOutput) {
@@ -2067,28 +2067,29 @@ Style:
           const failedCode = this.config.lastFailedCode || '';
           
           enhancedPrompt += `\n🚨🚨🚨 CRITICAL ERROR: YOUR LAST CODE HAD NO OUTPUT! 🚨🚨🚨\n`;
-          enhancedPrompt += `The code you just ran returned NOTHING because you forgot console.log()!\n\n`;
+          enhancedPrompt += `The code returned NOTHING - missing console.log() OR forgot AWAIT!\n\n`;
           
           if (failedCode) {
             enhancedPrompt += `YOUR BROKEN CODE:\n${failedCode}\n\n`;
-            enhancedPrompt += `FIX IT BY ADDING .then(r => console.log(r.data)) or similar!\n`;
-            enhancedPrompt += `EXAMPLE FIX:\n`;
-            enhancedPrompt += `axios.get('url', {headers: {...}}).then(r => console.log(r.data));\n\n`;
+            enhancedPrompt += `REQUIRED FIXES:\n`;
+            enhancedPrompt += `1. USE AWAIT: const res = await axios.get(...); console.log(res.data);\n`;
+            enhancedPrompt += `2. DON'T use .then() - Use await instead!\n`;
+            enhancedPrompt += `3. ALWAYS add console.log() to see output!\n\n`;
           }
           
           enhancedPrompt += `YOU MUST IMMEDIATELY RETRY WITH A NEW TOOL CALL!\n`;
           enhancedPrompt += `DO NOT respond with text - respond with JSON tool call!\n`;
-          enhancedPrompt += `GENERATE: {"tool": "execute_code", "params": {"code": "...FIXED CODE WITH console.log()..."}}\n\n`;
+          enhancedPrompt += `GENERATE: {"tool": "execute_code", "params": {"code": "...FIXED CODE WITH await AND console.log()..."}}\n\n`;
           
           console.log('🚨 [DEBUG] Empty output detected! Alert injected into prompt.');
           console.log('🚨 [DEBUG] Failed code:', failedCode.substring(0, 150));
         }
         
         enhancedPrompt += `EMPTY OUTPUT = FAILURE:\n`;
-        enhancedPrompt += `If execute_code returns "NO OUTPUT", you MUST rewrite the code with console.log()!\n`;
-        enhancedPrompt += `NEVER repeat the same code that produced no output - FIX IT!\n`;
-        enhancedPrompt += `BEFORE: await page.content(); // WRONG - No output!\n`;
-        enhancedPrompt += `AFTER:  const html = await page.content(); console.log(html); // RIGHT!\n\n`;
+        enhancedPrompt += `If execute_code returns "NO OUTPUT", fix it with await + console.log()!\n`;
+        enhancedPrompt += `NEVER repeat broken code - REWRITE IT!\n`;
+        enhancedPrompt += `WRONG: axios.get(...).then(r => console.log(r)) // NOT AWAITED!\n`;
+        enhancedPrompt += `RIGHT: const res = await axios.get(...); console.log(res.data);\n\n`;
         
         enhancedPrompt += `DO NOT explain, DO NOT retry the same broken code - FIX and retry!\n`;
       }
