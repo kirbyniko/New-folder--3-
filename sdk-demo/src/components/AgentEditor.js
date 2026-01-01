@@ -1489,15 +1489,41 @@ Style:
       const conversationContext = this.testConversation
         .filter(msg => !msg.loading && !msg.error)
         .map(msg => {
-          if (msg.role === 'system') return `System: ${msg.content}`;
-          return `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`;
+          if (msg.role === 'system') return `[Tool Result]\n${msg.content}`;
+          if (msg.role === 'user') return `User: ${msg.content}`;
+          return `Assistant: ${msg.content}`;
         })
         .join('\n\n');
       
-      // Enhanced prompt with action reminder
+      // Enhanced prompt - include FULL agent mode instructions
       let enhancedPrompt = this.config.systemPrompt;
-      enhancedPrompt += `\n\nREMEMBER: You are executing autonomously. Continue working on the task using the tool results above. Either:\n`;
-      enhancedPrompt += `1. Use another tool to continue (respond with JSON)\n`;
+      
+      // Add the same agent execution mode instructions as initial message
+      if (this.config.tools.length > 0) {
+        enhancedPrompt += `\n\n=== AGENT EXECUTION MODE ===\n`;
+        enhancedPrompt += `You are an AUTONOMOUS AGENT. You just received tool results.\n\n`;
+        enhancedPrompt += `CONTINUE WORKING:\n`;
+        enhancedPrompt += `1. Analyze the tool results above\n`;
+        enhancedPrompt += `2. Either use another tool (respond with JSON) OR present findings\n`;
+        enhancedPrompt += `3. DO NOT ask what to do next - keep executing!\n`;
+        enhancedPrompt += `4. DO NOT give instructions - take action or show results\n\n`;
+        
+        enhancedPrompt += `AVAILABLE TOOLS:\n`;
+        if (this.config.tools.includes('execute_code')) {
+          enhancedPrompt += `- {"tool": "execute_code", "params": {"code": "..."}}\n`;
+        }
+        if (this.config.tools.includes('fetch_url')) {
+          enhancedPrompt += `- {"tool": "fetch_url", "params": {"url": "..."}}\n`;
+        }
+        if (this.config.tools.includes('search_web')) {
+          enhancedPrompt += `- {"tool": "search_web", "params": {"query": "..."}}\n`;
+        }
+      }
+      
+      // Add environment info
+      if (this.config.environment.runtime && this.config.environment.dependencies.length > 0) {
+        enhancedPrompt += `\nAVAILABLE PACKAGES: ${this.config.environment.dependencies.join(', ')}\n`;
+      }
       enhancedPrompt += `2. Analyze results and proceed to next step\n`;
       enhancedPrompt += `3. Present final results if task is complete\n\n`;
       enhancedPrompt += `DO NOT ask what to do next - keep working!\n`;
@@ -1567,13 +1593,18 @@ Style:
           content: result.response,
           metadata: `⏱️ ${duration}ms • 📊 ~${Math.ceil(result.response.length / 4)} tokens`
         });
+        
+        console.log('[Agent] Continue cycle complete, response:', result.response.substring(0, 100));
+      } else {
+        console.warn('[Agent] No response from Ollama in continue cycle');
       }
       
     } catch (error) {
+      console.error('[Agent] Error in continue cycle:', error);
       this.testConversation = this.testConversation.filter(msg => !msg.loading);
       this.testConversation.push({
         role: 'error',
-        content: error.message,
+        content: `Continue Error: ${error.message}`,
         error: true
       });
     }
@@ -1780,13 +1811,17 @@ Style:
         }
         
         if (toolCallMatch && this.config.tools.includes(toolCallMatch.tool)) {
+          console.log('[Agent] Tool call detected:', toolCallMatch.tool, toolCallMatch.params);
+          
           // Execute the tool
           const toolResult = await this.executeTool(toolCallMatch.tool, toolCallMatch.params);
+          
+          console.log('[Agent] Tool result:', toolResult.success ? 'SUCCESS' : 'FAILED', `(${toolResult.duration}ms)`);
           
           // Add tool execution to conversation
           this.testConversation.push({
             role: 'assistant',
-            content: `🛠️ Executing: ${toolCallMatch.tool}(${JSON.stringify(toolCallMatch.params)})`,
+            content: `🛠️ Executing: ${toolCallMatch.tool}(${JSON.stringify(toolCallMatch.params).substring(0, 100)}...)`,
             metadata: `⏱️ ${duration}ms`
           });
           
@@ -1801,6 +1836,7 @@ Style:
           messagesDiv.scrollTop = messagesDiv.scrollHeight;
           
           // Automatically continue with tool results (agent continues autonomously)
+          console.log('[Agent] Continuing autonomously with tool results...');
           await this.continueWithToolResults(container);
           return;
         }
