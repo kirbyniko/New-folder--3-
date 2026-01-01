@@ -106,11 +106,16 @@ export class AgentEditor {
             </p>
             
             <div style="margin-bottom: 15px;">
-              <label style="display: block; color: #e0e0e0; font-size: 14px; font-weight: 500; margin-bottom: 8px;">
-                What should your agent do?
-              </label>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <label style="display: block; color: #e0e0e0; font-size: 14px; font-weight: 500;">
+                  What should your agent do?
+                </label>
+                <button id="ai-generate-idea-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 6px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                  💡 AI Generate Idea
+                </button>
+              </div>
               <textarea id="agent-purpose-input" 
-                        placeholder="Example: scrape e-commerce sites for product prices&#10;Example: analyze CSV files and generate reports&#10;Example: monitor RSS feeds and send alerts"
+                        placeholder="Example: scrape e-commerce sites for product prices&#10;Example: analyze CSV files and generate reports&#10;Example: monitor RSS feeds and send alerts&#10;&#10;Or click 'AI Generate Idea' to get inspiration!"
                         style="width: 100%; min-height: 100px; background: #1e1e1e; border: 1px solid #444; border-radius: 6px; color: #e0e0e0; padding: 12px; font-size: 14px; font-family: inherit; resize: vertical;"></textarea>
             </div>
           </div>
@@ -621,6 +626,10 @@ export class AgentEditor {
     
     document.getElementById('run-ai-optimize')?.addEventListener('click', () => {
       this.runAIOptimization();
+    });
+    
+    document.getElementById('ai-generate-idea-btn')?.addEventListener('click', () => {
+      this.generateAgentIdea();
     });
     
     // Update token impact when checkboxes change
@@ -1898,6 +1907,91 @@ Provide optimized configuration as JSON:
       // Auto-scroll to bottom
       const stream = document.getElementById('ai-progress-stream');
       if (stream) stream.scrollTop = stream.scrollHeight;
+    }
+  }
+  
+  async generateAgentIdea() {
+    const btn = document.getElementById('ai-generate-idea-btn');
+    const textarea = document.getElementById('agent-purpose-input');
+    if (!btn || !textarea) return;
+    
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '🎲 Generating...';
+    
+    try {
+      // Create a prompt to generate agent ideas
+      const ideaPrompt = `You are a creative AI assistant helping users brainstorm AI agent ideas.
+
+Generate ONE specific, practical, and interesting AI agent idea. The idea should be:
+- Actionable (something that can actually be built)
+- Useful (solves a real problem)
+- Specific (not vague like "help with tasks")
+- Creative (not too obvious)
+
+Consider these categories for inspiration:
+- Data processing (web scraping, analysis, transformation)
+- Automation (monitoring, alerts, scheduled tasks)
+- Content creation (summarization, generation, translation)
+- Research (information gathering, comparison, synthesis)
+- Development tools (code analysis, testing, documentation)
+- Business (reporting, tracking, integration)
+
+Respond with ONLY the agent description in 1-2 sentences. No JSON, no extra formatting.
+Examples:
+"Monitor GitHub repositories for security vulnerabilities and send weekly digest emails with severity ratings and patch recommendations"
+"Analyze customer support tickets using sentiment analysis, automatically categorize them, and route urgent issues to senior staff"
+"Track competitor pricing across multiple e-commerce sites, detect price changes over 10%, and send alerts with historical comparison charts"
+
+Generate a NEW creative idea now:`;
+
+      const response = await fetch('http://localhost:11434/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: this.config.model || 'qwen2.5-coder:14b',
+          prompt: ideaPrompt,
+          stream: false,
+          options: {
+            temperature: 0.9, // Higher temperature for more creativity
+            top_p: 0.95
+          }
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate agent idea');
+      }
+      
+      const data = await response.json();
+      const idea = data.response.trim();
+      
+      // Clean up the response (remove any extra formatting)
+      const cleanIdea = idea
+        .replace(/^["']|["']$/g, '') // Remove surrounding quotes
+        .replace(/^Agent idea:\s*/i, '') // Remove "Agent idea:" prefix
+        .replace(/^Idea:\s*/i, '') // Remove "Idea:" prefix
+        .trim();
+      
+      // Insert into textarea
+      textarea.value = cleanIdea;
+      textarea.focus();
+      
+      // Show success feedback
+      btn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+      btn.innerHTML = '✨ Idea Generated!';
+      
+      setTimeout(() => {
+        btn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+        btn.innerHTML = originalText;
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Failed to generate agent idea:', error);
+      alert(`Failed to generate agent idea: ${error.message}\n\nMake sure Ollama is running.`);
+      btn.innerHTML = originalText;
+    } finally {
+      btn.disabled = false;
     }
   }
 }
