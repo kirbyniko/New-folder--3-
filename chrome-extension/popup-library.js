@@ -736,77 +736,16 @@ function viewScraperDetails(index) {
     box-shadow: 0 20px 60px rgba(0,0,0,0.3);
   `;
   
-  // Generate documented code
+  // Generate clean JSON (no documentation BS)
   let codeText;
   if (scraper.code) {
     codeText = scraper.code;
   } else {
-    // Add comprehensive documentation to the JSON
-    const documented = {
-      '// SCRAPER METADATA': '────────────────────────────────────────',
-      name: scraper.name,
-      description: scraper.description,
-      jurisdiction: scraper.jurisdiction,
-      stateCode: scraper.stateCode,
-      level: scraper.level,
-      baseUrl: scraper.baseUrl,
-      startUrl: scraper.startUrl,
-      requiresPuppeteer: scraper.requiresPuppeteer,
-      active: scraper.active,
-      
-      '// PAGE STRUCTURES': '────────────────────────────────────────',
-      '// HINT: Each pageStructure describes a page type (calendar, detail, search)': null,
-      '// - containerSelector: CSS selector for the list container (where multiple items live)': null,
-      '// - itemSelector: CSS selector for individual items within the container': null,
-      '// - nextButtonSelector: CSS selector for pagination "next" button': null,
-      '// - prevButtonSelector: CSS selector for pagination "previous" button': null,
-      '// - fields: Array of data fields to extract from each page/item': null,
-      pageStructures: scraper.pageStructures,
-      
-      '// FIELD EXTRACTION': '────────────────────────────────────────',
-      '// HINT: Each field has selectorSteps showing HOW we found the data': null,
-      '// - fieldName: Database column name (e.g., "title", "date", "location")': null,
-      '// - fieldType: Data type (text, date, url, number)': null,
-      '// - isRequired: Whether this field must be present': null,
-      '// - transformation: How to clean the data (trim, parse_date, lowercase)': null,
-      '// - selectorSteps: Step-by-step instructions for extracting this field': null,
-      '//   - actionType: "extract" (get text), "click" (navigate), "wait" (pause)': null,
-      '//   - selector: CSS selector used (copy this!)': null,
-      '//   - xpath: XPath alternative (if CSS fails)': null,
-      '//   - attributeName: HTML attribute to read (href, src, data-id)': null,
-      '//   - comment: Human explanation of what this step does': null,
-      '// EXAMPLE: To extract event title, we found it at "h2.event-title"': null,
-      
-      '// NAVIGATION STEPS': '────────────────────────────────────────',
-      '// HINT: These are actions to perform BEFORE scraping (login, open menu, etc.)': null,
-      '// - stepType: "click", "type", "wait", "scroll"': null,
-      '// - selector: Where to perform the action': null,
-      '// - comment: Why this step is needed': null,
-      navigationSteps: scraper.navigationSteps,
-      
-      '// METADATA': '────────────────────────────────────────',
-      metadata: scraper.metadata,
-      
-      '// 🎯 HOW TO USE THIS DATA': '────────────────────────────────────────',
-      '// 1. Look at pageStructures[0].fields to see what data we extract': null,
-      '// 2. Each field.selectorSteps shows the EXACT selectors that worked': null,
-      '// 3. Copy those selectors when building your own scraper': null,
-      '// 4. The "comment" fields explain WHY each selector was chosen': null,
-      '// 5. If a field has multiple selectorSteps, try them in order (fallback strategy)': null,
-      '// 6. containerSelector + itemSelector = list scraping pattern': null,
-      '// 7. nextButtonSelector = pagination pattern (click to load more)': null
-    };
-    
-    codeText = JSON.stringify(documented, null, 2);
-    
-    // Store clean JSON for agent (no documentation comments)
-    window._currentScraperCleanJSON = JSON.stringify({
+    codeText = JSON.stringify({
       name: scraper.name,
       startUrl: scraper.startUrl,
       pageStructures: scraper.pageStructures
-    }, null, 2)
-      .replace(/"\/\/ ([^"]+)":/g, '\n// $1:') // Convert comment keys to actual comments
-      .replace(/: null,?\n/g, '\n'); // Remove null values
+    }, null, 2);
   }
   
   content.innerHTML = `
