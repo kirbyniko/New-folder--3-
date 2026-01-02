@@ -379,17 +379,15 @@ ${JSON.stringify(scraperConfig, null, 2)}`;
     this.addMessage('user', message.substring(0, 500) + (message.length > 500 ? '...' : ''));
     
     // Show loading
-    const loadingId = this.addMessage('progress', '⏳ Starting agent workflow...');
+    const loadingId = this.addMessage('progress', '⏳ Generating scraper with templates...');
     
     try {
-      // Use agent for all tasks - it will test and iterate
-      const response = await fetch('http://localhost:3003/agent', {
+      // Use template generator (much more reliable than ReAct agent!)
+      const response = await fetch('http://localhost:3003/template-scraper', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          task: message,
-          config: this.config,
-          scraperConfig: scraperConfig // Pass config separately if detected
+          config: scraperConfig
         })
       });
       
@@ -397,77 +395,18 @@ ${JSON.stringify(scraperConfig, null, 2)}`;
         throw new Error(`HTTP ${response.status}`);
       }
       
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
+      const result = await response.json();
       
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        
-        const text = decoder.decode(value);
-        const lines = text.split('\n');
-        
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = JSON.parse(line.substring(6));
-            const loadingEl = document.getElementById(loadingId);
-            
-            if (data.type === 'gpu_status') {
-              // Show GPU status prominently
-              if (loadingEl) {
-                const statusColor = data.usingGpu ? '#00ff00' : '#ff4444';
-                const statusMsg = data.usingGpu 
-                  ? `<span style="color: ${statusColor};">✓ GPU ACTIVE (${data.gpuLayers}/${data.totalLayers} layers)</span>`
-                  : `<span style="color: ${statusColor};">⚠ WARNING: CPU FALLBACK - SLOW!</span>`;
-                loadingEl.innerHTML = statusMsg;
-              }
-              // Also log to console for debugging
-              console.log(data.usingGpu ? '✓ GPU ACTIVE' : '⚠ CPU FALLBACK DETECTED', data);
-            } else if (data.type === 'step') {
-              if (loadingEl) {
-                loadingEl.innerHTML = `⏳ ${data.message} ${data.elapsed ? `[${data.elapsed}]` : ''}`;
-              }
-            } else if (data.type === 'tool_start') {
-              if (loadingEl) {
-                loadingEl.innerHTML = `🛠️ ${data.message} ${data.step ? `(Step ${data.step})` : ''} ${data.elapsed ? `[${data.elapsed}]` : ''}`;
-              }
-            } else if (data.type === 'tool_end') {
-              if (loadingEl) {
-                loadingEl.innerHTML = `✅ ${data.message} ${data.elapsed ? `[${data.elapsed}]` : ''}`;
-              }
-            } else if (data.type === 'llm_start') {
-              if (loadingEl) {
-                loadingEl.innerHTML = `🧠 ${data.message} ${data.elapsed ? `[${data.elapsed}]` : ''}`;
-              }
-            } else if (data.type === 'llm_token') {
-              if (loadingEl) {
-                loadingEl.innerHTML = `🧠 ${data.message} ${data.elapsed ? `[${data.elapsed}]` : ''}`;
-              }
-            } else if (data.type === 'llm_end') {
-              if (loadingEl) {
-                loadingEl.innerHTML = `✓ ${data.message} ${data.elapsed ? `[${data.elapsed}]` : ''}`;
-              }
-            } else if (data.type === 'complete') {
-              this.removeMessage(loadingId);
-              
-              const result = data.result;
-              this.addMessage('assistant', result.output || result.text || 'No response');
-              
-              if (result.steps || result.executionTime) {
-                const metadata = `
-                  <div class="metadata">
-                    ${result.steps ? `Steps: ${result.steps}` : ''}
-                    ${result.executionTime ? `Time: ${result.executionTime}ms` : ''}
-                  </div>
-                `;
-                this.addMessage('system', metadata);
-              }
-            } else if (data.type === 'error') {
-              this.removeMessage(loadingId);
-              this.addMessage('error', `❌ Error: ${data.error}`);
-            }
-          }
-        }
+      // Remove loading message
+      this.removeMessage(loadingId);
+      
+      // Show results
+      if (result.success) {
+        this.addMessage('system', `✅ Generated with template: ${result.template} (${result.attempts} attempt${result.attempts > 1 ? 's' : ''})`);
+        this.addMessage('assistant', `\`\`\`javascript\n${result.code}\n\`\`\``);
+      } else {
+        this.addMessage('error', `❌ Generation failed: ${result.error}`);
+        this.addMessage('assistant', `Partial code:\n\`\`\`javascript\n${result.code}\n\`\`\``);
       }
       
     } catch (error) {

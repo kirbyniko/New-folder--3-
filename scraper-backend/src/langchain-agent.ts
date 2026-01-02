@@ -47,15 +47,31 @@ const executeCodeTool = tool(
   },
   {
     name: "execute_code",
-    description: `Execute Node.js code with pre-loaded axios, cheerio, and puppeteer modules.
-CRITICAL: Always end with console.log() to see output!
-Both patterns work:
-- const axios = require('axios'); // ✅ Works
-- await axios.get(url); // ✅ Also works (pre-loaded)
+    description: `Execute JavaScript/Node.js code. 
+    
+🚨 CRITICAL: Only JavaScript allowed - NO PYTHON!
 
-Example: const html = await axios.get('https://example.com'); console.log(html.data);`,
+Examples that work:
+\`\`\`javascript
+const axios = require('axios');
+const html = await axios.get('https://example.com');
+console.log(html.data);
+\`\`\`
+
+\`\`\`javascript
+const puppeteer = require('puppeteer');
+const browser = await puppeteer.launch();
+const page = await browser.newPage();
+await page.goto('https://example.com');
+console.log(await page.title());
+await browser.close();
+\`\`\`
+
+Always use console.log() to see output!
+NO import statements - use require()
+NO Python syntax`,
     schema: z.object({
-      code: z.string().describe("The Node.js code to execute. Must end with console.log() for output!")
+      code: z.string().describe("JavaScript code ONLY (not Python). Must use console.log() for output!")
     })
   }
 );
@@ -196,8 +212,8 @@ export async function createScraperAgent(config: {
   sessionId?: string; // Session ID for conversation memory
 }) {
   const {
-    model = 'mistral-nemo:12b-instruct-2407-q8_0',
-    temperature = 0.3,
+    model = 'deepseek-coder:6.7b',
+    temperature = 0.1,
     systemPrompt,
     tools: enabledTools,
     context = 'general',
@@ -362,6 +378,7 @@ export async function runAgentTask(
         messages: [...history, { role: "user", content: task }]
       },
       {
+        recursionLimit: 25, // Allow up to 25 steps for testing/iteration
         callbacks: [
           {
             handleToolStart: (tool: any, input: string) => {

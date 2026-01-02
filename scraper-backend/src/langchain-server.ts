@@ -210,6 +210,49 @@ const server = http.createServer(async (req, res) => {
     return;
   }
   
+  // POST /template-scraper - Generate scraper using templates (RECOMMENDED!)
+  if (req.method === 'POST' && req.url === '/template-scraper') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', async () => {
+      try {
+        const { config } = JSON.parse(body);
+        
+        // Import template generator
+        const { generateScraperFromConfig } = await import('./template-generator.js');
+        
+        console.log(`\n🎯 TEMPLATE SCRAPER GENERATOR`);
+        console.log(`   Config: ${config.name}`);
+        
+        // Progress callback
+        const progressCallback = (message: string) => {
+          // Could stream progress here if needed
+          console.log(`   ${message}`);
+        };
+        
+        const result = await generateScraperFromConfig(config, progressCallback);
+        
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          success: result.success,
+          code: result.code,
+          template: result.template,
+          attempts: result.attempts,
+          error: result.error,
+          method: 'template-generator'
+        }));
+      } catch (error: any) {
+        console.error(`❌ Template scraper error:`, error);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ 
+          success: false, 
+          error: error.message 
+        }));
+      }
+    });
+    return;
+  }
+  
   if (req.method === 'POST' && req.url === '/agent') {
     let body = '';
     
