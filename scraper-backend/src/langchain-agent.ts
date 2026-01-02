@@ -11,7 +11,7 @@ import { ChatPromptTemplate, MessagesPlaceholder } from "@langchain/core/prompts
 import { z } from "zod";
 import axios from "axios";
 import * as cheerio from "cheerio";
-import { getContext, listContexts } from './agent-contexts.js';
+import { getContext, listContexts } from './context-manager.js';
 import { agentMemory } from './agent-memory.js';
 import { localTracer } from './local-tracer.js';
 

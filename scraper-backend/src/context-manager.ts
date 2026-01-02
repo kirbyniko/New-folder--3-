@@ -494,6 +494,17 @@ export function getContextById(id: string): ContextTemplate | undefined {
 }
 
 /**
+ * Alias for compatibility - returns context or falls back to general
+ */
+export function getContext(id: string): ContextTemplate {
+  const context = getContextById(id);
+  if (context) return context;
+  
+  // Fallback to general or first available
+  return getContextById('general-assistant') || CONTEXT_TEMPLATES[0];
+}
+
+/**
  * List all available contexts
  */
 export function listContexts(): ContextTemplate[] {
