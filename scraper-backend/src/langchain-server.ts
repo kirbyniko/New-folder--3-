@@ -5,6 +5,8 @@
 
 import http from 'http';
 import { createScraperAgent, runAgentTask } from './langchain-agent.js';
+import { listContexts } from './agent-contexts.js';
+import { agentMemory } from './agent-memory.js';
 
 const PORT = process.env.LANGCHAIN_PORT || 3003;
 
@@ -15,6 +17,8 @@ interface AgentRequest {
     temperature?: number;
     systemPrompt?: string;
     tools?: string[];
+    context?: string; // Context ID
+    sessionId?: string; // Session ID for memory
   };
 }
 
@@ -85,6 +89,41 @@ const server = http.createServer(async (req, res) => {
   } else if (req.method === 'GET' && req.url === '/health') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ status: 'ok', port: PORT }));
+  } else if (req.method === 'GET' && req.url === '/contexts') {
+    // List available contexts
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ contexts: listContexts() }));
+  } else if (req.method === 'POST' && req.url === '/session/create') {
+    // Create new session
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', () => {
+      const { context } = JSON.parse(body || '{}');
+      const sessionId = agentMemory.createSession(context || 'general');
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ sessionId, context: context || 'general' }));
+    });
+  } else if (req.method === 'GET' && req.url?.startsWith('/session/')) {
+    // Get session info
+    const sessionId = req.url.split('/session/')[1];
+    const session = agentMemory.getSession(sessionId);
+    if (session) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(session));
+    } else {
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Session not found' }));
+    }
+  } else if (req.method === 'DELETE' && req.url?.startsWith('/session/')) {
+    // Clear session
+    const sessionId = req.url.split('/session/')[1];
+    agentMemory.clearSession(sessionId);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ success: true }));
+  } else if (req.method === 'GET' && req.url === '/sessions') {
+    // List all sessions
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ sessions: agentMemory.listSessions() }));
   } else {
     res.writeHead(404, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'Not found' }));

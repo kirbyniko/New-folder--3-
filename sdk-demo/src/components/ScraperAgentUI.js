@@ -20,11 +20,14 @@ export class ScraperAgentUI {
       temperature: 0.3,
       contextWindow: 8192,
       systemPrompt: this.getScraperSystemPrompt(),
-      tools: ['execute_code', 'fetch_url', 'search_web']
+      tools: ['execute_code', 'fetch_url', 'search_web'],
+      context: 'general',
+      sessionId: null
     };
     
     this.conversation = [];
     this.availableModels = [];
+    this.availableContexts = [];
     this.serverOnline = false;
     
     this.init();
@@ -63,6 +66,7 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
     this.render();
     await this.checkServerStatus();
     await this.loadModels();
+    await this.loadContexts();
     
     // Auto-check server every 10s
     setInterval(() => this.checkServerStatus(), 10000);
@@ -79,7 +83,6 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
             <span class="status-text">Checking...</span>
           </div>
         </div>
-        
         <!-- Quick Config Panel -->
         <div class="quick-config">
           <div class="vram-presets">
@@ -91,10 +94,20 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
             </div>
           </div>
           
+          <div class="context-selector">
+            <label>📋 Context:</label>
+            <select id="context-select">
+              <option value="general">🌐 General Web Scraping</option>
+            </select>
+            <button id="new-session-btn" class="action-btn">New Session</button>
+            <button id="clear-session-btn" class="action-btn">Clear History</button>
+          </div>
+          
           <div class="model-config">
             <div class="config-row">
               <label>Model:</label>
               <select id="model-select"></select>
+            </div>ect id="model-select"></select>
             </div>
             
             <div class="config-row">
@@ -153,7 +166,37 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
     // VRAM preset buttons
     document.querySelectorAll('.preset-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        const vram = btn.dataset.vram;
+    // Context selection
+    const contextSelect = document.getElementById('context-select');
+    contextSelect.addEventListener('change', (e) => {
+      this.config.context = e.target.value;
+      // Show context examples
+      const context = this.availableContexts.find(c => c.id === e.target.value);
+      if (context) {
+        this.addMessage('system', `
+          <strong>Context: ${context.name}</strong>
+          <p>${context.description}</p>
+          <p><strong>Examples:</strong></p>
+          <ul>
+            ${context.examples.map(ex => `<li>${ex}</li>`).join('')}
+          </ul>
+        `);
+      }
+    });
+    
+    // New session button
+    document.getElementById('new-session-btn').addEventListener('click', async () => {
+      await this.createNewSession();
+    });
+    
+    // Clear session button
+    document.getElementById('clear-session-btn').addEventListener('click', () => {
+      if (this.config.sessionId) {
+        this.clearSession();
+      }
+    });
+    
+    // Model selectiontn.dataset.vram;
         this.applyVRAMPreset(vram);
         
         // Visual feedback
@@ -216,23 +259,72 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
     document.getElementById('temperature-slider').value = preset.temperature;
     document.getElementById('temp-value').textContent = preset.temperature;
     document.getElementById('context-window').value = preset.context;
-    
-    this.addMessage('system', `✅ Applied ${vram} preset: ${preset.model} (temp ${preset.temperature}, context ${preset.context})`);
+  async loadModels() {
+    try {
+      const response = await fetch('http://localhost:11434/api/tags');
+      const data = await response.json();
+      this.availableModels = data.models || [];
+      
+      const modelSelect = document.getElementById('model-select');
+      modelSelect.innerHTML = this.availableModels
+        .map(model => `<option value="${model.name}">${model.name}</option>`)
+        .join('');
+      
+      // Set current model
+      modelSelect.value = this.config.model;
+    } catch (error) {
+      console.error('Failed to load models:', error);
+    }
   }
   
-  async checkServerStatus() {
+  async loadContexts() {
     try {
-      const response = await fetch('http://localhost:3003/health');
-      if (response.ok) {
-        this.serverOnline = true;
-        this.updateServerStatus(true);
-      } else {
-        throw new Error('Server returned non-OK status');
-      }
+      const response = await fetch('http://localhost:3003/contexts');
+      const data = await response.json();
+      this.availableContexts = data.contexts || [];
+      
+      const contextSelect = document.getElementById('context-select');
+      contextSelect.innerHTML = this.availableContexts
+        .map(ctx => `<option value="${ctx.id}">${ctx.name}</option>`)
+        .join('');
+      
+      contextSelect.value = this.config.context;
     } catch (error) {
-      this.serverOnline = false;
-      this.updateServerStatus(false);
+      console.error('Failed to load contexts:', error);
     }
+  }
+  
+  async createNewSession() {
+    try {
+      const response = await fetch('http://localhost:3003/session/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ context: this.config.context })
+      });
+      
+      const data = await response.json();
+      this.config.sessionId = data.sessionId;
+      
+      this.addMessage('system', `✅ New session created: ${data.sessionId}<br>Context: ${data.context}<br>Conversation history enabled.`);
+    } catch (error) {
+      this.addMessage('error', `Failed to create session: ${error.message}`);
+    }
+  }
+  
+  async clearSession() {
+    if (!this.config.sessionId) return;
+    
+    try {
+      await fetch(`http://localhost:3003/session/${this.config.sessionId}`, {
+        method: 'DELETE'
+      });
+      
+      this.config.sessionId = null;
+      this.addMessage('system', '🗑️ Session cleared. Starting fresh.');
+    } catch (error) {
+      this.addMessage('error', `Failed to clear session: ${error.message}`);
+    }
+  } }
   }
   
   updateServerStatus(online) {

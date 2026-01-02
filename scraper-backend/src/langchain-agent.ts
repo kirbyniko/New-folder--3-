@@ -11,6 +11,8 @@ import { ChatPromptTemplate, MessagesPlaceholder } from "@langchain/core/prompts
 import { z } from "zod";
 import axios from "axios";
 import * as cheerio from "cheerio";
+import { getContext, listContexts } from './agent-contexts.js';
+import { agentMemory } from './agent-memory.js';
 
 // Tool 1: Execute Code (via our execute-server)
 const executeCodeTool = tool(
@@ -146,14 +148,24 @@ export async function createScraperAgent(config: {
   model?: string;
   temperature?: number;
   systemPrompt?: string;
-  tools?: string[]; // ['execute_code', 'fetch_url', 'search_web']
+  tools?: string[];
+  context?: string; // Context ID from agent-contexts.ts
+  sessionId?: string; // Session ID for conversation memory
 }) {
   const {
     model = 'mistral-nemo:12b-instruct-2407-q8_0',
     temperature = 0.3,
-    systemPrompt = 'You are a helpful web scraping assistant.',
-    tools: enabledTools = ['execute_code', 'fetch_url', 'search_web']
+    systemPrompt,
+    tools: enabledTools,
+    context = 'general',
+    sessionId
   } = config;
+  
+  // Load context if specified
+  const contextConfig = getContext(context);
+  const finalSystemPrompt = systemPrompt || contextConfig.systemPrompt;
+  const finalTools = enabledTools || contextConfig.tools;
+  const finalTemperature = temperature ?? contextConfig.temperature;
   
   // Select tools based on config
   const allTools = {
@@ -162,7 +174,7 @@ export async function createScraperAgent(config: {
     search_web: searchWebTool
   };
   
-  const selectedTools = enabledTools
+  const selectedTools = finalTools
     .filter(name => name in allTools)
     .map(name => allTools[name as keyof typeof allTools]);
   
@@ -173,12 +185,12 @@ export async function createScraperAgent(config: {
   // Initialize Ollama
   const llm = new ChatOllama({
     model: model,
-    temperature: temperature,
+    temperature: finalTemperature,
     baseUrl: 'http://localhost:11434',
   });
   
-  // Enhanced system prompt with autonomy rules
-  const enhancedSystemPrompt = `${systemPrompt}
+  // Use context-based system prompt
+  const enhancedSystemPrompt = `${finalSystemPrompt}
 
 === CRITICAL AUTONOMY RULES ===
 1. You are AUTONOMOUS - never ask the user to provide information
@@ -231,13 +243,17 @@ export async function runAgentTask(
   onProgress?: (data: any) => void
 ) {
   const agent = await createScraperAgent(config || {});
+  const sessionId = config?.sessionId;
   
   try {
     onProgress?.({ type: 'step', message: 'Agent initialized, starting task...' });
     
+    // Get conversation history if session exists
+    const history = sessionId ? agentMemory.getHistory(sessionId) : [];
+    
     const result = await agent.invoke(
       {
-        messages: [{ role: "user", content: task }]
+        messages: [...history, { role: "user", content: task }]
       },
       {
         callbacks: [
@@ -278,10 +294,17 @@ export async function runAgentTask(
     const finalMessage = messages[messages.length - 1];
     const output = finalMessage?.content || 'No output generated';
     
+    // Save to memory if session exists
+    if (sessionId) {
+      agentMemory.addMessage(sessionId, 'user', task);
+      agentMemory.addMessage(sessionId, 'assistant', output);
+    }
+    
     return {
       success: true,
       output: output,
       messages: messages, // Full conversation for debugging
+      sessionId: sessionId
     };
   } catch (error: any) {
     return {
