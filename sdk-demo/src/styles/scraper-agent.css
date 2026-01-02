@@ -265,6 +265,25 @@
   max-width: 90%;
 }
 
+.message.progress {
+  background: rgba(103, 126, 234, 0.15);
+  border: 1px solid rgba(103, 126, 234, 0.4);
+  color: #667eea;
+  align-self: flex-start;
+  font-style: italic;
+  animation: pulse-progress 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-progress {
+  0%, 100% { opacity: 1; border-color: rgba(103, 126, 234, 0.4); }
+  50% { opacity: 0.8; border-color: rgba(103, 126, 234, 0.7); }
+}
+
+.message.progress::before {
+  content: "⚡ ";
+  font-style: normal;
+}
+
 .metadata {
   margin-top: 8px;
   padding-top: 8px;

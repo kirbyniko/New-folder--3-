@@ -385,8 +385,8 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
     // Add user message
     this.addMessage('user', message);
     
-    // Show loading with real progress
-    const loadingId = this.addMessage('assistant', '⏳ Initializing agent...');
+    // Show loading with real progress (use 'progress' class for visibility)
+    const loadingId = this.addMessage('progress', '⏳ Initializing agent...');
     
     try {
       const response = await fetch('http://localhost:3003/agent', {
