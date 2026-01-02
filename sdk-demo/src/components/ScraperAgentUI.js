@@ -166,6 +166,15 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
     // VRAM preset buttons
     document.querySelectorAll('.preset-btn').forEach(btn => {
       btn.addEventListener('click', () => {
+        const vram = btn.dataset.vram;
+        this.applyVRAMPreset(vram);
+        
+        // Visual feedback
+        document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+    
     // Context selection
     const contextSelect = document.getElementById('context-select');
     contextSelect.addEventListener('change', (e) => {
@@ -194,15 +203,6 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
       if (this.config.sessionId) {
         this.clearSession();
       }
-    });
-    
-    // Model selectiontn.dataset.vram;
-        this.applyVRAMPreset(vram);
-        
-        // Visual feedback
-        document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-      });
     });
     
     // Model selection
@@ -325,6 +325,18 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
       this.addMessage('system', '🗑️ Session cleared. Starting fresh.');
     } catch (error) {
       this.addMessage('error', `Failed to clear session: ${error.message}`);
+    }
+  }
+  
+  async checkServerStatus() {
+    try {
+      const response = await fetch('http://localhost:3003/health');
+      const data = await response.json();
+      this.serverOnline = data.status === 'ok';
+      this.updateServerStatus(true);
+    } catch (error) {
+      this.serverOnline = false;
+      this.updateServerStatus(false);
     }
   }
   
