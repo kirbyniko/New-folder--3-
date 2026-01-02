@@ -3038,6 +3038,30 @@ function clearSelectedTab() {
 
 // Listen for captured selector GLOBALLY
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  // Handle capture cancellation
+  if (message.type === 'CAPTURE_CANCELLED') {
+    console.log('❌ Capture was cancelled - resetting buttons');
+    
+    // Reset all capture buttons that might be in "waiting" state
+    const buttons = document.querySelectorAll('.capture-btn[disabled]');
+    buttons.forEach(button => {
+      button.textContent = button.dataset.originalText || '🎯 Capture Element';
+      button.style.backgroundColor = '';
+      button.style.color = '';
+      button.disabled = false;
+    });
+    
+    // Also reset step capture buttons
+    const stepButtons = document.querySelectorAll('.capture-step-action-btn[disabled]');
+    stepButtons.forEach(button => {
+      button.textContent = '🎯 Capture Selector';
+      button.disabled = false;
+    });
+    
+    sendResponse({ received: true });
+    return true;
+  }
+  
   if (message.action === 'selectorCaptured') {
     const targetId = message.fieldId;
     const selector = message.selector;
