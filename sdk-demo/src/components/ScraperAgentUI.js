@@ -338,6 +338,10 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
         // Try to parse as JSON first
         scraperConfig = JSON.parse(message);
         message = `Build a scraper using this configuration:\n${JSON.stringify(scraperConfig, null, 2)}`;
+        
+        // Force scraper-guide context when scraper config is detected
+        this.config.context = 'scraper-guide';
+        console.log('🎯 Detected scraper config - forcing scraper-guide context');
       } catch (e) {
         // If parse fails, maybe it's embedded in text - try to extract
         const jsonMatch = message.match(/\{[\s\S]*"name"[\s\S]*\}/);
@@ -345,6 +349,10 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
           try {
             scraperConfig = JSON.parse(jsonMatch[0]);
             message = `Build a scraper using this configuration:\n${JSON.stringify(scraperConfig, null, 2)}`;
+            
+            // Force scraper-guide context when scraper config is detected
+            this.config.context = 'scraper-guide';
+            console.log('🎯 Detected scraper config - forcing scraper-guide context');
           } catch (e2) {
             // Keep original message if extraction fails
             console.warn('Failed to parse JSON from message:', e2);

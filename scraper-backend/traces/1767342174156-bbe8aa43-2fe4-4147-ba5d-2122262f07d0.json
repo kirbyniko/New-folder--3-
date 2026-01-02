@@ -1,0 +1,14 @@
+{
+  "id": "bbe8aa43-2fe4-4147-ba5d-2122262f07d0",
+  "type": "agent_task",
+  "input": "You don't have access to tools? List your tools you have access to right now",
+  "context": "general",
+  "sessionId": null,
+  "startTime": 1767342174156,
+  "steps": [],
+  "endTime": 1767342177993,
+  "executionTime": 3837,
+  "success": true,
+  "output": "I can use the following functions:\n\n- **execute_code**: Run Node.js with axios, cheerio, puppeteer pre-loaded\n- **fetch_url**: Get raw HTML from URLs\n- **search_web**: Find websites via DuckDuckGo",
+  "tokenCount": 49
+}
