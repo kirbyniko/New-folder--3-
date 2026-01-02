@@ -117,8 +117,9 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
           </div>
           
           <div class="context-selector-compact">
-            <label>🧠 Agent Knowledge:</label>
-            <button id="context-popup-btn" class="popup-btn">Configure Context</button>
+            <p style="color: #4ade80; font-size: 13px; margin: 8px 0;">
+              💡 <strong>Use the dropdown below</strong> to select agent context (e.g., "Scraper Guide")
+            </p>
             <button id="new-session-btn" class="action-btn">New Session</button>
           </div>
           
@@ -173,14 +174,6 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
         btn.classList.add('active');
       });
     });
-    
-    // Context popup
-    const contextPopupBtn = document.getElementById('context-popup-btn');
-    if (contextPopupBtn) {
-      contextPopupBtn.addEventListener('click', () => {
-        this.showContextPopup();
-      });
-    }
     
     // New session button
     const newSessionBtn = document.getElementById('new-session-btn');
