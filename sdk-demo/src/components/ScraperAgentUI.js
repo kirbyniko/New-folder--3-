@@ -259,6 +259,8 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
     document.getElementById('temperature-slider').value = preset.temperature;
     document.getElementById('temp-value').textContent = preset.temperature;
     document.getElementById('context-window').value = preset.context;
+  }
+  
   async loadModels() {
     try {
       const response = await fetch('http://localhost:11434/api/tags');
@@ -324,7 +326,6 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
     } catch (error) {
       this.addMessage('error', `Failed to clear session: ${error.message}`);
     }
-  } }
   }
   
   updateServerStatus(online) {
