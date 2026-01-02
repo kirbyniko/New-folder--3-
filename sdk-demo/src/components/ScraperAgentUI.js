@@ -21,10 +21,9 @@ export class ScraperAgentUI {
       model: 'mistral-nemo:12b-instruct-2407-q8_0',
       temperature: 0.3,
       contextWindow: 8192,
-      systemPrompt: this.getScraperSystemPrompt(),
+      // DON'T send systemPrompt - let context provide it
       tools: ['execute_code', 'fetch_url', 'search_web'],
-      context: 'general',
-      contextKnowledge: ['scraper-guide'], // Default to scraper guide
+      context: 'scraper-guide', // Changed default to scraper-guide
       sessionId: null
     };
     
@@ -35,35 +34,6 @@ export class ScraperAgentUI {
     this.contextSelector = null;
     
     this.init();
-  }
-  
-  getScraperSystemPrompt() {
-    return `You are an expert web scraper. Use your tools to extract data from websites.
-
-**Your Tools:**
-- execute_code: Run Node.js with axios, cheerio, puppeteer pre-loaded
-- fetch_url: Get raw HTML from URLs
-- search_web: Find websites via DuckDuckGo
-
-**Your Mission:**
-When asked to scrape data, use execute_code to write and run the scraper immediately.
-
-**Pattern:**
-1. User: "Get top 5 Hacker News headlines"
-2. You: Use execute_code with this code:
-   const axios = require('axios');
-   const cheerio = require('cheerio');
-   const html = (await axios.get('https://news.ycombinator.com')).data;
-   const $ = cheerio.load(html);
-   const headlines = $('.titleline').slice(0, 5).map((i, el) => $(el).text()).get();
-   console.log(headlines);
-
-**CRITICAL:**
-- ALWAYS use tools, never just describe code
-- ALWAYS end execute_code with console.log() for output
-- Extract data autonomously - never ask user for selectors
-- If one approach fails, try another tool
-- Keep trying until you succeed!`;
   }
   
   async init() {
