@@ -378,13 +378,14 @@ export async function runAgentTask(
             },
             handleToolEnd: (output: any) => {
               const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+              const outputStr = typeof output === 'string' ? output : JSON.stringify(output);
               onProgress?.({ 
                 type: 'tool_end', 
                 message: 'Tool completed',
-                output: output.substring(0, 150),
+                output: outputStr.substring(0, 150),
                 elapsed: elapsed + 's' 
               });
-              console.log(`✅ [${elapsed}s] Tool completed: ${output.substring(0, 100)}...`);
+              console.log(`✅ [${elapsed}s] Tool completed: ${outputStr.substring(0, 100)}...`);
             },
             handleLLMStart: () => {
               llmStartTime = Date.now();
