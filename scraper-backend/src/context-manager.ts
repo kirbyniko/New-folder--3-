@@ -201,63 +201,24 @@ Keep responses short and to the point. Use tools only when necessary.`,
     id: 'scraper-guide',
     name: 'Scraper Guide (Mistral-optimized)',
     description: 'Compressed scraper guide with keyword detection for dynamic content',
-    systemPrompt: `You are a scraper building assistant. Follow this EXACT workflow:
+    systemPrompt: `User provides PRE-ANALYSIS: Use Puppeteer or Cheerio.
 
-WORKFLOW (DO EACH STEP IN ORDER):
+TRUST IT. Don't re-analyze.
 
-STEP 1: DETECT CONTENT TYPE
-- Read the configuration notes/fields
-- Check for: "click", "popup", "modal", "dropdown", "expand"
-- DECIDE: Puppeteer (dynamic) OR Cheerio (static)
-- OUTPUT: "I detected [keywords] → Using [Puppeteer/Cheerio]"
+WORKFLOW:
+1. Confirm tool choice
+2. Use execute_code to inspect HTML
+3. Build complete script  
+4. Use execute_code to TEST it
+5. Fix errors, test again
 
-STEP 2: FETCH & INSPECT
-- Use execute_code to fetch the URL
-- Inspect HTML structure
-- Verify selectors exist
-- OUTPUT: "Found [X] items matching selector..."
+Templates:
+PUPPETEER: puppeteer.launch() → page.goto(URL) → page.$$(selector) → item.click() → extract data
+CHEERIO: axios.get(URL) → cheerio.load(html) → $(selector).each()
 
-STEP 3: BUILD SCRAPER
-- Generate complete script based on Step 1 decision
-- Use selectors from config
-- Include error handling
-- OUTPUT: Complete JavaScript code
-
-STEP 4: TEST SCRIPT
-- Use execute_code to run the script
-- Check for errors
-- Verify data extraction works
-- OUTPUT: Test results or error details
-
-STEP 5: FIX & ITERATE
-- If errors found, identify root cause
-- Modify script to fix issues
-- Test again with execute_code
-- REPEAT until working
-
-CRITICAL RULES:
-1. ALWAYS use execute_code - NEVER just return untested code
-2. If keywords detected → Puppeteer is MANDATORY
-3. Test EVERY script you generate
-4. If test fails, debug and try again
-5. ONLY JavaScript - NO Python
-
-EXAMPLE WORKFLOW:
-User: [posts config with "click" keyword]
-You: "I detected 'click' keyword → Using Puppeteer
-     Let me fetch the page first..."
-     [calls execute_code to fetch URL]
-You: "Found 20 event items. Building Puppeteer script..."
-     [calls execute_code with Puppeteer script]
-You: "Error: Cannot find selector. Let me inspect the HTML..."
-     [calls execute_code to check selectors]
-You: "Found correct selector is '.event-card'. Rebuilding..."
-     [calls execute_code with fixed script]
-You: "✅ Script works! Extracted 20 events successfully."
-
-START WORKFLOW NOW.`,
-    tools: ['execute_code'],  // Only execute_code to force testing
-    temperature: 0.1,  // Low temperature for consistency
+START NOW.`,
+    tools: ['execute_code'],
+    temperature: 0.1,
     modelRecommendation: 'mistral-nemo:12b-instruct-2407-q8_0'
   },
   {
@@ -545,3 +506,4 @@ export function formatModelInfo(model: ModelConfig): string {
 - ${model.description}
 - Best for: ${model.recommended.join(', ')}`;
 }
+

@@ -300,40 +300,70 @@ export class ScraperAgentUI {
       try {
         // Try to parse as JSON first
         scraperConfig = JSON.parse(message);
-        message = `Build a scraper using this configuration. Follow the workflow:
+        
+        // PRE-ANALYZE for the agent (make it impossible to miss)
+        const configStr = JSON.stringify(scraperConfig).toLowerCase();
+        const hasClick = configStr.includes('click');
+        const hasPopup = configStr.includes('popup');
+        const hasModal = configStr.includes('modal');
+        const needsPuppeteer = hasClick || hasPopup || hasModal;
+        
+        message = `🚨 PRE-ANALYSIS COMPLETE:
+- Keywords detected: ${hasClick ? '"click" ' : ''}${hasPopup ? '"popup" ' : ''}${hasModal ? '"modal" ' : ''}${needsPuppeteer ? '' : 'NONE'}
+- Decision: ${needsPuppeteer ? '⚠️ MUST USE PUPPETEER (dynamic content)' : 'Use Cheerio (static)'}
+- URL: ${scraperConfig.startUrl}
+- Item selector: ${scraperConfig.pageStructures[0]?.itemSelector}
 
-STEP 1: Detect content type (check for "click"/"popup"/"modal" keywords)
-STEP 2: Fetch URL and inspect HTML with execute_code
-STEP 3: Build the scraper script (Puppeteer if keywords found, else Cheerio)
-STEP 4: TEST the script using execute_code
-STEP 5: Debug and iterate if needed
+Your task: Build and TEST a ${needsPuppeteer ? 'Puppeteer' : 'Cheerio'} scraper.
+
+WORKFLOW:
+1. Use execute_code to fetch and inspect the HTML
+2. Build the ${needsPuppeteer ? 'Puppeteer' : 'Cheerio'} script
+3. Use execute_code to TEST the script
+4. Debug and fix errors
+5. Iterate until working
 
 Configuration:
 ${JSON.stringify(scraperConfig, null, 2)}`;
         
         // Force scraper-guide context when scraper config is detected
         this.config.context = 'scraper-guide';
-        console.log('🎯 Detected scraper config - forcing scraper-guide context with explicit workflow');
+        console.log('🎯 Detected scraper config - PRE-ANALYZED:', needsPuppeteer ? 'PUPPETEER' : 'Cheerio');
       } catch (e) {
         // If parse fails, maybe it's embedded in text - try to extract
         const jsonMatch = message.match(/\{[\s\S]*"name"[\s\S]*\}/);
         if (jsonMatch) {
           try {
             scraperConfig = JSON.parse(jsonMatch[0]);
-            message = `Build a scraper using this configuration. Follow the workflow:
+            
+            // PRE-ANALYZE for the agent
+            const configStr = JSON.stringify(scraperConfig).toLowerCase();
+            const hasClick = configStr.includes('click');
+            const hasPopup = configStr.includes('popup');
+            const hasModal = configStr.includes('modal');
+            const needsPuppeteer = hasClick || hasPopup || hasModal;
+            
+            message = `🚨 PRE-ANALYSIS COMPLETE:
+- Keywords detected: ${hasClick ? '"click" ' : ''}${hasPopup ? '"popup" ' : ''}${hasModal ? '"modal" ' : ''}${needsPuppeteer ? '' : 'NONE'}
+- Decision: ${needsPuppeteer ? '⚠️ MUST USE PUPPETEER (dynamic content)' : 'Use Cheerio (static)'}
+- URL: ${scraperConfig.startUrl}
+- Item selector: ${scraperConfig.pageStructures[0]?.itemSelector}
 
-STEP 1: Detect content type (check for "click"/"popup"/"modal" keywords)
-STEP 2: Fetch URL and inspect HTML with execute_code  
-STEP 3: Build the scraper script (Puppeteer if keywords found, else Cheerio)
-STEP 4: TEST the script using execute_code
-STEP 5: Debug and iterate if needed
+Your task: Build and TEST a ${needsPuppeteer ? 'Puppeteer' : 'Cheerio'} scraper.
+
+WORKFLOW:
+1. Use execute_code to fetch and inspect the HTML
+2. Build the ${needsPuppeteer ? 'Puppeteer' : 'Cheerio'} script
+3. Use execute_code to TEST the script
+4. Debug and fix errors
+5. Iterate until working
 
 Configuration:
 ${JSON.stringify(scraperConfig, null, 2)}`;
             
             // Force scraper-guide context when scraper config is detected
             this.config.context = 'scraper-guide';
-            console.log('🎯 Detected scraper config - forcing scraper-guide context with explicit workflow');
+            console.log('🎯 Detected scraper config - PRE-ANALYZED:', needsPuppeteer ? 'PUPPETEER' : 'Cheerio');
           } catch (e2) {
             // Keep original message if extraction fails
             console.warn('Failed to parse JSON from message:', e2);
