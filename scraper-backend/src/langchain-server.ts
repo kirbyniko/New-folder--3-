@@ -7,6 +7,7 @@ import http from 'http';
 import { createScraperAgent, runAgentTask } from './langchain-agent.js';
 import { listContexts } from './agent-contexts.js';
 import { agentMemory } from './agent-memory.js';
+import { localTracer } from './local-tracer.js';
 
 const PORT = process.env.LANGCHAIN_PORT || 3003;
 
@@ -124,6 +125,44 @@ const server = http.createServer(async (req, res) => {
     // List all sessions
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ sessions: agentMemory.listSessions() }));
+  } else if (req.method === 'GET' && req.url?.startsWith('/trace/')) {
+    // Get trace by ID
+    const traceId = req.url.split('/')[2];
+    try {
+      const trace = localTracer.getTrace(traceId);
+      if (!trace) {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Trace not found' }));
+        return;
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(trace));
+    } catch (error: any) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: error.message }));
+    }
+  } else if (req.method === 'GET' && req.url?.startsWith('/traces')) {
+    // List recent traces
+    try {
+      const url = new URL(req.url, `http://${req.headers.host}`);
+      const limit = parseInt(url.searchParams.get('limit') || '20');
+      const traces = localTracer.listTraces(limit);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ traces }));
+    } catch (error: any) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: error.message }));
+    }
+  } else if (req.method === 'GET' && req.url === '/stats') {
+    // Get trace statistics
+    try {
+      const stats = localTracer.getStats();
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(stats));
+    } catch (error: any) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: error.message }));
+    }
   } else {
     res.writeHead(404, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'Not found' }));

@@ -13,6 +13,7 @@ import axios from "axios";
 import * as cheerio from "cheerio";
 import { getContext, listContexts } from './agent-contexts.js';
 import { agentMemory } from './agent-memory.js';
+import { localTracer } from './local-tracer.js';
 
 // Tool 1: Execute Code (via our execute-server)
 const executeCodeTool = tool(
@@ -143,6 +144,48 @@ const searchWebTool = tool(
   }
 );
 
+// Tool 4: Validate Scraper Result
+const validateResultTool = tool(
+  async ({ data, schema }) => {
+    try {
+      const parsed = JSON.parse(data);
+      const schemaObj = schema ? JSON.parse(schema) : null;
+      
+      // Basic validation
+      if (!parsed || typeof parsed !== 'object') {
+        return 'Invalid: Data must be a JSON object or array';
+      }
+      
+      // Count items
+      const count = Array.isArray(parsed) ? parsed.length : Object.keys(parsed).length;
+      
+      // Check for empty values
+      const hasEmptyValues = JSON.stringify(parsed).includes('null') || 
+                              JSON.stringify(parsed).includes('undefined');
+      
+      // Schema validation (if provided)
+      if (schemaObj && schemaObj.required) {
+        const missing = schemaObj.required.filter((key: string) => !(key in parsed));
+        if (missing.length > 0) {
+          return `Missing required fields: ${missing.join(', ')}`;
+        }
+      }
+      
+      return `✅ Valid: ${count} items${hasEmptyValues ? ' (some empty values)' : ''}\n${JSON.stringify(parsed, null, 2).slice(0, 200)}...`;
+    } catch (error: any) {
+      return `❌ Validation error: ${error.message}`;
+    }
+  },
+  {
+    name: "validate_result",
+    description: "Validate scraped data structure. Use after scraping to check data quality.",
+    schema: z.object({
+      data: z.string().describe("JSON string of scraped data to validate"),
+      schema: z.string().optional().describe("Optional JSON schema with required fields")
+    })
+  }
+);
+
 // Create the agent
 export async function createScraperAgent(config: {
   model?: string;
@@ -171,7 +214,8 @@ export async function createScraperAgent(config: {
   const allTools = {
     execute_code: executeCodeTool,
     fetch_url: fetchUrlTool,
-    search_web: searchWebTool
+    search_web: searchWebTool,
+    validate_result: validateResultTool
   };
   
   const selectedTools = finalTools
@@ -236,7 +280,7 @@ You: 1. Use search_web with query "React official documentation"
   return agent;
 }
 
-// Helper: Run agent with a task
+// Helper: Run agent with a task (with local tracing)
 export async function runAgentTask(
   task: string, 
   config?: Parameters<typeof createScraperAgent>[0],
@@ -244,6 +288,14 @@ export async function runAgentTask(
 ) {
   const agent = await createScraperAgent(config || {});
   const sessionId = config?.sessionId;
+  
+  const startTime = Date.now();
+  const traceId = localTracer.startTrace({
+    type: 'agent_task',
+    input: task,
+    context: config?.context || 'general',
+    sessionId: sessionId || null
+  });
   
   try {
     onProgress?.({ type: 'step', message: 'Agent initialized, starting task...' });
@@ -294,23 +346,45 @@ export async function runAgentTask(
     const finalMessage = messages[messages.length - 1];
     const output = finalMessage?.content || 'No output generated';
     
+    const executionTime = Date.now() - startTime;
+    
     // Save to memory if session exists
     if (sessionId) {
       agentMemory.addMessage(sessionId, 'user', task);
       agentMemory.addMessage(sessionId, 'assistant', output);
     }
     
+    // Complete local trace
+    localTracer.endTrace(traceId, {
+      success: true,
+      output: output,
+      executionTime,
+      tokenCount: output.length / 4 // Rough estimate
+    });
+    
+    console.log(`📊 Local trace saved: ${traceId}`);
+    
     return {
       success: true,
       output: output,
-      messages: messages, // Full conversation for debugging
-      sessionId: sessionId
+      messages: messages,
+      sessionId: sessionId,
+      executionTime,
+      traceId: traceId
     };
   } catch (error: any) {
+    localTracer.endTrace(traceId, {
+      success: false,
+      error: error.message,
+      executionTime: Date.now() - startTime
+    });
+    
     return {
       success: false,
       error: error.message,
-      output: null
+      output: null,
+      executionTime: Date.now() - startTime,
+      traceId: traceId
     };
   }
 }
