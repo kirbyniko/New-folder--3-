@@ -830,12 +830,12 @@ function viewScraperDetails(index) {
     </div>
     
     <div style="padding: 20px; border-top: 1px solid #e0e0e0; display: flex; gap: 10px; justify-content: space-between;">
-      <button id="send-to-agent" class="btn-primary" style="padding: 10px 20px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+      <button id="send-to-agent" class="btn-primary" style="padding: 12px 24px; font-size: 15px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
         🤖 Send to Agent
       </button>
       <div style="display: flex; gap: 10px;">
-        <button id="copy-scraper-code" class="btn-primary" style="padding: 10px 20px;">
-          📋 Copy Code
+        <button id="copy-clean-json" class="btn-primary" style="padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+          📋 Copy Clean JSON
         </button>
         <button id="close-scraper-view" class="btn-secondary" style="padding: 10px 20px;">
           Close
@@ -876,11 +876,16 @@ Important:
     });
   });
   
-  // Copy button
-  document.getElementById('copy-scraper-code').addEventListener('click', () => {
-    textarea.select();
-    navigator.clipboard.writeText(codeText).then(() => {
-      showStatus('✅ Code copied to clipboard!', 'success');
+  // Copy Clean JSON button
+  document.getElementById('copy-clean-json').addEventListener('click', () => {
+    const cleanJSON = JSON.stringify({
+      name: scraper.name,
+      startUrl: scraper.startUrl,
+      pageStructures: scraper.pageStructures
+    }, null, 2);
+    
+    navigator.clipboard.writeText(cleanJSON).then(() => {
+      showStatus('✅ Clean JSON copied to clipboard!', 'success');
     }).catch(err => {
       showStatus('❌ Failed to copy', 'error');
     });
