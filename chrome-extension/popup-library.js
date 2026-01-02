@@ -706,7 +706,105 @@ document.getElementById('import-file-input').addEventListener('change', (e) => {
 
 function viewScraperDetails(index) {
   const scraper = scrapers[index];
-  alert(`Scraper Details:\n\n${JSON.stringify(scraper, null, 2)}`);
+  
+  // Create modal overlay
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  `;
+  
+  // Create modal content
+  const content = document.createElement('div');
+  content.style.cssText = `
+    background: white;
+    border-radius: 12px;
+    max-width: 800px;
+    width: 100%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  `;
+  
+  const codeText = scraper.code || JSON.stringify(scraper, null, 2);
+  
+  content.innerHTML = `
+    <div style="padding: 20px; border-bottom: 1px solid #e0e0e0;">
+      <h2 style="margin: 0; font-size: 18px;">📄 ${scraper.name}</h2>
+    </div>
+    
+    <div style="flex: 1; overflow: auto; padding: 20px;">
+      <textarea id="scraper-code-view" readonly style="
+        width: 100%;
+        min-height: 400px;
+        font-family: 'Consolas', 'Monaco', monospace;
+        font-size: 12px;
+        line-height: 1.5;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        background: #f8f9fa;
+        resize: vertical;
+      ">${codeText}</textarea>
+    </div>
+    
+    <div style="padding: 20px; border-top: 1px solid #e0e0e0; display: flex; gap: 10px; justify-content: flex-end;">
+      <button id="copy-scraper-code" class="btn-primary" style="padding: 10px 20px;">
+        📋 Copy Code
+      </button>
+      <button id="close-scraper-view" class="btn-secondary" style="padding: 10px 20px;">
+        Close
+      </button>
+    </div>
+  `;
+  
+  modal.appendChild(content);
+  document.body.appendChild(modal);
+  
+  // Auto-select text for easy copying
+  const textarea = document.getElementById('scraper-code-view');
+  textarea.select();
+  
+  // Copy button
+  document.getElementById('copy-scraper-code').addEventListener('click', () => {
+    textarea.select();
+    navigator.clipboard.writeText(codeText).then(() => {
+      showStatus('✅ Code copied to clipboard!', 'success');
+    }).catch(err => {
+      showStatus('❌ Failed to copy', 'error');
+    });
+  });
+  
+  // Close button
+  document.getElementById('close-scraper-view').addEventListener('click', () => {
+    modal.remove();
+  });
+  
+  // Click outside to close
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.remove();
+    }
+  });
+  
+  // ESC key to close
+  const escHandler = (e) => {
+    if (e.key === 'Escape') {
+      modal.remove();
+      document.removeEventListener('keydown', escHandler);
+    }
+  };
+  document.addEventListener('keydown', escHandler);
 }
 
 function exportScraperJson(index) {
