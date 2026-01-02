@@ -1,0 +1,14 @@
+{
+  "id": "0c063f0c-bf75-465d-a853-d573d447de64",
+  "type": "agent_task",
+  "input": "{\n  \"name\": \"Legislative Calendar Scraper\",\n  \"pageStructures\": [],\n  \"createdAt\": \"2026-01-02T07:30:33.615Z\",\n  \"fields\": {\n    \"step1-base_url\": \"https://gc.nh.gov\",\n    \"step1-calendar_url\": \"https://gc.nh.gov/house/schedule/dailyschedule.aspx\",\n    \"step1-jurisdiction\": \"Honolulu\",\n    \"step1-state_code\": \"HI\",\n    \"step2-event-list-event_container\": \"#calendar\",\n    \"step2-event-list-event_item\": \".fc-list-event-title\",\n    \"step2-event-list-has_event_list\": false,\n    \"step2-navigation-(optional)-month_view_button\": \".fc-dayGridMonth-button.btn.btn-outline-primary\",\n    \"step2-navigation-(optional)-next_button\": \".fc-next-button.btn.btn-outline-primary\",\n    \"step2-navigation-(optional)-prev_button\": \".fc-prev-button.btn.btn-outline-primary\",\n    \"step3-recommended-fields-time\": \"div.em-item-meta-line.em-event-time\",\n    \"step3-required-fields-date\": \"div.em-item-meta-line.em-event-date\",\n    \"step3-required-fields-name\": \"td.fc-list-event-title > a\"\n  },\n  \"steps\": {},\n  \"notes\": {},\n  \"aiFields\": {\n    \"step4-details-page-fields-agenda_url\": {\n      \"contexts\": [],\n      \"enabled\": true,\n      \"prompt\": \"We need a summary of the document, we need to grab all events on the agenda, all bills, all hyperlinks. \"\n    },\n    \"step4-details-page-fields-docket_url\": {\n      \"contexts\": [],\n      \"enabled\": true,\n      \"prompt\": \"We need a summary of the document, we need to grab all events on the agenda, all bills, all hyperlinks. \"\n    }\n  }\n}",
+  "context": "general",
+  "sessionId": null,
+  "startTime": 1767339047190,
+  "steps": [],
+  "endTime": 1767339104333,
+  "executionTime": 57143,
+  "success": true,
+  "output": "It seems like there was an error because I didn't provide any code for you to execute. Could you please specify what task or problem you would like me to help with?",
+  "tokenCount": 41
+}

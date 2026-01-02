@@ -187,7 +187,28 @@ const server = http.createServer(async (req, res) => {
     
     req.on('end', async () => {
       try {
-        const request: AgentRequest = JSON.parse(body);
+        // Log raw body for debugging
+        console.log(`📥 Received body (first 500 chars):`, body.substring(0, 500));
+        console.log(`📏 Body length: ${body.length} characters`);
+        
+        let request: AgentRequest;
+        try {
+          request = JSON.parse(body);
+        } catch (parseError: any) {
+          console.error(`❌ JSON Parse Error:`, parseError.message);
+          console.error(`❌ Body around error position:`, body.substring(
+            Math.max(0, parseError.message.match(/\d+/)?.[0] - 100),
+            Math.min(body.length, parseError.message.match(/\d+/)?.[0] + 100)
+          ));
+          
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ 
+            success: false, 
+            error: `Invalid JSON: ${parseError.message}`,
+            hint: 'Check for unescaped quotes in notes or prompts'
+          }));
+          return;
+        }
         
         if (!request.task) {
           res.writeHead(400, { 'Content-Type': 'application/json' });

@@ -323,7 +323,7 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
   
   async sendMessage() {
     const userInput = document.getElementById('user-input');
-    const message = userInput.value.trim();
+    let message = userInput.value.trim();
     
     if (!message) return;
     if (!this.serverOnline) {
@@ -331,11 +331,33 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
       return;
     }
     
+    // Check if message looks like JSON config - if so, extract and clean it
+    let scraperConfig = null;
+    if (message.includes('"pageStructures"') || message.includes('"fields"')) {
+      try {
+        // Try to parse as JSON first
+        scraperConfig = JSON.parse(message);
+        message = `Build a scraper using this configuration:\n${JSON.stringify(scraperConfig, null, 2)}`;
+      } catch (e) {
+        // If parse fails, maybe it's embedded in text - try to extract
+        const jsonMatch = message.match(/\{[\s\S]*"name"[\s\S]*\}/);
+        if (jsonMatch) {
+          try {
+            scraperConfig = JSON.parse(jsonMatch[0]);
+            message = `Build a scraper using this configuration:\n${JSON.stringify(scraperConfig, null, 2)}`;
+          } catch (e2) {
+            // Keep original message if extraction fails
+            console.warn('Failed to parse JSON from message:', e2);
+          }
+        }
+      }
+    }
+    
     // Clear input
     userInput.value = '';
     
     // Add user message
-    this.addMessage('user', message);
+    this.addMessage('user', message.substring(0, 500) + (message.length > 500 ? '...' : ''));
     
     // Show loading with real progress (use 'progress' class for visibility)
     const loadingId = this.addMessage('progress', '⏳ Initializing agent...');
@@ -346,7 +368,8 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           task: message,
-          config: this.config
+          config: this.config,
+          scraperConfig: scraperConfig // Pass config separately if detected
         })
       });
       
