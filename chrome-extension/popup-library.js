@@ -853,7 +853,8 @@ function viewScraperDetails(index) {
   
   // Send to Agent button - builds clean prompt with flexibility instructions
   document.getElementById('send-to-agent').addEventListener('click', () => {
-    const cleanJSON = window._currentScraperCleanJSON || JSON.stringify({
+    // Build clean JSON without documentation comments
+    const cleanJSON = JSON.stringify({
       name: scraper.name,
       startUrl: scraper.startUrl,
       pageStructures: scraper.pageStructures
@@ -869,7 +870,7 @@ Important:
 - Build a complete scraper that captures ALL available data, not just these fields`;
     
     navigator.clipboard.writeText(prompt).then(() => {
-      showStatus('✅ Agent prompt copied! The agent will use template as flexible hints and discover additional fields.', 'success');
+      showStatus('✅ Agent prompt copied! Paste into chat and send.', 'success');
     }).catch(err => {
       showStatus('❌ Failed to copy', 'error');
     });
