@@ -21,4 +21,5 @@ echo   - Float16 KV: ON (faster inference)
 echo   - Flash Attention: ON (efficient)
 echo.
 
-npm run langchain
+cd /d "%~dp0"
+npm run agent
