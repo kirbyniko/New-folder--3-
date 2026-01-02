@@ -270,18 +270,23 @@
   border: 1px solid rgba(103, 126, 234, 0.4);
   color: #667eea;
   align-self: flex-start;
-  font-style: italic;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
   animation: pulse-progress 1.5s ease-in-out infinite;
+  padding: 12px 16px;
+  line-height: 1.6;
 }
 
 @keyframes pulse-progress {
   0%, 100% { opacity: 1; border-color: rgba(103, 126, 234, 0.4); }
-  50% { opacity: 0.8; border-color: rgba(103, 126, 234, 0.7); }
+  50% { opacity: 0.85; border-color: rgba(103, 126, 234, 0.7); }
 }
 
 .message.progress::before {
   content: "⚡ ";
   font-style: normal;
+  margin-right: 8px;
+  font-size: 14px;
 }
 
 .metadata {

@@ -418,15 +418,29 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
             const loadingEl = document.getElementById(loadingId);
             
             if (data.type === 'step') {
-              if (loadingEl) loadingEl.innerHTML = `⏳ ${data.message}`;
+              if (loadingEl) {
+                loadingEl.innerHTML = `⏳ ${data.message} ${data.elapsed ? `[${data.elapsed}]` : ''}`;
+              }
             } else if (data.type === 'tool_start') {
-              if (loadingEl) loadingEl.innerHTML = `🛠️ ${data.message}`;
+              if (loadingEl) {
+                loadingEl.innerHTML = `🛠️ ${data.message} ${data.step ? `(Step ${data.step})` : ''} ${data.elapsed ? `[${data.elapsed}]` : ''}`;
+              }
             } else if (data.type === 'tool_end') {
-              if (loadingEl) loadingEl.innerHTML = `✅ ${data.message}`;
+              if (loadingEl) {
+                loadingEl.innerHTML = `✅ ${data.message} ${data.elapsed ? `[${data.elapsed}]` : ''}`;
+              }
             } else if (data.type === 'llm_start') {
-              if (loadingEl) loadingEl.innerHTML = `🧠 ${data.message}`;
+              if (loadingEl) {
+                loadingEl.innerHTML = `🧠 ${data.message} ${data.elapsed ? `[${data.elapsed}]` : ''}`;
+              }
+            } else if (data.type === 'llm_token') {
+              if (loadingEl) {
+                loadingEl.innerHTML = `🧠 ${data.message} ${data.elapsed ? `[${data.elapsed}]` : ''}`;
+              }
             } else if (data.type === 'llm_end') {
-              if (loadingEl) loadingEl.innerHTML = `✓ ${data.message}`;
+              if (loadingEl) {
+                loadingEl.innerHTML = `✓ ${data.message} ${data.elapsed ? `[${data.elapsed}]` : ''}`;
+              }
             } else if (data.type === 'complete') {
               this.removeMessage(loadingId);
               

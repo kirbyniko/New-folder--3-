@@ -303,6 +303,10 @@ export async function runAgentTask(
     // Get conversation history if session exists
     const history = sessionId ? agentMemory.getHistory(sessionId) : [];
     
+    let llmStartTime = 0;
+    let totalTokens = 0;
+    let stepCount = 0;
+    
     const result = await agent.invoke(
       {
         messages: [...history, { role: "user", content: task }]
@@ -311,30 +315,66 @@ export async function runAgentTask(
         callbacks: [
           {
             handleToolStart: (tool: any, input: string) => {
+              stepCount++;
+              const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
               onProgress?.({ 
                 type: 'tool_start', 
                 tool: tool.name,
-                message: `Using tool: ${tool.name}` 
+                message: `Using tool: ${tool.name}`,
+                step: stepCount,
+                elapsed: elapsed + 's'
               });
+              console.log(`🛠️  [${elapsed}s] Step ${stepCount}: Using tool ${tool.name}`);
             },
             handleToolEnd: (output: any) => {
+              const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
               onProgress?.({ 
                 type: 'tool_end', 
                 message: 'Tool completed',
-                output: output.substring(0, 100) 
+                output: output.substring(0, 150),
+                elapsed: elapsed + 's' 
               });
+              console.log(`✅ [${elapsed}s] Tool completed: ${output.substring(0, 100)}...`);
             },
             handleLLMStart: () => {
+              llmStartTime = Date.now();
+              const elapsed = ((llmStartTime - startTime) / 1000).toFixed(1);
               onProgress?.({ 
                 type: 'llm_start', 
-                message: 'Thinking...' 
+                message: 'Thinking...',
+                elapsed: elapsed + 's' 
+              });
+              console.log(`🧠 [${elapsed}s] LLM thinking...`);
+            },
+            handleLLMNewToken: (token: string) => {
+              totalTokens++;
+              const llmElapsed = (Date.now() - llmStartTime) / 1000;
+              const tokensPerSec = llmElapsed > 0 ? (totalTokens / llmElapsed).toFixed(1) : '0';
+              const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+              
+              onProgress?.({ 
+                type: 'llm_token', 
+                token: token,
+                tokens: totalTokens,
+                tokensPerSec: tokensPerSec,
+                elapsed: elapsed + 's',
+                message: `Generating... ${totalTokens} tokens (${tokensPerSec} tok/s)`
               });
             },
-            handleLLMEnd: () => {
+            handleLLMEnd: (output: any) => {
+              const llmElapsed = ((Date.now() - llmStartTime) / 1000).toFixed(1);
+              const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+              const tokensPerSec = parseFloat(llmElapsed) > 0 ? (totalTokens / parseFloat(llmElapsed)).toFixed(1) : '0';
+              
               onProgress?.({ 
                 type: 'llm_end', 
-                message: 'Decision made' 
+                message: `Decision made (${totalTokens} tokens in ${llmElapsed}s @ ${tokensPerSec} tok/s)`,
+                tokens: totalTokens,
+                tokensPerSec: tokensPerSec,
+                elapsed: elapsed + 's'
               });
+              console.log(`✓ [${elapsed}s] LLM completed: ${totalTokens} tokens in ${llmElapsed}s (${tokensPerSec} tok/s)`);
+              totalTokens = 0; // Reset for next LLM call
             }
           }
         ]
