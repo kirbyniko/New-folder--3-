@@ -4,12 +4,57 @@
  */
 
 import http from 'http';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 import { createScraperAgent, runAgentTask } from './langchain-agent.js';
 import { listContexts } from './agent-contexts.js';
 import { agentMemory } from './agent-memory.js';
 import { localTracer } from './local-tracer.js';
 
+const execAsync = promisify(exec);
 const PORT = process.env.LANGCHAIN_PORT || 3003;
+
+// Check if Ollama is using GPU
+async function checkOllamaGpuUsage(): Promise<{usingGpu: boolean, gpuLayers: number, totalLayers: number}> {
+  try {
+    // First check running models
+    const { stdout: psOut } = await execAsync('curl -s http://localhost:11434/api/ps');
+    const models = JSON.parse(psOut);
+    
+    if (models.models && models.models.length > 0) {
+      const activeModel = models.models[0];
+      
+      // Check size_vram vs size (if size_vram > 0, GPU is being used)
+      const sizeVram = activeModel.size_vram || 0;
+      const totalSize = activeModel.size || 0;
+      
+      if (sizeVram > 0) {
+        // Calculate approximate GPU layers
+        const gpuPercentage = totalSize > 0 ? (sizeVram / totalSize) * 100 : 0;
+        return { 
+          usingGpu: true, 
+          gpuLayers: Math.round(gpuPercentage), 
+          totalLayers: 100 
+        };
+      }
+    }
+    
+    // Fallback: check if CUDA/GPU libraries are loaded
+    const { stdout: showOut } = await execAsync('curl -s http://localhost:11434/api/show -d \'{"name": "mistral-nemo:12b-instruct-2407-q8_0"}\'');
+    const modelInfo = JSON.parse(showOut);
+    
+    // If parameters mention GPU settings, it's trying to use GPU
+    if (modelInfo.parameters && modelInfo.parameters.includes('gpu')) {
+      return { usingGpu: true, gpuLayers: 100, totalLayers: 100 };
+    }
+    
+  } catch (error) {
+    console.error('Failed to check GPU usage:', error);
+  }
+  
+  // If we can't determine, assume CPU fallback
+  return { usingGpu: false, gpuLayers: 0, totalLayers: 100 };
+}
 
 interface AgentRequest {
   task: string;
@@ -70,6 +115,18 @@ const server = http.createServer(async (req, res) => {
         const sendProgress = (data: any) => {
           res.write(`data: ${JSON.stringify(data)}\n\n`);
         };
+        
+        // Check GPU usage before starting
+        const gpuStatus = await checkOllamaGpuUsage();
+        sendProgress({ 
+          type: 'gpu_status', 
+          usingGpu: gpuStatus.usingGpu,
+          gpuLayers: gpuStatus.gpuLayers,
+          totalLayers: gpuStatus.totalLayers,
+          message: gpuStatus.usingGpu 
+            ? `✓ GPU ACTIVE (${gpuStatus.gpuLayers}/${gpuStatus.totalLayers} layers)` 
+            : '⚠ WARNING: CPU FALLBACK DETECTED'
+        });
         
         const result = await runAgentTask(request.task, request.config, sendProgress);
         

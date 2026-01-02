@@ -417,7 +417,18 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
             const data = JSON.parse(line.substring(6));
             const loadingEl = document.getElementById(loadingId);
             
-            if (data.type === 'step') {
+            if (data.type === 'gpu_status') {
+              // Show GPU status prominently
+              if (loadingEl) {
+                const statusColor = data.usingGpu ? '#00ff00' : '#ff4444';
+                const statusMsg = data.usingGpu 
+                  ? `<span style="color: ${statusColor};">✓ GPU ACTIVE (${data.gpuLayers}/${data.totalLayers} layers)</span>`
+                  : `<span style="color: ${statusColor};">⚠ WARNING: CPU FALLBACK - SLOW!</span>`;
+                loadingEl.innerHTML = statusMsg;
+              }
+              // Also log to console for debugging
+              console.log(data.usingGpu ? '✓ GPU ACTIVE' : '⚠ CPU FALLBACK DETECTED', data);
+            } else if (data.type === 'step') {
               if (loadingEl) {
                 loadingEl.innerHTML = `⏳ ${data.message} ${data.elapsed ? `[${data.elapsed}]` : ''}`;
               }
