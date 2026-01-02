@@ -1,0 +1,361 @@
+/* Context Selector Styles */
+
+.context-selector {
+  background: rgba(26, 26, 46, 0.95);
+  border: 1px solid rgba(103, 126, 234, 0.3);
+  border-radius: 12px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.selector-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: rgba(103, 126, 234, 0.1);
+  cursor: pointer;
+  user-select: none;
+}
+
+.selector-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #667eea;
+}
+
+.toggle-btn {
+  background: transparent;
+  border: 1px solid rgba(103, 126, 234, 0.3);
+  color: #667eea;
+  padding: 4px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.toggle-btn:hover {
+  background: rgba(103, 126, 234, 0.2);
+  border-color: rgba(103, 126, 234, 0.5);
+}
+
+.toggle-icon {
+  display: inline-block;
+  transition: transform 0.3s;
+}
+
+.selector-content {
+  max-height: 800px;
+  overflow-y: auto;
+  padding: 20px;
+  transition: max-height 0.3s, padding 0.3s;
+}
+
+.selector-content.collapsed {
+  max-height: 0;
+  padding: 0 20px;
+  overflow: hidden;
+}
+
+/* Context Grid */
+.context-section {
+  margin-bottom: 24px;
+}
+
+.context-section h4 {
+  font-size: 14px;
+  color: #aaa;
+  margin: 0 0 12px 0;
+  font-weight: 500;
+}
+
+.context-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.context-option {
+  background: rgba(42, 42, 62, 0.6);
+  border: 2px solid rgba(103, 126, 234, 0.2);
+  border-radius: 8px;
+  padding: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.context-option:hover {
+  border-color: rgba(103, 126, 234, 0.5);
+  background: rgba(42, 42, 62, 0.8);
+  transform: translateY(-2px);
+}
+
+.context-option.selected {
+  border-color: #667eea;
+  background: rgba(103, 126, 234, 0.15);
+  box-shadow: 0 0 20px rgba(103, 126, 234, 0.3);
+}
+
+.context-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 6px;
+}
+
+.context-description {
+  font-size: 12px;
+  color: #aaa;
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+.context-model-hint {
+  font-size: 11px;
+  color: #667eea;
+  background: rgba(103, 126, 234, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-top: 8px;
+}
+
+/* Model Section */
+.model-section {
+  margin-bottom: 24px;
+}
+
+.vram-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(42, 42, 62, 0.6);
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.vram-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #aaa;
+}
+
+.vram-icon {
+  font-size: 20px;
+}
+
+.refresh-btn {
+  background: rgba(103, 126, 234, 0.2);
+  border: 1px solid rgba(103, 126, 234, 0.3);
+  color: #667eea;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.refresh-btn:hover {
+  background: rgba(103, 126, 234, 0.3);
+  transform: rotate(90deg);
+}
+
+/* Model Cards */
+.recommended-models,
+.too-large-models {
+  margin-bottom: 20px;
+}
+
+.recommended-models h4,
+.too-large-models h4 {
+  font-size: 14px;
+  color: #aaa;
+  margin: 0 0 12px 0;
+  font-weight: 500;
+}
+
+.model-card {
+  background: rgba(42, 42, 62, 0.6);
+  border: 2px solid rgba(103, 126, 234, 0.2);
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.model-card:hover:not(.disabled) {
+  border-color: rgba(103, 126, 234, 0.5);
+  background: rgba(42, 42, 62, 0.8);
+  transform: translateX(4px);
+}
+
+.model-card.selected {
+  border-color: #00ff88;
+  background: rgba(0, 255, 136, 0.1);
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
+}
+
+.model-card.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.model-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.model-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  font-family: 'Courier New', monospace;
+}
+
+.model-speed {
+  font-size: 12px;
+  color: #00ff88;
+  background: rgba(0, 255, 136, 0.1);
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.model-vram {
+  font-size: 12px;
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.model-stats {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: #aaa;
+}
+
+.model-description {
+  font-size: 12px;
+  color: #aaa;
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+.model-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.model-tags .tag {
+  font-size: 10px;
+  background: rgba(103, 126, 234, 0.2);
+  color: #667eea;
+  padding: 3px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+/* Quick Actions */
+.quick-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  flex: 1;
+  min-width: 150px;
+  background: rgba(103, 126, 234, 0.2);
+  border: 1px solid rgba(103, 126, 234, 0.3);
+  color: #667eea;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.action-btn:hover:not(:disabled) {
+  background: rgba(103, 126, 234, 0.3);
+  border-color: rgba(103, 126, 234, 0.5);
+  transform: translateY(-2px);
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Notifications */
+.context-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(26, 26, 46, 0.95);
+  border: 2px solid #667eea;
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  z-index: 10000;
+  animation: slideIn 0.3s ease-out;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.context-notification.error {
+  border-color: #ff6b6b;
+  color: #ff6b6b;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+}
+
+/* Scrollbar */
+.selector-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.selector-content::-webkit-scrollbar-track {
+  background: rgba(42, 42, 62, 0.4);
+  border-radius: 4px;
+}
+
+.selector-content::-webkit-scrollbar-thumb {
+  background: rgba(103, 126, 234, 0.4);
+  border-radius: 4px;
+}
+
+.selector-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(103, 126, 234, 0.6);
+}

@@ -10,6 +10,13 @@ import { createScraperAgent, runAgentTask } from './langchain-agent.js';
 import { listContexts } from './agent-contexts.js';
 import { agentMemory } from './agent-memory.js';
 import { localTracer } from './local-tracer.js';
+import { 
+  AVAILABLE_MODELS, 
+  CONTEXT_TEMPLATES, 
+  getModelRecommendations, 
+  detectVRAM,
+  getScraperExtensionContext 
+} from './context-manager.js';
 
 const execAsync = promisify(exec);
 const PORT = process.env.LANGCHAIN_PORT || 3003;
@@ -77,6 +84,97 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'OPTIONS') {
     res.writeHead(200);
     res.end();
+    return;
+  }
+  
+  // GET /contexts - List available contexts and models
+  if (req.method === 'GET' && req.url === '/contexts') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      contexts: CONTEXT_TEMPLATES,
+      models: AVAILABLE_MODELS
+    }));
+    return;
+  }
+  
+  // GET /vram-info - Get VRAM detection and model recommendations
+  if (req.method === 'GET' && req.url === '/vram-info') {
+    try {
+      const vramInfo = await detectVRAM();
+      const recommendations = getModelRecommendations(vramInfo.totalGB);
+      
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        ...vramInfo,
+        ...recommendations
+      }));
+    } catch (error: any) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: error.message }));
+    }
+    return;
+  }
+  
+  // POST /scraper-context - Get enhanced prompt for scraper extension
+  if (req.method === 'POST' && req.url === '/scraper-context') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', () => {
+      try {
+        const { jsonTemplate } = JSON.parse(body);
+        const result = getScraperExtensionContext(jsonTemplate);
+        
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          enhancedPrompt: result.enhancedPrompt,
+          recommendedModel: result.model.name,
+          context: result.context
+        }));
+      } catch (error: any) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: error.message }));
+      }
+    });
+    return;
+  }
+  
+  // POST /test-model - Quick model test
+  if (req.method === 'POST' && req.url === '/test-model') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', async () => {
+      try {
+        const { model, prompt } = JSON.parse(body);
+        
+        const startTime = Date.now();
+        const response = await fetch('http://localhost:11434/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model,
+            prompt: prompt || 'Say OK',
+            stream: false
+          })
+        });
+        
+        const data = await response.json();
+        const elapsed = Date.now() - startTime;
+        
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          success: true,
+          response: data.response,
+          tokens: data.eval_count || 0,
+          timeMs: elapsed
+        }));
+      } catch (error: any) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ 
+          success: false, 
+          error: error.message 
+        }));
+      }
+    });
     return;
   }
   

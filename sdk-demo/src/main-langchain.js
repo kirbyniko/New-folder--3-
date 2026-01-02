@@ -5,6 +5,7 @@
 
 import { LangChainAgentUI } from './components/LangChainAgentUI.js';
 import './styles/langchain-ui.css';
+import './styles/context-selector.css';
 
 console.log('🚀 LangChain Agent Demo Loading...');
 

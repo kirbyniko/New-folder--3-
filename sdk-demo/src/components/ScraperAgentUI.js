@@ -3,6 +3,8 @@
  * Optimized for: Model selection, VRAM constraints, scraper context
  */
 
+import { ContextSelector } from './ContextSelector.js';
+
 export class ScraperAgentUI {
   constructor(containerId) {
     this.container = document.getElementById(containerId);
@@ -29,6 +31,7 @@ export class ScraperAgentUI {
     this.availableModels = [];
     this.availableContexts = [];
     this.serverOnline = false;
+    this.contextSelector = null;
     
     this.init();
   }
@@ -67,6 +70,25 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
     await this.checkServerStatus();
     await this.loadModels();
     await this.loadContexts();
+    
+    // Initialize ContextSelector in header area
+    const contextContainer = document.createElement('div');
+    contextContainer.id = 'contextSelectorContainer';
+    const header = this.container.querySelector('.scraper-header');
+    header.after(contextContainer);
+    
+    this.contextSelector = new ContextSelector(contextContainer);
+    
+    // Listen for config changes
+    this.contextSelector.onModelChange = (model) => {
+      this.config.model = model;
+      const modelSelect = document.getElementById('model-select');
+      if (modelSelect) modelSelect.value = model;
+    };
+    
+    this.contextSelector.onContextChange = (context) => {
+      this.config.context = context;
+    };
     
     // Auto-check server every 10s
     setInterval(() => this.checkServerStatus(), 10000);
