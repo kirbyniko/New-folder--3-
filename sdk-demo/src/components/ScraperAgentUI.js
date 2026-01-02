@@ -18,12 +18,12 @@ export class ScraperAgentUI {
     
     // Default config
     this.config = {
-      model: 'mistral-nemo:12b-instruct-2407-q8_0',
+      model: 'deepseek-coder-v2:16b',  // Changed from mistral-nemo - better at following instructions
       temperature: 0.3,
       contextWindow: 8192,
-      // DON'T send systemPrompt - let context provide it
+      // No systemPrompt - let context provide it
       tools: ['execute_code', 'fetch_url', 'search_web'],
-      context: 'scraper-guide', // Changed default to scraper-guide
+      context: 'scraper-guide', // Default to scraper-guide
       sessionId: null
     };
     
