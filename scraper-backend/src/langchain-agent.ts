@@ -226,11 +226,18 @@ export async function createScraperAgent(config: {
     throw new Error('At least one tool must be enabled');
   }
   
-  // Initialize Ollama
+  // Initialize Ollama with GPU-optimized settings
   const llm = new ChatOllama({
     model: model,
     temperature: finalTemperature,
     baseUrl: 'http://localhost:11434',
+    // Force 100% GPU acceleration
+    numGpu: 999, // Use all available GPU layers
+    numThread: 1, // Minimize CPU threads (GPU-only)
+    numCtx: 4096, // Context window
+    useMMap: false, // Don't use memory mapping (slower on GPU)
+    useMlock: true, // Lock memory for faster GPU access
+    f16Kv: true, // Use float16 for key/value cache (faster GPU)
   });
   
   // Use context-based system prompt
