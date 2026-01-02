@@ -70,7 +70,6 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
     this.render();
     await this.checkServerStatus();
     await this.loadModels();
-    await this.loadContexts();
     
     // Initialize ContextSelector in header area
     const contextContainer = document.createElement('div');
@@ -246,23 +245,6 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
       modelSelect.value = this.config.model;
     } catch (error) {
       console.error('Failed to load models:', error);
-    }
-  }
-  
-  async loadContexts() {
-    try {
-      const response = await fetch('http://localhost:3003/contexts');
-      const data = await response.json();
-      this.availableContexts = data.contexts || [];
-      
-      const contextSelect = document.getElementById('context-select');
-      contextSelect.innerHTML = this.availableContexts
-        .map(ctx => `<option value="${ctx.id}">${ctx.name}</option>`)
-        .join('');
-      
-      contextSelect.value = this.config.context;
-    } catch (error) {
-      console.error('Failed to load contexts:', error);
     }
   }
   
