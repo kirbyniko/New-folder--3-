@@ -280,75 +280,74 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
     // Add user message
     this.addMessage('user', message);
     
-    // Show loading with progress updates
+    // Show loading with real progress
     const loadingId = this.addMessage('assistant', '⏳ Initializing agent...');
     
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 min timeout
-      
-      // Update loading message every 3 seconds
-      const progressInterval = setInterval(() => {
-        const loadingEl = document.getElementById(loadingId);
-        if (loadingEl) {
-          const messages = [
-            '⏳ Analyzing task...',
-            '🔍 Planning scraper...',
-            '🛠️ Generating code...',
-            '⚙️ Selecting tools...',
-            '🚀 Building scraper...'
-          ];
-          const randomMsg = messages[Math.floor(Math.random() * messages.length)];
-          loadingEl.innerHTML = randomMsg;
-        }
-      }, 3000);
-      
       const response = await fetch('http://localhost:3003/agent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           task: message,
           config: this.config
-        }),
-        signal: controller.signal
+        })
       });
-      
-      clearTimeout(timeoutId);
-      clearInterval(progressInterval);
-      
-      clearTimeout(timeoutId);
-      clearInterval(progressInterval);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
       
-      const result = await response.json();
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
       
-      // Remove loading message
-      this.removeMessage(loadingId);
-      
-      // Add agent response
-      this.addMessage('assistant', result.output || result.text || 'No response');
-      
-      // Show metadata
-      if (result.steps || result.executionTime) {
-        const metadata = `
-          <div class="metadata">
-            ${result.steps ? `Steps: ${result.steps}` : ''}
-            ${result.executionTime ? `Time: ${result.executionTime}ms` : ''}
-          </div>
-        `;
-        this.addMessage('system', metadata);
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const text = decoder.decode(value);
+        const lines = text.split('\n');
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = JSON.parse(line.substring(6));
+            const loadingEl = document.getElementById(loadingId);
+            
+            if (data.type === 'step') {
+              if (loadingEl) loadingEl.innerHTML = `⏳ ${data.message}`;
+            } else if (data.type === 'tool_start') {
+              if (loadingEl) loadingEl.innerHTML = `🛠️ ${data.message}`;
+            } else if (data.type === 'tool_end') {
+              if (loadingEl) loadingEl.innerHTML = `✅ ${data.message}`;
+            } else if (data.type === 'llm_start') {
+              if (loadingEl) loadingEl.innerHTML = `🧠 ${data.message}`;
+            } else if (data.type === 'llm_end') {
+              if (loadingEl) loadingEl.innerHTML = `✓ ${data.message}`;
+            } else if (data.type === 'complete') {
+              this.removeMessage(loadingId);
+              
+              const result = data.result;
+              this.addMessage('assistant', result.output || result.text || 'No response');
+              
+              if (result.steps || result.executionTime) {
+                const metadata = `
+                  <div class="metadata">
+                    ${result.steps ? `Steps: ${result.steps}` : ''}
+                    ${result.executionTime ? `Time: ${result.executionTime}ms` : ''}
+                  </div>
+                `;
+                this.addMessage('system', metadata);
+              }
+            } else if (data.type === 'error') {
+              this.removeMessage(loadingId);
+              this.addMessage('error', `❌ Error: ${data.error}`);
+            }
+          }
+        }
       }
       
     } catch (error) {
       this.removeMessage(loadingId);
-      if (error.name === 'AbortError') {
-        this.addMessage('error', `❌ Request timeout after 5 minutes`);
-      } else {
-        this.addMessage('error', `❌ Error: ${error.message}`);
-      }
+      this.addMessage('error', `❌ Error: ${error.message}`);
     }
   }
   

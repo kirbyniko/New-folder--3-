@@ -225,13 +225,53 @@ You: 1. Use search_web with query "React official documentation"
 }
 
 // Helper: Run agent with a task
-export async function runAgentTask(task: string, config?: Parameters<typeof createScraperAgent>[0]) {
+export async function runAgentTask(
+  task: string, 
+  config?: Parameters<typeof createScraperAgent>[0],
+  onProgress?: (data: any) => void
+) {
   const agent = await createScraperAgent(config || {});
   
   try {
-    const result = await agent.invoke({
-      messages: [{ role: "user", content: task }]
-    });
+    onProgress?.({ type: 'step', message: 'Agent initialized, starting task...' });
+    
+    const result = await agent.invoke(
+      {
+        messages: [{ role: "user", content: task }]
+      },
+      {
+        callbacks: [
+          {
+            handleToolStart: (tool: any, input: string) => {
+              onProgress?.({ 
+                type: 'tool_start', 
+                tool: tool.name,
+                message: `Using tool: ${tool.name}` 
+              });
+            },
+            handleToolEnd: (output: any) => {
+              onProgress?.({ 
+                type: 'tool_end', 
+                message: 'Tool completed',
+                output: output.substring(0, 100) 
+              });
+            },
+            handleLLMStart: () => {
+              onProgress?.({ 
+                type: 'llm_start', 
+                message: 'Thinking...' 
+              });
+            },
+            handleLLMEnd: () => {
+              onProgress?.({ 
+                type: 'llm_end', 
+                message: 'Decision made' 
+              });
+            }
+          }
+        ]
+      }
+    );
     
     // Extract the final message from the agent
     const messages = result.messages || [];

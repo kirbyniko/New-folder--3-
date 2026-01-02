@@ -53,20 +53,33 @@ const server = http.createServer(async (req, res) => {
         console.log(`🤖 Running agent task: ${request.task.substring(0, 100)}...`);
         console.log(`⚙️  Config:`, request.config || 'default');
         
-        const result = await runAgentTask(request.task, request.config);
+        // Set up SSE for streaming progress
+        res.writeHead(200, {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+          'Access-Control-Allow-Origin': '*'
+        });
         
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(result));
+        // Send progress updates
+        const sendProgress = (data: any) => {
+          res.write(`data: ${JSON.stringify(data)}\n\n`);
+        };
+        
+        const result = await runAgentTask(request.task, request.config, sendProgress);
+        
+        // Send final result
+        sendProgress({ type: 'complete', result });
+        res.end();
         
         console.log(`✅ Task completed: ${result.success ? 'SUCCESS' : 'FAILED'}`);
       } catch (error: any) {
         console.error('❌ Agent error:', error);
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({
-          success: false,
-          error: error.message,
-          stack: error.stack
-        }));
+        res.write(`data: ${JSON.stringify({ 
+          type: 'error', 
+          error: error.message 
+        })}\n\n`);
+        res.end();
       }
     });
   } else if (req.method === 'GET' && req.url === '/health') {
