@@ -205,21 +205,6 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
       tempValue.textContent = e.target.value;
     });
     
-    // Context window
-    const contextInput = document.getElementById('context-window');
-    contextInput.addEventListener('change', (e) => {
-      this.config.contextWindow = parseInt(e.target.value);
-    });
-    
-    // Tool checkboxes
-    document.querySelectorAll('.tool-checkboxes input').forEach(checkbox => {
-      checkbox.addEventListener('change', () => {
-        this.config.tools = Array.from(
-          document.querySelectorAll('.tool-checkboxes input:checked')
-        ).map(cb => cb.value);
-      });
-    });
-    
     // Send button
     const sendBtn = document.getElementById('send-btn');
     const userInput = document.getElementById('user-input');
@@ -244,7 +229,6 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
     document.getElementById('model-select').value = preset.model;
     document.getElementById('temperature-slider').value = preset.temperature;
     document.getElementById('temp-value').textContent = preset.temperature;
-    document.getElementById('context-window').value = preset.context;
   }
   
   async loadModels() {
