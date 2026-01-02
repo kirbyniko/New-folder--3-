@@ -490,8 +490,8 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
             <label class="context-checkbox">
               <input type="checkbox" value="scraper-guide" ${this.config.contextKnowledge?.includes('scraper-guide') ? 'checked' : 'checked'}>
               <div class="checkbox-label">
-                <strong>📚 SCRAPER_GUIDE_SHORT (~4,000 tokens)</strong>
-                <span>State legislature scraping patterns and best practices</span>
+                <strong>📚 Scraper Guide RAG (~1,500 tokens + examples)</strong>
+                <span>Compressed scraper guide for Mistral with on-demand platform examples</span>
               </div>
             </label>
             
@@ -547,7 +547,7 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
     const tokenEstimates = {
       'scraper-builder': 800,
       'puppeteer-expert': 600,
-      'scraper-guide': 4000,
+      'scraper-guide': 1500,  // RAG-optimized: 1,500 tokens core + 400 on-demand
       'pdf-parser': 1200,
       'agenda-summarizer': 850,
       'data-analyzer': 400,
