@@ -2518,6 +2518,8 @@ function finalizeDynamicBuilder() {
     // Build the scraper configuration
     const scraperConfig = {
       name: template.name,
+      startUrl: template.startUrl,
+      pageStructures: template.pageStructures || [],
       templateId: template.id,
       createdAt: new Date().toISOString(),
       fields: {},
