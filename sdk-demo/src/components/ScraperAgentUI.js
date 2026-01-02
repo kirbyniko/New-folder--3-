@@ -280,18 +280,44 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
     // Add user message
     this.addMessage('user', message);
     
-    // Show loading
-    const loadingId = this.addMessage('assistant', '⏳ Generating scraper...');
+    // Show loading with progress updates
+    const loadingId = this.addMessage('assistant', '⏳ Initializing agent...');
     
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 min timeout
+      
+      // Update loading message every 3 seconds
+      const progressInterval = setInterval(() => {
+        const loadingEl = document.getElementById(loadingId);
+        if (loadingEl) {
+          const messages = [
+            '⏳ Analyzing task...',
+            '🔍 Planning scraper...',
+            '🛠️ Generating code...',
+            '⚙️ Selecting tools...',
+            '🚀 Building scraper...'
+          ];
+          const randomMsg = messages[Math.floor(Math.random() * messages.length)];
+          loadingEl.innerHTML = randomMsg;
+        }
+      }, 3000);
+      
       const response = await fetch('http://localhost:3003/agent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           task: message,
           config: this.config
-        })
+        }),
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
+      clearInterval(progressInterval);
+      
+      clearTimeout(timeoutId);
+      clearInterval(progressInterval);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
@@ -318,7 +344,11 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
       
     } catch (error) {
       this.removeMessage(loadingId);
-      this.addMessage('error', `❌ Error: ${error.message}`);
+      if (error.name === 'AbortError') {
+        this.addMessage('error', `❌ Request timeout after 5 minutes`);
+      } else {
+        this.addMessage('error', `❌ Error: ${error.message}`);
+      }
     }
   }
   
