@@ -205,10 +205,28 @@ export async function createScraperAgent(config: {
   } = config;
   
   // Load context if specified
+  console.log(`\n🔍 CONTEXT DEBUGGING:`);
+  console.log(`   Requested context: "${context}"`);
   const contextConfig = getContext(context);
+  console.log(`   Context loaded: "${contextConfig.id}" - ${contextConfig.name}`);
+  
   const finalSystemPrompt = systemPrompt || contextConfig.systemPrompt;
   const finalTools = enabledTools || contextConfig.tools;
   const finalTemperature = temperature ?? contextConfig.temperature;
+  
+  console.log(`   Tools enabled: [${finalTools.join(', ')}]`);
+  console.log(`   System prompt length: ${finalSystemPrompt.length} chars`);
+  console.log(`   First 300 chars of prompt:`);
+  console.log(`   "${finalSystemPrompt.substring(0, 300)}..."`);
+  console.log(``);
+  
+  // Check for keyword detection in prompt
+  const hasKeywordDetection = finalSystemPrompt.includes('click') && finalSystemPrompt.includes('PUPPETEER');
+  console.log(`   ⚠️  Contains keyword detection: ${hasKeywordDetection ? '✅ YES' : '❌ NO'}`);
+  if (!hasKeywordDetection) {
+    console.log(`   🚨 WARNING: Prompt may not detect dynamic content keywords!`);
+  }
+  console.log(``);
   
   // Select tools based on config
   const allTools = {
@@ -293,6 +311,31 @@ export async function runAgentTask(
   config?: Parameters<typeof createScraperAgent>[0],
   onProgress?: (data: any) => void
 ) {
+  console.log(`\n📋 TASK RECEIVED:`);
+  console.log(`   Task length: ${task.length} chars`);
+  console.log(`   First 500 chars: "${task.substring(0, 500)}..."`);
+  
+  // Check if task contains scraper config
+  const hasScraperConfig = task.includes('pageStructures') || task.includes('selectorSteps');
+  console.log(`   Contains scraper config: ${hasScraperConfig ? '✅ YES' : '❌ NO'}`);
+  
+  if (hasScraperConfig) {
+    // Check for dynamic content keywords
+    const hasClick = task.toLowerCase().includes('click');
+    const hasPopup = task.toLowerCase().includes('popup');
+    const hasModal = task.toLowerCase().includes('modal');
+    
+    console.log(`   🎯 DYNAMIC CONTENT DETECTION:`);
+    console.log(`      - Contains "click": ${hasClick ? '✅' : '❌'}`);
+    console.log(`      - Contains "popup": ${hasPopup ? '✅' : '❌'}`);
+    console.log(`      - Contains "modal": ${hasModal ? '✅' : '❌'}`);
+    
+    if (hasClick || hasPopup || hasModal) {
+      console.log(`   🚨 SHOULD USE PUPPETEER!`);
+    }
+  }
+  console.log(``);
+  
   const agent = await createScraperAgent(config || {});
   const sessionId = config?.sessionId;
   
@@ -392,6 +435,26 @@ export async function runAgentTask(
     const messages = result.messages || [];
     const finalMessage = messages[messages.length - 1];
     const output = finalMessage?.content || 'No output generated';
+    
+    // 🔍 ANALYZE OUTPUT
+    console.log(`\n📤 AGENT OUTPUT ANALYSIS:`);
+    console.log(`   Output length: ${output.length} chars`);
+    console.log(`   First 500 chars: "${output.substring(0, 500)}..."`);
+    
+    const containsPython = output.toLowerCase().includes('python') || output.includes('import requests') || output.includes('from bs4');
+    const containsJavaScript = output.includes('const') || output.includes('require(') || output.includes('puppeteer');
+    const containsBeautifulSoup = output.includes('BeautifulSoup') || output.includes('bs4');
+    const containsPuppeteer = output.includes('puppeteer') && output.includes('page.click');
+    
+    console.log(`   🐍 Contains Python: ${containsPython ? '❌ WRONG!' : '✅'}`);
+    console.log(`   📜 Contains JavaScript: ${containsJavaScript ? '✅' : '❌'}`);
+    console.log(`   🍜 Uses BeautifulSoup: ${containsBeautifulSoup ? '❌ WRONG!' : '✅'}`);
+    console.log(`   🎭 Uses Puppeteer: ${containsPuppeteer ? '✅ CORRECT!' : '❌ Missing'}`);
+    
+    if (containsPython || containsBeautifulSoup) {
+      console.log(`   🚨 ERROR: Agent generated Python despite JavaScript-only instructions!`);
+    }
+    console.log(``);
     
     const executionTime = Date.now() - startTime;
     
