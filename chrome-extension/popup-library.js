@@ -776,6 +776,9 @@ function viewScraperDetails(index) {
         <button id="copy-clean-json" class="btn-primary" style="padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
           📋 Copy Clean JSON
         </button>
+        <button id="copy-raw-json" class="btn-secondary" style="padding: 10px 20px;">
+          📦 Copy Raw Data
+        </button>
         <button id="close-scraper-view" class="btn-secondary" style="padding: 10px 20px;">
           Close
         </button>
@@ -825,6 +828,17 @@ Important:
     
     navigator.clipboard.writeText(cleanJSON).then(() => {
       showStatus('✅ Clean JSON copied to clipboard!', 'success');
+    }).catch(err => {
+      showStatus('❌ Failed to copy', 'error');
+    });
+  });
+  
+  // Copy Raw JSON button - copies the complete saved scraper object
+  document.getElementById('copy-raw-json').addEventListener('click', () => {
+    const rawJSON = JSON.stringify(scraper, null, 2);
+    
+    navigator.clipboard.writeText(rawJSON).then(() => {
+      showStatus('✅ Raw data copied to clipboard!', 'success');
     }).catch(err => {
       showStatus('❌ Failed to copy', 'error');
     });
