@@ -2515,11 +2515,40 @@ function finalizeDynamicBuilder() {
       return;
     }
     
+    // Convert form fields to pageStructures format
+    const pageStructures = [];
+    const pageStructure = {
+      fields: []
+    };
+    
+    // Extract container and item selectors from field values
+    if (fieldValues['step2-event-list-event_container']) {
+      pageStructure.containerSelector = fieldValues['step2-event-list-event_container'];
+    }
+    if (fieldValues['step2-event-list-event_item']) {
+      pageStructure.itemSelector = fieldValues['step2-event-list-event_item'];
+    }
+    
+    // Convert field values to fields array
+    Object.entries(fieldValues).forEach(([fieldId, value]) => {
+      if (value && fieldId.includes('-fields-')) {
+        const fieldName = fieldId.split('-fields-')[1];
+        pageStructure.fields.push({
+          fieldName: fieldName,
+          selectorSteps: [{ selector: value }]
+        });
+      }
+    });
+    
+    if (pageStructure.fields.length > 0) {
+      pageStructures.push(pageStructure);
+    }
+    
     // Build the scraper configuration
     const scraperConfig = {
       name: template.name,
-      startUrl: template.startUrl,
-      pageStructures: template.pageStructures || [],
+      startUrl: fieldValues['step1-calendar_url'] || template.startUrl,
+      pageStructures: pageStructures.length > 0 ? pageStructures : (template.pageStructures || []),
       templateId: template.id,
       createdAt: new Date().toISOString(),
       fields: {},
