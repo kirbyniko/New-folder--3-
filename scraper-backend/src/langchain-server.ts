@@ -178,6 +178,38 @@ const server = http.createServer(async (req, res) => {
     return;
   }
   
+  // POST /simple-scraper - Generate scraper without agent (more reliable!)
+  if (req.method === 'POST' && req.url === '/simple-scraper') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', async () => {
+      try {
+        const { config, model } = JSON.parse(body);
+        
+        // Import dynamically to avoid circular deps
+        const { generateScraper } = await import('./simple-scraper-generator.js');
+        
+        console.log(`\n🚀 SIMPLE SCRAPER GENERATOR (NO AGENT)`);
+        const code = await generateScraper(config, model);
+        
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          success: true,
+          code,
+          method: 'simple-generator'
+        }));
+      } catch (error: any) {
+        console.error(`❌ Simple scraper error:`, error);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ 
+          success: false, 
+          error: error.message 
+        }));
+      }
+    });
+    return;
+  }
+  
   if (req.method === 'POST' && req.url === '/agent') {
     let body = '';
     

@@ -1,0 +1,13 @@
+{
+  "id": "cc60485d-a25d-4a53-a1a4-2eaeb3d6bc8d",
+  "type": "agent_task",
+  "input": "Build a scraper using this configuration:\n{\n  \"name\": \"Legislative Calendar Scraper\",\n  \"startUrl\": \"https://www.honolulu.gov/clerk/clk-council-calendar/\",\n  \"pageStructures\": [\n    {\n      \"fields\": [\n        {\n          \"fieldName\": \"time\",\n          \"selectorSteps\": [\n            {\n              \"selector\": \"div.em-item-meta-line.em-event-time\"\n            }\n          ]\n        },\n        {\n          \"fieldName\": \"date\",\n          \"selectorSteps\": [\n            {\n              \"selector\": \"div.em-item-meta-line.em-event-date\"\n            }\n          ]\n        },\n        {\n          \"fieldName\": \"name\",\n          \"selectorSteps\": [\n            {\n              \"selector\": \"div.em-modal-title > a\"\n            }\n          ]\n        },\n        {\n          \"fieldName\": \"name-note\",\n          \"selectorSteps\": [\n            {\n              \"selector\": \"This and the rest of the following fields are inside the event, you have to click the single event for this information to popup on the screen\"\n            }\n          ]\n        },\n        {\n          \"fieldName\": \"agenda_url\",\n          \"selectorSteps\": [\n            {\n              \"selector\": \"a > span > strong\"\n            }\n          ]\n        },\n        {\n          \"fieldName\": \"docket_url\",\n          \"selectorSteps\": [\n            {\n              \"selector\": \"a > span > strong\"\n            }\n          ]\n        }\n      ],\n      \"itemSelector\": \"div.em-cal-event > div\"\n    }\n  ]\n}",
+  "context": "scraper-guide",
+  "sessionId": null,
+  "startTime": 1767344598111,
+  "steps": [],
+  "endTime": 1767344598184,
+  "executionTime": 73,
+  "success": false,
+  "error": "registry.ollama.ai/library/deepseek-coder:6.7b does not support tools"
+}

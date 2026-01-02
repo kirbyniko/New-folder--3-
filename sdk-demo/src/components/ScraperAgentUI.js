@@ -24,7 +24,8 @@ export class ScraperAgentUI {
       // No systemPrompt - let context provide it
       tools: ['execute_code', 'fetch_url', 'search_web'],
       context: 'scraper-guide', // Default to scraper-guide
-      sessionId: null
+      sessionId: null,
+      useSimpleMode: true // NEW: Use simple direct generation instead of agent
     };
     
     this.conversation = [];
@@ -330,10 +331,41 @@ export class ScraperAgentUI {
     // Add user message
     this.addMessage('user', message.substring(0, 500) + (message.length > 500 ? '...' : ''));
     
-    // Show loading with real progress (use 'progress' class for visibility)
-    const loadingId = this.addMessage('progress', '⏳ Initializing agent...');
+    // Show loading
+    const loadingId = this.addMessage('progress', '⏳ Initializing...');
     
     try {
+      // NEW: If scraper config detected, use simple direct generation (more reliable!)
+      if (scraperConfig && this.config.useSimpleMode) {
+        console.log('🎯 Using SIMPLE MODE - Direct code generation (no agent)');
+        
+        this.updateMessage(loadingId, '⏳ Analyzing configuration...');
+        
+        const response = await fetch('http://localhost:3003/simple-scraper', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            config: scraperConfig,
+            model: this.config.model
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          this.removeMessage(loadingId);
+          this.addMessage('assistant', `✅ Generated scraper using direct code generation (bypasses agent)\n\n\`\`\`javascript\n${data.code}\n\`\`\``);
+          return;
+        } else {
+          throw new Error(data.error || 'Simple scraper generation failed');
+        }
+      }
+      
+      // FALLBACK: Use agent mode for non-scraper tasks
       const response = await fetch('http://localhost:3003/agent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
