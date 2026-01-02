@@ -100,24 +100,21 @@ export const CONTEXT_TEMPLATES: ContextTemplate[] = [
 4. Include error handling and null checks
 5. Return ONLY the code, no explanations
 
-## Using Manual Capture Templates
+## Using Manual Capture Templates (Flexible Hints)
 If user provides JSON with \`pageStructures\` and \`selectorSteps\`:
-- Extract selectors from \`selectorSteps[].selector\` fields
-- These are pre-discovered selectors from clicking elements
-- Verify they work with execute_code before using
-- Build scraper using these verified selectors
+- Extract selectors from \`selectorSteps[].selector\` fields - these are HINTS
+- Verify selectors still work with execute_code
+- **Look for additional fields** not in template by inspecting HTML
+- Build **complete scraper** with all available fields, not just template fields
 
-## Field Mapping
-Extract ALL fields from the user's JSON template:
-- Event name/title
-- Date/time
-- Location
-- Committee/body
-- Agenda URL
-- Video/stream URL
-- Any custom fields
+## Field Discovery (Go Beyond Template)
+Extract ALL fields available on the page:
+- Template fields (title, date from selectorSteps)
+- **Additional fields:** location, agenda_url, meeting_type, status, video_url, etc.
+- Inspect HTML to find fields the template missed
+- Report which fields were found and any additional ones discovered
 
-Report which fields were found and which are missing.`,
+Example: Template has title + date, but you find location + agenda links → include them!`,
     tools: ['execute_code', 'fetch_url'],
     modelRecommendation: 'qwen2.5-coder:7b'
   },
@@ -213,35 +210,39 @@ Before generating ANY scraper, you MUST:
 3. NEVER invent generic selectors like .event-list or .event-item
 4. Test your scraper with execute_code before responding
 
-## USING MANUAL CAPTURE TEMPLATES
-If the user provides a JSON template with selectorSteps, this is from manual element capture:
+## USING MANUAL CAPTURE TEMPLATES (FLEXIBLE HINTS)
+If the user provides a JSON template with selectorSteps, treat these as **HELPFUL HINTS, NOT RULES**:
 
 **What the template contains:**
 - \`pageStructures[].fields[].selectorSteps\` = Selectors discovered by clicking elements
 - \`containerSelector\` = Parent container where items live
 - \`itemSelector\` = Individual item selector
-- Comments explain WHY each selector was chosen
 
-**How to use it:**
+**CRITICAL - Templates are STARTING POINTS:**
 1. Extract selectors from \`selectorSteps[].selector\` fields
-2. Use these as STARTING POINTS (verify they still work)
-3. Test with execute_code to confirm selectors return data
-4. If selectors fail, inspect HTML and find corrected selectors
-5. Build working scraper using verified selectors
+2. **Verify selectors still work** - websites change!
+3. **Look for additional fields** not in the template (location, document links, contact info)
+4. **Inspect the actual HTML** with execute_code to find what the template missed
+5. Build a **complete scraper** that captures ALL available data, not just template fields
 
 **Example template:**
 \`\`\`json
 {
   "pageStructures": [{
-    "fields": [{
-      "fieldName": "title",
-      "selectorSteps": [{"selector": "h2.event-title"}]
-    }]
+    "containerSelector": ".events-list",
+    "fields": [
+      {"fieldName": "title", "selectorSteps": [{"selector": "h2.event-title"}]},
+      {"fieldName": "date", "selectorSteps": [{"selector": ".event-date"}]}
+    ]
   }]
 }
 \`\`\`
 
-**Your job:** Extract \`h2.event-title\`, verify it works, use it in scraper code
+**Your job:**
+1. Use \`.events-list\`, \`h2.event-title\`, \`.event-date\` as hints
+2. Fetch HTML and verify these selectors work
+3. **Discover additional fields:** location, agenda URL, meeting type, status, etc.
+4. Build scraper with ALL fields found, not just title + date
 
 ## DECISION TREE
 1. View page source → content visible? → **Static HTML** (use cheerio)

@@ -797,7 +797,14 @@ function viewScraperDetails(index) {
       '// 7. nextButtonSelector = pagination pattern (click to load more)': null
     };
     
-    codeText = JSON.stringify(documented, null, 2)
+    codeText = JSON.stringify(documented, null, 2);
+    
+    // Store clean JSON for agent (no documentation comments)
+    window._currentScraperCleanJSON = JSON.stringify({
+      name: scraper.name,
+      startUrl: scraper.startUrl,
+      pageStructures: scraper.pageStructures
+    }, null, 2)
       .replace(/"\/\/ ([^"]+)":/g, '\n// $1:') // Convert comment keys to actual comments
       .replace(/: null,?\n/g, '\n'); // Remove null values
   }
@@ -822,13 +829,18 @@ function viewScraperDetails(index) {
       ">${codeText}</textarea>
     </div>
     
-    <div style="padding: 20px; border-top: 1px solid #e0e0e0; display: flex; gap: 10px; justify-content: flex-end;">
-      <button id="copy-scraper-code" class="btn-primary" style="padding: 10px 20px;">
-        📋 Copy Code
+    <div style="padding: 20px; border-top: 1px solid #e0e0e0; display: flex; gap: 10px; justify-content: space-between;">
+      <button id="send-to-agent" class="btn-primary" style="padding: 10px 20px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+        🤖 Send to Agent
       </button>
-      <button id="close-scraper-view" class="btn-secondary" style="padding: 10px 20px;">
-        Close
-      </button>
+      <div style="display: flex; gap: 10px;">
+        <button id="copy-scraper-code" class="btn-primary" style="padding: 10px 20px;">
+          📋 Copy Code
+        </button>
+        <button id="close-scraper-view" class="btn-secondary" style="padding: 10px 20px;">
+          Close
+        </button>
+      </div>
     </div>
   `;
   
@@ -838,6 +850,30 @@ function viewScraperDetails(index) {
   // Auto-select text for easy copying
   const textarea = document.getElementById('scraper-code-view');
   textarea.select();
+  
+  // Send to Agent button - builds clean prompt with flexibility instructions
+  document.getElementById('send-to-agent').addEventListener('click', () => {
+    const cleanJSON = window._currentScraperCleanJSON || JSON.stringify({
+      name: scraper.name,
+      startUrl: scraper.startUrl,
+      pageStructures: scraper.pageStructures
+    }, null, 2);
+    
+    const prompt = `Build a scraper using this template as a starting point. The selectors in selectorSteps are hints to help you - verify they work and discover any additional fields not listed here:
+
+${cleanJSON}
+
+Important:
+- Use the provided selectors as hints, but verify they still work
+- Inspect the HTML to find additional fields not in this template
+- Build a complete scraper that captures ALL available data, not just these fields`;
+    
+    navigator.clipboard.writeText(prompt).then(() => {
+      showStatus('✅ Agent prompt copied! The agent will use template as flexible hints and discover additional fields.', 'success');
+    }).catch(err => {
+      showStatus('❌ Failed to copy', 'error');
+    });
+  });
   
   // Copy button
   document.getElementById('copy-scraper-code').addEventListener('click', () => {
