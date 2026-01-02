@@ -1,0 +1,103 @@
+{
+  "legistar": {
+    "description": "Legistar platform - used by 1000+ cities (NYC, LA, Chicago, Honolulu, Seattle)",
+    "url_pattern": "*.legistar.com/Calendar.aspx",
+    "selectors": {
+      "container": "#ctl00_ContentPlaceHolder1_divResultContent",
+      "item": "tr.rgRow, tr.rgAltRow",
+      "title": "td:nth-child(2) a",
+      "date": "td:nth-child(1)",
+      "time": "td:nth-child(3)",
+      "location": "td:nth-child(4)",
+      "detail_link": "td:nth-child(2) a[href]"
+    },
+    "example_code": "const events = [];\n$('tr.rgRow, tr.rgAltRow').each((_, row) => {\n  const cells = $(row).find('td');\n  events.push({\n    title: $(cells[1]).find('a').text().trim(),\n    date: $(cells[0]).text().trim(),\n    time: $(cells[2]).text().trim(),\n    location: $(cells[3]).text().trim(),\n    detail_url: $(cells[1]).find('a').attr('href')\n  });\n});",
+    "notes": "Always has pagination via __doPostBack. Check for 'ctl00$ContentPlaceHolder1$btnNext'"
+  },
+  
+  "granicus": {
+    "description": "Granicus platform - common for state legislatures",
+    "url_pattern": "*granicus.com/ViewPublisher.php",
+    "api_endpoint": "/api/v1/events",
+    "example_code": "const response = await fetch('https://state.granicus.com/api/v1/events?start_date=' + startDate);\nconst data = await response.json();\nreturn data.events.map(e => ({\n  title: e.name,\n  date: e.start_date,\n  location: e.location,\n  video_url: e.video_url\n}));",
+    "notes": "Often has JSON API. Check Network tab for /api/ calls."
+  },
+  
+  "civicplus": {
+    "description": "CivicPlus - small cities and counties",
+    "url_pattern": "*civicplus.com/AgendaCenter",
+    "selectors": {
+      "container": ".catAgendaRow",
+      "item": ".catAgendaRow",
+      "title": ".catAgendaSubject",
+      "date": ".catAgendaDate",
+      "location": ".catAgendaLocation"
+    },
+    "example_code": "$('.catAgendaRow').each((_, row) => {\n  events.push({\n    title: $(row).find('.catAgendaSubject').text().trim(),\n    date: $(row).find('.catAgendaDate').text().trim(),\n    location: $(row).find('.catAgendaLocation').text().trim()\n  });\n});",
+    "notes": "Usually static HTML, very consistent structure"
+  },
+  
+  "static-table": {
+    "description": "Generic HTML table pattern",
+    "example_code": "$('table#meetings tbody tr').each((_, row) => {\n  const cells = $(row).find('td');\n  if (cells.length < 3) return;\n  events.push({\n    date: $(cells[0]).text().trim(),\n    title: $(cells[1]).text().trim(),\n    location: $(cells[2]).text().trim()\n  });\n});",
+    "selector_tips": [
+      "Use table ID if available: table#meetings",
+      "Skip header row: tbody tr (not thead)",
+      "Check cell count: if (cells.length < 3) return;",
+      "Common order: Date, Title, Location"
+    ]
+  },
+  
+  "json-api": {
+    "description": "REST API pattern",
+    "example_code": "const headers = {\n  'User-Agent': 'Mozilla/5.0',\n  'Accept': 'application/json'\n};\nconst response = await fetch(apiUrl, { headers });\nconst data = await response.json();\nreturn data.results.map(item => ({\n  title: item.name || item.title,\n  date: item.date || item.start_date,\n  location: item.venue || item.location\n}));",
+    "debugging_tips": [
+      "Check Network tab → Filter by 'XHR' or 'Fetch'",
+      "Copy request as cURL → test in terminal",
+      "Look for Authorization headers",
+      "Check for pagination: ?page=1&limit=50"
+    ]
+  },
+  
+  "graphql": {
+    "description": "GraphQL endpoint pattern",
+    "example_code": "const query = `\n  query GetEvents($startDate: String!) {\n    events(startDate: $startDate) {\n      id\n      title\n      startDate\n      location\n    }\n  }\n`;\nconst response = await fetch(graphqlUrl, {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({ query, variables: { startDate } })\n});\nconst { data } = await response.json();\nreturn data.events;",
+    "notes": "Check for /graphql endpoint. Use GraphiQL if available."
+  },
+  
+  "puppeteer": {
+    "description": "JavaScript-rendered content pattern",
+    "example_code": "const browser = await puppeteer.launch();\nconst page = await browser.newPage();\nawait page.goto(url);\nawait page.waitForSelector('.event-item');\n\nconst events = await page.evaluate(() => {\n  return Array.from(document.querySelectorAll('.event-item')).map(el => ({\n    title: el.querySelector('.title')?.textContent?.trim(),\n    date: el.querySelector('.date')?.textContent?.trim(),\n    location: el.querySelector('.location')?.textContent?.trim()\n  }));\n});\n\nawait browser.close();\nreturn events;",
+    "when_to_use": [
+      "View source is empty",
+      "No API endpoint found",
+      "Content loads via JavaScript",
+      "Infinite scroll or dynamic loading"
+    ]
+  },
+  
+  "pagination": {
+    "description": "Handling multi-page results",
+    "patterns": {
+      "next_button": "let hasMore = true;\nwhile (hasMore) {\n  // scrape current page\n  const events = scrapePage();\n  allEvents.push(...events);\n  \n  const nextBtn = $('.next-button');\n  if (nextBtn.length === 0 || nextBtn.hasClass('disabled')) {\n    hasMore = false;\n  } else {\n    await nextBtn.click();\n    await page.waitForSelector('.event-item');\n  }\n}",
+      
+      "page_numbers": "const maxPages = 10;\nfor (let page = 1; page <= maxPages; page++) {\n  const url = `${baseUrl}?page=${page}`;\n  const response = await fetch(url);\n  const events = await parsePage(response);\n  if (events.length === 0) break;\n  allEvents.push(...events);\n}",
+      
+      "load_more": "while (true) {\n  const loadMoreBtn = await page.$('.load-more');\n  if (!loadMoreBtn) break;\n  await loadMoreBtn.click();\n  await page.waitForTimeout(1000);\n}",
+      
+      "infinite_scroll": "let lastHeight = await page.evaluate('document.body.scrollHeight');\nwhile (true) {\n  await page.evaluate('window.scrollTo(0, document.body.scrollHeight)');\n  await page.waitForTimeout(2000);\n  const newHeight = await page.evaluate('document.body.scrollHeight');\n  if (newHeight === lastHeight) break;\n  lastHeight = newHeight;\n}"
+    }
+  },
+  
+  "date_parsing": {
+    "description": "Common date format patterns",
+    "examples": {
+      "iso": "2025-01-15",
+      "us_long": "January 15, 2025",
+      "us_short": "01/15/2025",
+      "eu": "15/01/2025",
+      "relative": "Tomorrow at 3:00 PM"
+    },
+    "parsing_code": "function parseDate(text) {\n  // Try ISO format first\n  if (/\\d{4}-\\d{2}-\\d{2}/.test(text)) {\n    return text.match(/\\d{4}-\\d{2}-\\d{2}/)[0];\n  }\n  \n  // Try US format: MM/DD/YYYY\n  if (/\\d{1,2}\\/\\d{1,2}\\/\\d{4}/.test(text)) {\n    const [month, day, year] = text.match(/\\d{1,2}\\/\\d{1,2}\\/\\d{4}/)[0].split('/');\n    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;\n  }\n  \n  // Fallback: Use Date() constructor\n  try {\n    return new Date(text).toISOString().split('T')[0];\n  } catch {\n    return null;\n  }\n}"
+  }
+}

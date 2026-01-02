@@ -468,13 +468,13 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
           <button class="close-modal">&times;</button>
         </div>
         <div class="context-modal-body">
-          <p class="context-help">Select the knowledge areas your agent needs:</p>
+          <p class="context-help">Select the knowledge areas your agent needs. Token estimates shown in parentheses.</p>
           
           <div class="context-checkboxes">
             <label class="context-checkbox">
               <input type="checkbox" value="scraper-builder" ${this.config.contextKnowledge?.includes('scraper-builder') ? 'checked' : ''}>
               <div class="checkbox-label">
-                <strong>🛠️ Scraper Builder</strong>
+                <strong>🛠️ Scraper Builder (~800 tokens)</strong>
                 <span>Build scrapers using Static HTML, JSON API, or Puppeteer patterns</span>
               </div>
             </label>
@@ -482,7 +482,7 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
             <label class="context-checkbox">
               <input type="checkbox" value="puppeteer-expert" ${this.config.contextKnowledge?.includes('puppeteer-expert') ? 'checked' : ''}>
               <div class="checkbox-label">
-                <strong>🎭 Puppeteer Expert</strong>
+                <strong>🎭 Puppeteer Expert (~600 tokens)</strong>
                 <span>Advanced browser automation for JavaScript-heavy sites</span>
               </div>
             </label>
@@ -490,15 +490,31 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
             <label class="context-checkbox">
               <input type="checkbox" value="scraper-guide" ${this.config.contextKnowledge?.includes('scraper-guide') ? 'checked' : 'checked'}>
               <div class="checkbox-label">
-                <strong>📚 SCRAPER_GUIDE_SHORT</strong>
+                <strong>📚 SCRAPER_GUIDE_SHORT (~4,000 tokens)</strong>
                 <span>State legislature scraping patterns and best practices</span>
+              </div>
+            </label>
+            
+            <label class="context-checkbox">
+              <input type="checkbox" value="pdf-parser" ${this.config.contextKnowledge?.includes('pdf-parser') ? 'checked' : ''}>
+              <div class="checkbox-label">
+                <strong>📄 PDF Agenda Parser (~1,200 tokens)</strong>
+                <span>Extract bills, tags, and topics from legislative PDF agendas</span>
+              </div>
+            </label>
+            
+            <label class="context-checkbox">
+              <input type="checkbox" value="agenda-summarizer" ${this.config.contextKnowledge?.includes('agenda-summarizer') ? 'checked' : ''}>
+              <div class="checkbox-label">
+                <strong>✍️ Agenda Summarizer (~850 tokens)</strong>
+                <span>Generate AI summaries of meeting agendas using Ollama</span>
               </div>
             </label>
             
             <label class="context-checkbox">
               <input type="checkbox" value="data-analyzer" ${this.config.contextKnowledge?.includes('data-analyzer') ? 'checked' : ''}>
               <div class="checkbox-label">
-                <strong>📊 Data Analyzer</strong>
+                <strong>📊 Data Analyzer (~400 tokens)</strong>
                 <span>Validate and analyze scraped data for quality</span>
               </div>
             </label>
@@ -506,10 +522,15 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
             <label class="context-checkbox">
               <input type="checkbox" value="general-assistant" ${this.config.contextKnowledge?.includes('general-assistant') ? 'checked' : ''}>
               <div class="checkbox-label">
-                <strong>🌐 General Assistant</strong>
+                <strong>🌐 General Assistant (~300 tokens)</strong>
                 <span>Web research and information gathering</span>
               </div>
             </label>
+          </div>
+          
+          <div class="token-warning" style="display: none; margin: 16px 0; padding: 12px; background: rgba(255, 193, 7, 0.1); border: 1px solid #ffc107; border-radius: 8px;">
+            <strong style="color: #ffc107;">⚠️ Context Warning</strong>
+            <p style="margin: 4px 0 0 0; font-size: 13px; color: #ddd;"></p>
           </div>
           
           <div class="context-modal-footer">
@@ -521,6 +542,57 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
     `;
     
     document.body.appendChild(modal);
+    
+    // Token estimation
+    const tokenEstimates = {
+      'scraper-builder': 800,
+      'puppeteer-expert': 600,
+      'scraper-guide': 4000,
+      'pdf-parser': 1200,
+      'agenda-summarizer': 850,
+      'data-analyzer': 400,
+      'general-assistant': 300
+    };
+    
+    const updateTokenWarning = () => {
+      const selected = Array.from(modal.querySelectorAll('.context-checkboxes input:checked'))
+        .map(input => input.value);
+      
+      const totalTokens = 500 + selected.reduce((sum, area) => sum + (tokenEstimates[area] || 500), 0);
+      const modelName = this.config.model || 'mistral-nemo:12b-instruct-2407-q8_0';
+      
+      // Get context window size
+      const contextWindows = {
+        'qwen2.5-coder:1.5b': 32768,
+        'qwen2.5-coder:3b': 32768,
+        'qwen2.5-coder:7b': 32768,
+        'qwen2.5-coder:14b': 32768,
+        'mistral-nemo:12b-instruct-2407-q8_0': 4096,
+        'llama3.2:3b': 8192,
+        'deepseek-coder-v2:16b': 16384
+      };
+      
+      const maxTokens = contextWindows[modelName] || 4096;
+      const usableTokens = Math.floor(maxTokens * 0.7); // Reserve 30% for response
+      
+      const warningDiv = modal.querySelector('.token-warning');
+      const warningText = warningDiv.querySelector('p');
+      
+      if (totalTokens > usableTokens) {
+        warningDiv.style.display = 'block';
+        warningText.textContent = `${totalTokens} tokens exceeds ${usableTokens} usable (${modelName} has ${maxTokens} window). Switch to qwen2.5-coder:7b or reduce knowledge areas.`;
+      } else {
+        warningDiv.style.display = 'none';
+      }
+    };
+    
+    // Update warning on checkbox change
+    modal.querySelectorAll('.context-checkboxes input').forEach(checkbox => {
+      checkbox.addEventListener('change', updateTokenWarning);
+    });
+    
+    // Initial warning check
+    updateTokenWarning();
     
     // Event listeners
     modal.querySelector('.close-modal').addEventListener('click', () => {
@@ -546,9 +618,11 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
       }
       
       // Show confirmation
+      const totalTokens = 500 + selected.reduce((sum, area) => sum + (tokenEstimates[area] || 500), 0);
       this.addMessage('system', `
         <strong>Knowledge Updated</strong>
         <p>Enabled: ${selected.map(s => s.replace(/-/g, ' ')).join(', ')}</p>
+        <p style="margin-top: 8px; font-size: 13px; opacity: 0.8;">Total estimated tokens: ${totalTokens}</p>
       `);
       
       modal.remove();
