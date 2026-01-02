@@ -217,13 +217,32 @@ If the user provides a JSON template with selectorSteps, treat these as **HELPFU
 - \`pageStructures[].fields[].selectorSteps\` = Selectors discovered by clicking elements
 - \`containerSelector\` = Parent container where items live
 - \`itemSelector\` = Individual item selector
+- \`notes\` = Important context about the page behavior
+
+**CRITICAL - Detect Dynamic Content:**
+If the template contains notes/fields with these keywords, **USE PUPPETEER**:
+- "click", "popup", "modal", "dropdown", "expand"
+- "you have to click", "appears when", "shows on hover"
+- "JavaScript", "dynamic", "loads after"
+
+**Example requiring Puppeteer:**
+\`\`\`json
+{
+  "fields": [{
+    "fieldName": "name-note",
+    "selectorSteps": [{"selector": "This and the rest of the following fields are inside the event, you have to click the single event for this information to popup"}]
+  }]
+}
+\`\`\`
+→ **Keywords "click" and "popup" = USE PUPPETEER with page.click()**
 
 **CRITICAL - Templates are STARTING POINTS:**
 1. Extract selectors from \`selectorSteps[].selector\` fields
-2. **Verify selectors still work** - websites change!
-3. **Look for additional fields** not in the template (location, document links, contact info)
-4. **Inspect the actual HTML** with execute_code to find what the template missed
-5. Build a **complete scraper** that captures ALL available data, not just template fields
+2. **Check notes for dynamic behavior** - if it mentions clicking/modals, use Puppeteer
+3. **Verify selectors still work** - websites change!
+4. **Look for additional fields** not in the template (location, document links, contact info)
+5. **Inspect the actual HTML** with execute_code to find what the template missed
+6. Build a **complete scraper** that captures ALL available data, not just template fields
 
 **Example template:**
 \`\`\`json
@@ -245,10 +264,16 @@ If the user provides a JSON template with selectorSteps, treat these as **HELPFU
 4. Build scraper with ALL fields found, not just title + date
 
 ## DECISION TREE
+**Check template notes FIRST:**
+- Contains "click", "popup", "modal"? → **PUPPETEER**
+- Mentions "event details", "expand", "dropdown"? → **PUPPETEER**
+
+**Then check page:**
 1. View page source → content visible? → **Static HTML** (use cheerio)
 2. Network tab shows /api/ endpoint? → **JSON API** (use fetch)
 3. Empty source, JavaScript-rendered? → **Puppeteer**
-4. Can't find calendar in 10min? → **STOP & ASK USER**
+4. Calendar loads dynamically? → **Puppeteer**
+5. Can't find calendar in 10min? → **STOP & ASK USER**
 
 ## CORE PATTERNS
 
