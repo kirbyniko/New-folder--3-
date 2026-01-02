@@ -24,6 +24,7 @@ export class ScraperAgentUI {
       systemPrompt: this.getScraperSystemPrompt(),
       tools: ['execute_code', 'fetch_url', 'search_web'],
       context: 'general',
+      contextKnowledge: ['scraper-guide'], // Default to scraper guide
       sessionId: null
     };
     
@@ -116,42 +117,19 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
             </div>
           </div>
           
-          <div class="context-selector">
-            <label>📋 Context:</label>
-            <select id="context-select">
-              <option value="general">🌐 General Web Scraping</option>
-            </select>
+          <div class="context-selector-compact">
+            <label>🧠 Agent Knowledge:</label>
+            <button id="context-popup-btn" class="popup-btn">Configure Context</button>
             <button id="new-session-btn" class="action-btn">New Session</button>
-            <button id="clear-session-btn" class="action-btn">Clear History</button>
           </div>
           
-          <div class="model-config">
-            <div class="config-row">
-              <label>Model:</label>
-              <select id="model-select"></select>
-            </div>ect id="model-select"></select>
-            </div>
-            
-            <div class="config-row">
-              <label>Temperature: <span id="temp-value">0.3</span></label>
-              <input type="range" id="temperature-slider" 
-                     min="0" max="1" step="0.1" value="0.3">
-            </div>
-            
-            <div class="config-row">
-              <label>Context Window:</label>
-              <input type="number" id="context-window" 
-                     value="8192" min="2048" max="32768" step="1024">
-            </div>
-          </div>
-          
-          <div class="tools-config">
-            <label>Tools:</label>
-            <div class="tool-checkboxes">
-              <label><input type="checkbox" value="execute_code" checked> execute_code</label>
-              <label><input type="checkbox" value="fetch_url" checked> fetch_url</label>
-              <label><input type="checkbox" value="search_web" checked> search_web</label>
-            </div>
+          <div class="model-config-compact">
+            <label>Model:</label>
+            <select id="model-select"></select>
+            <label style="margin-left: 16px;">Temp:</label>
+            <input type="range" id="temperature-slider" 
+                   min="0" max="1" step="0.1" value="0.3" style="width: 80px;">
+            <span id="temp-value" style="margin-left: 8px;">0.3</span>
           </div>
         </div>
         
@@ -197,35 +175,21 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
       });
     });
     
-    // Context selection
-    const contextSelect = document.getElementById('context-select');
-    contextSelect.addEventListener('change', (e) => {
-      this.config.context = e.target.value;
-      // Show context examples
-      const context = this.availableContexts.find(c => c.id === e.target.value);
-      if (context) {
-        this.addMessage('system', `
-          <strong>Context: ${context.name}</strong>
-          <p>${context.description}</p>
-          <p><strong>Examples:</strong></p>
-          <ul>
-            ${context.examples.map(ex => `<li>${ex}</li>`).join('')}
-          </ul>
-        `);
-      }
-    });
+    // Context popup
+    const contextPopupBtn = document.getElementById('context-popup-btn');
+    if (contextPopupBtn) {
+      contextPopupBtn.addEventListener('click', () => {
+        this.showContextPopup();
+      });
+    }
     
     // New session button
-    document.getElementById('new-session-btn').addEventListener('click', async () => {
-      await this.createNewSession();
-    });
-    
-    // Clear session button
-    document.getElementById('clear-session-btn').addEventListener('click', () => {
-      if (this.config.sessionId) {
-        this.clearSession();
-      }
-    });
+    const newSessionBtn = document.getElementById('new-session-btn');
+    if (newSessionBtn) {
+      newSessionBtn.addEventListener('click', async () => {
+        await this.createNewSession();
+      });
+    }
     
     // Model selection
     const modelSelect = document.getElementById('model-select');
@@ -525,5 +489,110 @@ When asked to scrape data, use execute_code to write and run the scraper immedia
     if (messageEl) {
       messageEl.remove();
     }
+  }
+  
+  showContextPopup() {
+    // Create modal overlay
+    const modal = document.createElement('div');
+    modal.className = 'context-modal-overlay';
+    modal.innerHTML = `
+      <div class="context-modal">
+        <div class="context-modal-header">
+          <h3>🧠 Configure Agent Knowledge</h3>
+          <button class="close-modal">&times;</button>
+        </div>
+        <div class="context-modal-body">
+          <p class="context-help">Select the knowledge areas your agent needs:</p>
+          
+          <div class="context-checkboxes">
+            <label class="context-checkbox">
+              <input type="checkbox" value="scraper-builder" ${this.config.contextKnowledge?.includes('scraper-builder') ? 'checked' : ''}>
+              <div class="checkbox-label">
+                <strong>🛠️ Scraper Builder</strong>
+                <span>Build scrapers using Static HTML, JSON API, or Puppeteer patterns</span>
+              </div>
+            </label>
+            
+            <label class="context-checkbox">
+              <input type="checkbox" value="puppeteer-expert" ${this.config.contextKnowledge?.includes('puppeteer-expert') ? 'checked' : ''}>
+              <div class="checkbox-label">
+                <strong>🎭 Puppeteer Expert</strong>
+                <span>Advanced browser automation for JavaScript-heavy sites</span>
+              </div>
+            </label>
+            
+            <label class="context-checkbox">
+              <input type="checkbox" value="scraper-guide" ${this.config.contextKnowledge?.includes('scraper-guide') ? 'checked' : 'checked'}>
+              <div class="checkbox-label">
+                <strong>📚 SCRAPER_GUIDE_SHORT</strong>
+                <span>State legislature scraping patterns and best practices</span>
+              </div>
+            </label>
+            
+            <label class="context-checkbox">
+              <input type="checkbox" value="data-analyzer" ${this.config.contextKnowledge?.includes('data-analyzer') ? 'checked' : ''}>
+              <div class="checkbox-label">
+                <strong>📊 Data Analyzer</strong>
+                <span>Validate and analyze scraped data for quality</span>
+              </div>
+            </label>
+            
+            <label class="context-checkbox">
+              <input type="checkbox" value="general-assistant" ${this.config.contextKnowledge?.includes('general-assistant') ? 'checked' : ''}>
+              <div class="checkbox-label">
+                <strong>🌐 General Assistant</strong>
+                <span>Web research and information gathering</span>
+              </div>
+            </label>
+          </div>
+          
+          <div class="context-modal-footer">
+            <button class="cancel-btn">Cancel</button>
+            <button class="apply-btn">Apply</button>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Event listeners
+    modal.querySelector('.close-modal').addEventListener('click', () => {
+      modal.remove();
+    });
+    
+    modal.querySelector('.cancel-btn').addEventListener('click', () => {
+      modal.remove();
+    });
+    
+    modal.querySelector('.apply-btn').addEventListener('click', () => {
+      const selected = Array.from(modal.querySelectorAll('.context-checkboxes input:checked'))
+        .map(input => input.value);
+      
+      this.config.contextKnowledge = selected;
+      
+      // Update button text
+      const btn = document.getElementById('context-popup-btn');
+      if (btn) {
+        btn.textContent = selected.length > 0 
+          ? `✓ ${selected.length} Knowledge Areas`
+          : 'Configure Context';
+      }
+      
+      // Show confirmation
+      this.addMessage('system', `
+        <strong>Knowledge Updated</strong>
+        <p>Enabled: ${selected.map(s => s.replace(/-/g, ' ')).join(', ')}</p>
+      `);
+      
+      modal.remove();
+    });
+    
+    // Click overlay to close
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.remove();
+      }
+    });
   }
 }

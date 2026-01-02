@@ -66,13 +66,245 @@
 }
 
 /* Quick Config Panel */
+/* Quick Config - Compact Version */
 .quick-config {
-  padding: 20px 24px;
-  background: #141414;
-  border-bottom: 1px solid #2a2a2a;
+  padding: 12px 24px;
+  background: rgba(26, 26, 46, 0.6);
+  border-bottom: 1px solid rgba(102, 126, 234, 0.2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+}
+
+.context-selector-compact {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex: 1;
+}
+
+.context-selector-compact label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #aaa;
+}
+
+.popup-btn {
+  padding: 8px 16px;
+  background: rgba(102, 126, 234, 0.2);
+  border: 1px solid rgba(102, 126, 234, 0.4);
+  color: #667eea;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.popup-btn:hover {
+  background: rgba(102, 126, 234, 0.3);
+  border-color: rgba(102, 126, 234, 0.6);
+}
+
+.model-config-compact {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.model-config-compact label {
+  color: #aaa;
+  font-weight: 600;
+}
+
+.model-config-compact select {
+  padding: 6px 12px;
+  background: rgba(42, 42, 62, 0.8);
+  border: 1px solid rgba(102, 126, 234, 0.3);
+  color: #e0e0e0;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+/* Context Modal */
+.context-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.2s;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.context-modal {
+  background: #1a1a2e;
+  border: 2px solid #667eea;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  animation: slideUp 0.3s;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.context-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  background: rgba(102, 126, 234, 0.1);
+  border-bottom: 1px solid rgba(102, 126, 234, 0.3);
+}
+
+.context-modal-header h3 {
+  margin: 0;
+  font-size: 20px;
+  color: #667eea;
+}
+
+.close-modal {
+  background: transparent;
+  border: none;
+  color: #aaa;
+  font-size: 28px;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.close-modal:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.context-modal-body {
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.context-help {
+  margin: 0 0 20px 0;
+  color: #aaa;
+  font-size: 14px;
+}
+
+.context-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.context-checkbox {
+  display: flex;
+  align-items: start;
+  padding: 16px;
+  background: rgba(42, 42, 62, 0.6);
+  border: 2px solid rgba(102, 126, 234, 0.2);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.context-checkbox:hover {
+  border-color: rgba(102, 126, 234, 0.5);
+  background: rgba(42, 42, 62, 0.8);
+}
+
+.context-checkbox input[type="checkbox"] {
+  margin: 4px 12px 0 0;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #667eea;
+}
+
+.checkbox-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.checkbox-label strong {
+  font-size: 15px;
+  color: #fff;
+}
+
+.checkbox-label span {
+  font-size: 13px;
+  color: #aaa;
+  line-height: 1.4;
+}
+
+.context-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 20px 24px;
+  border-top: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.cancel-btn, .apply-btn {
+  padding: 10px 24px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancel-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #aaa;
+}
+
+.cancel-btn:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #fff;
+}
+
+.apply-btn {
+  background: #667eea;
+  border: 1px solid #667eea;
+  color: #fff;
+}
+
+.apply-btn:hover {
+  background: #764ba2;
+  border-color: #764ba2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
 .vram-presets {
