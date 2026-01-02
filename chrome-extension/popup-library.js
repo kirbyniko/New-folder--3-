@@ -2607,6 +2607,14 @@ function saveScraperToLibrary(config) {
   
   localStorage.setItem('scrapers', JSON.stringify(scrapers));
   loadScraperLibrary(); // Refresh library view
+  
+  // Switch to Library tab so user can see it
+  setTimeout(() => {
+    const libraryTab = document.querySelector('[data-tab="library"]');
+    if (libraryTab) {
+      libraryTab.click();
+    }
+  }, 100);
 }
 
 function showExportModal(config) {
@@ -2636,8 +2644,11 @@ function showExportModal(config) {
   `;
   
   content.innerHTML = `
-    <h2 style="margin: 0 0 16px 0; color: #10b981;">✅ Scraper Complete!</h2>
-    <p style="margin-bottom: 16px; color: #666;">Your scraper configuration has been saved.</p>
+    <h2 style="margin: 0 0 16px 0; color: #10b981;">✅ Scraper Saved to Library!</h2>
+    <p style="margin-bottom: 16px; color: #666;">
+      <strong>${config.name}</strong> has been saved. 
+      <span style="color: #3b82f6; cursor: pointer; text-decoration: underline;" id="go-to-library-link">Click here to view in Library tab →</span>
+    </p>
     
     <div id="ai-status" style="margin-bottom: 16px; padding: 12px; background: #f3f4f6; border-radius: 6px; font-size: 12px;">
       <div id="ollama-check">⏳ Checking for local AI...</div>
@@ -2688,6 +2699,13 @@ function showExportModal(config) {
   
   modal.appendChild(content);
   document.body.appendChild(modal);
+  
+  // Add click handler for "go to library" link
+  document.getElementById('go-to-library-link').addEventListener('click', () => {
+    modal.remove();
+    const libraryTab = document.querySelector('[data-tab="library"]');
+    if (libraryTab) libraryTab.click();
+  });
   
   // Check Ollama status
   checkOllamaAndEnableAI();
