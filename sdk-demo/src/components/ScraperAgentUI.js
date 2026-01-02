@@ -18,14 +18,13 @@ export class ScraperAgentUI {
     
     // Default config
     this.config = {
-      model: 'deepseek-coder-v2:16b',  // Changed from mistral-nemo - better at following instructions
-      temperature: 0.3,
+      model: 'mistral-nemo:12b-instruct-2407-q8_0',  // Back to mistral - works with structured prompts
+      temperature: 0.1,  // Lower temp for more consistent behavior
       contextWindow: 8192,
-      // No systemPrompt - let context provide it
-      tools: ['execute_code', 'fetch_url', 'search_web'],
-      context: 'scraper-guide', // Default to scraper-guide
+      tools: ['execute_code'],  // ONLY execute_code - force testing
+      context: 'scraper-guide',
       sessionId: null,
-      useSimpleMode: true // NEW: Use simple direct generation instead of agent
+      useSimpleMode: false // Back to agent mode with forced workflow
     };
     
     this.conversation = [];
@@ -301,22 +300,40 @@ export class ScraperAgentUI {
       try {
         // Try to parse as JSON first
         scraperConfig = JSON.parse(message);
-        message = `Build a scraper using this configuration:\n${JSON.stringify(scraperConfig, null, 2)}`;
+        message = `Build a scraper using this configuration. Follow the workflow:
+
+STEP 1: Detect content type (check for "click"/"popup"/"modal" keywords)
+STEP 2: Fetch URL and inspect HTML with execute_code
+STEP 3: Build the scraper script (Puppeteer if keywords found, else Cheerio)
+STEP 4: TEST the script using execute_code
+STEP 5: Debug and iterate if needed
+
+Configuration:
+${JSON.stringify(scraperConfig, null, 2)}`;
         
         // Force scraper-guide context when scraper config is detected
         this.config.context = 'scraper-guide';
-        console.log('🎯 Detected scraper config - forcing scraper-guide context');
+        console.log('🎯 Detected scraper config - forcing scraper-guide context with explicit workflow');
       } catch (e) {
         // If parse fails, maybe it's embedded in text - try to extract
         const jsonMatch = message.match(/\{[\s\S]*"name"[\s\S]*\}/);
         if (jsonMatch) {
           try {
             scraperConfig = JSON.parse(jsonMatch[0]);
-            message = `Build a scraper using this configuration:\n${JSON.stringify(scraperConfig, null, 2)}`;
+            message = `Build a scraper using this configuration. Follow the workflow:
+
+STEP 1: Detect content type (check for "click"/"popup"/"modal" keywords)
+STEP 2: Fetch URL and inspect HTML with execute_code  
+STEP 3: Build the scraper script (Puppeteer if keywords found, else Cheerio)
+STEP 4: TEST the script using execute_code
+STEP 5: Debug and iterate if needed
+
+Configuration:
+${JSON.stringify(scraperConfig, null, 2)}`;
             
             // Force scraper-guide context when scraper config is detected
             this.config.context = 'scraper-guide';
-            console.log('🎯 Detected scraper config - forcing scraper-guide context');
+            console.log('🎯 Detected scraper config - forcing scraper-guide context with explicit workflow');
           } catch (e2) {
             // Keep original message if extraction fails
             console.warn('Failed to parse JSON from message:', e2);
@@ -332,40 +349,10 @@ export class ScraperAgentUI {
     this.addMessage('user', message.substring(0, 500) + (message.length > 500 ? '...' : ''));
     
     // Show loading
-    const loadingId = this.addMessage('progress', '⏳ Initializing...');
+    const loadingId = this.addMessage('progress', '⏳ Starting agent workflow...');
     
     try {
-      // NEW: If scraper config detected, use simple direct generation (more reliable!)
-      if (scraperConfig && this.config.useSimpleMode) {
-        console.log('🎯 Using SIMPLE MODE - Direct code generation (no agent)');
-        
-        this.updateMessage(loadingId, '⏳ Analyzing configuration...');
-        
-        const response = await fetch('http://localhost:3003/simple-scraper', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            config: scraperConfig,
-            model: this.config.model
-          })
-        });
-        
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (data.success) {
-          this.removeMessage(loadingId);
-          this.addMessage('assistant', `✅ Generated scraper using direct code generation (bypasses agent)\n\n\`\`\`javascript\n${data.code}\n\`\`\``);
-          return;
-        } else {
-          throw new Error(data.error || 'Simple scraper generation failed');
-        }
-      }
-      
-      // FALLBACK: Use agent mode for non-scraper tasks
+      // Use agent for all tasks - it will test and iterate
       const response = await fetch('http://localhost:3003/agent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
