@@ -86,7 +86,7 @@ const TEMPLATES: ScraperTemplate[] = [
       
       return `const puppeteer = require('puppeteer');
 
-(async () => {
+module.exports = async function scrape(url) {
   const browser = await puppeteer.launch({ 
     headless: true,
     args: ['--no-sandbox', '--disable-setuid-sandbox']
@@ -94,12 +94,12 @@ const TEMPLATES: ScraperTemplate[] = [
   
   try {
     const page = await browser.newPage();
-    await page.goto('${config.startUrl}', { 
+    await page.goto(url || '${config.startUrl}', { 
       waitUntil: 'networkidle2',
       timeout: 30000 
     });
     
-    console.log('Page loaded: ${config.startUrl}');
+    console.log('Page loaded');
     
     // Wait for items to appear
     try {
@@ -180,13 +180,12 @@ ${extractFields.map(field => {
     console.log('\\nExtracted ' + results.length + ' items');
     console.log(JSON.stringify(results, null, 2));
     
+    return results;
+    
   } finally {
     await browser.close();
   }
-})().catch(err => {
-  console.error('Script error:', err);
-  process.exit(1);
-});`;
+};`;
     }
   },
   
@@ -206,7 +205,7 @@ ${extractFields.map(field => {
       
       return `const puppeteer = require('puppeteer');
 
-(async () => {
+module.exports = async function scrape(url) {
   const browser = await puppeteer.launch({ 
     headless: true,
     args: ['--no-sandbox', '--disable-setuid-sandbox']
@@ -214,12 +213,12 @@ ${extractFields.map(field => {
   
   try {
     const page = await browser.newPage();
-    await page.goto('${config.startUrl}', { 
+    await page.goto(url || '${config.startUrl}', { 
       waitUntil: 'networkidle2',
       timeout: 30000 
     });
     
-    console.log('Page loaded: ${config.startUrl}');
+    console.log('Page loaded');
     
     // Wait for items
     await page.waitForSelector('${itemSelector}', { timeout: 10000 });
@@ -254,13 +253,12 @@ ${ps.fields.map(field => {
     console.log('Extracted ' + results.length + ' items');
     console.log(JSON.stringify(results, null, 2));
     
+    return results;
+    
   } finally {
     await browser.close();
   }
-})().catch(err => {
-  console.error('Script error:', err);
-  process.exit(1);
-});`;
+};`;
     }
   },
   
@@ -281,52 +279,48 @@ ${ps.fields.map(field => {
       return `const axios = require('axios');
 const cheerio = require('cheerio');
 
-(async () => {
-  try {
-    console.log('Fetching: ${config.startUrl}');
+module.exports = async function scrape(url) {
+  console.log('Fetching:', url || '${config.startUrl}');
+  
+  const { data: html } = await axios.get(url || '${config.startUrl}', {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+    }
+  });
+  
+  const $ = cheerio.load(html);
+  const items = $('${itemSelector}');
+  
+  console.log('Found ' + items.length + ' items');
+  
+  const results = [];
+  
+  items.each((i, item) => {
+    if (i >= 10) return false; // Limit to 10 items
     
-    const { data: html } = await axios.get('${config.startUrl}', {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-      }
-    });
+    const $item = $(item);
+    const data = {};
     
-    const $ = cheerio.load(html);
-    const items = $('${itemSelector}');
-    
-    console.log('Found ' + items.length + ' items');
-    
-    const results = [];
-    
-    items.each((i, item) => {
-      if (i >= 10) return false; // Limit to 10 items
-      
-      const $item = $(item);
-      const data = {};
-      
 ${ps.fields.map(field => {
   const step = field.selectorSteps[0];
   const attr = step.attributeName;
-  return `      // Extract ${field.fieldName}
-      try {
-        const el = $item.find('${step.selector}');
-        data.${field.fieldName} = el.length ? ${attr ? `el.attr('${attr}')` : 'el.text().trim()'} : null;
-      } catch (e) {
-        data.${field.fieldName} = null;
-      }
+  return `    // Extract ${field.fieldName}
+    try {
+      const el = $item.find('${step.selector}');
+      data.${field.fieldName} = el.length ? ${attr ? `el.attr('${attr}')` : 'el.text().trim()'} : null;
+    } catch (e) {
+      data.${field.fieldName} = null;
+    }
 `;
 }).join('\n')}
-      results.push(data);
-    });
-    
-    console.log('Extracted ' + results.length + ' items');
-    console.log(JSON.stringify(results, null, 2));
-    
-  } catch (error) {
-    console.error('Script error:', error.message);
-    process.exit(1);
-  }
-})();`;
+    results.push(data);
+  });
+  
+  console.log('Extracted ' + results.length + ' items');
+  console.log(JSON.stringify(results, null, 2));
+  
+  return results;
+};`;
     }
   }
 ];
@@ -335,7 +329,7 @@ ${ps.fields.map(field => {
  * Main template generator class
  */
 export class TemplateScraperGenerator {
-  private executeServerUrl = 'http://localhost:3002/run';
+  private executeServerUrl = 'http://localhost:3002/execute';
   private ollamaUrl = 'http://localhost:11434/api/generate';
   private model = 'deepseek-coder:6.7b';
   
@@ -369,7 +363,7 @@ export class TemplateScraperGenerator {
     for (let attempt = 1; attempt <= 3; attempt++) {
       log(`\n🧪 Test attempt ${attempt}/3`);
       
-      const result = await this.test(code);
+      const result = await this.test(code, config.startUrl);
       
       if (result.success) {
         log(`✅ SUCCESS! Scraper works correctly`);
@@ -421,14 +415,14 @@ export class TemplateScraperGenerator {
   /**
    * Test generated code on execute server
    */
-  private async test(code: string): Promise<ExecuteResult> {
+  private async test(code: string, targetUrl: string): Promise<ExecuteResult> {
     try {
       const response = await fetch(this.executeServerUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           scriptCode: code,
-          targetUrl: '',
+          targetUrl: targetUrl,
           timeout: 30000
         })
       });

@@ -86,6 +86,18 @@ async function executeScript(req: ExecuteRequest): Promise<ExecuteResponse> {
       }
     };
     
+    // Wrap code in async IIFE if it contains await but no async function wrapper
+    let codeToExecute = req.scriptCode;
+    const hasAwait = /\bawait\b/.test(codeToExecute);
+    const hasAsyncFunction = /async\s+function|async\s*\(/.test(codeToExecute);
+    const hasModuleExports = /module\.exports/.test(codeToExecute);
+    
+    if (hasAwait && !hasAsyncFunction && !hasModuleExports) {
+      // Wrap in async IIFE that returns a scraper function
+      codeToExecute = `module.exports = async function(url) {\n${codeToExecute}\n};`;
+      logs.push('[AUTO-WRAP] Wrapped code in async function');
+    }
+    
     // Execute the script with controlled context
     const scriptFunc = new Function(
       'module',
@@ -93,7 +105,7 @@ async function executeScript(req: ExecuteRequest): Promise<ExecuteResponse> {
       'require',
       'console',
       'analyzeWithAI',
-      req.scriptCode
+      codeToExecute
     );
     
     scriptFunc(module, exports, require, mockConsole, analyzeWithAI);
@@ -225,18 +237,18 @@ const server = http.createServer(async (req, res) => {
     req.on('data', chunk => body += chunk);
     req.on('end', async () => {
       try {
-        const request = JSON.parse(body);
+        const { code, args = [] } = JSON.parse(body);
         
-        if (!request.code) {
+        if (!code) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ 
             success: false,
-            error: 'Missing code parameter' 
+            error: 'Missing required field: code' 
           }));
           return;
         }
         
-        console.log(`\n🔧 Executing code snippet...`);
+        console.log(`\n🔧 Executing code (${code.length} chars) with ${args.length} args`);
         const startTime = Date.now();
         const logs: string[] = [];
         
@@ -253,27 +265,45 @@ const server = http.createServer(async (req, res) => {
         };
         
         try {
-          // Create a safe execution environment
-          // Make axios and cheerio available as globals so code can use them directly
-          // OR the LLM can use require() syntax (we'll provide a mock require)
-          
+          // Mock require for axios, cheerio, puppeteer
           const mockRequire = (moduleName: string) => {
             if (moduleName === 'axios') return axios;
             if (moduleName === 'cheerio') return cheerio;
-            throw new Error(`Module '${moduleName}' is not available. Only 'axios' and 'cheerio' are supported.`);
+            if (moduleName === 'puppeteer') return puppeteer;
+            throw new Error(`Module '${moduleName}' not available. Supported: axios, cheerio, puppeteer`);
           };
           
-          // Execute code with modules available
-          const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
-          const fn = new AsyncFunction('axios', 'cheerio', 'console', 'require', request.code);
-          await fn(axios, cheerio, mockConsole, mockRequire);
+          // Create mock module.exports for code that uses module.exports pattern
+          const mockModule = { exports: {} };
+          
+          // Execute the code to define the function (handles module.exports pattern)
+          const wrappedCode = `
+            return (async function(module, exports, require, console) {
+              ${code}
+              return module.exports;
+            })(module, module.exports, require, console);
+          `;
+          
+          const scriptFunc = new Function('module', 'require', 'console', wrappedCode);
+          const exportedFunc = await scriptFunc(mockModule, mockRequire, mockConsole);
+          
+          // If code exported a function, call it with args
+          let result;
+          if (typeof exportedFunc === 'function') {
+            console.log(`📞 Calling exported function with ${args.length} arguments`);
+            result = await exportedFunc(...args);
+          } else {
+            // Code didn't export a function, return whatever it returned/exported
+            result = exportedFunc;
+          }
           
           const duration = Date.now() - startTime;
-          console.log(`✅ Code executed successfully in ${duration}ms`);
+          console.log(`✅ Code executed successfully in ${duration}ms, extracted ${Array.isArray(result) ? result.length : 0} items`);
           
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({
             success: true,
+            result: result,
             logs: logs,
             duration: duration
           }));
@@ -335,94 +365,6 @@ const server = http.createServer(async (req, res) => {
         res.end(JSON.stringify({ 
           success: false, 
           error: error.message 
-        }));
-      }
-    });
-    return;
-  }
-  
-  // NEW: Generic code runner endpoint for agent testing
-  if (req.url === '/run') {
-    let body = '';
-    req.on('data', chunk => body += chunk);
-    req.on('end', async () => {
-      try {
-        const { code, runtime = 'nodejs' } = JSON.parse(body);
-        
-        if (!code) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ 
-            success: false,
-            error: 'Missing required field: code' 
-          }));
-          return;
-        }
-        
-        console.log(`\n🔧 Executing ${runtime} code (${code.length} chars)`);
-        
-        const startTime = Date.now();
-        const logs: string[] = [];
-        
-        try {
-          // Create mock console to capture output
-          const mockConsole = {
-            log: (...args: any[]) => {
-              logs.push(args.map(a => String(a)).join(' '));
-              console.log('[CODE]', ...args);
-            },
-            error: (...args: any[]) => {
-              logs.push('[ERROR] ' + args.map(a => String(a)).join(' '));
-              console.error('[CODE ERROR]', ...args);
-            }
-          };
-          
-          // Execute code with axios, cheerio, and puppeteer available
-          const require = (moduleName: string) => {
-            if (moduleName === 'axios') return axios;
-            if (moduleName === 'cheerio') return cheerio;
-            if (moduleName === 'puppeteer') return puppeteer;
-            throw new Error(`Module '${moduleName}' not available. Supported: axios, cheerio, puppeteer`);
-          };
-          
-          // Wrap code to handle async patterns and capture return value
-          const wrappedCode = `
-            return (async function(require, console) {
-              ${code}
-            })(require, console);
-          `;
-          
-          const scriptFunc = new Function('require', 'console', wrappedCode);
-          const result = await scriptFunc(require, mockConsole);
-          
-          const duration = Date.now() - startTime;
-          console.log(`✅ Code executed successfully in ${duration}ms`);
-          
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ 
-            success: true,
-            data: result,
-            logs,
-            duration
-          }));
-        } catch (error: any) {
-          const duration = Date.now() - startTime;
-          console.error(`❌ Code execution failed in ${duration}ms:`, error.message);
-          
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ 
-            success: false,
-            error: error.message,
-            stack: error.stack,
-            logs,
-            duration
-          }));
-        }
-      } catch (error: any) {
-        console.error('❌ Request parse error:', error);
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ 
-          success: false,
-          error: `Request parse error: ${error.message}`
         }));
       }
     });

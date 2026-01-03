@@ -5,9 +5,7 @@
 
 import { ChatOllama } from "@langchain/ollama";
 import { tool } from "@langchain/core/tools";
-import { AgentExecutor } from "@langchain/langgraph/prebuilt";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
-import { ChatPromptTemplate, MessagesPlaceholder } from "@langchain/core/prompts";
 import { z } from "zod";
 import axios from "axios";
 import * as cheerio from "cheerio";
@@ -160,7 +158,219 @@ const searchWebTool = tool(
   }
 );
 
-// Tool 4: Validate Scraper Result
+// Tool 4: Test Scraper (GOAL-AWARE VALIDATION)
+const testScraperTool = tool(
+  async ({ code, targetUrl, fieldsRequired }) => {
+    try {
+      console.log(`\n🧪 TEST_SCRAPER: Validating scraper code`);
+      console.log(`   URL: ${targetUrl}`);
+      console.log(`   Required fields: ${fieldsRequired.join(', ')}`);
+      
+      // 1. Execute the code
+      const response = await fetch('http://localhost:3002/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          scriptCode: code, 
+          targetUrl: targetUrl,
+          timeout: 30000
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (!result.success) {
+        return JSON.stringify({
+          success: false,
+          error: result.error || 'Code execution failed',
+          logs: result.logs || [],
+          suggestion: "Fix syntax errors or runtime issues in your code"
+        }, null, 2);
+      }
+      
+      // 2. Parse output as JSON
+      let items;
+      const output = result.data || result.logs?.join('\n') || '';
+      
+      try {
+        // Try to find JSON in output
+        const jsonMatch = output.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          items = JSON.parse(jsonMatch[0]);
+        } else {
+          items = JSON.parse(output);
+        }
+      } catch (e) {
+        return JSON.stringify({
+          success: false,
+          error: "Output is not valid JSON array",
+          output: output.substring(0, 300),
+          suggestion: "Make sure your code uses: console.log(JSON.stringify(results, null, 2))"
+        }, null, 2);
+      }
+      
+      if (!Array.isArray(items)) {
+        return JSON.stringify({
+          success: false,
+          error: "Output must be an array of items",
+          output: output.substring(0, 300),
+          suggestion: "Your scraper should return: [{field1: value1, field2: value2}, ...]"
+        }, null, 2);
+      }
+      
+      if (items.length === 0) {
+        return JSON.stringify({
+          success: false,
+          error: "Scraper extracted 0 items",
+          suggestion: "Check your item selector - it's not finding any elements on the page"
+        }, null, 2);
+      }
+      
+      // 3. Validate field extraction
+      const validation: any = {
+        itemCount: items.length,
+        fieldsFound: {} as Record<string, boolean>,
+        fieldsWithData: {} as Record<string, number>,
+        missingFields: [] as string[],
+        nullFields: [] as string[]
+      };
+      
+      fieldsRequired.forEach((field: string) => {
+        const itemsWithField = items.filter(item => field in item);
+        const itemsWithData = items.filter(item => {
+          const val = item[field];
+          return val !== null && val !== undefined && val !== '';
+        });
+        
+        validation.fieldsFound[field] = itemsWithField.length === items.length;
+        validation.fieldsWithData[field] = itemsWithData.length;
+        
+        if (itemsWithField.length === 0) {
+          validation.missingFields.push(field);
+        } else if (itemsWithData.length === 0) {
+          validation.nullFields.push(field);
+        }
+      });
+      
+      // 4. Determine success
+      const allFieldsPresent = validation.missingFields.length === 0;
+      const allFieldsHaveData = validation.nullFields.length === 0;
+      
+      if (allFieldsPresent && allFieldsHaveData) {
+        const successMsg = {
+          success: true,
+          message: `✅ SUCCESS! Extracted ${items.length} items with all ${fieldsRequired.length} fields containing data!`,
+          validation: validation,
+          sampleItem: items[0]
+        };
+        console.log(`   ✅ Validation PASSED`);
+        return JSON.stringify(successMsg, null, 2);
+      }
+      
+      // 5. Provide actionable feedback
+      let feedback = `❌ Validation FAILED:\n`;
+      feedback += `- Items extracted: ${items.length}\n`;
+      
+      if (validation.missingFields.length > 0) {
+        feedback += `\n🚨 MISSING fields (not in results object): ${validation.missingFields.join(', ')}\n`;
+        feedback += `   → Your .push() needs ALL fields: {${fieldsRequired.join(', ')}}\n`;
+      }
+      
+      if (validation.nullFields.length > 0) {
+        feedback += `\n🚨 NULL/EMPTY fields: ${validation.nullFields.join(', ')}\n`;
+        feedback += `   → These fields exist but have no data (null/empty)\n`;
+        feedback += `   → Selectors are wrong or elements don't exist\n`;
+        feedback += `   → Use execute_code to inspect HTML and find correct selectors\n`;
+      }
+      
+      const partialFields = Object.entries(validation.fieldsWithData)
+        .filter(([field, count]: [string, any]) => count > 0 && count < items.length)
+        .map(([field]) => field);
+      
+      if (partialFields.length > 0) {
+        feedback += `\n⚠️ PARTIAL data: ${partialFields.join(', ')}\n`;
+        feedback += `   → Some items have data, some don't - selector might be inconsistent\n`;
+      }
+      
+      const result2 = {
+        success: false,
+        feedback: feedback,
+        validation: validation,
+        sampleItems: items.slice(0, 2),
+        nextStep: "Use execute_code to fetch HTML and inspect the structure to find correct selectors"
+      };
+      
+      console.log(`   ❌ Validation FAILED: ${validation.missingFields.length} missing, ${validation.nullFields.length} null`);
+      return JSON.stringify(result2, null, 2);
+      
+    } catch (error: any) {
+      return JSON.stringify({
+        success: false,
+        error: `test_scraper failed: ${error.message}`,
+        suggestion: "Check if code is valid JavaScript"
+      }, null, 2);
+    }
+  },
+  {
+    name: "test_scraper",
+    description: `🎯 CRITICAL: Test scraper code and validate it extracts ALL required fields with REAL DATA.
+    
+This tool executes your scraper and checks:
+✅ Code runs without errors
+✅ Returns array of items (not empty)
+✅ Every item has ALL required fields
+✅ NO fields are null/empty
+
+YOU MUST call this after building every scraper!
+Do NOT finish until this returns success: true`,
+    schema: z.object({
+      code: z.string().describe("Complete scraper code to test (module.exports = async function...)"),
+      targetUrl: z.string().describe("URL to test scraper against"),
+      fieldsRequired: z.array(z.string()).describe("List of field names that MUST be extracted with data")
+    })
+  }
+);
+
+// Tool 5: Request User Help
+const requestUserHelpTool = tool(
+  async ({ question, context, options }) => {
+    console.log(`\n❓ AGENT REQUESTING USER HELP`);
+    console.log(`   Question: ${question}`);
+    console.log(`   Options: ${options.join(', ')}`);
+    
+    return JSON.stringify({
+      status: 'waiting_for_user',
+      question: question,
+      context: context,
+      options: options,
+      message: "⏸️ Agent paused - awaiting user response. User will select an option and agent will continue."
+    }, null, 2);
+  },
+  {
+    name: "request_user_help",
+    description: `Ask user for help when stuck (after 3+ failed attempts to find selectors).
+
+When to use:
+- Can't find correct CSS selector after multiple tries
+- Multiple similar elements, unclear which contains data
+- Ambiguous HTML structure
+
+Provide:
+- Specific question about what you're looking for
+- 2-4 HTML examples showing possible elements
+- Clear options user can choose from
+
+Example: "I can't find the meeting time. Which element contains it?"
+Options: ["A: <span class='date'>...</span>", "B: <div class='meta'>2:00 PM</div>", "C: <p class='info'>...</p>"]`,
+    schema: z.object({
+      question: z.string().describe("Clear, specific question for user (what are you trying to find?)"),
+      context: z.string().describe("Relevant HTML snippet(s) showing the issue - helps user understand"),
+      options: z.array(z.string()).describe("2-4 concrete choices user can pick from (label each: A, B, C...)")
+    })
+  }
+);
+
+// Tool 6: Validate Scraper Result (legacy - keeping for compatibility)
 const validateResultTool = tool(
   async ({ data, schema }) => {
     try {
@@ -247,6 +457,8 @@ export async function createScraperAgent(config: {
   // Select tools based on config
   const allTools = {
     execute_code: executeCodeTool,
+    test_scraper: testScraperTool,
+    request_user_help: requestUserHelpTool,
     fetch_url: fetchUrlTool,
     search_web: searchWebTool,
     validate_result: validateResultTool
@@ -311,7 +523,7 @@ You: 1. Use search_web with query "React official documentation"
 - If you get "no output", you forgot console.log()!
 - If a website blocks you, try a different URL from search results`;
   
-  // Create the agent using ReAct pattern
+  // Create ReAct agent (LangGraph's prebuilt agent)
   const agent = createReactAgent({
     llm,
     tools: selectedTools,
@@ -330,6 +542,25 @@ export async function runAgentTask(
   console.log(`\n📋 TASK RECEIVED:`);
   console.log(`   Task length: ${task.length} chars`);
   console.log(`   First 500 chars: "${task.substring(0, 500)}..."`);
+  
+  // Extract fieldsRequired from config if present
+  const fieldsRequired = (config as any)?.fieldsRequired;
+  if (fieldsRequired && fieldsRequired.length > 0) {
+    console.log(`   📊 Required fields: ${fieldsRequired.join(', ')}`);
+    
+    // Enhance task with structured field information
+    task = `${task}
+
+📊 REQUIRED FIELDS (you MUST extract ALL of these):
+${fieldsRequired.map((f: string) => `- ${f}`).join('\n')}
+
+🎯 VALIDATION: After building scraper, you MUST call test_scraper with:
+- code: your complete scraper code
+- targetUrl: the URL you're scraping
+- fieldsRequired: ${JSON.stringify(fieldsRequired)}
+
+Do NOT finish until test_scraper returns success: true!`;
+  }
   
   // Check if task contains scraper config
   const hasScraperConfig = task.includes('pageStructures') || task.includes('selectorSteps');
@@ -449,9 +680,18 @@ export async function runAgentTask(
       }
     );
     
+    console.log(`\n🎯 AGENT INVOCATION COMPLETE`);
+    console.log(`   Result type: ${typeof result}`);
+    console.log(`   Result keys: ${result ? Object.keys(result).join(', ') : 'null'}`);
+    
     // Extract the final message from the agent
     const messages = result.messages || [];
+    console.log(`   Messages count: ${messages.length}`);
+    
     const finalMessage = messages[messages.length - 1];
+    console.log(`   Final message type: ${finalMessage?.type}`);
+    console.log(`   Final message content length: ${finalMessage?.content?.length || 0}`);
+    
     const output = finalMessage?.content || 'No output generated';
     
     // 🔍 ANALYZE OUTPUT
