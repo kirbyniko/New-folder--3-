@@ -1,0 +1,92 @@
+{
+  "id": "legislative-scraper-workflow",
+  "name": "Legislative Bill Scraper",
+  "version": "1.0.0",
+  "description": "Iterative workflow for scraping state legislative bills, committee meetings, and agendas with intelligent extraction and validation",
+  "layers": [
+    {
+      "maxAttempts": 5,
+      "strategy": "progressive_refinement",
+      "patterns": [
+        "html_table_extraction",
+        "pdf_parsing",
+        "date_time_normalization"
+      ],
+      "successAction": "continue",
+      "failureAction": "escalate",
+      "description": "Extract raw calendar data and committee meetings from legislative website"
+    },
+    {
+      "maxAttempts": 3,
+      "strategy": "pattern_detection",
+      "patterns": [
+        "bill_id_extraction",
+        "regex_patterns",
+        "contextual_extraction"
+      ],
+      "successAction": "continue",
+      "failureAction": "retry",
+      "description": "Parse bill IDs and titles from agenda PDFs and HTML content"
+    },
+    {
+      "maxAttempts": 3,
+      "strategy": "progressive_refinement",
+      "patterns": [
+        "api_enrichment",
+        "data_enhancement",
+        "sponsor_extraction"
+      ],
+      "successAction": "continue",
+      "failureAction": "escalate",
+      "description": "Enhance bills with detailed information (sponsors, status, full title)"
+    },
+    {
+      "maxAttempts": 2,
+      "strategy": "pattern_detection",
+      "patterns": [
+        "date_validation",
+        "field_completeness",
+        "data_deduplication"
+      ],
+      "successAction": "stop",
+      "failureAction": "escalate",
+      "description": "Validate and normalize extracted data before storage"
+    }
+  ],
+  "tools": [
+    "execute_code",
+    "fetch_url",
+    "test_scraper"
+  ],
+  "agent": {
+    "model": "qwen2.5-coder:14b",
+    "temperature": 0.2,
+    "systemPrompt": "You are an expert web scraper specialized in extracting legislative data from state government websites.\n\nYour task is to extract:\n- Committee meetings with dates, times, locations\n- Bills discussed in each meeting (bill IDs like HB123, SB456)\n- Bill titles and descriptions\n- Sponsors and status information\n\nKey patterns to recognize:\n- Bill formats: HB/SB/HJ/SJ/HCR/SCR followed by numbers\n- Date patterns: Various formats (MM/DD/YYYY, Month DD YYYY, etc.)\n- PDF parsing: Extract text from agenda PDFs\n- HTML tables: Parse structured legislative calendars\n\nUse iterative refinement:\n1. First pass: Extract basic structure\n2. Second pass: Improve extraction accuracy\n3. Third pass: Handle edge cases and validate\n4. Fourth pass: Enrich with additional details\n5. Final pass: Normalize and deduplicate\n\nBe precise, handle errors gracefully, and always validate your extractions."
+  },
+  "validation": {
+    "validators": [
+      {
+        "type": "field_coverage",
+        "config": {
+          "requiredFields": ["date", "committee", "bills"],
+          "minCoverage": 0.8
+        }
+      },
+      {
+        "type": "item_count",
+        "config": {
+          "minCount": 1,
+          "maxCount": 500
+        }
+      }
+    ]
+  },
+  "testInput": "{\"name\":\"Virginia Legislative Calendar\",\"startUrl\":\"https://lis.virginia.gov/cgi-bin/legp604.exe?ses=241&typ=cal&month=01\",\"pageStructures\":[{\"fields\":[{\"fieldName\":\"date\",\"selector\":\".calendarDate\",\"type\":\"text\"},{\"fieldName\":\"committee\",\"selector\":\".committeeTitle\",\"type\":\"text\"},{\"fieldName\":\"location\",\"selector\":\".location\",\"type\":\"text\"},{\"fieldName\":\"time\",\"selector\":\".meetingTime\",\"type\":\"text\"},{\"fieldName\":\"bills\",\"selector\":\".billItem\",\"type\":\"list\"}]}]}",
+  "metadata": {
+    "source": "Legislative Scraper System",
+    "useCase": "State Legislature Data Collection",
+    "states": ["Virginia", "Washington", "Michigan", "Wisconsin", "Arizona"],
+    "created": "2026-01-03T00:00:00.000Z",
+    "tags": ["scraping", "legislation", "government", "iterative-learning"]
+  }
+}

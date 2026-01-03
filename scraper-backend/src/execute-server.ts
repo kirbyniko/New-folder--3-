@@ -382,14 +382,22 @@ const server = http.createServer(async (req, res) => {
   req.on('data', chunk => body += chunk);
   req.on('end', async () => {
     try {
-      const request: ExecuteRequest = JSON.parse(body);
+      const parsed = JSON.parse(body);
+      
+      // Support both naming conventions: {code, url} and {scriptCode, targetUrl}
+      const request: ExecuteRequest = {
+        scriptCode: parsed.scriptCode || parsed.code,
+        targetUrl: parsed.targetUrl || parsed.url,
+        timeout: parsed.timeout
+      };
       
       // Validate request
       if (!request.scriptCode || !request.targetUrl) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ 
           success: false,
-          error: 'Missing scriptCode or targetUrl' 
+          error: 'Missing code/scriptCode or url/targetUrl',
+          received: Object.keys(parsed)
         }));
         return;
       }
@@ -401,9 +409,14 @@ const server = http.createServer(async (req, res) => {
       
       console.log(`${result.success ? '✅' : '❌'} Execution ${result.success ? 'succeeded' : 'failed'} in ${result.duration}ms`);
       
-      // Send response
+      // Send response with items array at top level for compatibility
+      const response: any = {
+        ...result,
+        items: result.data || []  // Add items array at top level
+      };
+      
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(result));
+      res.end(JSON.stringify(response));
       
     } catch (error: any) {
       console.error('❌ Server error:', error);

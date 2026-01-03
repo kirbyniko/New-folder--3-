@@ -18,6 +18,40 @@ export class ScraperAgentUI {
     
     // Auto-check server every 10s
     setInterval(() => this.checkServerStatus(), 10000);
+    
+    // Check for pending scraper config from IAF Workflow Builder
+    this.checkPendingConfig();
+  }
+  
+  checkPendingConfig() {
+    const pendingConfig = localStorage.getItem('pending_scraper_config');
+    if (pendingConfig) {
+      try {
+        const config = JSON.parse(pendingConfig);
+        localStorage.removeItem('pending_scraper_config');
+        
+        // Show notification
+        this.addMessage('system', `✅ <strong>Loaded workflow configuration!</strong><br>Scraper for: ${config.startUrl}`);
+        
+        // Auto-populate input field
+        const userInput = document.getElementById('user-input');
+        if (userInput) {
+          userInput.value = JSON.stringify(config, null, 2);
+          
+          // Scroll to input
+          userInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          
+          // Flash highlight effect
+          userInput.style.border = '2px solid #4ade80';
+          setTimeout(() => {
+            userInput.style.border = '';
+          }, 2000);
+        }
+      } catch (error) {
+        console.error('Failed to load pending config:', error);
+        localStorage.removeItem('pending_scraper_config');
+      }
+    }
   }
   
   render() {

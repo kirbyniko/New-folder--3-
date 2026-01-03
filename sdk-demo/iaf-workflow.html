@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Scraper Agent - Quick Access</title>
+  <title>IAF Workflow Builder</title>
   <style>
+    body { margin: 0; padding: 0; }
     .nav-switcher {
       position: fixed;
       top: 20px;
@@ -15,29 +16,29 @@
     }
     .nav-switcher button {
       padding: 10px 20px;
-      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
       color: white;
       border: none;
       border-radius: 8px;
       cursor: pointer;
       font-size: 14px;
       font-weight: 500;
-      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
       transition: all 0.2s;
     }
     .nav-switcher button:hover {
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
     }
   </style>
 </head>
 <body>
   <div class="nav-switcher">
-    <button onclick="window.location.href='/iaf-workflow.html'">
-      🔧 IAF Workflow Builder
+    <button onclick="window.location.href='/'">
+      🤖 Scraper Agent
     </button>
   </div>
   <div id="app"></div>
-  <script type="module" src="/src/main-scraper.js"></script>
+  <script type="module" src="/src/main-iaf.js"></script>
 </body>
 </html>

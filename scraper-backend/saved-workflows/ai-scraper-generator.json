@@ -1,0 +1,73 @@
+{
+  "id": "ai-scraper-generator",
+  "name": "AI Scraper Code Generator",
+  "version": "1.0.0",
+  "description": "Iteratively generate and improve web scraper code using AI with batched field processing and continuous learning",
+  "layers": [
+    {
+      "maxAttempts": 12,
+      "strategy": "progressive_refinement",
+      "patterns": [
+        "field_batching",
+        "focused_context",
+        "incremental_improvement"
+      ],
+      "successAction": "continue",
+      "failureAction": "retry",
+      "description": "Generate scraper code for small batches of fields (12 fields per batch) with focused prompts"
+    },
+    {
+      "maxAttempts": 10,
+      "strategy": "pattern_detection",
+      "patterns": [
+        "test_execution",
+        "error_analysis",
+        "pattern_learning"
+      ],
+      "successAction": "continue",
+      "failureAction": "retry",
+      "description": "Test generated scraper, analyze results, learn patterns from failures"
+    },
+    {
+      "maxAttempts": 5,
+      "strategy": "progressive_refinement",
+      "patterns": [
+        "script_merging",
+        "deduplication",
+        "optimization"
+      ],
+      "successAction": "stop",
+      "failureAction": "escalate",
+      "description": "Merge batch results into final scraper with optimizations"
+    }
+  ],
+  "tools": [
+    "execute_code",
+    "fetch_url",
+    "test_scraper"
+  ],
+  "agent": {
+    "model": "qwen2.5-coder:7b",
+    "temperature": 0.7,
+    "systemPrompt": "You are an AI that generates web scraper code through iterative learning.\n\nCORE INSIGHT: Generate code in small, focused batches rather than all at once.\n\nProcess:\n1. Receive 12 fields to extract\n2. Analyze page structure for ONLY those fields\n3. Generate minimal, focused scraper code\n4. Test and refine based on results\n5. Learn patterns from successes and failures\n\nField Batching Strategy:\n- Batch 1: Basic fields (title, date, location)\n- Batch 2: Complex fields (descriptions, lists, tables)\n- Batch 3: Nested fields (bills, sponsors, tags)\n- Continue until all fields extracted\n\nFor each iteration:\n- Use ONLY relevant context for current fields\n- Generate clean, executable JavaScript\n- Include error handling\n- Return structured JSON results\n- Learn from test outcomes\n\nSuccess criteria:\n- 80%+ field coverage per batch\n- Valid, parseable data\n- No runtime errors\n- Real data (not placeholders)\n\nIf iteration fails, adjust approach:\n- Try different selectors\n- Change parsing strategy\n- Simplify extraction logic\n- Focus on what works"
+  },
+  "validation": {
+    "validators": [
+      {
+        "type": "field_coverage",
+        "config": {
+          "requiredFields": ["generated_code", "test_results"],
+          "minCoverage": 0.8
+        }
+      }
+    ]
+  },
+  "testInput": "{\"name\":\"Example News Scraper\",\"startUrl\":\"https://example.com/news\",\"pageStructures\":[{\"fields\":[{\"fieldName\":\"title\",\"selector\":\"h1.article-title\",\"type\":\"text\"},{\"fieldName\":\"author\",\"selector\":\".author-name\",\"type\":\"text\"},{\"fieldName\":\"date\",\"selector\":\".publish-date\",\"type\":\"text\"},{\"fieldName\":\"content\",\"selector\":\".article-content\",\"type\":\"text\"},{\"fieldName\":\"tags\",\"selector\":\".tag\",\"type\":\"list\"}]}]}",
+  "metadata": {
+    "source": "Chrome Extension AI Agent",
+    "useCase": "Automated Scraper Generation",
+    "learningEnabled": true,
+    "created": "2026-01-03T00:00:00.000Z",
+    "tags": ["ai", "code-generation", "iterative-learning", "scraping"]
+  }
+}

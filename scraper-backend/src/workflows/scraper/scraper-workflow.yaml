@@ -1,0 +1,125 @@
+# Web Scraper Generator Workflow
+# IAF Configuration for the existing scraper system
+
+name: Web Scraper Generator
+version: 1.0.0
+description: Generate and validate web scrapers with automatic field detection
+
+# Iterative wrapper configuration - mimics our current Supervisor/Worker pattern
+iterativeWrapper:
+  layers:
+    # Layer 1: Supervisor (high-level orchestration)
+    - name: supervisor
+      maxAttempts: 3
+      strategy: pattern_detection
+      
+      # Pattern detection and fixes
+      patterns:
+        - pattern: NO_ITEMS
+          fix: use_alternative_selectors
+          escalate: true
+        
+        - pattern: PARSE_ERROR
+          fix: use_different_parser
+          escalate: true
+        
+        - pattern: PARTIAL_SUCCESS
+          fix: refine_missing_fields
+          escalate: false
+        
+        - pattern: INVALID_SELECTOR
+          fix: regenerate_selectors
+          escalate: true
+      
+      onSuccess: return_best
+      onFailure: return_best  # Always return best attempt
+    
+    # Layer 2: Worker (deep scraper generation)
+    - name: worker
+      maxAttempts: 5
+      strategy: progressive_refinement
+      
+      # First attempt uses heuristics, rest use LLM
+      onSuccess: escalate  # Return to supervisor for validation
+      onFailure: try_next  # Try next attempt
+
+# Agent configuration
+agent:
+  name: ScraperBuilderAgent
+  model: llama3-groq-tool-use
+  temperature: 0.3
+  
+  systemPrompt: |
+    You are an expert web scraper generator. Your job is to build complete, working web scrapers 
+    that extract data from HTML pages.
+    
+    Guidelines:
+    - Always test scrapers before returning them
+    - Use CSS selectors or XPath as appropriate
+    - Handle missing fields gracefully
+    - Extract arrays of items when possible
+    - Return valid JavaScript code
+  
+  tools:
+    - execute_code
+    - fetch_url
+    - test_scraper
+
+# Validation configuration
+validation:
+  name: field_coverage
+  type: custom
+  
+  # Success = all fields present
+  successCriteria:
+    - itemCount > 0
+    - missingFields.length === 0
+  
+  # Partial success = some fields present
+  partialSuccessCriteria:
+    - itemCount > 0
+    - fieldCoverage >= 50%
+  
+  # Failure = no items
+  failureCriteria:
+    - itemCount === 0
+  
+  # Diagnostics to track
+  diagnostics:
+    - totalAttempts
+    - bestAttemptNumber
+    - itemsExtracted
+    - fieldsWorking
+    - fieldsTotal
+    - missingFieldsList
+    - errorTypes
+    - suggestions
+
+# Human-in-the-loop configuration
+humanFeedback:
+  enabled: true
+  trigger: validation_failed
+  
+  interface:
+    type: modal
+    fields:
+      - field_selection
+      - issue_type
+      - notes
+      - correct_selector
+  
+  refinement:
+    endpoint: /manual-agent-refine
+    use_feedback_for: missing_fields
+
+# Storage configuration
+storage:
+  type: file
+  location: ./saved-scrapers
+  format: json
+  
+  crud:
+    - save
+    - list
+    - get
+    - delete

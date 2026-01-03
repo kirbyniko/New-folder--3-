@@ -20,6 +20,15 @@ import {
   detectVRAM,
   getScraperExtensionContext 
 } from './context-manager.js';
+import {
+  handleIAFWorkflowsGet,
+  handleIAFWorkflowsPost,
+  handleIAFWorkflowsDelete,
+  handleIAFToolsGet,
+  handleIAFToolsPost,
+  handleIAFValidatorsGet,
+  handleIAFExecute
+} from './iaf-api.js';
 
 const execAsync = promisify(exec);
 const PORT = process.env.LANGCHAIN_PORT || 3003;
@@ -496,8 +505,8 @@ ${fieldMappings}
     totalAttempts: MAX_ATTEMPTS,
     bestAttemptNumber: bestAttempt.attempt || 0,
     itemsExtracted: bestAttempt.itemCount,
-    fieldsWorking: fieldsRequired.length - (bestAttempt.missingFields?.length || fieldsRequired.length),
-    fieldsTotal: fieldsRequired.length,
+    fieldsWorking: validFields.length - (bestAttempt.missingFields?.length || validFields.length),
+    fieldsTotal: validFields.length,
     missingFieldsList: bestAttempt.missingFields || [],
     errorTypes: allErrors.map(e => e.type).filter((v, i, a) => a.indexOf(v) === i),
     lastError: allErrors[allErrors.length - 1]?.error || 'Unknown error',
@@ -557,6 +566,240 @@ interface AgentRequest {
     context?: string; // Context ID
     sessionId?: string; // Session ID for memory
   };
+}
+
+// AI Workflow Generation
+async function generateWorkflowWithAI(prompt: string, requirements?: string, onProgress?: (update: any) => void): Promise<any> {
+  console.log('🤖 Generating workflow with AI...');
+  
+  if (onProgress) {
+    onProgress({ stage: 'preparing', message: 'Preparing AI system prompt...' });
+  }
+  
+  const systemPrompt = `You are an expert at designing iterative agentic workflows. 
+Given a user's description, you create well-structured IAF (Iterative Agent Framework) workflows.
+
+An IAF workflow consists of:
+1. **Layers**: Sequential processing steps (data fetch → process → validate → output)
+2. **Tools**: Functions the agent can call (web scraping, API calls, file operations, etc.)
+3. **Agent Config**: Model settings (temperature, system prompt, max iterations)
+4. **Validation**: Rules to check output quality
+
+Return a valid JSON workflow object with this structure:
+{
+  "name": "Workflow Name",
+  "version": "1.0.0",
+  "description": "What this workflow does",
+  "layers": [
+    {
+      "name": "Layer 1: Data Collection",
+      "maxAttempts": 3,
+      "strategy": "sequential",
+      "patterns": ["pattern1", "pattern2"],
+      "validation": { "minScore": 0.7 }
+    }
+  ],
+  "tools": [
+    {
+      "name": "toolName",
+      "type": "scraper|api|transform|validate",
+      "description": "What this tool does",
+      "config": { }
+    }
+  ],
+  "agent": {
+    "model": "mistral-nemo:12b-instruct-2407-q8_0",
+    "temperature": 0.7,
+    "systemPrompt": "You are helping with...",
+    "maxIterations": 5
+  },
+  "validation": {
+    "validators": [
+      { "type": "completeness", "threshold": 0.8 },
+      { "type": "accuracy", "threshold": 0.7 }
+    ]
+  }
+}
+
+Make the workflow practical, production-ready, and well-documented.`;
+
+  const userPrompt = `Create an IAF workflow for this use case:
+
+${prompt}
+
+${requirements ? `Additional requirements:\n${requirements}\n` : ''}
+
+Design a complete workflow with:
+- 3-5 layers that break down the task logically
+- Relevant tools for each capability needed
+- Appropriate validation at each step
+- Realistic agent configuration
+- Clear descriptions for each component
+
+Return ONLY the JSON workflow object, no other text.`;
+
+  try {
+    if (onProgress) {
+      onProgress({ stage: 'calling_ai', message: 'Calling Ollama AI (mistral-nemo)...', chars: 0 });
+    }
+    
+    console.log('⏳ Calling Ollama API (mistral-nemo)...');
+    console.log('⏱️  Streaming generation - watch the progress...');
+    
+    let generatedText = '';
+    let lastUpdate = Date.now();
+    
+    const response = await axios.post('http://localhost:11434/api/generate', {
+      model: 'mistral-nemo:12b-instruct-2407-q8_0',
+      prompt: `${systemPrompt}\n\n${userPrompt}`,
+      stream: true,
+      options: {
+        temperature: 0.8,
+        num_predict: 3000
+      }
+    }, {
+      responseType: 'stream'
+    });
+
+    // Stream the response
+    for await (const chunk of response.data) {
+      const text = chunk.toString();
+      const lines = text.split('\n').filter(line => line.trim());
+      
+      for (const line of lines) {
+        try {
+          const data = JSON.parse(line);
+          if (data.response) {
+            generatedText += data.response;
+            
+            // Send progress to frontend and log
+            const now = Date.now();
+            if (now - lastUpdate > 500) {
+              const progressUpdate = { 
+                stage: 'generating', 
+                message: `AI is generating workflow...`, 
+                chars: generatedText.length 
+              };
+              
+              if (onProgress) {
+                onProgress(progressUpdate);
+              }
+              
+              console.log(`📝 Generated ${generatedText.length} characters...`);
+              lastUpdate = now;
+            }
+          }
+        } catch (e) {
+          // Skip invalid JSON lines
+        }
+      }
+    }
+    
+    if (onProgress) {
+      onProgress({ stage: 'parsing', message: 'Parsing generated workflow...', chars: generatedText.length });
+    }
+    
+    console.log('✅ AI Response complete!');
+    console.log('📝 Final length:', generatedText.length, 'characters');
+    
+    // Extract JSON from response (handle markdown code blocks)
+    let workflowJson = generatedText;
+    
+    // Remove markdown code fences if present
+    if (workflowJson.includes('```json')) {
+      workflowJson = workflowJson.split('```json')[1].split('```')[0].trim();
+    } else if (workflowJson.includes('```')) {
+      workflowJson = workflowJson.split('```')[1].split('```')[0].trim();
+    }
+    
+    if (onProgress) {
+      onProgress({ stage: 'validating', message: 'Validating workflow structure...' });
+    }
+    
+    // Parse the JSON
+    const workflow = JSON.parse(workflowJson);
+    
+    if (onProgress) {
+      onProgress({ stage: 'finalizing', message: 'Adding metadata and finalizing...' });
+    }
+    
+    // Add metadata
+    workflow.id = `ai-generated-${Date.now()}`;
+    workflow.metadata = {
+      generated: true,
+      generatedAt: new Date().toISOString(),
+      prompt: prompt.substring(0, 200),
+      tags: ['ai-generated']
+    };
+    
+    console.log('✅ Generated workflow:', workflow.name);
+    return workflow;
+    
+  } catch (error: any) {
+    console.error('❌ Workflow generation failed:', error);
+    
+    // Fallback: Create a basic workflow template
+    console.log('⚠️ Using fallback template');
+    return {
+      id: `ai-generated-${Date.now()}`,
+      name: extractWorkflowName(prompt),
+      version: '1.0.0',
+      description: prompt.substring(0, 200),
+      layers: [
+        {
+          name: 'Layer 1: Initialize',
+          maxAttempts: 1,
+          strategy: 'sequential',
+          patterns: [],
+          validation: {}
+        },
+        {
+          name: 'Layer 2: Process',
+          maxAttempts: 3,
+          strategy: 'iterative',
+          patterns: ['error_handling', 'retry_logic'],
+          validation: { minScore: 0.7 }
+        },
+        {
+          name: 'Layer 3: Validate & Output',
+          maxAttempts: 1,
+          strategy: 'validation',
+          patterns: ['quality_check'],
+          validation: { minScore: 0.8 }
+        }
+      ],
+      tools: [],
+      agent: {
+        model: 'mistral-nemo:12b-instruct-2407-q8_0',
+        temperature: 0.7,
+        systemPrompt: `You are helping with: ${prompt}`,
+        maxIterations: 5
+      },
+      validation: {
+        validators: [
+          { type: 'completeness', threshold: 0.7 }
+        ]
+      },
+      metadata: {
+        generated: true,
+        generatedAt: new Date().toISOString(),
+        prompt: prompt.substring(0, 200),
+        tags: ['ai-generated', 'template']
+      }
+    };
+  }
+}
+
+function extractWorkflowName(prompt: string): string {
+  // Try to extract a meaningful name from the prompt
+  const words = prompt.split(' ').slice(0, 5);
+  let name = words.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  
+  if (name.length > 50) {
+    name = name.substring(0, 47) + '...';
+  }
+  
+  return name || 'Generated Workflow';
 }
 
 const server = http.createServer(async (req, res) => {
@@ -1276,6 +1519,7 @@ ${fieldMappings}
         
         // Return best attempt after all supervisor iterations
         console.log(`\n❌ SUPERVISOR: All ${MAX_SUPERVISOR_ATTEMPTS} iterations exhausted`);
+        console.log('📤 Sending completion SSE with code length:', lastResult.code?.length || 0);
         sendProgress({ 
           type: 'complete', 
           output: lastResult.code,
@@ -1286,6 +1530,7 @@ ${fieldMappings}
           itemCount: lastResult.itemCount,
           fieldCoverage: lastResult.fieldCoverage || '0',
           missingFields: lastResult.missingFields || [],
+          fieldsRequired: validFields, // Add required fields list
           sampleData: lastResult.sampleItems || [],
           html: html, // Include HTML for refinement
           diagnostics: lastResult.diagnostics || {}, // Include diagnostics
@@ -1295,6 +1540,7 @@ ${fieldMappings}
             sampleItem: lastResult.bestAttempt?.firstItem
           }
         });
+        console.log('✅ Completion SSE sent, ending response');
         res.end();
         
       } catch (error: any) {
@@ -1721,6 +1967,181 @@ ${fieldMappings}
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: error.message }));
     }
+  } else if (req.method === 'OPTIONS') {
+    // Handle CORS preflight
+    res.writeHead(200, {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type'
+    });
+    res.end();
+  } else if (req.method === 'GET' && req.url === '/iaf/workflows') {
+    // Get all IAF workflows
+    try {
+      await handleIAFWorkflowsGet(req, res);
+    } catch (error: any) {
+      console.error('IAF workflows GET error:', error);
+      res.writeHead(500, { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      });
+      res.end(JSON.stringify({ error: error.message, stack: error.stack }));
+    }
+  } else if (req.method === 'POST' && req.url === '/iaf/workflows') {
+    // Save IAF workflow
+    try {
+      await handleIAFWorkflowsPost(req, res);
+    } catch (error: any) {
+      console.error('IAF workflows POST error:', error);
+      res.writeHead(500, { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      });
+      res.end(JSON.stringify({ error: error.message }));
+    }
+  } else if (req.method === 'DELETE' && req.url?.startsWith('/iaf/workflows/')) {
+    // Delete IAF workflow
+    try {
+      const workflowId = req.url.split('/iaf/workflows/')[1];
+      await handleIAFWorkflowsDelete(req, res, workflowId);
+    } catch (error: any) {
+      console.error('IAF workflows DELETE error:', error);
+      res.writeHead(500, { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      });
+      res.end(JSON.stringify({ error: error.message }));
+    }
+  } else if (req.method === 'GET' && req.url === '/iaf/tools') {
+    // Get all IAF tools
+    try {
+      await handleIAFToolsGet(req, res);
+    } catch (error: any) {
+      console.error('IAF tools GET error:', error);
+      res.writeHead(500, { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      });
+      res.end(JSON.stringify({ error: error.message }));
+    }
+  } else if (req.method === 'POST' && req.url === '/iaf/tools') {
+    // Create IAF tool
+    try {
+      await handleIAFToolsPost(req, res);
+    } catch (error: any) {
+      console.error('IAF tools POST error:', error);
+      res.writeHead(500, { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      });
+      res.end(JSON.stringify({ error: error.message }));
+    }
+  } else if (req.method === 'GET' && req.url === '/iaf/validators') {
+    // Get all IAF validators
+    try {
+      await handleIAFValidatorsGet(req, res);
+    } catch (error: any) {
+      console.error('IAF validators GET error:', error);
+      res.writeHead(500, { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      });
+      res.end(JSON.stringify({ error: error.message }));
+    }
+  } else if (req.method === 'POST' && req.url?.startsWith('/iaf/execute')) {
+    // Execute IAF workflow (SSE streaming) with user input
+    try {
+      let body = '';
+      req.on('data', (chunk: any) => { body += chunk.toString(); });
+      req.on('end', async () => {
+        try {
+          const { workflowId, input } = JSON.parse(body);
+          if (!workflowId) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Missing workflowId' }));
+            return;
+          }
+          await handleIAFExecute(req, res, workflowId, input);
+        } catch (error: any) {
+          console.error('IAF execute error:', error);
+          res.writeHead(500, { 
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          });
+          res.end(JSON.stringify({ error: error.message }));
+        }
+      });
+    } catch (error: any) {
+      console.error('IAF execute error:', error);
+      res.writeHead(500, { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      });
+      res.end(JSON.stringify({ error: error.message }));
+    }
+  } else if (req.method === 'GET' && req.url?.startsWith('/iaf/execute')) {
+    // Backward compatibility: GET with workflow parameter
+    try {
+      const url = new URL(req.url, `http://${req.headers.host}`);
+      const workflowId = url.searchParams.get('workflow');
+      if (!workflowId) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Missing workflow parameter' }));
+        return;
+      }
+      await handleIAFExecute(req, res, workflowId, null);
+    } catch (error: any) {
+      console.error('IAF execute error:', error);
+      res.writeHead(500, { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      });
+      res.end(JSON.stringify({ error: error.message }));
+    }
+  } else if (req.method === 'POST' && req.url === '/iaf/generate-workflow') {
+    // AI Workflow Generator with SSE streaming
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const { prompt, requirements } = JSON.parse(body);
+        
+        console.log('\n🤖 AI Workflow Generation Request');
+        console.log('Prompt:', prompt);
+        if (requirements) console.log('Requirements:', requirements);
+        
+        // Set up SSE headers
+        res.writeHead(200, {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+          'Access-Control-Allow-Origin': '*'
+        });
+        
+        // Send initial status
+        res.write(`data: ${JSON.stringify({ stage: 'initializing', message: 'Starting AI generation...' })}\n\n`);
+        
+        const generatedWorkflow = await generateWorkflowWithAI(prompt, requirements, (update) => {
+          // Send progress updates to frontend
+          res.write(`data: ${JSON.stringify(update)}\n\n`);
+        });
+        
+        // Send final result
+        res.write(`data: ${JSON.stringify({ stage: 'complete', workflow: generatedWorkflow })}\n\n`);
+        res.end();
+        
+      } catch (error: any) {
+        console.error('❌ Workflow generation error:', error);
+        if (!res.headersSent) {
+          res.writeHead(200, { 
+            'Content-Type': 'text/event-stream',
+            'Access-Control-Allow-Origin': '*'
+          });
+        }
+        res.write(`data: ${JSON.stringify({ stage: 'error', error: error.message })}\n\n`);
+        res.end();
+      }
+    });
   } else {
     res.writeHead(404, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'Not found' }));

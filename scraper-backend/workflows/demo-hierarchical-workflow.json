@@ -1,0 +1,303 @@
+{
+  "name": "Multi-Agent Job Scraper Demo",
+  "version": "2.0.0",
+  "description": "Demonstrates hierarchical agent architecture with specialized agents",
+  
+  "agentRegistry": {
+    "scraper-agent": {
+      "id": "scraper-agent",
+      "name": "Web Scraper Agent",
+      "model": "llama3.2:3b",
+      "temperature": 0.1,
+      "systemPrompt": "You are a web scraping specialist. Your job is to extract job listings from HTML content. Focus on finding job titles, companies, locations, and descriptions. Return structured data.",
+      "tools": [
+        {
+          "id": "http-fetch",
+          "name": "HTTP Fetcher",
+          "type": "http",
+          "description": "Fetch webpage content via HTTP",
+          "schema": {
+            "input": { "url": "string" },
+            "output": { "html": "string", "statusCode": "number" }
+          },
+          "implementation": {
+            "type": "built-in",
+            "endpoint": "http://localhost:3003/tools/http"
+          }
+        },
+        {
+          "id": "html-parser",
+          "name": "HTML Parser",
+          "type": "custom",
+          "description": "Parse HTML and extract structured data",
+          "schema": {
+            "input": { "html": "string", "selector": "string" },
+            "output": { "elements": "array" }
+          },
+          "implementation": {
+            "type": "custom",
+            "code": "function parseHTML(html, selector) { /* ... */ }"
+          }
+        }
+      ],
+      "metadata": {
+        "cost": 0.001,
+        "latency": 500,
+        "capabilities": ["web-scraping", "html-parsing"],
+        "tags": ["scraper", "fast", "cheap"]
+      }
+    },
+    
+    "validator-agent": {
+      "id": "validator-agent",
+      "name": "Data Validator Agent",
+      "model": "mistral-nemo:12b-instruct-2407-q8_0",
+      "temperature": 0.3,
+      "systemPrompt": "You validate scraped job data. Check for required fields, data quality, and consistency. Identify missing or malformed data. Suggest corrections when possible.",
+      "tools": [
+        {
+          "id": "schema-validator",
+          "name": "JSON Schema Validator",
+          "type": "custom",
+          "description": "Validate JSON against a schema",
+          "schema": {
+            "input": { "data": "object", "schema": "object" },
+            "output": { "valid": "boolean", "errors": "array" }
+          },
+          "implementation": {
+            "type": "built-in",
+            "config": { "library": "ajv" }
+          }
+        },
+        {
+          "id": "quality-checker",
+          "name": "Data Quality Checker",
+          "type": "custom",
+          "description": "Check data quality metrics",
+          "schema": {
+            "input": { "data": "array" },
+            "output": { "score": "number", "issues": "array" }
+          },
+          "implementation": {
+            "type": "custom",
+            "code": "function checkQuality(data) { /* ... */ }"
+          }
+        }
+      ],
+      "iterativeWrapper": {
+        "enabled": true,
+        "maxAttempts": 3,
+        "strategy": "validation",
+        "patterns": [
+          {
+            "pattern": "missing required field",
+            "fix": "Request additional scraping for missing data",
+            "escalate": false
+          },
+          {
+            "pattern": "invalid format",
+            "fix": "Apply data normalization",
+            "escalate": false
+          }
+        ]
+      },
+      "metadata": {
+        "cost": 0.01,
+        "latency": 1500,
+        "capabilities": ["validation", "quality-assurance"],
+        "tags": ["validator", "thorough"]
+      }
+    },
+    
+    "enrichment-agent": {
+      "id": "enrichment-agent",
+      "name": "Data Enrichment Agent",
+      "model": "qwen2.5:14b",
+      "temperature": 0.5,
+      "systemPrompt": "You enrich job listing data with additional context. Add salary estimates, location details, company information, and skill requirements. Use external APIs when available.",
+      "tools": [
+        {
+          "id": "geocoding-api",
+          "name": "Geocoding API",
+          "type": "http",
+          "description": "Convert addresses to lat/lng coordinates",
+          "schema": {
+            "input": { "address": "string" },
+            "output": { "lat": "number", "lng": "number", "formatted": "string" }
+          },
+          "implementation": {
+            "type": "remote",
+            "endpoint": "https://maps.googleapis.com/maps/api/geocode/json"
+          },
+          "restrictions": {
+            "maxCallsPerMinute": 60,
+            "requiresAuth": true,
+            "allowedAgents": ["enrichment-agent"]
+          }
+        },
+        {
+          "id": "salary-estimator",
+          "name": "Salary Estimator",
+          "type": "custom",
+          "description": "Estimate salary range based on job details",
+          "schema": {
+            "input": { "title": "string", "location": "string", "experience": "string" },
+            "output": { "min": "number", "max": "number", "currency": "string" }
+          },
+          "implementation": {
+            "type": "custom",
+            "code": "function estimateSalary(title, location, experience) { /* ... */ }"
+          }
+        },
+        {
+          "id": "shared-cache",
+          "name": "Redis Cache",
+          "type": "custom",
+          "description": "Cache enrichment data to avoid redundant API calls",
+          "schema": {
+            "input": { "key": "string", "value": "any" },
+            "output": { "cached": "boolean" }
+          },
+          "implementation": {
+            "type": "built-in",
+            "endpoint": "redis://localhost:6379"
+          }
+        }
+      ],
+      "context": {
+        "type": "shared"
+      },
+      "metadata": {
+        "cost": 0.02,
+        "latency": 2000,
+        "capabilities": ["enrichment", "external-apis", "geocoding"],
+        "tags": ["enricher", "expensive", "slow"]
+      }
+    },
+    
+    "export-agent": {
+      "id": "export-agent",
+      "name": "JSON Export Agent",
+      "model": "llama3.2:1b",
+      "temperature": 0.1,
+      "systemPrompt": "You format job data into clean, structured JSON output. Ensure consistency, proper formatting, and include all metadata. Generate human-readable summaries.",
+      "tools": [
+        {
+          "id": "json-formatter",
+          "name": "JSON Formatter",
+          "type": "custom",
+          "description": "Format and prettify JSON output",
+          "schema": {
+            "input": { "data": "any" },
+            "output": { "json": "string" }
+          },
+          "implementation": {
+            "type": "custom",
+            "code": "function formatJSON(data) { return JSON.stringify(data, null, 2); }"
+          }
+        }
+      ],
+      "metadata": {
+        "cost": 0.0005,
+        "latency": 200,
+        "capabilities": ["formatting", "export"],
+        "tags": ["exporter", "fast", "cheap"]
+      }
+    }
+  },
+  
+  "toolRegistry": {
+    "shared-cache": {
+      "id": "shared-cache",
+      "name": "Shared Redis Cache",
+      "type": "custom",
+      "description": "Workflow-level cache accessible by multiple agents",
+      "schema": {
+        "input": { "operation": "string", "key": "string", "value": "any" },
+        "output": { "success": "boolean", "data": "any" }
+      },
+      "implementation": {
+        "type": "built-in",
+        "endpoint": "redis://localhost:6379",
+        "config": { "db": 0, "ttl": 3600 }
+      },
+      "restrictions": {
+        "allowedAgents": ["scraper-agent", "enrichment-agent"],
+        "maxCallsPerMinute": 1000
+      }
+    }
+  },
+  
+  "iterativeWrapper": {
+    "layers": [
+      {
+        "name": "Scraping Layer",
+        "description": "Extract job listings from target website",
+        "agentRefs": ["scraper-agent"],
+        "maxAttempts": 3,
+        "strategy": "pattern_detection",
+        "patterns": [
+          {
+            "pattern": "connection timeout",
+            "fix": "Retry with exponential backoff"
+          },
+          {
+            "pattern": "empty result",
+            "fix": "Try alternative selectors"
+          }
+        ],
+        "onSuccess": "continue",
+        "onFailure": "retry"
+      },
+      {
+        "name": "Validation Layer",
+        "description": "Validate scraped data quality and completeness",
+        "agentRefs": ["validator-agent"],
+        "maxAttempts": 2,
+        "strategy": "sequential",
+        "onSuccess": "continue",
+        "onFailure": "escalate"
+      },
+      {
+        "name": "Enrichment Layer",
+        "description": "Add salary estimates, geocoding, and company data",
+        "agentRefs": ["enrichment-agent"],
+        "maxAttempts": 1,
+        "strategy": "sequential",
+        "onSuccess": "continue",
+        "onFailure": "continue"
+      },
+      {
+        "name": "Export Layer",
+        "description": "Format and export final JSON output",
+        "agentRefs": ["export-agent"],
+        "maxAttempts": 1,
+        "strategy": "sequential",
+        "onSuccess": "return",
+        "onFailure": "fail"
+      }
+    ],
+    "globalValidation": {
+      "name": "Final Output Validation",
+      "type": "schema",
+      "successCriteria": [
+        "All jobs have required fields",
+        "At least 5 jobs extracted",
+        "No duplicate entries"
+      ]
+    }
+  },
+  
+  "settings": {
+    "timeout": 300000,
+    "maxCost": 0.5,
+    "parallelism": 1
+  },
+  
+  "metadata": {
+    "author": "IAF Demo",
+    "created": "2024-01-15T10:00:00Z",
+    "tags": ["demo", "hierarchical", "multi-agent", "job-scraper"],
+    "version": "2.0.0"
+  }
+}
